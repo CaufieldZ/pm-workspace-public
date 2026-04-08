@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # PRD 模板 · 完整结构参考
 
 ## 文档结构总览

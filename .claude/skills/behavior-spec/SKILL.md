@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: behavior-spec
 description: >
@@ -12,6 +13,7 @@ depends_on: [scene-list, prd]
 optional_inputs: [interaction-map, prototype]
 consumed_by: [test-cases, cross-check]
 ---
+<!-- pm-ws-canary-236a5364 -->
 
 # 行为规格文档 Skill（Behavior Spec）
 

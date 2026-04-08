@@ -1,3 +1,4 @@
+# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 """
 Helper for running LibreOffice (soffice) in environments where AF_UNIX
 sockets may be blocked (e.g., sandboxed VMs).  Detects the restriction

@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: test-cases
 description: >
@@ -11,6 +12,7 @@ depends_on: [scene-list, prd]
 optional_inputs: [behavior-spec]
 consumed_by: [cross-check]
 ---
+<!-- pm-ws-canary-236a5364 -->
 
 # 测试用例集生成器 Skill（Test Cases）
 

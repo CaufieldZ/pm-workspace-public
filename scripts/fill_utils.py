@@ -1,3 +1,5 @@
+# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
+# pm-ws-canary-236a5364
 """
 通用填充工具 — 所有 fill 脚本 import 此模块。
 用法: from fill_utils import fill_block, run_fill

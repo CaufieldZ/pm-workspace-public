@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # PPT 满分产物片段库
 
 从 SOP-final.html（PM AI 提效工作流 SOP V2.0）提炼。参考叙事模式和结构骨架，不复制业务内容。

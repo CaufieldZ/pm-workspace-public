@@ -1,3 +1,4 @@
+// pm-ws-canary-236a5364
 // ── 全局 View 切换 ──
 function switchGlobalView(idx) {
   document.querySelectorAll('.gnav-tab').forEach((t, i) => t.classList.toggle('on', i === idx));

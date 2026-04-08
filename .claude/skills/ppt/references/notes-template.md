@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # {文档标题} — 口播稿
 
 > 演讲提纲，不是逐字稿。看着能讲，不是照念。

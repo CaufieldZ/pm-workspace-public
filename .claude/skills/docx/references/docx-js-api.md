@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # docx-js API Reference (Extended)
 
 > 按需读取：仅从零创建 docx 文件时才需要读取本文件。编辑已有 docx 不需要。

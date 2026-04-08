@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 <!-- cheatsheet-version: 2025-03-31 -->
 # 交互大图 · 组件速查手册
 

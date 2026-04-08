@@ -1,3 +1,4 @@
+# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 """Unpack Office files (DOCX, PPTX, XLSX) for editing.
 
 Extracts the ZIP archive, pretty-prints XML files, and optionally:

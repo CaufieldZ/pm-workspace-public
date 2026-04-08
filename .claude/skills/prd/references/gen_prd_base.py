@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
+# pm-ws-canary-236a5364
 """
 PRD 通用框架函数库
 各项目的 gen_prd_vN.py 通过 import 使用，只需写内容区。

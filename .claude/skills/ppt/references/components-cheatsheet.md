@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # PPT 组件速查表
 
 从 SOP-final.html 提取的所有可复用组件模式。

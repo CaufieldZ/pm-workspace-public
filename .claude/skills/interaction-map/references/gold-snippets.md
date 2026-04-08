@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # 交互大图 · 黄金片段参考（从高质量样本提取）
 
 > 填充时如不确定组件写法，直接复制以下片段修改内容即可。

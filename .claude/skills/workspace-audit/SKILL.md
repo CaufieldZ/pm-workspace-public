@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: workspace-audit
 description: >
@@ -11,6 +12,7 @@ depends_on: []
 optional_inputs: []
 consumed_by: []
 ---
+<!-- pm-ws-canary-236a5364 -->
 
 # Workspace Audit
 

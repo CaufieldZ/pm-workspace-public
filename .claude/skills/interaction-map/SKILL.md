@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: interaction-map
 description: >
@@ -12,6 +13,7 @@ depends_on: [scene-list]
 optional_inputs: [context.md, requirement-framework, architecture-diagrams]
 consumed_by: [prototype, prd]
 ---
+<!-- pm-ws-canary-236a5364 -->
 
 # 交互大图 Skill（Interaction Map）
 

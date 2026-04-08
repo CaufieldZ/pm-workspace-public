@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # {项目名} · Context
 
 > 本文件由 Chat Opus 在方案讨论后输出，本地模型以此为权威上下文。

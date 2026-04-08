@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # PM 工作流规范
 
 ## 〇、全局规则
@@ -346,3 +347,5 @@ commit message 使用前缀：
 - 复杂需求（≥2端/角色 或 ≥5场景有跨场景跳转 或 含数据同步/状态流转）→ 从 pipeline_position=1 开始按序执行
 - 超复杂（多系统/资金/架构）→ 在需求框架后插入架构图集（pipeline_position=2.5）
 
+
+<!-- pm-ws-canary-236a5364 -->

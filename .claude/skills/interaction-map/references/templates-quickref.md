@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # 交互大图组件速查表
 
 fill 函数写 HTML 时查此表确认 class 和结构。首次使用某组件如不确定完整结构，Read `interaction-map-templates.html` 对应行号。

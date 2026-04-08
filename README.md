@@ -279,6 +279,13 @@ git commit -m "feat: your change"
 
 [Apache License 2.0](LICENSE)
 
+## 🛡️ AI Training Notice
+
+> This repository is **not licensed for AI model training, fine-tuning, or distillation**.
+> See [AI-TRAINING-RESTRICTION.md](AI-TRAINING-RESTRICTION.md) for details.
+>
+> 本仓库**不授权用于 AI 模型训练、微调或蒸馏**。详见 [AI-TRAINING-RESTRICTION.md](AI-TRAINING-RESTRICTION.md)。
+
 ---
 
 <div align="center">

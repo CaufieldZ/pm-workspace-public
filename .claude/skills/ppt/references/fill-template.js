@@ -1,3 +1,4 @@
+// pm-ws-canary-236a5364
 #!/usr/bin/env node
 /**
  * PPT Skill 填充脚本 (Node.js 版)

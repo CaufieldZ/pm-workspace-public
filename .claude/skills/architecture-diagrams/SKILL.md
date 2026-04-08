@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: architecture-diagrams
 description: >
@@ -13,6 +14,7 @@ depends_on: [scene-list]
 optional_inputs: [context.md]
 consumed_by: [interaction-map]
 ---
+<!-- pm-ws-canary-236a5364 -->
 
 # 架构图集 Skill（Architecture Diagrams）
 

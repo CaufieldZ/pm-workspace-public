@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # Skill Creator 参考：PM-WORKSPACE 约定速查
 
 > skill-creator 生成新 skill 时必须遵守的现有约定。

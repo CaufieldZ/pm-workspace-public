@@ -1,3 +1,5 @@
+# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
+# pm-ws-canary-236a5364
 # fill 脚本模板 — 仅在编写 fill 脚本时参考
 # 公共工具在 scripts/fill_utils.py，fill 脚本只需写 Scene 内容函数。
 #

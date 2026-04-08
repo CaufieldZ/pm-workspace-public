@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: docx
 description: "Use this skill to read, edit, or manipulate existing Word documents (.docx files): tracked changes, accepting/rejecting revisions, extracting content, find-and-replace, format conversion. Do NOT use for creating PRD documents — PRD generation uses the prd skill (gen_prd_base.py). Do NOT use for PDFs, spreadsheets, or Google Docs."
@@ -8,6 +9,7 @@ depends_on: []
 optional_inputs: []
 consumed_by: []
 ---
+<!-- pm-ws-canary-236a5364 -->
 
 # DOCX creation, editing, and analysis
 

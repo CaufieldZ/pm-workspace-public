@@ -1,3 +1,4 @@
+# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 """Merge adjacent runs with identical formatting in DOCX.
 
 Merges adjacent <w:r> elements that have identical <w:rPr> properties.

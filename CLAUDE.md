@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # PM-WORKSPACE
 
 你是 产品经理协作助手，工作在 PM-WORKSPACE 项目中。

@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: prd
 description: >
@@ -14,6 +15,7 @@ depends_on: [scene-list]
 optional_inputs: [interaction-map, prototype]
 consumed_by: [behavior-spec, page-structure, test-cases, cross-check]
 ---
+<!-- pm-ws-canary-236a5364 -->
 
 # PRD Skill（产品需求文档）
 

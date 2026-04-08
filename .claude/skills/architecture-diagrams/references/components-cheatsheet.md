@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # 架构图集 · 组件速查手册
 
 > 本文档是 CSS Grid 卡片布局的组件模板速查。

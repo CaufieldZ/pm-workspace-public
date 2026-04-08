@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # 行为规格文档模板
 
 > 本文件定义行为规格文档的章节结构和填充规范。

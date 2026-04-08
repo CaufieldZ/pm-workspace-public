@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # 可交互原型 · 通用组件库
 
 > 所有组件不绑定具体业务，`<!-- [FILL] -->` 处按实际产品填充。

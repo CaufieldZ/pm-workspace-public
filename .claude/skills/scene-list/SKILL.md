@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: scene-list
 description: >
@@ -13,6 +14,7 @@ depends_on: []
 optional_inputs: [context.md]
 consumed_by: [requirement-framework, architecture-diagrams, interaction-map, prototype, prd, behavior-spec, page-structure, test-cases, cross-check]
 ---
+<!-- pm-ws-canary-236a5364 -->
 
 # 场景清单 Skill（Scene List）
 

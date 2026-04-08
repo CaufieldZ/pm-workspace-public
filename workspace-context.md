@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # PM-WORKSPACE 仓库全貌（给 Claude Opus 的系统背景）
 
 > 导出时间：2026-04-07 | 目的：供 Opus 了解仓库结构、Skill 体系、工作流规则，用于诊断或协作
@@ -137,3 +138,4 @@ pm-workspace/
 > v13: 2026-04-07 workspace-audit 诊断修复：§三字体规范拆分正文栈+等宽栈解决矛盾、PPT JetBrains Mono 白名单、分级表 200K→256K、arch body 字体补齐、优先级表述修正
 > v14: 2026-04-08 全局诊断修复 11 项：XSD schemas 移出 git(1MB)、prototype.css CJK 优先、imap optional_inputs+arch、arch/docx 自检清单、imap CSS/JS 引用说明、requirements.txt、cross-check optional_inputs 补全、竞品字体加注、impact-check.sh 新工具
 > v15: 2026-04-08 能力升级：test-cases Pairwise 建模+覆盖密度+依赖改为 prd、PRD 边写边审+迭代模式(冲突检测+存量数据)+埋点模板重写、逻辑拼图(方案变更自动推演)、一键开项目+会议纪要自动处理、/变更影响 command
+> v16: 2026-04-08 防蒸馏防护：AI-TRAINING-RESTRICTION.md+NOTICE+ai.txt 被动声明层、canary token 注入(38文件)、sync_public.sh 水印注入+保护验证、degrade.sh 离职降级工具(~/.claude/scripts/)

@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # SVG 拓扑图扩展（可选）
 
 > 大部分方案文档**不需要**画真正的拓扑图。用 CSS Grid 卡片 + 表格就能讲清楚。

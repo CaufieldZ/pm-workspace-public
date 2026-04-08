@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 你是一个正在接受能力评估的 AI 模型。请严格按照以下格式逐题作答，不要跳题，不要合并题目。每道题单独作答。
 
 ===== P1. 身份声明 =====

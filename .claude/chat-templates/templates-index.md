@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # Templates Index · 产物模板索引手册
 
 > **用途：** 新对话开头上传此文件 + 对应 template.html + context.md → Claude 精准产出
