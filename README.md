@@ -128,8 +128,9 @@ Layer 3 · 项目文件（= 具体项目资料）
                                                                    │
   ┌────────────────────────────────────────────────────────────────┘
   ▼
-4 prototype* ─→ 5 prd ──┬─→ 6 behavior-spec*  ─→ 7 test-cases* ─→ 8 cross-check
-                        └─→ 6 page-structure* ───────────────────────┘
+4 prototype* ─→ 5 prd ──┬─→ 6 behavior-spec* ─┐
+                        ├─→ 6 page-structure* ─┼─→ 8 cross-check
+                        └─→ 7 test-cases*      ─┘
 
                                                      * = optional
 ```
@@ -144,7 +145,7 @@ Layer 3 · 项目文件（= 具体项目资料）
 | 5   | **prd**                   | 横版左图右文 PRD，九章结构           | `.docx` |
 | 6   | **behavior-spec**         | 研发 AI 消费：状态机 + 异常处理      | `.md`   |
 | 6   | **page-structure**        | 设计/前端 AI 消费：组件树 + 数据绑定 | `.md`   |
-| 7   | **test-cases**            | QA AI 消费：边界值 + 异常场景全覆盖  | `.md`   |
+| 7   | **test-cases**            | QA AI 消费：Pairwise 建模 + 四类全覆盖 | `.md`   |
 | 8   | **cross-check**           | 编号/术语/字段一致性拉通验证         | 终端输出  |
 
 **独立 & 工具类**
@@ -185,7 +186,7 @@ PRD ─────┼─→ page-structure ─→ Design AI (Frontend AI)
 | :--- | :--- |
 | **防腐化 hook** | `.githooks/pre-commit` — Skill/规则变更时自动跑 `audit.sh`（完整性+依赖+规则冲突），不通过拦截 commit |
 | **自检反压** | 每个 Skill 自带 checklist，不通过最多自动修复 2 次，仍失败停下报告，禁止静默跳过 |
-| **impact-check** | `bash scripts/impact-check.sh <项目名>` — 改完 scene-list 后一键识别哪些 deliverable 需同步更新 |
+| **impact-check** | `bash scripts/impact-check.sh <项目名>` 或 `/变更影响 <项目名>` — 改完 scene-list 后一键识别哪些 deliverable 需同步更新 |
 | **workspace-audit** | 双阶段审计（脚本硬检查 + 模型软检查），11 类全局诊断：文件完整性、数值一致、依赖链路、规则冲突、Token 预算、产出物一致、SKILL_TABLE 同步、深度规则矛盾、安全扫描、优化建议、综合评估 |
 | **HTML 铁律** | >200 行必须脚本生成（骨架 → 填充 → 自检），禁止 Write 直写 |
 | **变更级联** | 改了 context.md → 依赖链自动扫描波及范围 → 按 pipeline 顺序升版下游产出物 → cross-check 拉通验证。PM 不用自己记哪些文档要同步改 |

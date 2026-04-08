@@ -4,13 +4,10 @@ node_modules/
 *.bak
 /tmp/
 __pycache__/
-.claude/settings.local.json
-.mcp.json
-projects/
 diagnostic-dump.md
-/references/
-.claude/rules/soul.md
-.markdownlint.json
-deliverables/
 package-lock.json
 .claude/skills/docx/scripts/office/schemas/
+
+# 本机配置（含密钥或机器级设置，不跟踪）
+.mcp.json
+.claude/settings.local.json
