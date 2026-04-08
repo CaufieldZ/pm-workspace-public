@@ -136,4 +136,4 @@ pm-workspace/
 > v12: 2026-04-06 Token 降本 + 工程健壮性：pm-workflow 原地压缩(-24%)、imap quickref 速查表(-48%)、audit.sh 去硬编码改动态提取、commands 参数防御、pre-commit 加规则冲突检查、CLAUDE.md 标注分界原则
 > v13: 2026-04-07 workspace-audit 诊断修复：§三字体规范拆分正文栈+等宽栈解决矛盾、PPT JetBrains Mono 白名单、分级表 200K→256K、arch body 字体补齐、优先级表述修正
 > v14: 2026-04-08 全局诊断修复 11 项：XSD schemas 移出 git(1MB)、prototype.css CJK 优先、imap optional_inputs+arch、arch/docx 自检清单、imap CSS/JS 引用说明、requirements.txt、cross-check optional_inputs 补全、竞品字体加注、impact-check.sh 新工具
-> v15: 2026-04-08 GT workspace 融合 + PD 工作流蒸馏：test-cases 升级(Pairwise 建模+覆盖密度+依赖改为 prd)、PRD 边写边审(Step 2.5)、PRD 迭代模式(Step 2.1 冲突检测+存量数据)、埋点需求模板(prd-template §8)、逻辑拼图(方案变更自动推演)、一键开项目+会议纪要自动处理、/变更影响 command
+> v15: 2026-04-08 能力升级：test-cases Pairwise 建模+覆盖密度+依赖改为 prd、PRD 边写边审+迭代模式(冲突检测+存量数据)+埋点模板重写、逻辑拼图(方案变更自动推演)、一键开项目+会议纪要自动处理、/变更影响 command
