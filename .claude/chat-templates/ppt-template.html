@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{PROJECT_TITLE}} · {{DECK_SUBTITLE}}</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;0,9..40,900;1,9..40,400&family=Noto+Sans+SC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   CSS VARIABLES
+   深色 GitHub-like 主题
+   功能色：blue / green / orange / purple / red / pink
+═══════════════════════════════════════ */
+:root {
+  --bg:#0a0c10; --bg2:#0e1117; --surface:#161b22; --surface2:#1c2129; --surface3:#21262d;
+  --border:#30363d; --border2:#21262d;
+  --t1:#e6edf3; --t2:#b1bac4; --t3:#6e7681; --t4:#30363d;
+  --blue:#58a6ff; --blue2:#1f6feb; --blue-bg:rgba(56,139,253,.08);
+  --green:#3fb950; --green2:#238636; --green-bg:rgba(63,185,80,.08);
+  --orange:#d29922; --orange-bg:rgba(210,153,34,.08);
+  --purple:#bc8cff; --purple-bg:rgba(188,140,255,.08);
+  --red:#f85149; --red-bg:rgba(248,81,73,.08);
+  --pink:#f778ba; --pink-bg:rgba(247,120,186,.08);
+  --brand:#58a6ff;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans SC','DM Sans',sans-serif;background:var(--bg);color:var(--t1);height:100vh;overflow:hidden;display:flex;-webkit-font-smoothing:antialiased;}
+
+/* ═══════════════════════════════════════
+   SIDEBAR（左侧导航栏）
+   ─ .sidebar-head — Logo + 副标题
+   ─ .sidebar-nav — 分组导航项
+     ─ .nav-group → .nav-label（分组标题，可带彩色圆点）
+     ─ .nav-item（可点击，active 高亮）
+═══════════════════════════════════════ */
+.sidebar{width:240px;background:var(--bg2);border-right:1px solid var(--border2);display:flex;flex-direction:column;flex-shrink:0;height:100vh;overflow:hidden;}
+.sidebar-head{padding:20px 16px 16px;border-bottom:1px solid var(--border2);}
+.sidebar-head .logo{display:flex;align-items:center;gap:10px;}
+.sidebar-head .logo-icon{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#58a6ff,#bc8cff);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#fff;}
+.sidebar-head .logo-text{font-size:14px;font-weight:800;letter-spacing:-.02em;}
+.sidebar-head .logo-sub{font-size:9px;color:var(--t3);font-family:'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;margin-top:1px;}
+
+.sidebar-nav{flex:1;overflow-y:auto;padding:8px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.sidebar-nav::-webkit-scrollbar{width:5px;}
+.sidebar-nav::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+.nav-group{margin-bottom:4px;}
+.nav-label{font-size:9px;font-weight:800;color:var(--t3);letter-spacing:.12em;text-transform:uppercase;padding:14px 12px 6px;font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:6px;}
+.nav-label .dot{width:6px;height:6px;border-radius:3px;}
+.nav-label .dot.green{background:var(--green);}
+.nav-label .dot.blue{background:var(--blue);}
+.nav-label .dot.pink{background:var(--pink);}
+.nav-label .dot.purple{background:var(--purple);}
+.nav-label .dot.orange{background:var(--orange);}
+
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;font-size:12.5px;font-weight:500;color:var(--t2);cursor:pointer;transition:all .12s;position:relative;user-select:none;}
+.nav-item:hover{background:var(--surface);color:var(--t1);}
+.nav-item.active{background:var(--blue-bg);color:var(--blue);font-weight:700;}
+.nav-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:60%;background:var(--blue);border-radius:0 3px 3px 0;}
+.nav-item .ni{font-size:14px;flex-shrink:0;width:20px;text-align:center;}
+
+/* ═══════════════════════════════════════
+   MAIN AREA
+   ─ .main-header — 面包屑 + 右侧标签
+   ─ .main-content — 页面容器（JS 动态渲染）
+═══════════════════════════════════════ */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.main-header{height:48px;border-bottom:1px solid var(--border2);display:flex;align-items:center;padding:0 32px;flex-shrink:0;background:var(--bg2);}
+.main-header .breadcrumb{font-size:11px;color:var(--t3);font-family:'JetBrains Mono',monospace;}
+.main-header .tags{margin-left:auto;display:flex;gap:8px;}
+
+.main-content{flex:1;overflow-y:auto;padding:32px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.main-content::-webkit-scrollbar{width:6px;}
+.main-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* ═══════════════════════════════════════
+   PAGES（页面容器 + 动画）
+═══════════════════════════════════════ */
+.page{display:none;max-width:1200px;margin:0 auto;animation:fadeUp .3s ease-out;}
+.page.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+.page-title{font-size:28px;font-weight:900;letter-spacing:-.03em;margin-bottom:6px;}
+.page-subtitle{font-size:13px;color:var(--t2);line-height:1.7;margin-bottom:32px;}
+
+/* ═══════════════════════════════════════
+   CARDS（基础卡片 + 网格布局）
+   border-top/left 可加色条
+═══════════════════════════════════════ */
+.card{background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:24px;margin-bottom:16px;transition:border-color .15s;}
+.card:hover{border-color:var(--border);}
+.card-title{font-size:15px;font-weight:800;margin-bottom:8px;}
+.card-desc{font-size:13px;color:var(--t2);line-height:1.8;font-weight:500;}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;}
+@media(max-width:900px){.grid2,.grid3,.grid4{grid-template-columns:1fr;}}
+
+/* ═══════════════════════════════════════
+   TAGS & BADGES
+   .tag-{color} — 小标签
+   .score — 分数/评级徽章（mono 字体）
+═══════════════════════════════════════ */
+.tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:.04em;}
+.tag-blue{background:var(--blue-bg);color:var(--blue);border:1px solid rgba(56,139,253,.15);}
+.tag-green{background:var(--green-bg);color:var(--green);border:1px solid rgba(63,185,80,.15);}
+.tag-orange{background:var(--orange-bg);color:var(--orange);border:1px solid rgba(210,153,34,.15);}
+.tag-purple{background:var(--purple-bg);color:var(--purple);border:1px solid rgba(188,140,255,.15);}
+.tag-red{background:var(--red-bg);color:var(--red);border:1px solid rgba(248,81,73,.15);}
+
+.score{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:800;font-family:'JetBrains Mono',monospace;}
+.score-mid{background:var(--orange-bg);color:var(--orange);}
+.score-high{background:var(--green-bg);color:var(--green);}
+.score-low{background:var(--red-bg);color:var(--red);}
+
+/* ═══════════════════════════════════════
+   SECTION LABEL（分区标题 + 横线）
+═══════════════════════════════════════ */
+.section-label{font-size:10px;font-weight:800;color:var(--t2);letter-spacing:.12em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+
+/* ═══════════════════════════════════════
+   NOTE BOX（左色条提示框）
+   默认蓝 / .green 绿 / .orange 橙 / .red 红 / .purple 紫
+═══════════════════════════════════════ */
+.note{border-left:3px solid var(--blue);background:var(--blue-bg);padding:14px 18px;border-radius:0 8px 8px 0;font-size:13px;color:var(--t2);line-height:1.8;margin:16px 0;font-weight:500;}
+.note strong{color:var(--blue);}
+.note.green{border-left-color:var(--green);background:var(--green-bg);}
+.note.green strong{color:var(--green);}
+.note.orange{border-left-color:var(--orange);background:var(--orange-bg);}
+.note.orange strong{color:var(--orange);}
+.note.red{border-left-color:var(--red);background:var(--red-bg);}
+.note.red strong{color:var(--red);}
+.note.purple{border-left-color:var(--purple);background:var(--purple-bg);}
+.note.purple strong{color:var(--purple);}
+
+/* ═══════════════════════════════════════
+   CODE / PROMPT BLOCK（代码块 + 复制按钮）
+═══════════════════════════════════════ */
+.prompt-block{background:var(--bg);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:16px 0;}
+.prompt-header{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border2);background:var(--surface);}
+.prompt-header .label{font-size:11px;font-weight:700;color:var(--t2);font-family:'JetBrains Mono',monospace;}
+.prompt-header .copy-btn{padding:5px 14px;border-radius:6px;font-size:11px;font-weight:700;background:var(--blue);color:#fff;border:none;cursor:pointer;transition:all .12s;}
+.prompt-header .copy-btn:hover{background:#1f6feb;}
+.prompt-body{padding:16px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--t2);line-height:1.8;white-space:pre-wrap;word-break:break-word;max-height:400px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;font-weight:500;}
+
+/* ═══════════════════════════════════════
+   HERO NUMBERS（大数字统计卡）
+═══════════════════════════════════════ */
+.hero-num{text-align:center;padding:20px;}
+.hero-num .val{font-size:32px;font-weight:900;font-family:'JetBrains Mono','DM Sans',sans-serif;letter-spacing:-.02em;}
+.hero-num .lbl{font-size:11px;color:var(--t2);margin-top:4px;font-weight:600;}
+
+/* ═══════════════════════════════════════
+   TRACK SELECTOR（双路径选择卡片）
+   .track-a = 绿色系 / .track-b = 蓝色系
+   按需改名或增加更多路径
+═══════════════════════════════════════ */
+.track-card{padding:28px;border-radius:14px;position:relative;overflow:hidden;cursor:pointer;transition:all .2s;}
+.track-card::before{content:'';position:absolute;top:0;right:0;width:120px;height:120px;border-radius:50%;filter:blur(60px);opacity:.15;pointer-events:none;}
+.track-card.track-a{background:var(--surface);border:1.5px solid rgba(63,185,80,.2);}
+.track-card.track-a::before{background:var(--green);}
+.track-card.track-a:hover{border-color:rgba(63,185,80,.4);}
+.track-card.track-b{background:var(--surface);border:1.5px solid rgba(56,139,253,.2);}
+.track-card.track-b::before{background:var(--blue);}
+.track-card.track-b:hover{border-color:rgba(56,139,253,.4);}
+
+/* ═══════════════════════════════════════
+   COMPARISON TABLE（对比表格）
+═══════════════════════════════════════ */
+.cmp-table{width:100%;border-collapse:collapse;font-size:13px;margin:16px 0;}
+.cmp-table th{text-align:left;padding:10px 14px;background:var(--surface);border:1px solid var(--border2);font-weight:700;color:var(--t2);font-size:11px;}
+.cmp-table td{padding:10px 14px;border:1px solid var(--border2);color:var(--t2);line-height:1.6;font-weight:500;}
+.cmp-table tr:hover td{background:var(--surface);}
+
+/* ═══════════════════════════════════════
+   CHECKLIST（编号列表项）
+   .ck-num 背景色用 inline style 控制
+═══════════════════════════════════════ */
+.ck-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border2);font-size:13px;color:var(--t2);line-height:1.7;font-weight:500;}
+.ck-item:last-child{border-bottom:none;}
+.ck-num{width:24px;height:24px;border-radius:8px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--t2);flex-shrink:0;margin-top:1px;}
+
+/* ═══════════════════════════════════════
+   ACCORDION（折叠面板，适合 FAQ）
+═══════════════════════════════════════ */
+.accordion{border:1px solid var(--border2);border-radius:10px;overflow:hidden;margin:8px 0;}
+.acc-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;background:var(--surface);transition:background .12s;font-size:13px;font-weight:600;}
+.acc-header:hover{background:var(--surface2);}
+.acc-header .arrow{color:var(--t3);font-size:12px;transition:transform .2s;}
+.acc-header.open .arrow{transform:rotate(90deg);}
+.acc-body{display:none;padding:0 18px 18px;font-size:13px;color:var(--t2);line-height:1.8;font-weight:500;}
+.acc-body.open{display:block;}
+
+/* ═══════════════════════════════════════
+   GALLERY（图片/产物展示卡片）
+═══════════════════════════════════════ */
+.gallery-card{background:var(--surface);border:1px solid var(--border2);border-radius:14px;overflow:hidden;transition:all .2s;}
+.gallery-card:hover{border-color:var(--border);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.3);}
+.gallery-preview{height:180px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:48px;border-bottom:1px solid var(--border2);}
+.gallery-info{padding:18px;}
+.gallery-info h4{font-size:14px;font-weight:800;margin-bottom:6px;}
+.gallery-info p{font-size:12px;color:var(--t2);line-height:1.6;font-weight:500;}
+
+/* ═══════════════════════════════════════
+   SKILL CARD（技能/模块卡片，右上角标签）
+═══════════════════════════════════════ */
+.skill-card{background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:20px;position:relative;}
+.skill-card .model-tag{position:absolute;top:12px;right:12px;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;font-family:'JetBrains Mono',monospace;}
+.skill-card .model-tag.variant-a{background:rgba(188,140,255,.12);color:var(--purple);}
+.skill-card .model-tag.variant-b{background:rgba(63,185,80,.12);color:var(--green);}
+
+/* ═══════════════════════════════════════
+   PIPELINE（垂直流程图）
+   .pipe > .pipe-node + .pipe-arrow 交替
+═══════════════════════════════════════ */
+.pipe{display:flex;flex-direction:column;gap:0;align-items:center;}
+.pipe-node{width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:20px;display:flex;gap:16px;align-items:flex-start;transition:border-color .15s;}
+.pipe-node:hover{border-color:var(--border);}
+.pipe-arrow{width:2px;height:28px;background:var(--border);position:relative;}
+.pipe-arrow::after{content:'▼';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);font-size:8px;color:var(--t3);}
+.pipe-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+
+/* ═══════════════════════════════════════
+   NESTED BOX DIAGRAM（嵌套架构图）
+   三层嵌套：outer(紫) > mid(蓝) > inner(绿)
+═══════════════════════════════════════ */
+.nest-outer{border:2px solid var(--purple);border-radius:16px;padding:20px;background:rgba(188,140,255,.03);position:relative;}
+.nest-mid{border:2px solid var(--blue);border-radius:12px;padding:18px;background:rgba(56,139,253,.03);margin-top:10px;position:relative;}
+.nest-inner{border:2px dashed var(--green);border-radius:10px;padding:16px;background:rgba(63,185,80,.03);position:relative;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+.nest-label{position:absolute;top:-10px;left:16px;background:var(--bg);padding:0 8px;font-size:11px;font-weight:800;font-family:'JetBrains Mono',monospace;}
+.nest-label.purple{color:var(--purple);}
+.nest-label.blue{color:var(--blue);}
+.nest-label.green{color:var(--green);}
+.nest-chip{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:700;background:var(--surface);border:1px solid var(--border2);}
+
+/* ═══════════════════════════════════════
+   MODAL（全屏遮罩 + 居中弹窗）
+═══════════════════════════════════════ */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(12px);z-index:200;display:none;align-items:center;justify-content:center;padding:24px;}
+.modal-overlay.show{display:flex;}
+.modal-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:100%;max-width:800px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.5);}
+.modal-head{padding:20px 24px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;}
+.modal-head h3{font-size:16px;font-weight:800;}
+.modal-head .close-btn{width:32px;height:32px;border-radius:8px;border:none;background:var(--surface);color:var(--t2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .12s;}
+.modal-head .close-btn:hover{background:var(--surface2);color:var(--t1);}
+.modal-body{flex:1;overflow-y:auto;padding:24px;}
+
+/* ═══════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════ */
+.divider{height:1px;background:var(--border2);margin:24px 0;}
+code{background:var(--surface2);padding:2px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue);}
+.text-blue{color:var(--blue);}
+.text-green{color:var(--green);}
+.text-orange{color:var(--orange);}
+.text-purple{color:var(--purple);}
+.text-red{color:var(--red);}
+.text-pink{color:var(--pink);}
+.fw9{font-weight:900;}
+.mono{font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body>
+
+<!-- ═══════ MODAL（全局弹窗，放 body 顶部） ═══════ -->
+<div class="modal-overlay" id="contentModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="modalTitle">{{MODAL_TITLE}}</h3>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="copy-btn" style="padding:6px 16px;border-radius:6px;font-size:11px;font-weight:700;background:var(--blue);color:#fff;border:none;cursor:pointer;" onclick="copyModalContent()"><span id="modalCopyText">📋 复制</span></button>
+        <button class="close-btn" onclick="closeModal()">✕</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div id="modalContent" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--t2);line-height:1.8;white-space:pre-wrap;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ SIDEBAR ═══════ -->
+<aside class="sidebar">
+  <div class="sidebar-head">
+    <div class="logo">
+      <div class="logo-icon">{{LOGO_LETTER}}</div>
+      <div>
+        <div class="logo-text">{{LOGO_TEXT}} <span style="color:var(--blue)">{{LOGO_HIGHLIGHT}}</span></div>
+        <div class="logo-sub">{{LOGO_SUBTITLE}}</div>
+      </div>
+    </div>
+  </div>
+  <nav class="sidebar-nav" id="sidebarNav"><!-- JS 动态渲染 --></nav>
+</aside>
+
+<!-- ═══════ MAIN ═══════ -->
+<main class="main">
+  <header class="main-header">
+    <span class="breadcrumb" id="breadcrumb">{{DEFAULT_PAGE_LABEL}}</span>
+    <div class="tags">
+      <span class="tag tag-blue">{{HEADER_TAG}}</span>
+    </div>
+  </header>
+  <div class="main-content" id="mainContent"><!-- JS 动态渲染 --></div>
+</main>
+
+<script>
+/* ════════════════════════════════════════
+   NAV DATA（侧边栏导航数据）
+   
+   结构：
+   { group: '分组标题', dot: 'green'|'blue'|'pink'|null, items: [
+     { id: 'page-id', icon: '🔧', label: '页面名称' },
+   ]}
+   
+   ─ dot 控制分组标题前的彩色圆点，null 不显示
+   ─ id 对应 PAGE_RENDERERS 中的键
+   ─ icon 支持 emoji 或文字
+════════════════════════════════════════ */
+const NAV = [
+  { group:'{{GROUP_1_NAME}}', dot:null, items:[
+    { id:'home', icon:'📍', label:'{{PAGE_HOME_LABEL}}' },
+    { id:'overview', icon:'📄', label:'{{PAGE_OVERVIEW_LABEL}}' },
+  ]},
+  { group:'{{GROUP_2_NAME}}', dot:'green', items:[
+    { id:'g2-page1', icon:'💬', label:'{{PAGE_G2_1_LABEL}}' },
+    { id:'g2-page2', icon:'💬', label:'{{PAGE_G2_2_LABEL}}' },
+    { id:'g2-page3', icon:'💬', label:'{{PAGE_G2_3_LABEL}}' },
+  ]},
+  { group:'{{GROUP_3_NAME}}', dot:'blue', items:[
+    { id:'g3-page1', icon:'⚡', label:'{{PAGE_G3_1_LABEL}}' },
+    { id:'g3-page2', icon:'⚡', label:'{{PAGE_G3_2_LABEL}}' },
+    { id:'g3-page3', icon:'⚡', label:'{{PAGE_G3_3_LABEL}}' },
+  ]},
+  { group:'{{GROUP_4_NAME}}', dot:'pink', items:[
+    { id:'gallery', icon:'🖼', label:'{{PAGE_GALLERY_LABEL}}' },
+    { id:'faq', icon:'❓', label:'{{PAGE_FAQ_LABEL}}' },
+  ]},
+];
+
+let currentPage = 'home';
+
+function renderNav() {
+  const nav = document.getElementById('sidebarNav');
+  nav.innerHTML = '';
+  NAV.forEach(g => {
+    let html = '<div class="nav-group"><div class="nav-label">' + (g.dot ? '<span class="dot ' + g.dot + '"></span>' : '') + g.group + '</div>';
+    g.items.forEach(item => {
+      const cls = item.id === currentPage ? 'nav-item active' : 'nav-item';
+      html += '<div class="' + cls + '" onclick="goPage(\'' + item.id + '\')"><span class="ni">' + item.icon + '</span>' + item.label + '</div>';
+    });
+    html += '</div>';
+    nav.innerHTML += html;
+  });
+}
+
+function goPage(id) {
+  currentPage = id;
+  renderNav();
+  renderPage();
+  document.getElementById('mainContent').scrollTop = 0;
+  let label = '';
+  NAV.forEach(g => g.items.forEach(i => { if(i.id===id) label = i.label; }));
+  document.getElementById('breadcrumb').textContent = label;
+}
+
+/* ════════════════════════════════════════
+   COPYABLE DATA（可复制的 Prompt / 模板 / 代码片段）
+   
+   按 key 存储，页面中通过 copyData(btn, key) 复制
+════════════════════════════════════════ */
+const COPYABLE_DATA = {
+  // 'key-name': `可复制的文本内容...`,
+};
+
+/* ════════════════════════════════════════
+   PAGE RENDERERS（每页一个渲染函数）
+   
+   PAGE_RENDERERS[pageId] = function(container) { container.innerHTML = `...`; }
+   
+   ─ 所有页面 HTML 在函数内用模板字符串拼接
+   ─ 可调用通用渲染器简化重复页面
+════════════════════════════════════════ */
+function renderPage() {
+  const c = document.getElementById('mainContent');
+  const fn = PAGE_RENDERERS[currentPage];
+  if (fn) { c.innerHTML = ''; fn(c); }
+}
+
+const PAGE_RENDERERS = {};
+
+/* ═══ HOME（总览页 / 封面页） ═══
+   典型结构：
+   - 居中大标题 + 副标题
+   - hero-num 统计卡 ×3
+   - 核心概念区（pipeline / 流程图）
+   - 路径选择区（track-card × 2）
+   - 对比表
+*/
+PAGE_RENDERERS['home'] = function(c) {
+  c.innerHTML = '<div class="page active">'
+    + '<div style="text-align:center;margin-bottom:40px;">'
+    + '  <span class="tag tag-blue" style="margin-bottom:12px;display:inline-flex;">{{HOME_TAG}}</span>'
+    + '  <h1 style="font-size:36px;font-weight:900;letter-spacing:-.04em;line-height:1.2;margin-bottom:10px;">{{HOME_TITLE_L1}}<br><span class="text-blue">{{HOME_TITLE_L2}}</span></h1>'
+    + '  <p style="font-size:14px;color:var(--t2);max-width:500px;margin:0 auto;line-height:1.7;">{{HOME_DESC}}</p>'
+    + '</div>'
+
+    // Hero Numbers
+    + '<div class="grid3" style="margin-bottom:32px;">'
+    + '  <div class="card" style="text-align:center;padding:20px;"><div class="hero-num"><div class="val text-green">{{STAT_1_VAL}}</div><div class="lbl">{{STAT_1_LABEL}}</div></div></div>'
+    + '  <div class="card" style="text-align:center;padding:20px;"><div class="hero-num"><div class="val text-blue">{{STAT_2_VAL}}</div><div class="lbl">{{STAT_2_LABEL}}</div></div></div>'
+    + '  <div class="card" style="text-align:center;padding:20px;"><div class="hero-num"><div class="val text-purple">{{STAT_3_VAL}}</div><div class="lbl">{{STAT_3_LABEL}}</div></div></div>'
+    + '</div>'
+
+    // Section: Core Concept
+    + '<div class="section-label" style="margin-top:40px;">{{HOME_SECTION_1_TITLE}}</div>'
+    + '<div class="card" style="border-top:3px solid var(--blue);margin-bottom:24px;">'
+    + '  <div style="text-align:center;margin-bottom:20px;">{{HOME_CORE_FLOW_HTML}}</div>'
+    + '  <div class="note green" style="margin:0;"><strong>{{HOME_CORE_NOTE_TITLE}}</strong>{{HOME_CORE_NOTE_BODY}}</div>'
+    + '</div>'
+
+    // Section: Decision Tree / Classification
+    + '<div class="section-label" style="margin-top:40px;">{{HOME_SECTION_2_TITLE}}</div>'
+    + '<div class="grid3" style="margin-bottom:24px;">'
+    + '  <div class="card" style="border-top:3px solid var(--green);">'
+    + '    <div style="font-size:14px;font-weight:900;color:var(--green);margin-bottom:10px;">{{TIER_1_TITLE}}</div>'
+    + '    <div class="card-desc" style="margin-bottom:12px;">{{TIER_1_DESC}}</div>'
+    + '    <div style="font-size:12px;color:var(--t1);font-weight:600;margin-bottom:6px;">{{TIER_1_LABEL}}</div>'
+    + '    <div class="card-desc">{{TIER_1_ITEMS}}</div>'
+    + '  </div>'
+    + '  <div class="card" style="border-top:3px solid var(--blue);">'
+    + '    <div style="font-size:14px;font-weight:900;color:var(--blue);margin-bottom:10px;">{{TIER_2_TITLE}}</div>'
+    + '    <div class="card-desc" style="margin-bottom:12px;">{{TIER_2_DESC}}</div>'
+    + '    <div style="font-size:12px;color:var(--t1);font-weight:600;margin-bottom:6px;">{{TIER_2_LABEL}}</div>'
+    + '    <div class="card-desc">{{TIER_2_ITEMS}}</div>'
+    + '  </div>'
+    + '  <div class="card" style="border-top:3px solid var(--purple);">'
+    + '    <div style="font-size:14px;font-weight:900;color:var(--purple);margin-bottom:10px;">{{TIER_3_TITLE}}</div>'
+    + '    <div class="card-desc" style="margin-bottom:12px;">{{TIER_3_DESC}}</div>'
+    + '    <div style="font-size:12px;color:var(--t1);font-weight:600;margin-bottom:6px;">{{TIER_3_LABEL}}</div>'
+    + '    <div class="card-desc">{{TIER_3_ITEMS}}</div>'
+    + '  </div>'
+    + '</div>'
+
+    // Section: Path Selection
+    + '<div class="section-label" style="margin-top:40px;">{{HOME_SECTION_3_TITLE}}</div>'
+    + '<div class="grid2" style="margin-bottom:32px;">'
+    + '  <div class="track-card track-a" onclick="goPage(\'g2-page1\')">'
+    + '    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span class="tag tag-green">{{TRACK_A_TAG}}</span><span class="score score-mid">{{TRACK_A_SCORE}}</span></div>'
+    + '    <h3 style="font-size:18px;font-weight:900;margin-bottom:8px;">{{TRACK_A_TITLE}}</h3>'
+    + '    <div class="card-desc">{{TRACK_A_DESC}}</div>'
+    + '  </div>'
+    + '  <div class="track-card track-b" onclick="goPage(\'g3-page1\')">'
+    + '    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span class="tag tag-blue">{{TRACK_B_TAG}}</span><span class="score score-high">{{TRACK_B_SCORE}}</span></div>'
+    + '    <h3 style="font-size:18px;font-weight:900;margin-bottom:8px;">{{TRACK_B_TITLE}}</h3>'
+    + '    <div class="card-desc">{{TRACK_B_DESC}}</div>'
+    + '  </div>'
+    + '</div>'
+
+    // Section: Comparison Table
+    + '<div class="section-label" style="margin-top:40px;">{{HOME_SECTION_4_TITLE}}</div>'
+    + '<table class="cmp-table">'
+    + '  <thead><tr><th style="width:20%;">{{CMP_COL_1}}</th><th style="width:40%;"><span class="text-green">{{CMP_COL_2}}</span></th><th style="width:40%;"><span class="text-blue">{{CMP_COL_3}}</span></th></tr></thead>'
+    + '  <tbody>'
+    + '    <tr><td style="color:var(--t1);font-weight:700;">{{CMP_ROW_1_DIM}}</td><td>{{CMP_ROW_1_A}}</td><td>{{CMP_ROW_1_B}}</td></tr>'
+    + '    <tr><td style="color:var(--t1);font-weight:700;">{{CMP_ROW_2_DIM}}</td><td>{{CMP_ROW_2_A}}</td><td>{{CMP_ROW_2_B}}</td></tr>'
+    + '    <tr><td style="color:var(--t1);font-weight:700;">{{CMP_ROW_3_DIM}}</td><td>{{CMP_ROW_3_A}}</td><td>{{CMP_ROW_3_B}}</td></tr>'
+    + '  </tbody>'
+    + '</table>'
+
+    + '<div class="note green"><strong>{{HOME_BOTTOM_NOTE_TITLE}}</strong>{{HOME_BOTTOM_NOTE_BODY}}</div>'
+  + '</div>';
+};
+
+/* ═══ OVERVIEW（详解页 / 第二页） ═══
+   典型结构：
+   - page-title + page-subtitle
+   - grid2 四张 border-left 色条卡片
+   - pipeline 垂直流程图
+   - grid2 两列分轨说明
+*/
+PAGE_RENDERERS['overview'] = function(c) {
+  c.innerHTML = '<div class="page active">'
+    + '<div class="page-title">{{OVERVIEW_TITLE}}</div>'
+    + '<div class="page-subtitle">{{OVERVIEW_SUBTITLE}}</div>'
+
+    + '<div class="section-label">{{OVERVIEW_SECTION_1}}</div>'
+    + '<div class="grid2" style="margin-bottom:24px;">'
+    + '  <div class="card" style="border-left:3px solid var(--blue);"><div style="font-size:13px;font-weight:800;color:var(--blue);margin-bottom:6px;">{{OV_CARD_1_TITLE}}</div><div class="card-desc">{{OV_CARD_1_DESC}}</div></div>'
+    + '  <div class="card" style="border-left:3px solid var(--green);"><div style="font-size:13px;font-weight:800;color:var(--green);margin-bottom:6px;">{{OV_CARD_2_TITLE}}</div><div class="card-desc">{{OV_CARD_2_DESC}}</div></div>'
+    + '  <div class="card" style="border-left:3px solid var(--orange);"><div style="font-size:13px;font-weight:800;color:var(--orange);margin-bottom:6px;">{{OV_CARD_3_TITLE}}</div><div class="card-desc">{{OV_CARD_3_DESC}}</div></div>'
+    + '  <div class="card" style="border-left:3px solid var(--purple);"><div style="font-size:13px;font-weight:800;color:var(--purple);margin-bottom:6px;">{{OV_CARD_4_TITLE}}</div><div class="card-desc">{{OV_CARD_4_DESC}}</div></div>'
+    + '</div>'
+
+    + '<div class="section-label" style="margin-top:32px;">{{OVERVIEW_SECTION_2}}</div>'
+    + '<div class="pipe" style="margin-bottom:24px;">'
+    + '  <div class="pipe-node"><div class="pipe-icon" style="background:var(--orange-bg);">{{PIPE_1_ICON}}</div><div><div style="font-weight:800;margin-bottom:4px;">{{PIPE_1_TITLE}}</div><div class="card-desc">{{PIPE_1_DESC}}</div></div></div>'
+    + '  <div class="pipe-arrow"></div>'
+    + '  <div class="pipe-node"><div class="pipe-icon" style="background:var(--blue-bg);">{{PIPE_2_ICON}}</div><div><div style="font-weight:800;margin-bottom:4px;">{{PIPE_2_TITLE}}</div><div class="card-desc">{{PIPE_2_DESC}}</div></div></div>'
+    + '  <div class="pipe-arrow"></div>'
+    + '  <div class="pipe-node" style="border-color:rgba(63,185,80,.3);"><div class="pipe-icon" style="background:var(--green-bg);">{{PIPE_3_ICON}}</div><div><div style="font-weight:800;color:var(--green);margin-bottom:4px;">{{PIPE_3_TITLE}}</div><div class="card-desc">{{PIPE_3_DESC}}</div></div></div>'
+    + '  <div class="pipe-arrow"></div>'
+    + '  <div class="pipe-node"><div class="pipe-icon" style="background:var(--purple-bg);">{{PIPE_4_ICON}}</div><div><div style="font-weight:800;margin-bottom:4px;">{{PIPE_4_TITLE}}</div><div class="card-desc">{{PIPE_4_DESC}}</div></div></div>'
+    + '</div>'
+  + '</div>';
+};
+
+/* ═══ 通用渲染器：Prompt 驱动页 ═══
+   适合：有可复制 Prompt 的操作页面
+   结构：tag + title + IN/OUT 双栏 + note + prompt-block + expectation
+*/
+function renderPromptPage(c, opts) {
+  var promptText = COPYABLE_DATA[opts.dataKey] || '';
+  c.innerHTML = '<div class="page active">'
+    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
+    + '  <span class="tag ' + (opts.tagClass||'tag-green') + '">' + opts.tag + '</span>'
+    + '  <span class="score ' + (opts.scoreClass||'score-mid') + '">' + opts.score + '</span>'
+    + '</div>'
+    + '<div class="page-title">' + opts.title + '</div>'
+    + '<div class="page-subtitle">' + opts.subtitle + '</div>'
+
+    + '<div class="grid2" style="margin-bottom:24px;">'
+    + '  <div class="card">'
+    + '    <div class="section-label"><span style="width:20px;height:20px;border-radius:6px;background:var(--surface2);display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:var(--t3);">IN</span> ' + (opts.inLabel||'输入') + '</div>'
+    + opts.inputs.map(function(f,i){return '<div class="ck-item"><div class="ck-num">'+(i+1)+'</div><div>'+f+'</div></div>';}).join('')
+    + '  </div>'
+    + '  <div class="card" style="background:var(--bg);border-color:var(--border);">'
+    + '    <div class="section-label"><span style="width:20px;height:20px;border-radius:6px;background:var(--surface2);display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:var(--blue);">OUT</span> ' + (opts.outLabel||'输出') + '</div>'
+    + opts.outputs.map(function(f,i){return '<div class="ck-item"><div class="ck-num" style="background:var(--blue-bg);color:var(--blue);">'+(i+1)+'</div><div>'+f+'</div></div>';}).join('')
+    + '  </div>'
+    + '</div>'
+
+    + (opts.notes ? '<div class="note">' + opts.notes + '</div>' : '')
+
+    + '<div class="section-label" style="margin-top:32px;">Prompt</div>'
+    + '<div class="prompt-block">'
+    + '  <div class="prompt-header"><span class="label">' + (opts.promptLabel||opts.dataKey) + '</span><button class="copy-btn" onclick="copyData(this, \'' + opts.dataKey + '\')">📋 复制</button></div>'
+    + '  <div class="prompt-body">' + escHtml(promptText) + '</div>'
+    + '</div>'
+
+    + '<div class="note orange" style="margin-top:24px;"><strong>预期管理：</strong>' + opts.expectation + '</div>'
+  + '</div>';
+}
+
+/* ═══ 通用渲染器：模板驱动页 ═══
+   适合：需要上传文件 + 查组件表 + 自检的页面
+   结构：tag + title + 上传指引 ×3 + 结构树 + 组件速查表 + 自检清单
+*/
+function renderTemplatePage(c, opts) {
+  c.innerHTML = '<div class="page active">'
+    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
+    + '  <span class="tag ' + (opts.tagClass||'tag-green') + '">' + opts.tag + '</span>'
+    + '  <span class="score ' + (opts.scoreClass||'score-mid') + '">' + opts.score + '</span>'
+    + '</div>'
+    + '<div class="page-title">' + opts.title + '</div>'
+    + '<div class="page-subtitle">' + opts.subtitle + '</div>'
+
+    + '<div class="note" style="margin-bottom:24px;"><strong>使用方式：</strong>' + (opts.usageNote||'上传文件给模型，模型按模板规范填充产出。') + '</div>'
+
+    + '<div class="section-label">上传文件</div>'
+    + '<div class="grid3" style="margin-bottom:24px;">'
+    + opts.files.map(function(f){return '<div class="card" style="text-align:center;border-top:3px solid var(--' + f.color + ');"><div style="font-size:28px;margin-bottom:8px;">' + f.icon + '</div><div style="font-weight:800;margin-bottom:4px;">' + f.name + '</div><div style="font-size:12px;color:var(--t2);">' + f.desc + '</div></div>';}).join('')
+    + '</div>'
+
+    + '<div class="section-label">产出物结构</div>'
+    + '<div class="card" style="background:var(--bg);font-family:\'JetBrains Mono\',monospace;font-size:12px;color:var(--t2);line-height:2;font-weight:500;">' + opts.structure + '</div>'
+
+    + '<div class="section-label" style="margin-top:24px;">组件速查</div>'
+    + '<table class="cmp-table"><thead><tr><th>组件</th><th>用途</th><th>变体/备注</th></tr></thead>'
+    + '<tbody>' + opts.components.map(function(r){return '<tr><td style="color:var(--blue);font-family:\'JetBrains Mono\',monospace;font-size:12px;">'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td></tr>';}).join('') + '</tbody></table>'
+
+    + '<div class="section-label" style="margin-top:24px;">自检清单</div>'
+    + '<div class="card">' + opts.checklist.map(function(s,i){return '<div class="ck-item"><div class="ck-num">'+(i+1)+'</div><div>'+s+'</div></div>';}).join('') + '</div>'
+
+    + '<div class="note orange" style="margin-top:24px;"><strong>预期管理：</strong>' + opts.expectation + '</div>'
+  + '</div>';
+}
+
+/* ═══ GALLERY（展示页） ═══ */
+PAGE_RENDERERS['gallery'] = function(c) {
+  c.innerHTML = '<div class="page active">'
+    + '<div class="page-title">{{GALLERY_TITLE}}</div>'
+    + '<div class="page-subtitle">{{GALLERY_SUBTITLE}}</div>'
+
+    + '<div class="section-label">{{GALLERY_SECTION_TITLE}}</div>'
+    + '<div class="grid3" style="margin-bottom:24px;">'
+    + '  <div class="gallery-card"><div class="gallery-preview">{{GALLERY_1_ICON}}</div><div class="gallery-info"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><h4>{{GALLERY_1_NAME}}</h4><span class="score score-high">{{GALLERY_1_SCORE}}</span></div><p>{{GALLERY_1_DESC}}</p></div></div>'
+    + '  <div class="gallery-card"><div class="gallery-preview">{{GALLERY_2_ICON}}</div><div class="gallery-info"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><h4>{{GALLERY_2_NAME}}</h4><span class="score score-high">{{GALLERY_2_SCORE}}</span></div><p>{{GALLERY_2_DESC}}</p></div></div>'
+    + '  <div class="gallery-card"><div class="gallery-preview">{{GALLERY_3_ICON}}</div><div class="gallery-info"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><h4>{{GALLERY_3_NAME}}</h4><span class="score score-mid">{{GALLERY_3_SCORE}}</span></div><p>{{GALLERY_3_DESC}}</p></div></div>'
+    + '</div>'
+
+    + '<div class="note" style="margin-top:24px;"><strong>{{GALLERY_NOTE_TITLE}}</strong>{{GALLERY_NOTE_BODY}}</div>'
+
+    // Performance table
+    + '<div class="section-label" style="margin-top:32px;">{{GALLERY_TABLE_TITLE}}</div>'
+    + '<table class="cmp-table">'
+    + '  <thead><tr><th>{{PERF_COL_1}}</th><th>{{PERF_COL_2}}</th><th>{{PERF_COL_3}}</th><th>{{PERF_COL_4}}</th></tr></thead>'
+    + '  <tbody>'
+    + '    <tr><td style="color:var(--t1);font-weight:700;">{{PERF_ROW_1}}</td><td>{{PERF_VAL_1}}</td><td>{{PERF_VAL_2}}</td><td>{{PERF_VAL_3}}</td></tr>'
+    + '    <tr><td style="color:var(--t1);font-weight:700;">{{PERF_ROW_2}}</td><td>{{PERF_VAL_4}}</td><td>{{PERF_VAL_5}}</td><td>{{PERF_VAL_6}}</td></tr>'
+    + '  </tbody>'
+    + '</table>'
+  + '</div>';
+};
+
+/* ═══ FAQ（折叠问答页） ═══ */
+PAGE_RENDERERS['faq'] = function(c) {
+  var faqs = [
+    {q:'{{FAQ_1_Q}}', a:'{{FAQ_1_A}}'},
+    {q:'{{FAQ_2_Q}}', a:'{{FAQ_2_A}}'},
+    {q:'{{FAQ_3_Q}}', a:'{{FAQ_3_A}}'},
+    {q:'{{FAQ_4_Q}}', a:'{{FAQ_4_A}}'},
+    // 更多 FAQ...
+  ];
+
+  c.innerHTML = '<div class="page active">'
+    + '<div class="page-title">{{FAQ_TITLE}}</div>'
+    + '<div class="page-subtitle">{{FAQ_SUBTITLE}}</div>'
+
+    + '<div class="section-label">{{FAQ_SECTION_1}}</div>'
+    + faqs.map(function(f){return '<div class="accordion"><div class="acc-header" onclick="toggleAcc(this)"><span>' + f.q + '</span><span class="arrow">▶</span></div><div class="acc-body">' + f.a + '</div></div>';}).join('')
+
+    + '<div class="section-label" style="margin-top:40px;">{{FAQ_SECTION_2}}</div>'
+    + '<div class="grid2">'
+    + '  <div class="card" style="border-top:3px solid var(--green);">'
+    + '    <div style="font-size:16px;font-weight:900;margin-bottom:16px;">{{FAQ_GUIDE_A_TITLE}}</div>'
+    + '    {{FAQ_GUIDE_A_STEPS_HTML}}'
+    + '  </div>'
+    + '  <div class="card" style="border-top:3px solid var(--blue);">'
+    + '    <div style="font-size:16px;font-weight:900;margin-bottom:16px;">{{FAQ_GUIDE_B_TITLE}}</div>'
+    + '    {{FAQ_GUIDE_B_STEPS_HTML}}'
+    + '  </div>'
+    + '</div>'
+  + '</div>';
+};
+
+/* ═══ 示例：注册 Group 2 的页面（Prompt 驱动页） ═══ */
+PAGE_RENDERERS['g2-page1'] = function(c) {
+  renderPromptPage(c, {
+    tag: '{{GROUP_2_NAME}}', tagClass: 'tag-green', score: '{{SCORE}}', scoreClass: 'score-mid',
+    title: '{{PAGE_TITLE}}', subtitle: '{{PAGE_SUBTITLE}}',
+    dataKey: '{{DATA_KEY}}', promptLabel: '{{PROMPT_LABEL}}',
+    inputs: ['{{INPUT_1}}', '{{INPUT_2}}', '{{INPUT_3}}'],
+    outputs: ['{{OUTPUT_1}}', '{{OUTPUT_2}}', '{{OUTPUT_3}}'],
+    notes: '<strong>{{NOTE_TITLE}}</strong>{{NOTE_BODY}}',
+    expectation: '{{EXPECTATION_TEXT}}',
+  });
+};
+
+/* ═══ 示例：注册 Group 2 的页面（模板驱动页） ═══ */
+PAGE_RENDERERS['g2-page2'] = function(c) {
+  renderTemplatePage(c, {
+    tag: '{{GROUP_2_NAME}}', tagClass: 'tag-green', score: '{{SCORE}}', scoreClass: 'score-mid',
+    title: '{{PAGE_TITLE}}', subtitle: '{{PAGE_SUBTITLE}}',
+    files: [
+      {icon:'📄', name:'{{FILE_1_NAME}}', desc:'{{FILE_1_DESC}}', color:'green'},
+      {icon:'📘', name:'{{FILE_2_NAME}}', desc:'{{FILE_2_DESC}}', color:'blue'},
+      {icon:'🧩', name:'{{FILE_3_NAME}}', desc:'{{FILE_3_DESC}}', color:'purple'},
+    ],
+    structure: '{{STRUCTURE_TREE_HTML}}',
+    components: [
+      ['{{COMP_1_CLASS}}', '{{COMP_1_USE}}', '{{COMP_1_NOTE}}'],
+      ['{{COMP_2_CLASS}}', '{{COMP_2_USE}}', '{{COMP_2_NOTE}}'],
+    ],
+    checklist: ['{{CHECK_1}}', '{{CHECK_2}}', '{{CHECK_3}}'],
+    expectation: '{{EXPECTATION_TEXT}}',
+  });
+};
+
+/* ═══ 示例：注册 Group 3 的页面（自定义渲染） ═══
+   展示所有可用组件的用法 */
+PAGE_RENDERERS['g3-page1'] = function(c) {
+  c.innerHTML = '<div class="page active">'
+    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span class="tag tag-blue">{{GROUP_3_NAME}}</span></div>'
+    + '<div class="page-title">{{PAGE_TITLE}}</div>'
+    + '<div class="page-subtitle">{{PAGE_SUBTITLE}}</div>'
+
+    // Nested Box Diagram
+    + '<div class="section-label">{{NESTED_SECTION_TITLE}}</div>'
+    + '<div class="card" style="margin-bottom:24px;">'
+    + '  <div class="nest-outer"><div class="nest-label purple">{{NEST_OUTER_LABEL}}</div>'
+    + '    <div style="font-size:12px;color:var(--t2);margin-bottom:12px;padding-left:4px;font-weight:500;">{{NEST_OUTER_DESC}}</div>'
+    + '    <div class="nest-mid"><div class="nest-label blue">{{NEST_MID_LABEL}}</div>'
+    + '      <div style="font-size:12px;color:var(--t2);margin-bottom:12px;padding-left:4px;font-weight:500;">{{NEST_MID_DESC}}</div>'
+    + '      <div class="nest-inner"><div class="nest-label green">{{NEST_INNER_LABEL}}</div>'
+    + '        <div class="nest-chip"><span class="text-purple">{{CHIP_1}}</span></div>'
+    + '        <div class="nest-chip"><span class="text-green">{{CHIP_2}}</span></div>'
+    + '        <div class="nest-chip"><span class="text-green">{{CHIP_3}}</span></div>'
+    + '      </div>'
+    + '    </div>'
+    + '  </div>'
+    + '</div>'
+
+    // Pipeline
+    + '<div class="section-label" style="margin-top:40px;">{{PIPE_SECTION_TITLE}}</div>'
+    + '<div class="pipe" style="margin-bottom:24px;">'
+    + '  <div class="pipe-node" style="border-color:rgba(188,140,255,.3);"><div class="pipe-icon" style="background:var(--purple-bg);font-size:16px;">{{PIPE_1_ICON}}</div><div style="flex:1;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="font-weight:900;font-size:14px;">{{PIPE_1_TITLE}}</span><span class="tag tag-purple">{{PIPE_1_TAG}}</span></div><div class="card-desc">{{PIPE_1_DESC}}</div></div></div>'
+    + '  <div class="pipe-arrow"></div>'
+    + '  <div class="pipe-node" style="border-color:rgba(56,139,253,.3);"><div class="pipe-icon" style="background:var(--blue-bg);font-size:16px;">{{PIPE_2_ICON}}</div><div style="flex:1;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="font-weight:900;font-size:14px;">{{PIPE_2_TITLE}}</span><span class="tag tag-blue">{{PIPE_2_TAG}}</span></div><div class="card-desc">{{PIPE_2_DESC}}</div></div></div>'
+    + '  <div class="pipe-arrow"></div>'
+    + '  <div class="pipe-node" style="border-color:rgba(63,185,80,.3);"><div class="pipe-icon" style="background:var(--green-bg);font-size:16px;">{{PIPE_3_ICON}}</div><div style="flex:1;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="font-weight:900;font-size:14px;">{{PIPE_3_TITLE}}</span><span class="tag tag-green">{{PIPE_3_TAG}}</span></div><div class="card-desc">{{PIPE_3_DESC}}</div></div></div>'
+    + '</div>'
+
+    // Skill Cards (grid)
+    + '<div class="section-label" style="margin-top:32px;">{{SKILL_SECTION_TITLE}}</div>'
+    + '<div class="grid3" style="margin-bottom:24px;">'
+    + '  <div class="skill-card"><span class="model-tag variant-a">{{MODEL_TAG_1}}</span><div style="font-size:18px;margin-bottom:8px;">{{SKILL_1_ICON}}</div><div style="font-weight:800;margin-bottom:4px;">{{SKILL_1_NAME}}</div><div class="card-desc">{{SKILL_1_DESC}}</div></div>'
+    + '  <div class="skill-card"><span class="model-tag variant-b">{{MODEL_TAG_2}}</span><div style="font-size:18px;margin-bottom:8px;">{{SKILL_2_ICON}}</div><div style="font-weight:800;margin-bottom:4px;">{{SKILL_2_NAME}}</div><div class="card-desc">{{SKILL_2_DESC}}</div></div>'
+    + '  <div class="skill-card"><span class="model-tag variant-a">{{MODEL_TAG_3}}</span><div style="font-size:18px;margin-bottom:8px;">{{SKILL_3_ICON}}</div><div style="font-weight:800;margin-bottom:4px;">{{SKILL_3_NAME}}</div><div class="card-desc">{{SKILL_3_DESC}}</div></div>'
+    + '</div>'
+
+    // Table
+    + '<div class="section-label" style="margin-top:32px;">{{TABLE_SECTION_TITLE}}</div>'
+    + '<table class="cmp-table"><thead><tr><th>{{TBL_COL_1}}</th><th>{{TBL_COL_2}}</th><th>{{TBL_COL_3}}</th></tr></thead>'
+    + '<tbody>'
+    + '  <tr><td style="color:var(--t1);font-weight:700;">{{TBL_ROW_1_C1}}</td><td>{{TBL_ROW_1_C2}}</td><td>{{TBL_ROW_1_C3}}</td></tr>'
+    + '  <tr><td style="color:var(--t1);font-weight:700;">{{TBL_ROW_2_C1}}</td><td>{{TBL_ROW_2_C2}}</td><td>{{TBL_ROW_2_C3}}</td></tr>'
+    + '</tbody></table>'
+
+    + '<div class="note"><strong>{{BOTTOM_NOTE_TITLE}}</strong>{{BOTTOM_NOTE_BODY}}</div>'
+  + '</div>';
+};
+
+// 空壳：其他页面按需注册
+PAGE_RENDERERS['g2-page3'] = function(c) { c.innerHTML = '<div class="page active"><div class="page-title">{{PAGE_TITLE}}</div><div class="page-subtitle">{{PAGE_SUBTITLE}}</div><!-- 按需填充 --></div>'; };
+PAGE_RENDERERS['g3-page2'] = function(c) { c.innerHTML = '<div class="page active"><div class="page-title">{{PAGE_TITLE}}</div><div class="page-subtitle">{{PAGE_SUBTITLE}}</div><!-- 按需填充 --></div>'; };
+PAGE_RENDERERS['g3-page3'] = function(c) { c.innerHTML = '<div class="page active"><div class="page-title">{{PAGE_TITLE}}</div><div class="page-subtitle">{{PAGE_SUBTITLE}}</div><!-- 按需填充 --></div>'; };
+
+/* ════════════════════════════════════════
+   UTILITY FUNCTIONS
+════════════════════════════════════════ */
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function copyData(btn, key) {
+  var text = COPYABLE_DATA[key] || '';
+  navigator.clipboard.writeText(text).then(function() {
+    btn.textContent = '✅ 已复制';
+    setTimeout(function() { btn.textContent = '📋 复制'; }, 2000);
+  }).catch(function() {
+    var ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    btn.textContent = '✅ 已复制';
+    setTimeout(function() { btn.textContent = '📋 复制'; }, 2000);
+  });
+}
+
+function closeModal() { document.getElementById('contentModal').classList.remove('show'); }
+function openModal(title, content) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalContent').textContent = content;
+  document.getElementById('contentModal').classList.add('show');
+}
+function copyModalContent() {
+  var text = document.getElementById('modalContent').textContent;
+  navigator.clipboard.writeText(text).then(function() {
+    var b = document.getElementById('modalCopyText');
+    b.textContent = '✅ 已复制'; setTimeout(function() { b.textContent = '📋 复制'; }, 2000);
+  });
+}
+
+function toggleAcc(el) {
+  el.classList.toggle('open');
+  el.nextElementSibling.classList.toggle('open');
+}
+
+/* ════════════════════════════════════════
+   INIT
+════════════════════════════════════════ */
+renderNav();
+renderPage();
+</script>
+</body>
+</html>

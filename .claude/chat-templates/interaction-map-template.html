@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{PROJECT_TITLE}} · 前端交互大图 {{VERSION}}</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+
+/* ═══════════════════════════════════════
+   CSS VARIABLES
+═══════════════════════════════════════ */
+:root {
+  /* 浅色系（页面背景、Web框、标注卡） */
+  --bg: #F4F5F7;
+  --bg2: #EBEDF0;
+  --surface: #fff;
+  --text: #0f172a;
+  --text2: #475569;
+  --text3: #94a3b8;
+  --border: #E2E6EB;
+  /* 功能色（箭头、标注、标签） */
+  --blue: #2D81FF;
+  --green: #0ECB81;
+  --red: #F6465D;
+  --purple: #8b5cf6;
+  --amber: #d97706;
+  --gold: #FFD740;
+  /* 深色系（App 壳内部） */
+  --dark: #0B0E11;
+  --dark2: #1B1D22;
+  --dark3: #2B2F36;
+  --dark-text: #EAECEF;
+  --dark-text2: #848E9C;
+  --dark-text3: #5E6673;
+  /* 圆角 & 阴影 */
+  --radius: 16px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,.08), 0 12px 40px rgba(0,0,0,.06);
+  --shadow-phone: 0 8px 40px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.08);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Noto Sans SC', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+
+/* ════════════════════════════════════════
+   PROGRESS BAR（顶部阅读进度条）
+════════════════════════════════════════ */
+.progress-bar {
+  position: fixed; top: 0; left: 0; height: 3px;
+  background: linear-gradient(90deg, var(--blue), var(--purple), var(--red));
+  z-index: 1000; width: 0; transition: width .1s linear;
+}
+
+
+/* ════════════════════════════════════════
+   SIDE NAV（左侧锚点导航，滚动跟随）
+════════════════════════════════════════ */
+.side-nav {
+  position: fixed; left: 0; top: 50%; transform: translateY(-50%);
+  z-index: 99; padding: 8px;
+  display: flex; flex-direction: column; gap: 2px;
+  background: rgba(244,245,247,.95);
+  backdrop-filter: blur(8px);
+  border-right: 1px solid rgba(0,0,0,.06);
+  border-radius: 0 12px 12px 0;
+  max-width: 150px;
+}
+.side-nav a {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; border-radius: 0 8px 8px 0;
+  font-size: 11px; font-weight: 600; color: var(--text3);
+  text-decoration: none; transition: all .2s;
+  border-left: 3px solid transparent;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.side-nav a:hover, .side-nav a.active {
+  color: var(--blue); background: rgba(41,121,255,.06);
+  border-left-color: var(--blue);
+}
+.side-nav a .dot {
+  width: 6px; height: 6px; border-radius: 3px; flex-shrink: 0;
+}
+@media (max-width: 1400px) { .side-nav { display: none; } }
+
+
+/* ════════════════════════════════════════
+   HEADER（sticky 顶部，含标题 + 图例）
+════════════════════════════════════════ */
+.hd {
+  background: rgba(255,255,255,.85);
+  backdrop-filter: blur(20px) saturate(1.8);
+  border-bottom: 1px solid rgba(0,0,0,.06);
+  padding: 16px 48px;
+  display: flex; justify-content: space-between; align-items: center;
+  position: sticky; top: 0; z-index: 100;
+}
+.hd h1 {
+  font-size: 20px; font-weight: 900; color: var(--text);
+  letter-spacing: -.5px; line-height: 1.3;
+}
+.hd .sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+/* 图例 */
+.lg {
+  display: flex; gap: 16px; font-size: 11px; color: var(--text3);
+  align-items: center; flex-wrap: wrap;
+}
+.lg .item { display: flex; align-items: center; gap: 6px; }
+.lg .line { width: 18px; height: 0; border-top: 2.5px dashed; }
+.lg .tag {
+  font-size: 9px; padding: 2px 7px; border-radius: 4px;
+  font-weight: 800; letter-spacing: .3px;
+}
+.lg .tag.new { background: #dcfce7; color: #15803d; }
+.lg .tag.chg { background: #dbeafe; color: #2563eb; }
+.lg .tag.del { background: #fef2f2; color: #991b1b; }
+.lg .tag.p0 { background: #dcfce7; color: #15803d; }
+.lg .tag.p1 { background: #dbeafe; color: #2563eb; }
+.lg .tag.p2 { background: #fef3c7; color: #92400e; }
+
+
+/* ════════════════════════════════════════
+   CONTENT AREA
+════════════════════════════════════════ */
+.cv { padding: 40px 48px 100px; }
+@media (min-width: 1400px) { .cv { margin-left: 160px; } }
+
+
+/* ════════════════════════════════════════
+   PART 分组大分隔线（PART 0 / PART 1 / ...）
+   三种主题色按端类型选择：
+   .viewer = 深色（客户端/App）
+   .host   = 浅蓝（Web 工作台/管理端）
+   .cross  = 浅绿（跨端衔接）
+   可自定义更多：如 .cms = 浅红（CMS 运营后台）
+════════════════════════════════════════ */
+.gd {
+  margin: 64px 0 28px; padding: 20px 28px;
+  border-radius: var(--radius); display: flex;
+  align-items: center; gap: 16px;
+  position: relative; overflow: hidden;
+}
+.gd::before {
+  content: ''; position: absolute; inset: 0;
+  opacity: .04; pointer-events: none;
+  background: repeating-linear-gradient(
+    -45deg, transparent, transparent 8px,
+    currentColor 8px, currentColor 9px
+  );
+}
+.gd:first-child { margin-top: 0; }
+.gd .gd-num {
+  font-size: 10px; font-weight: 800; padding: 4px 12px;
+  border-radius: 6px; letter-spacing: 1px; flex-shrink: 0;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.gd h2 { font-size: 18px; font-weight: 900; letter-spacing: -.3px; }
+.gd .gd-desc { font-size: 12px; opacity: .65; margin-top: 3px; }
+/* 主题色 */
+.gd.viewer { background: linear-gradient(135deg, #0B0E11, #161b22); color: var(--dark-text); }
+.gd.viewer .gd-num { background: rgba(255,255,255,.08); }
+.gd.host { background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #1e40af; }
+.gd.host .gd-num { background: rgba(37,99,235,.08); }
+.gd.cross { background: linear-gradient(135deg, #f0fdf4, #dcfce7); color: #166534; }
+.gd.cross .gd-num { background: rgba(22,101,52,.08); }
+/* 可选：CMS 后台专用 */
+.gd.cms { background: linear-gradient(135deg, #fef2f2, #fee2e2); color: #991b1b; }
+.gd.cms .gd-num { background: rgba(153,27,27,.06); }
+
+
+/* ════════════════════════════════════════
+   SCENE TITLE（场景标题行）
+════════════════════════════════════════ */
+.st {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 20px; margin-top: 56px;
+}
+.st:first-child { margin-top: 0; }
+.st h2 {
+  font-size: 16px; font-weight: 900; color: var(--text);
+  letter-spacing: .2px; white-space: nowrap;
+}
+.st::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
+}
+.st .note {
+  font-size: 11px; color: var(--text3);
+  font-style: italic; white-space: nowrap;
+  background: var(--bg2); padding: 3px 10px;
+  border-radius: 20px;
+}
+
+/* ═══ Lane Header（Scene 内子分支分隔） ═══ */
+.lane-hd {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 16px; margin-top: 48px;
+}
+.lane-hd .badge {
+  font-size: 13px; font-weight: 800; padding: 4px 14px; border-radius: 6px;
+}
+.lane-hd::after { content: ''; flex: 1; height: 1.5px; background: var(--border); }
+
+
+/* ════════════════════════════════════════
+   FLOW ROW（核心横向布局）
+   模式：[设备框] → 箭头+动作 → [设备框] → [标注说明卡]
+════════════════════════════════════════ */
+.flow {
+  display: flex; align-items: flex-start; gap: 0;
+  margin-bottom: 56px; flex-wrap: nowrap;
+  overflow-x: auto; padding-bottom: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.flow::-webkit-scrollbar { height: 6px; }
+.flow::-webkit-scrollbar-track { background: transparent; }
+.flow::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.flow-col {
+  display: flex; flex-direction: column;
+  align-items: center; flex-shrink: 0;
+}
+.flow-note {
+  font-size: 11px; color: var(--text3); text-align: center;
+  margin-top: 10px; max-width: 420px; line-height: 1.6; padding: 0 8px;
+}
+
+
+/* ════════════════════════════════════════
+   ARROWS（箭头连接器）
+   颜色语义：b=蓝主链路  g=绿新增  r=红删除  o=橙跨端  p=紫特殊
+   虚线：.al.da
+════════════════════════════════════════ */
+.aw {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  width: 80px; flex-shrink: 0; align-self: center;
+}
+.aw .al {
+  width: 100%; height: 3px; border-radius: 2px; position: relative;
+}
+.aw .al::after {
+  content: ''; position: absolute; right: -1px; top: -4px;
+  border: 5px solid transparent;
+}
+.aw .al.b { background: var(--blue); }     .aw .al.b::after { border-left-color: var(--blue); }
+.aw .al.g { background: var(--green); }    .aw .al.g::after { border-left-color: var(--green); }
+.aw .al.r { background: var(--red); }      .aw .al.r::after { border-left-color: var(--red); }
+.aw .al.o { background: var(--amber); }    .aw .al.o::after { border-left-color: var(--amber); }
+.aw .al.p { background: var(--purple); }   .aw .al.p::after { border-left-color: var(--purple); }
+.aw .al.da {
+  background: repeating-linear-gradient(90deg, var(--blue) 0, var(--blue) 4px, transparent 4px, transparent 8px);
+}
+.aw .al.da::after { border-left-color: var(--blue); }
+.aw .tx {
+  font-size: 10px; font-weight: 700; white-space: nowrap;
+  margin-top: 5px; text-align: center; line-height: 1.4;
+}
+.aw .tx.b { color: var(--blue); }   .aw .tx.g { color: var(--green); }
+.aw .tx.r { color: var(--red); }    .aw .tx.o { color: var(--amber); }
+.aw .tx.p { color: var(--purple); }
+
+
+/* ════════════════════════════════════════
+   PHONE MOCKUP（App 壳 375×auto）
+════════════════════════════════════════ */
+.phone {
+  width: 375px; background: var(--dark);
+  border-radius: 36px; border: 4px solid #3a3d44;
+  overflow: hidden;
+  box-shadow: var(--shadow-phone), inset 0 0 0 1px rgba(255,255,255,.05);
+  flex-shrink: 0; position: relative;
+}
+.phone-label {
+  text-align: center; font-size: 12px; font-weight: 700;
+  color: var(--text); background: var(--surface);
+  border: 1.5px solid var(--border); border-radius: 8px;
+  padding: 5px 16px; margin-bottom: 10px;
+  display: inline-block; box-shadow: var(--shadow);
+}
+.ph-status {
+  display: flex; justify-content: space-between;
+  padding: 8px 24px 4px; font-size: 10px;
+  color: var(--dark-text2); font-family: 'IBM Plex Mono', monospace; font-weight: 500;
+}
+/* 隐藏 phone 内滚动条 */
+.phone *::-webkit-scrollbar { display: none; }
+.phone * { scrollbar-width: none; -ms-overflow-style: none; }
+/* Home Indicator */
+.home-ind { padding: 5px 0 3px; display: flex; justify-content: center; }
+.home-ind div { width: 120px; height: 4px; background: var(--dark3); border-radius: 2px; }
+
+
+/* ════════════════════════════════════════
+   WEB FRAME（浏览器壳，大图 540px）
+════════════════════════════════════════ */
+.webframe {
+  background: var(--surface); border-radius: 14px;
+  border: 2px solid var(--border); overflow: hidden;
+  box-shadow: var(--shadow-lg); flex-shrink: 0; position: relative;
+}
+.wf-bar {
+  background: #f8f9fb; border-bottom: 1px solid var(--border);
+  padding: 10px 14px; display: flex; align-items: center; gap: 7px;
+}
+.wf-dot { width: 11px; height: 11px; border-radius: 6px; }
+.wf-url {
+  flex: 1; background: #fff; border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 12px; font-size: 11px;
+  color: var(--text3); font-family: 'IBM Plex Mono', monospace; margin-left: 6px;
+}
+
+
+/* ════════════════════════════════════════
+   HIGHLIGHT 标注方式 1：轮廓式（.hi）
+   简便写法，直接加 class 到被标注元素上
+   适合：单元素快速标注
+════════════════════════════════════════ */
+.hi { position: relative; outline: 2.5px dashed; outline-offset: 3px; z-index: 2; }
+.hi.blue { outline-color: var(--blue); }
+.hi.green { outline-color: var(--green); }
+.hi.red { outline-color: var(--red); }
+.hi.amber { outline-color: var(--amber); }
+.hi.purple { outline-color: var(--purple); }
+.hi .badge {
+  position: absolute; top: -8px; right: -8px;
+  width: 22px; height: 22px; border-radius: 11px;
+  font-size: 11px; font-weight: 900; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,.3); z-index: 12;
+}
+.hi .badge.blue { background: var(--blue); }
+.hi .badge.green { background: var(--green); color: #000; }
+.hi .badge.red { background: var(--red); }
+.hi .badge.amber { background: var(--amber); }
+.hi .badge.purple { background: var(--purple); }
+
+
+/* ════════════════════════════════════════
+   HIGHLIGHT 标注方式 2：绝对定位覆盖式（.anno）
+   精确控制位置，手动设 top/left/right/bottom
+   适合：跨多个子元素的区域标注
+════════════════════════════════════════ */
+.anno {
+  position: absolute; border: 2.5px dashed;
+  border-radius: 8px; z-index: 10; pointer-events: none;
+}
+.anno.blue { border-color: var(--blue); }
+.anno.green { border-color: var(--green); }
+.anno.red { border-color: var(--red); }
+.anno.purple { border-color: var(--purple); }
+.anno.amber { border-color: var(--amber); }
+.anno-n {
+  position: absolute; top: -11px; right: -11px;
+  width: 22px; height: 22px; border-radius: 11px;
+  font-size: 11px; font-weight: 900; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,.2);
+  font-family: 'IBM Plex Mono', monospace;
+}
+.anno-n.blue { background: var(--blue); }
+.anno-n.green { background: var(--green); color: #000; }
+.anno-n.red { background: var(--red); }
+.anno-n.purple { background: var(--purple); }
+.anno-n.amber { background: var(--amber); }
+
+
+/* ════════════════════════════════════════
+   ANNOTATION CARD（标注说明卡，放在 flow 右侧）
+════════════════════════════════════════ */
+.ann-card {
+  width: 320px; flex-shrink: 0; font-size: 13px;
+  line-height: 1.7; color: var(--text2);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  box-shadow: var(--shadow); align-self: flex-start;
+}
+.ann-card .card-title {
+  font-size: 15px; font-weight: 900; color: var(--text);
+  margin-bottom: 14px; padding-bottom: 10px;
+  border-bottom: 2px solid var(--bg2);
+  display: flex; align-items: center; gap: 8px;
+}
+.ann-item {
+  display: flex; gap: 10px; margin-bottom: 12px; align-items: flex-start;
+}
+.ann-num {
+  width: 22px; height: 22px; min-width: 22px;
+  border-radius: 11px; font-size: 11px; font-weight: 900;
+  color: #fff; display: flex; align-items: center;
+  justify-content: center; margin-top: 2px;
+  box-shadow: 0 2px 4px rgba(0,0,0,.12);
+  font-family: 'IBM Plex Mono', monospace;
+}
+.ann-num.blue { background: var(--blue); }
+.ann-num.green { background: var(--green); color: #000; }
+.ann-num.red { background: var(--red); }
+.ann-num.purple { background: var(--purple); }
+.ann-num.amber { background: var(--amber); }
+.ann-text b { font-weight: 700; color: var(--text); }
+.ann-tag {
+  display: inline-block; padding: 1px 7px; border-radius: 4px;
+  font-size: 9px; font-weight: 800; letter-spacing: .3px;
+}
+.ann-tag.p0 { background: #dcfce7; color: #15803d; }
+.ann-tag.p1 { background: #dbeafe; color: #2563eb; }
+.ann-tag.p2 { background: #fef3c7; color: #92400e; }
+.ann-tag.new { background: #dcfce7; color: #15803d; }
+.ann-tag.chg { background: #dbeafe; color: #2563eb; }
+.ann-tag.del { background: #fef2f2; color: #991b1b; }
+
+
+/* ════════════════════════════════════════
+   REUSE BOX（复用/跳转占位框）
+   用于标明"见 Scene X"或"复用 PART Y"
+   从产物1融合
+════════════════════════════════════════ */
+.reuse-box {
+  width: 280px; border: 2.5px dashed; border-radius: 14px;
+  padding: 24px 20px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center;
+  flex-shrink: 0; align-self: center;
+}
+.reuse-box.blue { border-color: var(--blue); color: var(--blue); }
+.reuse-box.green { border-color: var(--green); color: var(--green); }
+.reuse-box.amber { border-color: var(--amber); color: var(--amber); }
+.reuse-box.purple { border-color: var(--purple); color: var(--purple); }
+.reuse-box .rt { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
+.reuse-box .rs { font-size: 13px; color: var(--text3); line-height: 1.6; }
+
+
+/* ════════════════════════════════════════
+   CALLOUT
+════════════════════════════════════════ */
+.co {
+  border-radius: var(--radius-sm); padding: 16px 22px;
+  font-size: 13px; line-height: 1.7;
+  border-left: 4px solid; margin-top: 24px;
+}
+.co.bl { border-color: var(--blue); background: #eff6ff; color: #1e40af; }
+.co.gn { border-color: #22c55e; background: #f0fdf4; color: #166534; }
+.co.am { border-color: var(--amber); background: #fffbeb; color: #92400e; }
+.co.rd { border-color: var(--red); background: #fef2f2; color: #991b1b; }
+
+/* ═══ INFO BOX（技术说明小框） ═══ */
+.info-box {
+  padding: 10px 14px; border-radius: var(--radius-sm);
+  font-size: 12px; line-height: 1.6; margin-top: 12px;
+}
+.info-box.blue { background: #f0f4ff; color: #1e40af; }
+.info-box.purple { background: #f5f3ff; color: #5b21b6; }
+.info-box.amber { background: #fffbeb; color: #92400e; }
+.info-box.green { background: #f0fdf4; color: #166534; }
+
+
+/* ════════════════════════════════════════
+   深色 UI 内部 Helpers（.dk，App 壳内使用）
+════════════════════════════════════════ */
+.dk { color: var(--dark-text); font-size: 13px; }
+/* 通用元素 */
+.dk .nav-row { background: var(--dark); border-bottom: 1px solid var(--dark3); padding: 0 14px; display: flex; align-items: center; height: 42px; gap: 4px; }
+.dk .nav-logo { display: flex; align-items: center; gap: 4px; margin-right: 10px; }
+.dk .nav-logo b { font-size: 14px; font-weight: 800; color: var(--dark-text); }
+.dk .nav-item { padding: 0 8px; height: 42px; display: flex; align-items: center; font-size: 12px; color: var(--dark-text2); white-space: nowrap; }
+.dk .nav-item.act { color: var(--blue); font-weight: 600; border-bottom: 2px solid var(--blue); }
+.dk .btn-blue { background: var(--blue); color: #fff; padding: 4px 12px; border-radius: 5px; font-size: 11px; font-weight: 600; }
+.dk .btn-out { border: 1px solid var(--dark3); color: var(--dark-text2); padding: 3px 10px; border-radius: 5px; font-size: 11px; }
+/* Tab 栏 */
+.dk .tabs { display: flex; border-bottom: 1px solid var(--dark3); padding: 0 8px; }
+.dk .tab { padding: 8px 12px; font-size: 11px; color: var(--dark-text2); font-weight: 500; border-bottom: 2px solid transparent; white-space: nowrap; }
+.dk .tab.act { color: var(--dark-text); font-weight: 700; border-bottom-color: var(--blue); }
+.dk .tab .tc { font-size: 8px; background: var(--dark2); color: var(--dark-text3); padding: 1px 4px; border-radius: 6px; font-weight: 600; margin-left: 3px; }
+.dk .tab.act .tc { background: rgba(45,129,255,.12); color: var(--blue); }
+/* 卡片网格 */
+.dk .card-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; padding: 8px; }
+.dk .card-mock { background: var(--dark2); border: 1px solid var(--dark3); border-radius: 7px; padding: 8px; min-height: 80px; display: flex; flex-direction: column; justify-content: space-between; }
+.dk .card-mock .cm-badge { font-size: 8px; padding: 1px 4px; border-radius: 2px; width: fit-content; font-weight: 600; }
+.dk .card-mock .cm-t { font-size: 10px; font-weight: 700; color: var(--dark-text); margin-top: 3px; line-height: 1.3; }
+.dk .card-mock .cm-d { font-size: 8px; color: var(--dark-text3); margin-top: 2px; }
+.dk .card-mock .cm-f { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 8px; color: var(--dark-text3); }
+.dk .card-mock .cm-btn { background: var(--blue); color: #fff; padding: 2px 6px; border-radius: 3px; font-size: 8px; font-weight: 600; }
+
+
+/* ════════════════════════════════════════
+   后台 Arco 风格 Helpers（.mg，浏览器壳内使用）
+   从产物1融合——完整后台组件体系
+════════════════════════════════════════ */
+.mg { font-size: 11px; color: #1D2129; }
+/* 侧边栏 */
+.mg .sidebar { width: 140px; background: #232730; min-height: 100%; padding: 12px 0; color: #86909C; }
+.mg .sidebar .s-item { padding: 5px 14px; font-size: 10px; display: flex; align-items: center; gap: 5px; }
+.mg .sidebar .s-item.act { color: #fff; background: var(--blue); border-radius: 0 6px 6px 0; font-weight: 600; }
+/* 主内容区 */
+.mg .main { flex: 1; padding: 10px 14px; background: #F5F6FA; }
+/* 工具栏 */
+.mg .toolbar { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.mg .btn-p { background: var(--blue); color: #fff; padding: 3px 10px; border-radius: 3px; font-size: 10px; font-weight: 600; }
+.mg .btn-s { background: #fff; border: 1px solid #E4E7ED; padding: 3px 10px; border-radius: 3px; font-size: 10px; }
+/* 数据表格 */
+.mg .tbl { width: 100%; border-collapse: collapse; font-size: 10px; background: #fff; border-radius: 6px; overflow: hidden; }
+.mg .tbl th { padding: 6px 8px; text-align: left; background: #F5F6FA; color: #4E5969; font-weight: 600; border-bottom: 1px solid #E4E7ED; }
+.mg .tbl td { padding: 6px 8px; border-bottom: 1px solid #F2F3F5; }
+/* 弹窗三段式 */
+.mg .modal { background: #fff; border-radius: 6px; border: 1px solid #E4E7ED; width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,.08); }
+.mg .modal-hd { padding: 10px 14px; border-bottom: 1px solid #E4E7ED; font-size: 12px; font-weight: 700; display: flex; justify-content: space-between; }
+.mg .modal-bd { padding: 10px 14px; }
+.mg .modal-ft { padding: 8px 14px; border-top: 1px solid #E4E7ED; display: flex; justify-content: flex-end; gap: 6px; }
+/* 表单行 */
+.mg .f-row { display: flex; align-items: flex-start; margin-bottom: 8px; }
+.mg .f-lbl { width: 70px; text-align: right; padding-right: 8px; padding-top: 3px; font-size: 10px; color: #4E5969; flex-shrink: 0; }
+.mg .f-lbl .req { color: #F53F3F; }
+.mg .f-inp { width: 100%; max-width: 220px; padding: 3px 6px; border: 1px solid #E4E7ED; border-radius: 3px; font-size: 10px; }
+.mg .f-sel { padding: 3px 6px; border: 1px solid #E4E7ED; border-radius: 3px; font-size: 10px; min-width: 120px; display: inline-block; }
+.mg .f-hint { font-size: 8px; color: #86909C; margin-top: 2px; }
+.mg .f-sec { margin-bottom: 10px; }
+.mg .f-sec-t { font-size: 11px; font-weight: 700; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #E4E7ED; }
+/* 状态标记 */
+.mg .badge-n { background: #E8F5E9; color: #2E7D32; font-size: 7px; padding: 0 3px; border-radius: 2px; font-weight: 700; }
+.mg .badge-del { background: #FFEBEE; color: #C62828; font-size: 7px; padding: 0 3px; border-radius: 2px; font-weight: 700; }
+
+
+/* ════════════════════════════════════════
+   FADE IN ANIMATION（滚动渐入）
+════════════════════════════════════════ */
+.fade-section {
+  opacity: 0; transform: translateY(20px);
+  transition: opacity .5s ease, transform .5s ease;
+}
+.fade-section.visible {
+  opacity: 1; transform: translateY(0);
+}
+
+
+/* ════════════════════════════════════════
+   SUMMARY TABLE（场景总览表，底部索引）
+   从产物1融合
+════════════════════════════════════════ */
+.sum-wrap {
+  background: var(--surface); border-radius: var(--radius);
+  border: 1px solid var(--border); overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.sum-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.sum-tbl thead tr { background: #f8f9fb; }
+.sum-tbl th {
+  padding: 12px 16px; text-align: left; font-weight: 700;
+  border-bottom: 2px solid var(--border);
+}
+.sum-tbl td { padding: 10px 16px; border-bottom: 1px solid #f1f5f9; }
+.sum-tbl tr:nth-child(even) { background: #fafbfc; }
+.sum-tbl .sid { font-weight: 700; color: var(--blue); }
+
+</style>
+</head>
+<body>
+
+<!-- Progress Bar -->
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- ═══════════════════════════════════════════
+     SIDE NAV — 按 PART + Scene 锚点列举
+     dot 颜色对应 PART 主题色
+═══════════════════════════════════════════ -->
+<nav class="side-nav" id="sideNav">
+  <a href="#part0"><div class="dot" style="background:var(--dark);"></div>PART 0 {{NAME}}</a>
+  <a href="#{{SCENE_ANCHOR}}"><div class="dot" style="background:var(--blue);"></div>{{SCENE_ID}} {{SHORT_NAME}}</a>
+  <a href="#{{SCENE_ANCHOR}}"><div class="dot" style="background:var(--blue);"></div>{{SCENE_ID}} {{SHORT_NAME}}</a>
+  <a href="#part1"><div class="dot" style="background:var(--purple);"></div>PART 1 {{NAME}}</a>
+  <a href="#{{SCENE_ANCHOR}}"><div class="dot" style="background:var(--purple);"></div>{{SCENE_ID}} {{SHORT_NAME}}</a>
+  <a href="#part2"><div class="dot" style="background:var(--red);"></div>PART 2 {{NAME}}</a>
+  <a href="#{{SCENE_ANCHOR}}"><div class="dot" style="background:var(--red);"></div>{{SCENE_ID}} {{SHORT_NAME}}</a>
+  <a href="#part-cross"><div class="dot" style="background:var(--green);"></div>PART N 跨端衔接</a>
+</nav>
+
+
+<!-- ═══════════════════════════════════════════
+     HEADER（sticky 顶部）
+═══════════════════════════════════════════ -->
+<header class="hd">
+  <div>
+    <h1>{{PROJECT_TITLE}} · 前端交互大图 {{VERSION}}</h1>
+    <div class="sub">{{PART_FLOW_SUMMARY}} ｜ 分组阅读，一条线看完</div>
+  </div>
+  <div class="lg">
+    <span class="item"><span class="line" style="border-color:var(--blue);"></span>{{LEGEND_BLUE}}</span>
+    <span class="item"><span class="line" style="border-color:var(--green);"></span>{{LEGEND_GREEN}}</span>
+    <span class="item"><span class="line" style="border-color:var(--red);"></span>{{LEGEND_RED}}</span>
+    <span class="item"><span class="line" style="border-color:var(--purple);"></span>{{LEGEND_PURPLE}}</span>
+    <span class="item"><span class="line" style="border-color:var(--amber);"></span>{{LEGEND_AMBER}}</span>
+    <span style="margin-left:6px;" class="tag new">NEW</span>
+    <span class="tag chg">改动</span>
+  </div>
+</header>
+
+<div class="cv">
+
+<!-- ████████████████████████████████████████████████████████████████████████
+     PART 0（示例：客户端 / App）
+████████████████████████████████████████████████████████████████████████ -->
+<div class="gd viewer fade-section" id="part0">
+  <span class="gd-num">PART 0</span>
+  <div>
+    <h2>{{EMOJI}} {{PART_TITLE}}</h2>
+    <div class="gd-desc">{{PART_DESC}}</div>
+  </div>
+</div>
+
+<!-- ═══ Scene 骨架 ═══ -->
+<div class="fade-section" id="{{SCENE_ANCHOR}}">
+<div class="st"><h2>{{SCENE_ID}} · {{SCENE_NAME}}</h2><span class="note">{{SCENE_NOTE}}</span></div>
+
+<div class="flow">
+  <!-- 列1：App 设备框 -->
+  <div class="flow-col">
+    <span class="phone-label">{{FRAME_ID}} · {{FRAME_NAME}}</span>
+    <div class="phone" style="min-height:660px;display:flex;flex-direction:column;">
+      <div class="ph-status"><span>9:41</span><span>⚡ 📶 ■■■</span></div>
+      <!-- ═══ 填充 App UI ═══ -->
+      <div style="flex:1;">
+        <!-- 真实 UI 用 div + inline style 画 -->
+      </div>
+      <div class="home-ind"><div></div></div>
+    </div>
+    <div class="flow-note">{{FRAME_NOTE}}</div>
+  </div>
+
+  <!-- 箭头 -->
+  <div class="aw"><div class="al b"></div><div class="tx b">{{ACTION}}</div></div>
+
+  <!-- 列2：App 设备框（或 Web 框） -->
+  <div class="flow-col">
+    <span class="phone-label">{{FRAME_ID}} · {{FRAME_NAME}}</span>
+    <div class="phone" style="min-height:660px;display:flex;flex-direction:column;">
+      <div class="ph-status"><span>9:41</span><span>⚡ 📶 ■■■</span></div>
+      <div style="flex:1;">
+        <!-- 真实 UI -->
+      </div>
+      <div class="home-ind"><div></div></div>
+    </div>
+  </div>
+
+  <!-- 间距 + 标注说明卡 -->
+  <div style="width:20px;"></div>
+  <div class="ann-card">
+    <div class="card-title">{{SCENE_ID}} · 标注说明 <span class="ann-tag new">NEW</span> <span class="ann-tag p0">P0</span></div>
+    <div class="ann-item">
+      <div class="ann-num blue">1</div>
+      <div class="ann-text"><b>{{POINT_NAME}}</b>：{{POINT_DESC}} <span class="ann-tag p0">P0</span></div>
+    </div>
+    <div class="ann-item">
+      <div class="ann-num green">2</div>
+      <div class="ann-text"><b>{{POINT_NAME}}</b>：{{POINT_DESC}} <span class="ann-tag new">NEW</span></div>
+    </div>
+    <!-- 更多标注项 -->
+  </div>
+</div>
+</div><!-- .fade-section -->
+
+
+<!-- ═══ Lane Header（Scene 内子分支，可选） ═══ -->
+<!--
+<div class="lane-hd"><span class="badge" style="background:#dcfce7;color:#15803d;">② {{SUB_BRANCH_NAME}}</span></div>
+<div class="flow">
+  ...
+</div>
+-->
+
+<!-- ═══ Reuse Box 示例（跳转到其他 Scene，可选） ═══ -->
+<!--
+<div class="flow">
+  <div class="flow-col">
+    <span class="phone-label">{{FRAME_ID}}</span>
+    <div class="phone" style="min-height:300px;">...</div>
+  </div>
+  <div class="aw"><div class="al o"></div><div class="tx o">跳转</div></div>
+  <div class="reuse-box amber">
+    <div class="rt">→ 见 Scene {{ID}}</div>
+    <div class="rs">{{REUSE_DESC}}</div>
+  </div>
+</div>
+-->
+
+
+<!-- ████████████████████████████████████████████████████████████████████████
+     PART 1（示例：Web 工作台 / 管理端）
+████████████████████████████████████████████████████████████████████████ -->
+<div class="gd host fade-section" id="part1">
+  <span class="gd-num">PART 1</span>
+  <div>
+    <h2>{{EMOJI}} {{PART_TITLE}}</h2>
+    <div class="gd-desc">{{PART_DESC}}</div>
+  </div>
+</div>
+
+<!-- Web 端 Scene 使用 .webframe -->
+<div class="fade-section" id="{{SCENE_ANCHOR}}">
+<div class="st"><h2>{{SCENE_ID}} · {{SCENE_NAME}}</h2><span class="note">{{SCENE_NOTE}}</span></div>
+
+<div class="flow">
+  <div class="flow-col">
+    <span class="phone-label">{{FRAME_ID}} · {{FRAME_NAME}}</span>
+    <div class="webframe" style="width:580px;">
+      <div class="wf-bar">
+        <div class="wf-dot" style="background:#f87171;"></div>
+        <div class="wf-dot" style="background:#fbbf24;"></div>
+        <div class="wf-dot" style="background:#34d399;"></div>
+        <div class="wf-url">{{URL}}</div>
+      </div>
+      <!-- ═══ 填充 Web UI ═══ -->
+    </div>
+  </div>
+
+  <div class="aw"><div class="al p"></div><div class="tx p">{{ACTION}}</div></div>
+
+  <div class="flow-col">
+    <span class="phone-label">{{FRAME_ID}} · {{FRAME_NAME}}</span>
+    <div class="webframe" style="width:580px;">
+      <div class="wf-bar">
+        <div class="wf-dot" style="background:#f87171;"></div>
+        <div class="wf-dot" style="background:#fbbf24;"></div>
+        <div class="wf-dot" style="background:#34d399;"></div>
+        <div class="wf-url">{{URL}}</div>
+      </div>
+      <!-- 填充 Web UI -->
+    </div>
+  </div>
+
+  <div style="width:20px;"></div>
+  <div class="ann-card">
+    <div class="card-title">{{SCENE_ID}} · 标注说明</div>
+    <!-- .ann-item × N -->
+  </div>
+</div>
+</div>
+
+
+<!-- ████████████████████████████████████████████████████████████████████████
+     PART 2（示例：CMS 运营后台）
+     后台场景用 .mg Arco 组件体系
+████████████████████████████████████████████████████████████████████████ -->
+<div class="gd cms fade-section" id="part2">
+  <span class="gd-num">PART 2</span>
+  <div>
+    <h2>{{EMOJI}} {{PART_TITLE}}</h2>
+    <div class="gd-desc">{{PART_DESC}}</div>
+  </div>
+</div>
+
+<!-- CMS Scene：webframe 内使用 .mg 组件 -->
+<div class="fade-section" id="{{SCENE_ANCHOR}}">
+<div class="st"><h2>{{SCENE_ID}} · {{SCENE_NAME}}</h2><span class="note">{{SCENE_NOTE}}</span></div>
+
+<div class="flow">
+  <div class="flow-col">
+    <span class="phone-label">{{FRAME_ID}} · {{FRAME_NAME}}</span>
+    <div class="webframe" style="width:580px;">
+      <div class="wf-bar">
+        <div class="wf-dot" style="background:#f87171;"></div>
+        <div class="wf-dot" style="background:#fbbf24;"></div>
+        <div class="wf-dot" style="background:#34d399;"></div>
+        <div class="wf-url">{{URL}}</div>
+      </div>
+      <div class="mg" style="display:flex;min-height:300px;">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+          <div class="s-item">📊 {{MENU_1}}</div>
+          <div class="s-item act">📋 {{MENU_2}}</div>
+          <div class="s-item">⚙ {{MENU_3}}</div>
+        </div>
+        <!-- 主内容区 -->
+        <div class="main">
+          <div class="toolbar">
+            <div class="btn-p">+ {{CREATE_BTN}}</div>
+            <div class="btn-s">{{FILTER_BTN}}</div>
+          </div>
+          <table class="tbl">
+            <tr><th>{{COL_1}}</th><th>{{COL_2}}</th><th>{{COL_3}}</th><th>操作</th></tr>
+            <tr><td>{{VAL}}</td><td>{{VAL}}</td><td>{{VAL}}</td><td><span style="color:var(--blue);cursor:pointer;">编辑</span></td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 箭头指向弹窗态 -->
+  <div class="aw"><div class="al b"></div><div class="tx b">点击编辑</div></div>
+
+  <div class="flow-col">
+    <span class="phone-label">{{FRAME_ID}} · 编辑弹窗</span>
+    <div class="webframe" style="width:420px;">
+      <div class="wf-bar">
+        <div class="wf-dot" style="background:#f87171;"></div>
+        <div class="wf-dot" style="background:#fbbf24;"></div>
+        <div class="wf-dot" style="background:#34d399;"></div>
+        <div class="wf-url">{{URL}}</div>
+      </div>
+      <div class="mg">
+        <div class="modal">
+          <div class="modal-hd"><span>{{MODAL_TITLE}}</span><span style="cursor:pointer;color:#86909C;">✕</span></div>
+          <div class="modal-bd">
+            <div class="f-row"><div class="f-lbl"><span class="req">*</span> {{FIELD}}</div><div class="f-inp">{{VALUE}}</div></div>
+            <div class="f-row"><div class="f-lbl">{{FIELD}}</div><div class="f-sel">{{VALUE}} ▾</div></div>
+            <!-- 更多表单行 -->
+          </div>
+          <div class="modal-ft"><div class="btn-s">取消</div><div class="btn-p">保存</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="width:20px;"></div>
+  <div class="ann-card">
+    <div class="card-title">{{SCENE_ID}} · 标注说明</div>
+    <!-- .ann-item × N -->
+  </div>
+</div>
+</div>
+
+
+<!-- ████████████████████████████████████████████████████████████████████████
+     PART N（末尾）：跨端数据流衔接
+████████████████████████████████████████████████████████████████████████ -->
+<div class="gd cross fade-section" id="part-cross">
+  <span class="gd-num">PART {{N}}</span>
+  <div>
+    <h2>🔗 跨端数据流衔接</h2>
+    <div class="gd-desc">{{N}} 条跨端数据流逐条列明：起点 → 终点 → 数据 → 触发方式</div>
+  </div>
+</div>
+
+<div class="fade-section">
+<div class="flow" style="align-items:flex-start;">
+  <div style="flex-shrink:0;">
+    <div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);overflow:hidden;width:960px;box-shadow:var(--shadow-lg);">
+      <!-- 表头 -->
+      <div style="display:grid;grid-template-columns:40px 1.2fr 80px 1.2fr 1fr 1fr;background:#f8f9fb;border-bottom:2px solid var(--border);padding:10px 14px;font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;">
+        <span>#</span><span>起点</span><span></span><span>终点</span><span>数据</span><span>触发方式</span>
+      </div>
+      <!-- 数据行（重复 N 次） -->
+      <div style="display:grid;grid-template-columns:40px 1.2fr 80px 1.2fr 1fr 1fr;padding:12px 14px;align-items:center;border-bottom:1px solid #f1f5f9;">
+        <span style="font-size:12px;font-weight:900;color:var(--green);">①</span>
+        <div><div style="font-size:12px;font-weight:700;color:#15803d;">{{SOURCE_NAME}}</div><div style="font-size:10px;color:var(--text3);">{{SOURCE_ACTION}}</div></div>
+        <div style="display:flex;align-items:center;justify-content:center;"><div style="width:40px;height:3px;background:var(--green);border-radius:2px;position:relative;"><div style="position:absolute;right:-1px;top:-3px;border:4px solid transparent;border-left-color:var(--green);"></div></div></div>
+        <div><div style="font-size:12px;font-weight:700;color:var(--purple);">{{TARGET_NAME}}</div><div style="font-size:10px;color:var(--text3);">{{TARGET_ACTION}}</div></div>
+        <div style="font-size:11px;color:var(--text2);">{{DATA_FIELDS}}</div>
+        <div style="font-size:11px;color:var(--text2);">{{TRIGGER_METHOD}}<br><span style="font-size:9px;color:var(--text3);">{{LATENCY}}</span></div>
+      </div>
+      <!-- 更多行... -->
+    </div>
+    <!-- 技术说明 -->
+    <div class="info-box green" style="max-width:960px;margin-top:12px;">
+      <b>同步机制：</b>{{SYNC_DESC}}<br>
+      <b>延迟分级：</b>{{LATENCY_TIERS}}<br>
+      <b>容错：</b>{{FAILOVER_DESC}}
+    </div>
+  </div>
+</div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     SUMMARY TABLE（场景总览表，底部索引）
+════════════════════════════════════════ -->
+<div class="st" style="margin-top:80px;"><h2>场景总览 · {{N}} 个场景</h2></div>
+
+<div class="sum-wrap">
+  <table class="sum-tbl">
+    <thead>
+      <tr>
+        <th style="width:80px;">编号</th>
+        <th>场景</th>
+        <th>所属 PART</th>
+        <th style="width:60px;">P</th>
+        <th>大图位置</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="sid">{{SCENE_ID}}</td>
+        <td>{{SCENE_NAME}}</td>
+        <td>PART {{N}} · {{PART_NAME}}</td>
+        <td><span class="ann-tag p0">P0</span></td>
+        <td>{{ANCHOR_HINT}}</td>
+      </tr>
+      <!-- 更多行 -->
+    </tbody>
+  </table>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     底部 CALLOUT（阅读指引 + 优先级）
+════════════════════════════════════════ -->
+<div class="co bl" style="margin-top:48px;">
+  <strong>阅读指引</strong> — <b>PART 0</b> {{PART_0_SUMMARY}}，<b>PART 1</b> {{PART_1_SUMMARY}}，<b>PART 2</b> {{PART_2_SUMMARY}}，<b>PART N</b> 跨端数据流。每个界面中虚线框 = 改动区域，编号 = 右侧说明。
+</div>
+
+<div class="co am">
+  <strong>优先级</strong> —
+  <span class="ann-tag p0">P0</span> {{P0_LIST}} ·
+  <span class="ann-tag p1">P1</span> {{P1_LIST}} ·
+  <span class="ann-tag p2">P2</span> {{P2_LIST}}
+</div>
+
+<div style="text-align:center;margin-top:48px;font-size:13px;color:var(--text3);font-style:italic;">
+  — {{PROJECT_TITLE}} · 前端交互大图 · 文档结束 —
+</div>
+
+</div><!-- .cv -->
+
+
+<!-- ════════════════════════════════════════
+     SCRIPTS
+════════════════════════════════════════ -->
+<script>
+/* 进度条 */
+const progressBar = document.getElementById('progressBar');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+  progressBar.style.width = pct + '%';
+});
+
+/* 侧边栏 active 跟随 */
+const navLinks = document.querySelectorAll('.side-nav a');
+const sections = [];
+navLinks.forEach(a => {
+  const id = a.getAttribute('href').slice(1);
+  const el = document.getElementById(id);
+  if (el) sections.push({ el, link: a });
+});
+function updateNav() {
+  const scrollY = window.scrollY + 200;
+  let current = sections[0];
+  for (const s of sections) {
+    if (s.el.offsetTop <= scrollY) current = s;
+  }
+  navLinks.forEach(a => a.classList.remove('active'));
+  if (current) current.link.classList.add('active');
+}
+window.addEventListener('scroll', updateNav);
+updateNav();
+
+/* 滚动渐入 */
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) e.target.classList.add('visible');
+  });
+}, { threshold: 0.05, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.fade-section').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>

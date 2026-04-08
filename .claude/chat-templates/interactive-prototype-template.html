@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{PROJECT_TITLE}} · 可交互原型 {{VERSION}}</title>
+<style>
+/* ═══════════════════════════════════════
+   CSS VARIABLES（统一一个 :root）
+   --blue/--green/--red 等功能色全局共享
+   --dk-* 深色端（App / Web 前端）
+   --lt-* 浅色端（CMS 后台）
+═══════════════════════════════════════ */
+:root {
+  /* 共用功能色 */
+  --blue: #2D81FF;
+  --blue-l: #EEF2FF;
+  --blue-d: #1A5FCC;
+  --green: #0ECB81;
+  --green-l: #E8F5E9;
+  --red: #F6465D;
+  --red-l: #FFEBEE;
+  --orange: #FF7D00;
+  --orange-l: #FFF3E0;
+  --purple: #8b5cf6;
+  --gold: #FFD740;
+
+  /* 深色端（App / Web 前端） */
+  --dk-bg: #0B0E11;
+  --dk-bg2: #0D1117;
+  --dk-surface: #161A1E;
+  --dk-surface2: #1E2329;
+  --dk-border: #2B3139;
+  --dk-text: #EAECEF;
+  --dk-text2: #848E9C;
+  --dk-text3: #5E6673;
+
+  /* 浅色端（CMS 后台） */
+  --lt-bg: #F5F6FA;
+  --lt-surface: #FFF;
+  --lt-border: #E4E7ED;
+  --lt-border2: #DCDFE6;
+  --lt-text: #1D2129;
+  --lt-text2: #4E5969;
+  --lt-text3: #86909C;
+  --lt-text4: #C9CDD4;
+  --lt-sidebar: #001529;
+  --lt-sidebar-a: #1890FF;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, 'PingFang SC', 'Noto Sans SC', 'Helvetica Neue', sans-serif;
+  font-size: 13px; color: #1e293b; min-height: 100vh;
+  background: #f0f2f5;
+}
+
+
+/* ═══════════════════════════════════════
+   GNAV（顶部全局导航，切换 View）
+═══════════════════════════════════════ */
+.gnav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+  background: linear-gradient(135deg, #0a0f1a, #111827);
+  border-bottom: 1px solid rgba(45,129,255,.15);
+  display: flex; align-items: center; padding: 0 32px; height: 52px; gap: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.3);
+}
+.gnav-logo { font-size: 15px; font-weight: 800; color: #e2e8f0; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
+.gnav-logo span { font-size: 20px; }
+.gnav-sep { width: 1px; height: 24px; background: #1e293b; }
+.gnav-tabs { display: flex; gap: 0; }
+.gnav-tab {
+  padding: 15px 28px; font-size: 13px; font-weight: 600; color: #64748b;
+  cursor: pointer; border-bottom: 2px solid transparent; transition: .2s;
+  white-space: nowrap; display: flex; align-items: center; gap: 6px;
+}
+.gnav-tab:hover { color: #cbd5e1; }
+.gnav-tab.on { color: #fff; border-bottom-color: var(--blue); }
+.gnav-ic { font-size: 15px; }
+.gnav-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.gnav-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+.gnav-badge.p0 { background: rgba(34,197,94,.12); color: #4ade80; }
+.gnav-ver { font-size: 11px; color: #475569; }
+
+.gnav-view-wrap { padding-top: 52px; min-height: 100vh; }
+.gnav-view-section { display: none; }
+.gnav-view-section.gnav-active { display: block; }
+
+
+/* ═══════════════════════════════════════
+   VIEW: WEB 用户端（深色全宽，960px 居中）
+   ─ p-nav 顶部导航
+   ─ p-page 多页面切换
+   ─ p-tabs 内容Tab
+   ─ p-drawer 右侧抽屉
+═══════════════════════════════════════ */
+.web-view { background: var(--dk-bg); color: var(--dk-text); min-height: calc(100vh - 52px); }
+
+/* Nav Bar */
+.p-nav {
+  background: var(--dk-bg2); border-bottom: 1px solid var(--dk-border);
+  padding: 0 24px; height: 48px; display: flex; align-items: center; gap: 0;
+  position: sticky; top: 52px; z-index: 100;
+}
+.p-nav-logo { display: flex; align-items: center; gap: 6px; margin-right: 20px; cursor: pointer; }
+.p-nav-logo b { font-size: 15px; font-weight: 800; color: var(--dk-text); }
+.p-nav-logo span { font-size: 18px; }
+.p-nav-item {
+  padding: 0 14px; height: 48px; display: flex; align-items: center;
+  font-size: 13px; color: var(--dk-text2); cursor: pointer; position: relative;
+  white-space: nowrap; transition: .15s;
+}
+.p-nav-item:hover { color: var(--dk-text); }
+.p-nav-item.act { color: var(--blue); font-weight: 600; border-bottom: 2px solid var(--blue); }
+.p-nav-item .red-dot { width: 6px; height: 6px; background: var(--red); border-radius: 50%; position: absolute; top: 12px; right: 6px; }
+.p-nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.p-nav-right .p-btn-blue { background: var(--blue); color: #fff; padding: 5px 16px; border-radius: 5px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; }
+.p-nav-right .p-btn-out { border: 1px solid var(--dk-border); color: var(--dk-text2); padding: 4px 12px; border-radius: 5px; font-size: 12px; background: transparent; cursor: pointer; }
+
+/* Nav Dropdown */
+.p-dropdown {
+  display: none; position: absolute; top: 48px; left: 0;
+  background: var(--dk-surface); border: 1px solid var(--dk-border);
+  border-radius: 0 0 10px 10px; padding: 16px; min-width: 520px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.4); z-index: 200; gap: 20px;
+}
+.p-dropdown.show { display: flex; }
+.p-drop-col { flex: 1; min-width: 0; }
+.p-drop-col h4 { font-size: 9px; color: var(--dk-text3); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+.p-drop-item {
+  display: flex; align-items: center; gap: 8px; padding: 7px 6px;
+  border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--dk-text);
+  font-weight: 600; margin-bottom: 2px; transition: .15s;
+}
+.p-drop-item:hover { background: rgba(45,129,255,.08); }
+.p-drop-item .di { width: 28px; height: 28px; border-radius: 6px; background: #222730; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.p-drop-item .ds { font-size: 10px; color: var(--dk-text3); font-weight: 400; margin-top: 1px; }
+
+/* Breadcrumb */
+.p-bc { padding: 8px 24px; font-size: 12px; color: var(--dk-text3); display: flex; align-items: center; gap: 6px; }
+.p-bc a { color: var(--dk-text2); cursor: pointer; text-decoration: none; }
+.p-bc a:hover { color: var(--blue); }
+
+/* Header Area */
+.p-header { padding: 24px 24px 16px; display: flex; gap: 20px; align-items: flex-start; }
+.p-hdr-left { flex: 1; }
+.p-hdr-left h1 { font-size: 22px; font-weight: 800; }
+.p-hdr-sub { font-size: 12px; color: var(--dk-text2); margin-top: 4px; }
+.p-hdr-stats { display: flex; gap: 24px; margin-top: 12px; }
+.p-hs .p-hv { font-size: 20px; font-weight: 800; color: var(--dk-text); }
+.p-hs .p-hl { font-size: 10px; color: var(--dk-text3); margin-top: 2px; }
+
+/* Tabs */
+.p-tabs { display: flex; border-bottom: 1px solid var(--dk-border); padding: 0 24px; }
+.p-tab {
+  padding: 10px 18px; font-size: 13px; color: var(--dk-text2); font-weight: 500;
+  border-bottom: 2px solid transparent; cursor: pointer; transition: .15s;
+  display: flex; align-items: center; gap: 5px; white-space: nowrap;
+}
+.p-tab:hover { color: var(--dk-text); }
+.p-tab.act { color: var(--dk-text); font-weight: 700; border-bottom-color: var(--blue); }
+.p-tab .p-tc { font-size: 10px; background: #222730; color: var(--dk-text3); padding: 1px 6px; border-radius: 8px; font-weight: 600; }
+.p-tab.act .p-tc { background: rgba(45,129,255,.12); color: var(--blue); }
+
+/* Card Grid */
+.p-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; padding: 0 24px 8px; }
+.p-card {
+  background: var(--dk-surface); border: 1px solid var(--dk-border); border-radius: 10px;
+  padding: 14px; cursor: pointer; transition: .15s;
+  display: flex; flex-direction: column; min-height: 120px;
+}
+.p-card:hover { border-color: var(--blue); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(45,129,255,.08); }
+.p-card .p-cb { font-size: 9px; padding: 2px 6px; border-radius: 3px; display: inline-block; width: fit-content; font-weight: 600; }
+.p-cb-on { color: var(--green); background: rgba(14,203,129,.1); }
+.p-cb-soon { color: #FF8C00; background: rgba(255,140,0,.1); }
+.p-cb-end { color: var(--dk-text3); background: #222730; }
+.p-card .p-ct { font-size: 13px; font-weight: 700; margin-top: 6px; line-height: 1.4; }
+.p-card .p-cd { font-size: 11px; color: var(--dk-text2); margin-top: 4px; }
+.p-card .p-cf { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 10px; }
+.p-card .p-cf .p-btn { background: var(--blue); color: #fff; padding: 4px 12px; border-radius: 5px; font-size: 11px; font-weight: 600; border: none; cursor: pointer; }
+.p-card.ended { opacity: .55; }
+.p-card.ended:hover { transform: none; box-shadow: none; border-color: var(--dk-border); }
+
+/* Topic Group Headers */
+.p-topic { padding: 0 24px; }
+.p-topic-hd { display: flex; justify-content: space-between; align-items: center; padding: 16px 0 10px; }
+.p-topic-left { display: flex; align-items: center; gap: 8px; }
+.p-topic-icon { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+.p-topic-hd h3 { font-size: 14px; font-weight: 700; }
+.p-topic-n { font-size: 11px; color: var(--dk-text3); margin-left: 4px; }
+.p-topic-more { font-size: 12px; color: var(--blue); font-weight: 600; cursor: pointer; }
+
+/* Drawer（右侧抽屉面板） */
+.p-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 500; }
+.p-overlay.show { display: block; }
+.p-drawer {
+  position: fixed; top: 52px; right: -440px; width: 440px; bottom: 0;
+  background: var(--dk-bg); border-left: 1px solid var(--dk-border);
+  z-index: 501; transition: right .3s ease; overflow-y: auto;
+  box-shadow: -4px 0 20px rgba(0,0,0,.4);
+}
+.p-drawer.show { right: 0; }
+.p-drawer-bar {
+  background: var(--dk-surface); border-bottom: 1px solid var(--dk-border);
+  padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;
+  position: sticky; top: 0; z-index: 2;
+}
+.p-drawer-bar h3 { font-size: 15px; font-weight: 700; }
+.p-drawer-bar .dx { color: var(--dk-text3); font-size: 20px; cursor: pointer; }
+.p-drawer-bar .dx:hover { color: var(--red); }
+.p-drawer-body { padding: 16px 20px; }
+
+/* Page & footer */
+.p-page { display: none; }
+.p-page.show { display: block; }
+.p-footer { height: 60px; }
+
+
+/* ═══════════════════════════════════════
+   VIEW: APP 端（居中 phone 壳 375×812）
+   ─ 壳内可点击交互
+   ─ 底部 Tab 切换
+═══════════════════════════════════════ */
+.app-view { background: #1a1c20; min-height: calc(100vh - 52px); display: flex; justify-content: center; padding: 40px 0; }
+
+.app-phone {
+  width: 375px; min-height: 812px; background: var(--dk-bg);
+  border-radius: 44px; border: 4px solid #3a3d44;
+  overflow: hidden; position: relative;
+  box-shadow: 0 8px 40px rgba(0,0,0,.3), inset 0 0 0 1px rgba(255,255,255,.05);
+  display: flex; flex-direction: column;
+}
+.app-phone *::-webkit-scrollbar { display: none; }
+.app-phone * { scrollbar-width: none; -ms-overflow-style: none; }
+
+/* Status Bar */
+.app-status {
+  display: flex; justify-content: space-between; padding: 8px 24px 4px;
+  font-size: 10px; color: var(--dk-text2);
+  font-family: 'IBM Plex Mono', monospace; font-weight: 500;
+}
+
+/* App 页面容器（中间 flex:1 区域） */
+.app-body { flex: 1; overflow-y: auto; }
+.app-page { display: none; }
+.app-page.show { display: block; }
+
+/* Bottom Tab Bar */
+.app-tabbar {
+  display: flex; border-top: 1px solid var(--dk-border);
+  background: var(--dk-bg); padding: 6px 0 8px; flex-shrink: 0;
+}
+.app-tabbar-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  font-size: 9px; color: var(--dk-text3); cursor: pointer;
+}
+.app-tabbar-item.act { color: var(--blue); }
+.app-tabbar-item .ati { font-size: 18px; }
+
+/* Home Indicator */
+.app-home-ind { padding: 5px 0 3px; display: flex; justify-content: center; }
+.app-home-ind div { width: 120px; height: 4px; background: var(--dk-border); border-radius: 2px; }
+
+/* App Modal（底部弹起 Sheet） */
+.app-sheet-overlay { display: none; position: absolute; inset: 0; background: rgba(0,0,0,.6); z-index: 10; }
+.app-sheet-overlay.show { display: block; }
+.app-sheet {
+  position: absolute; bottom: -100%; left: 0; right: 0;
+  background: var(--dk-surface2); border-radius: 14px 14px 0 0;
+  z-index: 11; padding: 16px; transition: bottom .3s ease;
+  max-height: 70%;  overflow-y: auto;
+}
+.app-sheet.show { bottom: 0; }
+.app-sheet-handle { width: 32px; height: 4px; background: var(--dk-text3); border-radius: 2px; margin: 0 auto 12px; }
+
+
+/* ═══════════════════════════════════════
+   VIEW: 后台（浅色 Arco 风格）
+   ─ .mgt-sidebar 固定侧边栏
+   ─ .mgt-main 主内容区
+   ─ .mgt-topbar 面包屑导航
+   ─ 数据驱动 CRUD 模式（JS 部分）
+═══════════════════════════════════════ */
+.mgt-view { background: var(--lt-bg); color: var(--lt-text); min-height: calc(100vh - 52px); }
+.mgt-layout { display: flex; min-height: 100vh; }
+
+/* Sidebar */
+.mgt-sidebar {
+  width: 200px; background: var(--lt-sidebar); color: #fff;
+  flex-shrink: 0; position: fixed; top: 52px; bottom: 0;
+  overflow-y: auto; z-index: 50;
+}
+.mgt-sb-logo { padding: 16px; font-size: 15px; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; gap: 8px; }
+.mgt-sb-grp { padding: 16px 16px 6px; font-size: 10px; color: rgba(255,255,255,.3); text-transform: uppercase; letter-spacing: .5px; }
+.mgt-sb-item {
+  padding: 10px 16px 10px 24px; font-size: 13px; color: rgba(255,255,255,.6);
+  cursor: pointer; transition: .15s; display: flex; align-items: center; gap: 8px;
+}
+.mgt-sb-item:hover { color: #fff; background: rgba(255,255,255,.05); }
+.mgt-sb-item.on { color: #fff; background: var(--lt-sidebar-a); border-right: 3px solid #fff; }
+
+/* Main */
+.mgt-main { margin-left: 200px; flex: 1; min-width: 0; }
+
+/* Topbar */
+.mgt-topbar {
+  background: var(--lt-surface); border-bottom: 1px solid var(--lt-border);
+  padding: 0 24px; height: 48px; display: flex; align-items: center;
+  justify-content: space-between; position: sticky; top: 52px; z-index: 40;
+}
+.mgt-bc { font-size: 12px; color: var(--lt-text3); }
+.mgt-bc b { color: var(--lt-text); }
+.mgt-ui { font-size: 12px; color: var(--lt-text2); display: flex; align-items: center; gap: 10px; }
+.mgt-env { background: var(--green-l); color: #2E7D32; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+
+/* Content */
+.mgt-ct { padding: 20px 24px; }
+.mgt-pt { font-size: 18px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.mgt-pt .proto { background: var(--orange-l); color: var(--orange); font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+
+/* Card wrapper */
+.mgt-cd { background: var(--lt-surface); border-radius: 8px; border: 1px solid var(--lt-border); padding: 16px 20px; margin-bottom: 16px; }
+
+/* Sub View Tabs */
+.mgt-vt { display: flex; gap: 0; margin-bottom: 20px; background: var(--lt-surface); border-radius: 8px; overflow: hidden; border: 1px solid var(--lt-border); width: fit-content; }
+.mgt-vtb {
+  padding: 10px 24px; font-size: 13px; color: var(--lt-text2); cursor: pointer;
+  border-right: 1px solid var(--lt-border); font-weight: 500; transition: .15s;
+}
+.mgt-vtb:last-child { border-right: none; }
+.mgt-vtb:hover { background: #FAFBFC; }
+.mgt-vtb.on { background: var(--blue); color: #fff; }
+
+/* Filter Bar */
+.mgt-fb { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 14px; }
+.mgt-fg { display: flex; align-items: center; gap: 4px; }
+.mgt-fl { font-size: 12px; color: var(--lt-text2); white-space: nowrap; }
+.mgt-fs {
+  padding: 5px 28px 5px 8px; border: 1px solid var(--lt-border); border-radius: 4px;
+  font-size: 12px; background: var(--lt-surface); color: var(--lt-text);
+  appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2386909C'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 8px center;
+}
+.mgt-fi { padding: 5px 8px; border: 1px solid var(--lt-border); border-radius: 4px; font-size: 12px; width: 130px; }
+
+/* Buttons */
+.b { padding: 6px 16px; border-radius: 4px; font-size: 12px; font-weight: 500; border: 1px solid var(--lt-border); cursor: pointer; transition: .15s; display: inline-flex; align-items: center; gap: 4px; }
+.b-blue { background: var(--blue); color: #fff; border-color: var(--blue); }
+.b-blue:hover { background: var(--blue-d); }
+.b-green { background: var(--green); color: #fff; border-color: var(--green); }
+.b-red { background: transparent; color: var(--red); border-color: var(--red); }
+.b-ghost { background: transparent; color: var(--lt-text2); }
+.b-ghost:hover { color: var(--blue); border-color: var(--blue); }
+.b-sm { padding: 4px 10px; font-size: 11px; }
+
+/* Table */
+.mgt-tw { overflow-x: auto; }
+.mgt-view table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.mgt-view th { background: #FAFBFC; padding: 10px 8px; text-align: left; font-weight: 600; color: var(--lt-text2); border-bottom: 1px solid var(--lt-border); white-space: nowrap; }
+.mgt-view td { padding: 10px 8px; border-bottom: 1px solid var(--lt-border); vertical-align: top; }
+.mgt-view tr:hover td { background: #FAFBFC; }
+
+/* Badges */
+.badge { display: inline-block; font-size: 9px; padding: 1px 5px; border-radius: 2px; font-weight: 700; margin-left: 4px; vertical-align: middle; }
+.badge-n { background: var(--green-l); color: #2E7D32; }
+.badge-d { background: var(--red-l); color: #C62828; }
+.badge-m { background: var(--orange-l); color: #E65100; }
+
+/* Status */
+.s-on { color: var(--green); font-weight: 600; }
+.s-off { color: var(--red); font-weight: 600; }
+
+/* Ops */
+.ops { display: flex; gap: 4px; flex-wrap: wrap; }
+.op { font-size: 11px; cursor: pointer; padding: 2px 8px; border-radius: 3px; font-weight: 500; }
+.op-on { color: var(--green); background: var(--green-l); }
+.op-off { color: var(--red); background: var(--red-l); }
+.op-e { color: var(--blue); background: var(--blue-l); }
+.op-d { color: var(--lt-text3); background: #f1f5f9; }
+
+/* Info box */
+.mgt-info { background: var(--blue-l); border-radius: 6px; padding: 12px 16px; font-size: 12px; color: #1e40af; line-height: 1.8; margin-top: 12px; }
+
+/* Form */
+.mgt-f-sec { margin-bottom: 14px; }
+.mgt-f-sec-t { font-size: 13px; font-weight: 700; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--lt-border); }
+.mgt-f-row { display: flex; align-items: flex-start; margin-bottom: 10px; }
+.mgt-f-lbl { width: 100px; text-align: right; padding-right: 12px; padding-top: 5px; font-size: 12px; color: var(--lt-text2); flex-shrink: 0; }
+.mgt-f-lbl .req { color: var(--red); }
+.mgt-f-ctl { flex: 1; }
+.mgt-f-inp { width: 100%; max-width: 360px; padding: 5px 10px; border: 1px solid var(--lt-border); border-radius: 4px; font-size: 12px; }
+.mgt-f-sel { padding: 5px 10px; border: 1px solid var(--lt-border); border-radius: 4px; font-size: 12px; min-width: 160px; }
+.mgt-f-hint { font-size: 11px; color: var(--lt-text3); margin-top: 3px; }
+
+/* Modal（全屏遮罩 + 居中卡片） */
+.modal-bg {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.45); z-index: 600;
+  justify-content: center; align-items: center;
+}
+.modal-bg.show { display: flex; }
+.modal-box {
+  background: var(--lt-surface); border-radius: 8px;
+  border: 1px solid var(--lt-border); width: 560px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.15); max-height: 85vh; overflow-y: auto;
+}
+.modal-hd {
+  padding: 14px 20px; border-bottom: 1px solid var(--lt-border);
+  font-size: 14px; font-weight: 700; display: flex; justify-content: space-between; align-items: center;
+}
+.modal-hd .mx { color: var(--lt-text3); font-size: 18px; cursor: pointer; }
+.modal-hd .mx:hover { color: var(--red); }
+.modal-bd { padding: 16px 20px; }
+.modal-ft {
+  padding: 12px 20px; border-top: 1px solid var(--lt-border);
+  display: flex; justify-content: flex-end; gap: 8px;
+}
+
+/* Page toggle */
+.mgt-page { display: none; }
+.mgt-page.show { display: block; }
+.mgt-hide { display: none; }
+
+/* Language tabs (编辑页) */
+.mgt-lt { display: flex; gap: 0; border-bottom: 1px solid var(--lt-border); margin-bottom: 14px; }
+.mgt-ltb {
+  padding: 8px 16px; font-size: 12px; color: var(--lt-text3); cursor: pointer;
+  border-bottom: 2px solid transparent; font-weight: 500;
+}
+.mgt-ltb.on { color: var(--blue); font-weight: 600; border-bottom-color: var(--blue); }
+
+/* Switch toggle */
+.mgt-switch {
+  width: 36px; height: 20px; border-radius: 10px; background: var(--lt-text4);
+  position: relative; cursor: pointer; transition: .2s; flex-shrink: 0;
+}
+.mgt-switch.on { background: var(--green); }
+.mgt-switch::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 16px; height: 16px; border-radius: 50%; background: #fff;
+  transition: .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+.mgt-switch.on::after { left: 18px; }
+
+</style>
+</head>
+<body>
+
+<!-- ═══════ GNAV ═══════ -->
+<div class="gnav">
+  <div class="gnav-logo"><span>{{EMOJI}}</span> {{PROJECT_NAME}}</div>
+  <div class="gnav-sep"></div>
+  <div class="gnav-tabs">
+    <div class="gnav-tab on" onclick="switchGlobalView(0)"><span class="gnav-ic">🖥</span> {{WEB_VIEW_NAME}}</div>
+    <div class="gnav-tab" onclick="switchGlobalView(1)"><span class="gnav-ic">📱</span> {{APP_VIEW_NAME}}</div>
+    <div class="gnav-tab" onclick="switchGlobalView(2)"><span class="gnav-ic">⚙️</span> {{MGT_VIEW_NAME}}</div>
+  </div>
+  <div class="gnav-right">
+    <span class="gnav-ver">可交互原型 · 可截图</span>
+    <span class="gnav-badge p0">P0</span>
+  </div>
+</div>
+
+<div class="gnav-view-wrap">
+
+<!-- ╔══════════════════════════════════════════════════════════════╗
+     ║  VIEW 0 · Web 用户端（深色全宽 960px）                       ║
+     ╚══════════════════════════════════════════════════════════════╝ -->
+<div class="gnav-view-section gnav-active web-view" id="webView">
+
+  <!-- Nav Bar -->
+  <div class="p-nav">
+    <div class="p-nav-logo" onclick="goWebPage('main')"><span>{{EMOJI}}</span><b>{{BRAND_NAME}}</b></div>
+    <div class="p-nav-item">{{NAV_1}} ▾</div>
+    <div class="p-nav-item">{{NAV_2}} ▾</div>
+    <div class="p-nav-item act" id="navMain" onclick="toggleDropdown(event)">
+      {{NAV_ACTIVE}} ▾
+      <span class="red-dot"></span>
+      <div class="p-dropdown" id="mainDropdown">
+        <div class="p-drop-col">
+          <div class="p-drop-item" onclick="event.stopPropagation();goWebPage('main');closeDropdown()">
+            <div class="di" style="background:rgba(45,129,255,.12)">{{ICON}}</div>
+            <div><div style="color:var(--blue)">{{ENTRY_NAME}}</div><div class="ds">{{ENTRY_DESC}}</div></div>
+          </div>
+          <!-- 更多下拉项 -->
+        </div>
+      </div>
+    </div>
+    <div class="p-nav-right">
+      <button class="p-btn-out">💰 资产</button>
+      <button class="p-btn-blue">登录 / 注册</button>
+    </div>
+  </div>
+
+  <!-- PAGE: 主页（示例） -->
+  <div class="p-page show" id="web-page-main">
+    <div class="p-header">
+      <div class="p-hdr-left">
+        <h1>{{PAGE_TITLE}}</h1>
+        <div class="p-hdr-sub">{{PAGE_SUBTITLE}}</div>
+        <div class="p-hdr-stats">
+          <div class="p-hs"><div class="p-hv">{{STAT_1_VAL}}</div><div class="p-hl">{{STAT_1_LABEL}}</div></div>
+          <div class="p-hs"><div class="p-hv">{{STAT_2_VAL}}</div><div class="p-hl">{{STAT_2_LABEL}}</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="p-tabs">
+      <div class="p-tab act" onclick="switchWebTab(this,'ongoing')">{{TAB_1}} <span class="p-tc">{{COUNT}}</span></div>
+      <div class="p-tab" onclick="switchWebTab(this,'upcoming')">{{TAB_2}} <span class="p-tc">{{COUNT}}</span></div>
+      <div class="p-tab" onclick="switchWebTab(this,'ended')">{{TAB_3}} <span class="p-tc">{{COUNT}}</span></div>
+    </div>
+
+    <!-- Tab Content: ongoing -->
+    <div id="web-ongoing">
+      <div class="p-topic">
+        <div class="p-topic-hd">
+          <div class="p-topic-left">
+            <div class="p-topic-icon" style="background:rgba(255,215,64,.12)">{{ICON}}</div>
+            <h3>{{TOPIC_NAME}}</h3>
+            <span class="p-topic-n">{{COUNT}}</span>
+          </div>
+          <span class="p-topic-more">查看全部 ›</span>
+        </div>
+      </div>
+      <div class="p-grid">
+        <div class="p-card">
+          <span class="p-cb p-cb-on">● 进行中</span>
+          <div class="p-ct">{{CARD_TITLE}}</div>
+          <div class="p-cd">{{CARD_DESC}}</div>
+          <div class="p-cf">
+            <span style="font-size:11px;color:var(--dk-text3);">{{TIME}}</span>
+            <button class="p-btn">查看</button>
+          </div>
+        </div>
+        <!-- 更多卡片 -->
+      </div>
+    </div>
+    <div id="web-upcoming" style="display:none;"><!-- Tab 2 内容 --></div>
+    <div id="web-ended" style="display:none;"><!-- Tab 3 内容 --></div>
+
+    <div class="p-footer"></div>
+  </div>
+
+  <!-- Drawer（右侧面板） -->
+  <div class="p-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+  <div class="p-drawer" id="drawerPanel">
+    <div class="p-drawer-bar"><h3>{{DRAWER_TITLE}}</h3><span class="dx" onclick="closeDrawer()">✕</span></div>
+    <div class="p-drawer-body">
+      <!-- 抽屉内容 -->
+    </div>
+  </div>
+
+</div><!-- webView -->
+
+
+<!-- ╔══════════════════════════════════════════════════════════════╗
+     ║  VIEW 1 · App 端（居中 phone 壳 375×812）                   ║
+     ╚══════════════════════════════════════════════════════════════╝ -->
+<div class="gnav-view-section app-view" id="appView">
+
+  <div class="app-phone">
+    <div class="app-status"><span>9:41</span><span>⚡ 📶 ■■■</span></div>
+
+    <div class="app-body">
+      <!-- App Page: main -->
+      <div class="app-page show" id="app-page-main">
+        <!-- ═══ 填充 App UI ═══ -->
+        <!-- 用 dk- 变量画深色 UI -->
+      </div>
+
+      <!-- App Page: detail（示例） -->
+      <div class="app-page" id="app-page-detail">
+        <!-- 详情页 -->
+      </div>
+    </div>
+
+    <!-- Bottom Sheet（模态弹层） -->
+    <div class="app-sheet-overlay" id="appSheetOverlay" onclick="closeAppSheet()"></div>
+    <div class="app-sheet" id="appSheet">
+      <div class="app-sheet-handle"></div>
+      <!-- Sheet 内容 -->
+    </div>
+
+    <!-- Bottom Tab Bar -->
+    <div class="app-tabbar">
+      <div class="app-tabbar-item act" onclick="switchAppTab(0)"><span class="ati">🏠</span>首页</div>
+      <div class="app-tabbar-item" onclick="switchAppTab(1)"><span class="ati">📊</span>行情</div>
+      <div class="app-tabbar-item" onclick="switchAppTab(2)"><span class="ati">💹</span>交易</div>
+      <div class="app-tabbar-item" onclick="switchAppTab(3)"><span class="ati">🎯</span>活动</div>
+      <div class="app-tabbar-item" onclick="switchAppTab(4)"><span class="ati">💰</span>资产</div>
+    </div>
+
+    <div class="app-home-ind"><div></div></div>
+  </div>
+
+</div><!-- appView -->
+
+
+<!-- ╔══════════════════════════════════════════════════════════════╗
+     ║  VIEW 2 · 后台（浅色 Arco 风格，sidebar + main）             ║
+     ╚══════════════════════════════════════════════════════════════╝ -->
+<div class="gnav-view-section mgt-view" id="mgtView">
+
+<!-- Modal 示例（数据驱动弹窗，放在 layout 外面） -->
+<div class="modal-bg" id="editModal">
+  <div class="modal-box">
+    <div class="modal-hd"><span id="modalTitle">{{MODAL_TITLE}}</span><span class="mx" onclick="closeModal()">✕</span></div>
+    <div class="modal-bd">
+      <div class="mgt-f-row"><div class="mgt-f-lbl"><span class="req">*</span> {{FIELD_1}}</div><div class="mgt-f-ctl"><input class="mgt-f-inp" id="mf-field1"></div></div>
+      <div class="mgt-f-row"><div class="mgt-f-lbl"><span class="req">*</span> {{FIELD_2}}</div><div class="mgt-f-ctl"><select class="mgt-f-sel" id="mf-field2"><option>{{OPT_1}}</option><option>{{OPT_2}}</option></select></div></div>
+      <!-- 更多表单行 -->
+    </div>
+    <div class="modal-ft">
+      <button class="b b-ghost" onclick="closeModal()">取消</button>
+      <button class="b b-blue" onclick="saveModal()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="mgt-layout">
+  <!-- Sidebar -->
+  <div class="mgt-sidebar">
+    <div class="mgt-sb-logo"><span style="font-size:18px">{{EMOJI}}</span> {{MGT_NAME}}</div>
+    <div class="mgt-sb-grp">{{MODULE_GROUP}}</div>
+    <div class="mgt-sb-item on" onclick="swMgtPage(this,0)">📋 {{PAGE_0_NAME}}</div>
+    <div class="mgt-sb-item" onclick="swMgtPage(this,1)">📑 {{PAGE_1_NAME}}</div>
+    <div class="mgt-sb-item" onclick="swMgtPage(this,2)">🖼 {{PAGE_2_NAME}}</div>
+  </div>
+
+  <div class="mgt-main">
+    <!-- Topbar -->
+    <div class="mgt-topbar">
+      <div class="mgt-bc">🏠 {{BREADCRUMB_ROOT}} / <b id="mgtBcText">{{PAGE_0_NAME}}</b></div>
+      <div class="mgt-ui"><span class="mgt-env">{{ENV_LABEL}}</span><span>👤 {{USER}}</span></div>
+    </div>
+
+    <!-- ═══ PAGE 0: 列表页（静态 HTML，无数据驱动） ═══ -->
+    <div class="mgt-ct mgt-page show" id="mgt-page0">
+      <div class="mgt-pt">{{PAGE_0_NAME}} <span class="proto">{{VERSION_TAG}}</span></div>
+
+      <div class="mgt-cd">
+        <div class="mgt-fb">
+          <div class="mgt-fg"><span class="mgt-fl">{{FILTER_1}}：</span><select class="mgt-fs"><option>全部</option><option>{{OPT}}</option></select></div>
+          <div class="mgt-fg"><span class="mgt-fl">{{FILTER_2}}：</span><select class="mgt-fs"><option>全部</option><option>{{OPT}}</option></select></div>
+          <button class="b b-blue">🔍 查询</button>
+          <button class="b b-ghost">重置</button>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-size:11px;color:var(--lt-text3)">{{TABLE_HINT}}</span>
+        <button class="b b-green">＋ {{CREATE_BTN}}</button>
+      </div>
+
+      <div class="mgt-cd" style="padding:0;overflow:hidden">
+        <div class="mgt-tw">
+          <table>
+            <thead><tr>
+              <th>{{COL_1}}</th><th>{{COL_2}}</th><th>{{COL_3}}</th><th>操作</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td><b>{{VAL}}</b></td>
+                <td>{{VAL}}</td>
+                <td><span class="s-on">● {{STATUS}}</span></td>
+                <td><div class="ops"><span class="op op-e">编辑</span><span class="op op-d">删除</span></div></td>
+              </tr>
+              <!-- 更多行 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PAGE 1: 数据驱动管理页（有增删改） ═══ -->
+    <div class="mgt-ct mgt-page" id="mgt-page1">
+      <div class="mgt-pt">{{PAGE_1_NAME}} <span class="proto">{{VERSION_TAG}}</span></div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <span id="itemCount" style="font-size:12px;color:var(--lt-text3)">{{STAT_TEXT}}</span>
+        <button class="b b-green" onclick="openModal()">＋ {{CREATE_BTN}}</button>
+      </div>
+
+      <!-- 数据驱动列表容器，由 JS renderItems() 填充 -->
+      <div id="itemList">
+        <!-- JS 动态渲染 -->
+      </div>
+
+      <div class="mgt-info">
+        <b>配置说明：</b><br>
+        {{CONFIG_RULES}}
+      </div>
+    </div>
+
+    <!-- ═══ PAGE 2: 其他管理页 ═══ -->
+    <div class="mgt-ct mgt-page" id="mgt-page2">
+      <div class="mgt-pt">{{PAGE_2_NAME}}</div>
+      <!-- 按需填充 -->
+    </div>
+
+  </div><!-- mgt-main -->
+</div><!-- mgt-layout -->
+</div><!-- mgtView -->
+
+
+</div><!-- gnav-view-wrap -->
+
+
+<!-- ═══════════════════════════════════════
+     SCRIPTS
+═══════════════════════════════════════ -->
+<script>
+/* ════════════════════════════════════════
+   GLOBAL: gnav View 切换
+════════════════════════════════════════ */
+function switchGlobalView(idx) {
+  document.querySelectorAll('.gnav-tab').forEach((t,i) => t.classList.toggle('on', i===idx));
+  document.querySelectorAll('.gnav-view-section').forEach((v,i) => v.classList.toggle('gnav-active', i===idx));
+  window.scrollTo(0,0);
+}
+
+
+/* ════════════════════════════════════════
+   WEB VIEW: 页面导航 + Tab + Dropdown + Drawer
+════════════════════════════════════════ */
+function goWebPage(name) {
+  document.querySelectorAll('#webView .p-page').forEach(p => p.classList.remove('show'));
+  var el = document.getElementById('web-page-' + name);
+  if (el) el.classList.add('show');
+  window.scrollTo(0,0);
+}
+
+function switchWebTab(el, tab) {
+  el.parentElement.querySelectorAll('.p-tab').forEach(t => t.classList.remove('act'));
+  el.classList.add('act');
+  ['ongoing','upcoming','ended'].forEach(t => {
+    var c = document.getElementById('web-' + t);
+    if (c) c.style.display = (t === tab) ? 'block' : 'none';
+  });
+}
+
+function toggleDropdown(e) {
+  e.stopPropagation();
+  document.getElementById('mainDropdown').classList.toggle('show');
+}
+function closeDropdown() {
+  document.getElementById('mainDropdown').classList.remove('show');
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#navMain')) closeDropdown();
+});
+
+function openDrawer() {
+  document.getElementById('drawerOverlay').classList.add('show');
+  document.getElementById('drawerPanel').classList.add('show');
+}
+function closeDrawer() {
+  document.getElementById('drawerOverlay').classList.remove('show');
+  document.getElementById('drawerPanel').classList.remove('show');
+}
+
+
+/* ════════════════════════════════════════
+   APP VIEW: 页面切换 + Bottom Sheet + Tab Bar
+════════════════════════════════════════ */
+function goAppPage(name) {
+  document.querySelectorAll('#appView .app-page').forEach(p => p.classList.remove('show'));
+  var el = document.getElementById('app-page-' + name);
+  if (el) el.classList.add('show');
+}
+
+function switchAppTab(idx) {
+  document.querySelectorAll('.app-tabbar-item').forEach((t,i) => {
+    t.classList.toggle('act', i===idx);
+  });
+  // 按需切换 app-page
+}
+
+function openAppSheet() {
+  document.getElementById('appSheetOverlay').classList.add('show');
+  document.getElementById('appSheet').classList.add('show');
+}
+function closeAppSheet() {
+  document.getElementById('appSheetOverlay').classList.remove('show');
+  document.getElementById('appSheet').classList.remove('show');
+}
+
+
+/* ════════════════════════════════════════
+   MGT VIEW: Sidebar 切换 + Sub View
+════════════════════════════════════════ */
+var mgtPageNames = ['{{PAGE_0_NAME}}', '{{PAGE_1_NAME}}', '{{PAGE_2_NAME}}'];
+
+function swMgtPage(el, idx) {
+  document.querySelectorAll('.mgt-sb-item').forEach(s => s.classList.remove('on'));
+  el.classList.add('on');
+  document.querySelectorAll('.mgt-page').forEach((p, i) => {
+    p.classList.toggle('show', i === idx);
+    if (i !== idx) p.classList.remove('show');
+  });
+  document.getElementById('mgtBcText').textContent = mgtPageNames[idx];
+}
+
+/* 语言 Tab 切换（编辑页用） */
+document.querySelectorAll('.mgt-ltb').forEach(el => {
+  el.addEventListener('click', function() {
+    this.parentElement.querySelectorAll('.mgt-ltb').forEach(t => t.classList.remove('on'));
+    this.classList.add('on');
+  });
+});
+
+
+/* ════════════════════════════════════════
+   MGT VIEW: 数据驱动 CRUD 模式
+   ─ 核心模式：JS 数组 → render 渲染列表
+   ─ 弹窗按索引读 → 保存=写回+重渲染+关弹窗
+   ─ 新增和编辑共用同一弹窗（currentIdx = -1 新增 / >= 0 编辑）
+   ─ 删除二次确认
+   ═══ 只用于有增删改的模块，纯展示列表用静态 HTML ═══
+════════════════════════════════════════ */
+
+// ── 数据源（按项目替换） ──
+var itemData = [
+  // { field1: '...', field2: '...', ... }
+];
+
+var currentIdx = -1; // -1=新增, >=0=编辑
+
+function openModal(idx) {
+  currentIdx = (idx !== undefined) ? idx : -1;
+  var d = (currentIdx >= 0) ? itemData[currentIdx] : { field1: '', field2: '' /* 默认值 */ };
+
+  // 填充表单
+  document.getElementById('mf-field1').value = d.field1;
+  document.getElementById('mf-field2').value = d.field2;
+
+  // 更新标题
+  document.getElementById('modalTitle').textContent = (currentIdx >= 0) ? '编辑' : '新增';
+
+  document.getElementById('editModal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('editModal').classList.remove('show');
+}
+
+function saveModal() {
+  var field1 = document.getElementById('mf-field1').value.trim();
+  if (!field1) { alert('请填写必填项'); return; }
+
+  var field2 = document.getElementById('mf-field2').value;
+
+  if (currentIdx >= 0) {
+    // 编辑：写回数组
+    itemData[currentIdx].field1 = field1;
+    itemData[currentIdx].field2 = field2;
+  } else {
+    // 新增：push 到数组
+    itemData.push({ field1: field1, field2: field2 });
+  }
+
+  renderItems();  // 重渲染列表
+  closeModal();   // 关弹窗
+  // 三步：写数据 + render + 关弹窗，缺一不可
+}
+
+function deleteItem(idx) {
+  if (!confirm('确定删除「' + itemData[idx].field1 + '」？')) return;
+  itemData.splice(idx, 1);
+  renderItems();
+}
+
+function renderItems() {
+  var list = document.getElementById('itemList');
+  if (!list) return;
+  var html = '';
+  itemData.forEach(function(d, i) {
+    html += '<div style="background:var(--lt-surface);border:1px solid var(--lt-border);border-radius:8px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">'
+      + '<div style="font-weight:700;color:var(--lt-text);min-width:28px;text-align:center;">' + (i+1) + '</div>'
+      + '<div style="flex:1;"><div style="font-size:13px;font-weight:600;">' + d.field1 + '</div>'
+      + '<div style="font-size:11px;color:var(--lt-text3);margin-top:2px;">' + (d.field2 || '') + '</div></div>'
+      + '<div class="ops">'
+      + '<button class="b b-sm b-ghost" onclick="openModal(' + i + ')">编辑</button>'
+      + '<button class="b b-sm b-red" onclick="deleteItem(' + i + ')">删除</button>'
+      + '</div></div>';
+  });
+  list.innerHTML = html;
+
+  // 更新统计
+  var stat = document.getElementById('itemCount');
+  if (stat) stat.textContent = '共 ' + itemData.length + ' 条';
+}
+
+// 点击遮罩关弹窗
+document.querySelectorAll('.modal-bg').forEach(m => {
+  m.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('show'); });
+});
+
+// 初始化渲染
+renderItems();
+
+</script>
+</body>
+</html>

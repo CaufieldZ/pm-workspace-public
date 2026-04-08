@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{PROJECT_TITLE}} · {{SUBTITLE}} v1</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Noto Sans SC',sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh;}
+
+  /* ═══ Tab Bar（顶部导航） ═══ */
+  .tb{background:#fff;border-bottom:1px solid #e2e8f0;padding:0 12px;display:flex;flex-wrap:wrap;gap:0;position:sticky;top:0;z-index:100;}
+  .t{padding:13px 10px;font-size:10.5px;font-weight:600;color:#94a3b8;cursor:pointer;border-bottom:2.5px solid transparent;transition:all .2s;user-select:none;}
+  .t:hover{color:#475569;}
+  .t.a{color:#0f172a;border-bottom-color:#0f172a;}
+  .t .i{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;font-size:9px;font-weight:700;margin-right:3px;background:#f1f5f9;color:#64748b;}
+  .t.a .i{background:#0f172a;color:#fff;}
+
+  /* ═══ Page Panel（页面面板） ═══ */
+  .pw{display:none;background:#fff;padding:28px 32px;}
+  .pw.a{display:block;}
+  .pg{max-width:1120px;margin:0 auto;}
+
+  /* ═══ Page Header（页面头部三件套：h1 + .sub + .rl） ═══ */
+  h1{font-size:19px;font-weight:900;color:#0f172a;margin-bottom:2px;}
+  .sub{font-size:11.5px;color:#94a3b8;margin-bottom:18px;}
+  .rl{height:2px;background:linear-gradient(90deg,#0f172a 160px,#e2e8f0 160px);margin-bottom:22px;}
+
+  /* ═══ Section Title（段落标题，带emoji前缀） ═══ */
+  .st{font-size:13px;font-weight:700;color:#1e293b;margin-bottom:10px;}
+
+  /* ═══ Layout Utilities ═══ */
+  .fx{display:flex;gap:12px;} .fx>*{flex:1;}
+  .mt{margin-top:14px;} .mb{margin-bottom:14px;} .mb2{margin-bottom:20px;}
+
+  /* ═══ Card（通用卡片，颜色通过 inline style 控制） ═══ */
+  .cd{padding:14px;border-radius:8px;}
+
+  /* ═══ Tag 标签（嵌入卡片标题中标注状态） ═══
+       .tg-k 绿=已有/可用  .tg-n 青=新建  .tg-w 橙=复用
+       .tg-c 红=风险/待确认  .tg-p 紫=规划中 */
+  .tg{display:inline-block;font-size:8.5px;font-weight:700;padding:1px 5px;border-radius:3px;vertical-align:middle;}
+  .tg-k{background:#dcfce7;color:#15803d;}
+  .tg-n{background:#cffafe;color:#0e7490;}
+  .tg-w{background:#fef3c7;color:#b45309;}
+  .tg-c{background:#fee2e2;color:#b91c1c;}
+  .tg-p{background:#ede9fe;color:#6d28d9;}
+
+  /* ═══ Callout（底部总结/风险提示框） ═══
+       .co-b 蓝=信息  .co-a 橙=注意  .co-r 红=风险
+       .co-g 绿=结论  .co-v 紫=洞察 */
+  .co{border-radius:6px;padding:11px 14px;font-size:11px;line-height:1.7;border-left:3px solid;}
+  .co-b{border-color:#3b82f6;background:#eff6ff;color:#1e40af;}
+  .co-a{border-color:#d97706;background:#fffbeb;color:#92400e;}
+  .co-r{border-color:#dc2626;background:#fef2f2;color:#991b1b;}
+  .co-g{border-color:#16a34a;background:#f0fdf4;color:#166534;}
+  .co-v{border-color:#7c3aed;background:#f5f3ff;color:#5b21b6;}
+  .co strong{font-weight:600;}
+
+  /* ═══ Step Number（圆形步骤编号） ═══
+       .sn-b 蓝  .sn-g 绿  .sn-r 红  .sn-a 橙  .sn-p 紫 */
+  .sn{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;font-size:9px;font-weight:700;flex-shrink:0;margin-right:3px;}
+  .sn-b{background:#dbeafe;color:#2563eb;}
+  .sn-a{background:#fef3c7;color:#b45309;}
+  .sn-p{background:#ede9fe;color:#7c3aed;}
+  .sn-g{background:#dcfce7;color:#15803d;}
+  .sn-r{background:#fee2e2;color:#b91c1c;}
+
+  /* ═══ Table ═══ */
+  table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:14px;}
+  table th{padding:7px 10px;text-align:left;border-bottom:2px solid #cbd5e1;background:#f1f5f9;}
+  table td{padding:7px 10px;border-bottom:1px solid #e2e8f0;}
+  table tr:nth-child(even){background:#fafafa;}
+
+  /* ═══ Section Divider（带颜色标签的分隔线） ═══ */
+  .sec{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+  .sec b{font-size:10px;font-weight:700;letter-spacing:1.5px;padding:3px 10px;border-radius:4px;white-space:nowrap;}
+  .sec .sl{flex:1;height:1px;background:#e2e8f0;}
+  .sec em{font-size:10px;color:#94a3b8;font-style:italic;}
+
+  /* ═══ Code ═══ */
+  code{font-family:'IBM Plex Mono',monospace;font-size:10px;background:rgba(0,0,0,0.04);padding:1px 4px;border-radius:2px;}
+
+  /* ═══ Address Highlight（关键地址/实体高亮） ═══ */
+  .addr{display:inline-block;padding:4px 10px;border-radius:5px;border:2px solid #dc2626;background:#fef2f2;font-size:11px;font-weight:700;color:#b91c1c;letter-spacing:0.3px;}
+
+  /* ═══ Legend（页面底部图例） ═══ */
+  .leg{display:flex;gap:16px;margin-top:12px;padding-top:12px;border-top:1px solid #f1f5f9;flex-wrap:wrap;}
+  .leg-i{display:flex;align-items:center;gap:4px;font-size:10px;color:#64748b;}
+  .leg-s{width:20px;height:10px;border-radius:2px;border:1.5px solid;}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     TAB BAR — 按项目需要增减 Tab
+     规则：
+     - 编号从 0 开始，onclick="sw(N)" 对应 id="tN"
+     - 第一个 Tab 加 class="t a"（默认激活）
+     - Tab 数量通常 8-14 个，按方案复杂度调整
+     ═══════════════════════════════════════════════════════ -->
+<div class="tb">
+  <div class="t a" onclick="sw(0)"><span class="i">0</span>{{TAB_0_NAME}}</div>
+  <div class="t" onclick="sw(1)"><span class="i">1</span>{{TAB_1_NAME}}</div>
+  <div class="t" onclick="sw(2)"><span class="i">2</span>{{TAB_2_NAME}}</div>
+  <div class="t" onclick="sw(3)"><span class="i">3</span>{{TAB_3_NAME}}</div>
+  <div class="t" onclick="sw(4)"><span class="i">4</span>{{TAB_4_NAME}}</div>
+  <div class="t" onclick="sw(5)"><span class="i">5</span>{{TAB_5_NAME}}</div>
+  <div class="t" onclick="sw(6)"><span class="i">6</span>{{TAB_6_NAME}}</div>
+  <div class="t" onclick="sw(7)"><span class="i">7</span>{{TAB_7_NAME}}</div>
+  <!-- 按需继续添加更多 Tab -->
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE TYPE A: 背景与定位（Context / Why）
+     用途：方案第一页，解释为什么要做、角色关系、术语定义
+     典型组件：角色卡片grid + 循环/流程链 + 术语表 + 通用性grid + callout
+     ══════════════════════════════════════════════════════════════ -->
+<div class="pw a" id="t0"><div class="pg">
+  <h1>{{PAGE_TITLE}} · {{PAGE_SUBTITLE}}</h1>
+  <div class="sub">{{ONE_LINE_SUMMARY}}</div>
+  <div class="rl"></div>
+
+  <!-- 角色卡片（2-4个，用 grid 排列，主角卡宽度可用 1.5fr） -->
+  <div class="st">🏢 {{SECTION_TITLE}}</div>
+  <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:12px;margin-bottom:20px;">
+    <div class="cd" style="background:{{ROLE_A_BG}};border:2px solid {{ROLE_A_BORDER}};">
+      <div style="font-size:15px;font-weight:900;color:{{ROLE_A_COLOR}};margin-bottom:8px;">{{ROLE_A_NAME}}</div>
+      <div style="font-size:11px;color:#334155;line-height:1.8;">
+        {{ROLE_A_DESC_LINES}}
+      </div>
+    </div>
+    <div class="cd" style="background:{{ROLE_B_BG}};border:2px solid {{ROLE_B_BORDER}};">
+      <div style="font-size:15px;font-weight:900;color:{{ROLE_B_COLOR}};margin-bottom:8px;">{{ROLE_B_NAME}}</div>
+      <div style="font-size:11px;color:#334155;line-height:1.8;">
+        {{ROLE_B_DESC_LINES}}
+      </div>
+    </div>
+    <div class="cd" style="background:#f8fafc;border:1px dashed #cbd5e1;">
+      <div style="font-size:15px;font-weight:900;color:#64748b;margin-bottom:8px;">{{ROLE_C_NAME}}</div>
+      <div style="font-size:11px;color:#64748b;line-height:1.8;">
+        {{ROLE_C_DESC_LINES}}
+      </div>
+    </div>
+  </div>
+
+  <!-- 循环/流程链（3-6节点，flex + 箭头） -->
+  <div class="st">🔄 {{FLOW_TITLE}}</div>
+  <div style="display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:20px;">
+    <!-- 重复 N 次：节点 + 箭头 -->
+    <div style="padding:12px 16px;border-radius:8px;background:#fef2f2;border:2px solid #fca5a5;font-size:12px;text-align:center;line-height:1.6;">
+      <strong style="color:#b91c1c;">{{NODE_TITLE}}</strong><br>
+      <span style="color:#64748b;font-size:10px;">{{NODE_DESC}}</span>
+    </div>
+    <div style="font-size:18px;color:#b91c1c;padding:0 8px;">→</div>
+    <!-- ... 更多节点 ... -->
+  </div>
+
+  <!-- 术语表 -->
+  <div class="st">📖 术语约定</div>
+  <table>
+    <tr><th style="width:140px;">术语</th><th>含义</th><th style="width:150px;">当前实例</th></tr>
+    <tr><td style="font-weight:700;color:{{TERM_COLOR}};">{{TERM}}</td><td>{{DEFINITION}}</td><td>{{INSTANCE}}</td></tr>
+    <!-- 更多行 -->
+  </table>
+
+  <!-- 通用性/分类 grid（3列） -->
+  <div class="st">🔁 {{CATEGORY_TITLE}}</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
+    <div class="cd" style="background:#f0fdf4;border:2px solid #86efac;">
+      <div style="font-size:13px;font-weight:700;color:#15803d;margin-bottom:4px;">✅ {{CAT_A}}</div>
+      <div style="font-size:11px;color:#334155;line-height:1.7;">{{CAT_A_CONTENT}}</div>
+    </div>
+    <div class="cd" style="background:#fffbeb;border:1px solid #fde68a;">
+      <div style="font-size:13px;font-weight:700;color:#b45309;margin-bottom:4px;">⚙ {{CAT_B}}</div>
+      <div style="font-size:11px;color:#334155;line-height:1.7;">{{CAT_B_CONTENT}}</div>
+    </div>
+    <div class="cd" style="background:#eef2ff;border:1px solid #c7d2fe;">
+      <div style="font-size:13px;font-weight:700;color:#4338ca;margin-bottom:4px;">📋 {{CAT_C}}</div>
+      <div style="font-size:11px;color:#334155;line-height:1.7;">{{CAT_C_CONTENT}}</div>
+    </div>
+  </div>
+
+  <!-- 页面底部 Callout（每页 1-2 个） -->
+  <div class="co co-g mb">
+    <strong>一句话总结：</strong>{{SUMMARY}}
+  </div>
+  <div class="co co-b">
+    <strong>{{CALLOUT_LABEL}}：</strong>{{CALLOUT_CONTENT}}
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE TYPE B: 核心逻辑 / 方案选型（Decision / Comparison）
+     用途：解释为什么选这条路、和备选方案对比
+     典型组件：关系卡片(.fx) + 硬伤/优势卡片 + 对比表(table) + 洞察callout
+     ══════════════════════════════════════════════════════════════ -->
+<div class="pw" id="t1"><div class="pg">
+  <h1>{{PAGE_TITLE}}</h1>
+  <div class="sub">{{ONE_LINE_SUMMARY}}</div>
+  <div class="rl"></div>
+
+  <!-- 三方/多方关系卡片 -->
+  <div class="st">🔍 {{RELATION_TITLE}}</div>
+  <div class="fx mb2">
+    <div class="cd" style="background:{{COLOR_BG}};border:2px solid {{COLOR_BORDER}};">
+      <div style="font-size:13px;font-weight:700;color:{{COLOR_TEXT}};margin-bottom:6px;">{{PARTY_NAME}}</div>
+      <div style="font-size:11px;color:#334155;line-height:1.7;">{{PARTY_DESC}}</div>
+    </div>
+    <!-- 2-4 个卡片 -->
+  </div>
+
+  <!-- 硬伤/问题卡片（同色系，.fx 等宽排列） -->
+  <div class="st">🚨 {{PROBLEMS_TITLE}}</div>
+  <div class="fx mb2">
+    <div class="cd" style="background:#fef2f2;border:1px solid #fecaca;">
+      <div style="font-size:12px;font-weight:700;color:#b91c1c;margin-bottom:4px;">{{PROBLEM_NAME}}</div>
+      <div style="font-size:11px;color:#334155;line-height:1.7;">{{PROBLEM_DESC}}</div>
+    </div>
+    <!-- 2-4 个 -->
+  </div>
+
+  <!-- 核心洞察 callout -->
+  <div class="st">💡 核心洞察</div>
+  <div class="co co-g mb2">
+    <strong>{{INSIGHT}}</strong>
+  </div>
+
+  <!-- 方案对比表（推荐列高亮背景） -->
+  <div class="st">📊 {{COMPARISON_TITLE}}</div>
+  <table>
+    <tr><th style="width:100px;"></th><th>{{OPTION_A}}</th><th>{{OPTION_B}}</th><th style="background:#f0fdf4;"><strong style="color:#15803d;">✅ {{OPTION_RECOMMENDED}}</strong></th></tr>
+    <tr><td style="font-weight:600;">{{DIMENSION}}</td><td>{{A_VAL}}</td><td>{{B_VAL}}</td><td style="background:#f0fdf4;"><strong style="color:#15803d;">{{REC_VAL}}</strong></td></tr>
+    <!-- 更多行 -->
+  </table>
+
+  <div class="co co-b">
+    <strong>{{ACTION_LABEL}}：</strong>{{ACTION_CONTENT}}
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE TYPE C: 方案全景 / 架构总览（Architecture Overview）
+     用途：分层展示系统架构，通常按"侧"分区
+     典型组件：关键设施高亮框 + sec分隔线 + grid卡片(每层5个) + callout + 图例
+     ══════════════════════════════════════════════════════════════ -->
+<div class="pw" id="t2"><div class="pg">
+  <h1>{{PAGE_TITLE}}</h1>
+  <div class="sub">{{ONE_LINE_SUMMARY}}</div>
+  <div class="rl"></div>
+
+  <!-- 关键基础设施高亮（红色大框，全宽） -->
+  <div style="text-align:center;margin-bottom:18px;padding:14px;border-radius:8px;border:2px solid #dc2626;background:#fef2f2;">
+    <div style="font-size:10px;font-weight:700;color:#b91c1c;letter-spacing:2px;margin-bottom:4px;">⚠ {{HIGHLIGHT_LABEL}}</div>
+    <div style="font-size:16px;font-weight:900;color:#b91c1c;">{{HIGHLIGHT_TITLE}}</div>
+    <div style="font-size:11px;color:#64748b;margin-top:4px;">{{HIGHLIGHT_DESC}}</div>
+  </div>
+
+  <!-- 层级 A -->
+  <div class="sec"><b style="background:#f0fdfa;color:#0d9488;">{{LAYER_A_NAME}}</b><span class="sl"></span><em>{{LAYER_A_NOTE}}</em></div>
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px;">
+    <div class="cd" style="background:{{BG}};border:1.5px solid {{BORDER}};font-size:10.5px;line-height:1.5;">
+      <b style="font-size:11px;color:{{COLOR}};">{{ICON}} {{MODULE_NAME}} <span class="tg tg-n">新建</span></b><br>
+      <span style="color:#64748b;">{{MODULE_DESC}}</span>
+    </div>
+    <!-- 4-6 个模块卡片 -->
+  </div>
+
+  <!-- 层级 B（通道/连接层） -->
+  <div class="sec"><b style="background:#fef2f2;color:#b91c1c;">{{LAYER_B_NAME}}</b><span class="sl"></span></div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
+    <!-- 通道卡片 -->
+  </div>
+
+  <!-- 层级 C -->
+  <div class="sec"><b style="background:#fffbeb;color:#b45309;">{{LAYER_C_NAME}}</b><span class="sl"></span><em>{{LAYER_C_NOTE}}</em></div>
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px;">
+    <!-- 模块卡片，使用 .tg-w（复用标签） -->
+  </div>
+
+  <div class="co co-v mb">
+    <strong>本质：</strong>{{ESSENCE_SUMMARY}}
+  </div>
+
+  <!-- 图例 -->
+  <div class="leg">
+    <div class="leg-i"><div class="leg-s" style="background:{{LEG_BG}};border-color:{{LEG_BORDER}};"></div>{{LEG_LABEL}}</div>
+    <!-- 更多图例项 -->
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE TYPE D: 账户/数据结构（Data Model）
+     用途：展示账户体系、数据模型、状态机
+     典型组件：嵌套卡片(大卡内含子卡) + 辅助小卡 + 状态变动表 + callout
+     ══════════════════════════════════════════════════════════════ -->
+<div class="pw" id="t3"><div class="pg">
+  <h1>{{PAGE_TITLE}}</h1>
+  <div class="sub">{{ONE_LINE_SUMMARY}}</div>
+  <div class="rl"></div>
+
+  <div class="st">📊 {{MODEL_TITLE}}</div>
+  <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin-bottom:18px;">
+    <!-- 主账户大卡（内部嵌套 flex 子卡） -->
+    <div class="cd" style="background:#fffbeb;border:2px solid #fcd34d;">
+      <div style="font-size:14px;font-weight:900;color:#b45309;margin-bottom:8px;">💳 {{MAIN_ACCOUNT_NAME}}</div>
+      <div style="display:flex;gap:8px;">
+        <div style="flex:1;padding:10px;border-radius:6px;background:#f0fdf4;border:2px solid #86efac;">
+          <div style="font-size:12px;font-weight:700;color:#15803d;margin-bottom:4px;">{{SUB_A_NAME}}</div>
+          <div style="font-size:10px;color:#334155;line-height:1.6;">{{SUB_A_DESC}}</div>
+        </div>
+        <div style="flex:1;padding:10px;border-radius:6px;background:#fffbeb;border:2px solid #fde68a;">
+          <div style="font-size:12px;font-weight:700;color:#b45309;margin-bottom:4px;">{{SUB_B_NAME}}</div>
+          <div style="font-size:10px;color:#334155;line-height:1.6;">{{SUB_B_DESC}}</div>
+        </div>
+      </div>
+    </div>
+    <!-- 辅助账户（居中小卡） -->
+    <div class="cd" style="background:#f8fafc;border:1px dashed #cbd5e1;display:flex;flex-direction:column;justify-content:center;text-align:center;">
+      <div style="font-size:24px;margin-bottom:4px;">{{ICON}}</div>
+      <div style="font-size:13px;font-weight:700;color:#64748b;">{{AUX_ACCOUNT_NAME}}</div>
+      <div style="font-size:10px;color:#94a3b8;margin-top:6px;">{{AUX_DESC}}</div>
+    </div>
+    <!-- 再一个辅助账户 -->
+  </div>
+
+  <!-- 状态变动表 -->
+  <div class="st">📋 {{STATE_TABLE_TITLE}}</div>
+  <table>
+    <tr><th>动作</th><th>{{COL_A}}</th><th>{{COL_B}}</th><th>{{COL_C}}</th><th>{{COL_D}}</th></tr>
+    <tr style="background:#f0fdf4;"><td style="font-weight:600;color:#15803d;">{{ACTION}}</td><td>{{CHANGE}}</td><td>—</td><td>{{CHANGE}}</td><td>{{CHANGE}}</td></tr>
+    <!-- 更多行，关键行用 background 高亮 -->
+  </table>
+
+  <div class="co co-g">
+    <strong>{{SIMPLIFICATION_NOTE}}</strong>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE TYPE E: 生命周期 / 泳道图（Lifecycle / Swimlane）
+     用途：按时间步骤展示多角色协作流程
+     典型组件：列头标签 + grid(编号+N列角色卡) + callout
+     ══════════════════════════════════════════════════════════════ -->
+<div class="pw" id="t4"><div class="pg">
+  <h1>{{PAGE_TITLE}}</h1>
+  <div class="sub">{{ONE_LINE_SUMMARY}}</div>
+  <div class="rl"></div>
+
+  <div class="st">📖 场景：{{SCENARIO_DESC}}</div>
+
+  <div style="display:flex;flex-direction:column;gap:4px;">
+    <!-- 列头 -->
+    <div style="display:grid;grid-template-columns:28px 1fr 1fr 1fr;gap:8px;padding:6px 0;">
+      <div></div>
+      <div style="font-size:10px;font-weight:700;color:#64748b;text-align:center;">{{ROLE_A}}</div>
+      <div style="font-size:10px;font-weight:700;color:#64748b;text-align:center;">{{ROLE_B}}</div>
+      <div style="font-size:10px;font-weight:700;color:#64748b;text-align:center;">{{ROLE_C}}</div>
+    </div>
+
+    <!-- 步骤行（重复 N 次） -->
+    <div style="display:grid;grid-template-columns:28px 1fr 1fr 1fr;gap:8px;">
+      <div class="sn sn-b" style="margin:0;align-self:start;margin-top:8px;">1</div>
+      <!-- 活跃角色用实色卡片，非活跃用灰色 -->
+      <div class="cd" style="background:#eef2ff;border:1px solid #c7d2fe;font-size:10.5px;line-height:1.6;">
+        <strong style="color:#4338ca;">{{STEP_ACTION}}</strong><br>{{STEP_DETAIL}}
+      </div>
+      <div class="cd" style="background:#ecfeff;border:1.5px solid #22d3ee;font-size:10.5px;line-height:1.6;">
+        <strong style="color:#0e7490;">{{STEP_ACTION}}</strong><br>{{STEP_DETAIL}}
+      </div>
+      <div class="cd" style="background:#f8fafc;border:1px solid #e2e8f0;font-size:10.5px;line-height:1.6;color:#94a3b8;">
+        等待接收…
+      </div>
+    </div>
+    <!-- 更多步骤行 -->
+  </div>
+
+  <div class="co co-b mt">
+    <strong>{{TIMING_NOTE}}</strong>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE TYPE F: 场景矩阵（Scenario Matrix）
+     用途：用一张大表覆盖所有业务场景的资金/数据流转
+     典型组件：大表(8+行，多列) + callout(风险+核心理解)
+     ══════════════════════════════════════════════════════════════ -->
+<div class="pw" id="t5"><div class="pg">
+  <h1>{{PAGE_TITLE}}</h1>
+  <div class="sub">{{ONE_LINE_SUMMARY}}</div>
+  <div class="rl"></div>
+
+  <table>
+    <tr><th style="width:32px;">#</th><th style="width:130px;">{{COL_SCENARIO}}</th><th>{{COL_SIDE_A}}</th><th>{{COL_MIDDLEWARE}}</th><th>{{COL_SIDE_B}}</th><th style="width:100px;">{{COL_ONCHAIN}}</th></tr>
+    <!-- 每行一个场景，关键行用 background 高亮 -->
+    <tr style="background:#f0fdf4;">
+      <td style="font-weight:700;color:#15803d;">①</td>
+      <td style="font-weight:600;">{{SCENARIO_NAME}}</td>
+      <td>{{SIDE_A_ACTION}}</td>
+      <td style="color:#94a3b8;">{{MIDDLEWARE_ACTION}}</td>
+      <td style="color:#94a3b8;">{{SIDE_B_ACTION}}</td>
+      <td>{{ONCHAIN_ACTION}}</td>
+    </tr>
+    <!-- 更多场景行 -->
+  </table>
+
+  <div class="co co-a mb">
+    <strong>{{RISK_SCENARIO}}是关键风险点：</strong>{{RISK_DESC}}
+  </div>
+  <div class="co co-v">
+    <strong>核心理解：</strong>{{CORE_UNDERSTANDING}}
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE TYPE G: 流程详解（Process Detail）
+     用途：某个关键流程的详细步骤拆解（增资/撤资/结算等）
+     典型组件：info grid(3列) + 步骤卡(.sn编号) + 前置条件卡 + callout
+     ══════════════════════════════════════════════════════════════ -->
+<div class="pw" id="t6"><div class="pg">
+  <h1>{{PAGE_TITLE}}</h1>
+  <div class="sub">{{ONE_LINE_SUMMARY}}</div>
+  <div class="rl"></div>
+
+  <!-- 关键实体信息（3列 grid） -->
+  <div class="st">🔑 {{ENTITY_TITLE}}</div>
+  <div style="padding:16px;border-radius:8px;border:2px solid #dc2626;background:#fef2f2;margin-bottom:18px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#b91c1c;margin-bottom:4px;">{{INFO_A_LABEL}}</div>
+        <div style="font-size:11px;color:#334155;line-height:1.7;">{{INFO_A_CONTENT}}</div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#b91c1c;margin-bottom:4px;">{{INFO_B_LABEL}}</div>
+        <div style="font-size:11px;color:#334155;line-height:1.7;">{{INFO_B_CONTENT}}</div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#b91c1c;margin-bottom:4px;">{{INFO_C_LABEL}}</div>
+        <div style="font-size:11px;color:#334155;line-height:1.7;">{{INFO_C_CONTENT}}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 正常流程 + 异常/前置条件（.fx 双列） -->
+  <div class="st">📥 {{PROCESS_TITLE}}</div>
+  <div class="fx mb2">
+    <div class="cd" style="background:#f0fdf4;border:2px solid #86efac;">
+      <div style="font-size:12px;font-weight:700;color:#15803d;margin-bottom:6px;">正常流程</div>
+      <div style="font-size:11px;color:#334155;line-height:1.9;">
+        <span class="sn sn-g">1</span> {{STEP_1}}<br>
+        <span class="sn sn-g">2</span> {{STEP_2}}<br>
+        <span class="sn sn-g">3</span> {{STEP_3}}<br>
+      </div>
+    </div>
+    <div class="cd" style="background:#fef2f2;border:1px solid #fecaca;">
+      <div style="font-size:12px;font-weight:700;color:#b91c1c;margin-bottom:6px;">异常/拒绝</div>
+      <div style="font-size:11px;color:#334155;line-height:1.9;">
+        <span class="sn sn-r">!</span> {{REJECT_CASE_1}}<br>
+        <span class="sn sn-r">!</span> {{REJECT_CASE_2}}<br>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE TYPE H: 机制/模式对比（Mechanism / Modes）
+     用途：结算/风控/触发等多种机制的并排对比
+     典型组件：3列模式卡(带Phase标签) + 公式框 + 流程步骤grid + callout
+     ══════════════════════════════════════════════════════════════ -->
+<div class="pw" id="t7"><div class="pg">
+  <h1>{{PAGE_TITLE}}</h1>
+  <div class="sub">{{ONE_LINE_SUMMARY}}</div>
+  <div class="rl"></div>
+
+  <div class="st">🔄 {{MODES_TITLE}}</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px;">
+    <div class="cd" style="background:#f5f3ff;border:2px solid #c4b5fd;">
+      <div style="font-size:13px;font-weight:700;color:#6d28d9;margin-bottom:6px;">{{MODE_A}} <span class="tg tg-p">{{PHASE_TAG}}</span></div>
+      <div style="font-size:11px;color:#334155;line-height:1.7;">{{MODE_A_DETAIL}}</div>
+    </div>
+    <div class="cd" style="background:#fef2f2;border:2px solid #fca5a5;">
+      <div style="font-size:13px;font-weight:700;color:#b91c1c;margin-bottom:6px;">{{MODE_B}} <span class="tg tg-c">{{PHASE_TAG}}</span></div>
+      <div style="font-size:11px;color:#334155;line-height:1.7;">{{MODE_B_DETAIL}}</div>
+    </div>
+    <div class="cd" style="background:#ecfeff;border:2px solid #22d3ee;">
+      <div style="font-size:13px;font-weight:700;color:#0e7490;margin-bottom:6px;">{{MODE_C}} <span class="tg tg-n">{{PHASE_TAG}}</span></div>
+      <div style="font-size:11px;color:#334155;line-height:1.7;">{{MODE_C_DETAIL}}</div>
+    </div>
+  </div>
+
+  <!-- 公式框 -->
+  <div class="st">📐 {{FORMULA_TITLE}}</div>
+  <div style="padding:14px;border-radius:8px;border:2px solid #c4b5fd;background:#f5f3ff;margin-bottom:16px;font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:2;color:#5b21b6;">
+    <strong>{{FORMULA}}</strong><br>
+    <span style="color:#64748b;font-family:'Noto Sans SC';font-size:11px;">{{FORMULA_EXPLAIN}}</span>
+  </div>
+
+  <!-- 流程步骤（横向 grid，6步） -->
+  <div class="st">📋 {{FLOW_STEPS_TITLE}}</div>
+  <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:16px;">
+    <div class="cd" style="background:#f5f3ff;border:1px solid #c4b5fd;text-align:center;font-size:10px;line-height:1.5;padding:10px 6px;">
+      {{ICON}}<br><strong style="color:#6d28d9;">{{STEP_NAME}}</strong><br>{{STEP_DESC}}
+    </div>
+    <!-- 5 more -->
+  </div>
+
+  <div class="co co-a">
+    <strong>特殊场景：</strong>{{EDGE_CASES}}
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE TYPE I: 风控/告警表（Risk & Alert Table）
+     用途：告警规则全表 + 关键参数卡片
+     典型组件：告警表(带适配标签) + 参数grid(3列) + callout
+     ══════════════════════════════════════════════════════════════ -->
+<!-- 结构同 TYPE F 的表格 + TYPE C 的参数 grid，按需组合 -->
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE TYPE J: 风险分析 / 容灾方案（Risk Analysis）
+     用途：展示核心矛盾 + 多种容灾方案 + 推荐组合 + 极端场景
+     典型组件：矛盾高亮框 + 方案grid(2×2) + 推荐组合表 + 极端场景卡(.fx) + callout
+     ══════════════════════════════════════════════════════════════ -->
+<!-- 结构：红色大框(矛盾) + 2×2 grid(.cd 带 Phase 标签) + table(推荐组合) + .fx(极端场景) + .co-r -->
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE TYPE K: 定量测算（Quantitative Analysis）
+     用途：保证金/收益/成本等需要数字测算的页面
+     典型组件：核心问题grid(3列居中) + 锚点信息grid + 公式框 + 场景表 + 动态调整表 + callout
+     ══════════════════════════════════════════════════════════════ -->
+<!-- 结构：3列问题卡 + sec分隔线 + 锚点grid + 公式框(.f5f3ff) + 场景table + .co-a(不是一次性) + .co-g(启动方案) -->
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE TYPE L: Phase 路线图（Roadmap）
+     用途：分阶段展示实施计划
+     典型组件：Phase 大卡(带工期标签) + 3列内容(范围/我方/对方) + callout(交付标准)
+     ══════════════════════════════════════════════════════════════ -->
+<div class="pw" id="tN"><div class="pg">
+  <h1>Phase 路线图</h1>
+  <div class="sub">{{ONE_LINE_SUMMARY}}</div>
+  <div class="rl"></div>
+
+  <!-- Phase 卡片（重复 2-4 个，颜色递进：绿→蓝→紫） -->
+  <div class="cd mb" style="background:#f0fdf4;border:2px solid #22c55e;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div style="font-size:15px;font-weight:900;color:#15803d;">Phase 1 · {{PHASE_TITLE}}</div>
+      <div style="font-size:11px;font-weight:600;color:#15803d;padding:3px 10px;background:#dcfce7;border-radius:4px;">{{DURATION}}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+      <div><div style="font-size:11px;font-weight:700;color:#334155;margin-bottom:3px;">范围</div><div style="font-size:10.5px;color:#64748b;line-height:1.7;">{{SCOPE}}</div></div>
+      <div><div style="font-size:11px;font-weight:700;color:#334155;margin-bottom:3px;">{{OUR_SIDE}} 做</div><div style="font-size:10.5px;color:#64748b;line-height:1.7;">{{OUR_TASKS}}</div></div>
+      <div><div style="font-size:11px;font-weight:700;color:#334155;margin-bottom:3px;">{{THEIR_SIDE}} 做</div><div style="font-size:10.5px;color:#64748b;line-height:1.7;">{{THEIR_TASKS}}</div></div>
+    </div>
+  </div>
+  <!-- Phase 2: background:#eff6ff;border:2px solid #3b82f6; 蓝色系 -->
+  <!-- Phase 3: background:#f5f3ff;border:1px solid #c4b5fd; 紫色系 -->
+
+  <div class="co co-g">
+    <strong>Phase 1 交付标准：</strong>{{DELIVERY_CRITERIA}}
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE TYPE M: 待确认清单（Checklist / Action Items）
+     用途：方案最后一页，分组列出需要确认的问题
+     典型组件：分组标签 + 问题表(带编号和重要性) + 话术框 + callout
+     ══════════════════════════════════════════════════════════════ -->
+<div class="pw" id="tLAST"><div class="pg">
+  <h1>待确认清单</h1>
+  <div class="sub">{{ONE_LINE_SUMMARY}}</div>
+  <div class="rl"></div>
+
+  <!-- 分组标签（每组一个颜色） -->
+  <div style="font-size:12px;font-weight:700;color:#6d28d9;margin-bottom:6px;padding:5px 10px;background:#f5f3ff;border-radius:6px;border:2px solid #c4b5fd;">🔐 {{GROUP_A_NAME}}（{{GROUP_A_NOTE}}）</div>
+  <table class="mb">
+    <tr><th style="width:32px;">#</th><th>问题</th><th style="width:180px;">为什么重要</th></tr>
+    <tr style="background:#f0fdf4;"><td style="font-weight:700;color:#b91c1c;font-size:13px;">T1</td><td><strong style="color:#b91c1c;">{{MOST_CRITICAL_QUESTION}}</strong></td><td style="color:#b91c1c;font-weight:600;">{{WHY_CRITICAL}}</td></tr>
+    <tr><td style="font-weight:700;color:#6d28d9;">T2</td><td>{{QUESTION}}</td><td>{{WHY}}</td></tr>
+    <!-- 更多行 -->
+  </table>
+
+  <!-- 第二组 -->
+  <div style="font-size:12px;font-weight:700;color:#b91c1c;margin-bottom:6px;padding:5px 10px;background:#fef2f2;border-radius:6px;border:1px solid #fecaca;">🛡 {{GROUP_B_NAME}}</div>
+  <table class="mb">
+    <tr><th style="width:32px;">#</th><th>问题</th></tr>
+    <!-- 行 -->
+  </table>
+
+  <!-- 话术框 -->
+  <div class="st">🎤 {{PITCH_TITLE}}</div>
+  <div style="padding:14px;border-radius:8px;border:2px solid #0f172a;background:#f8fafc;margin-bottom:14px;font-size:12px;line-height:1.9;color:#334155;">
+    <strong style="color:#0f172a;">{{PITCH_CONTENT}}</strong>
+  </div>
+
+  <div class="co co-r">
+    <strong>{{FINAL_ACTION_LABEL}}：</strong>{{FINAL_ACTION}}
+  </div>
+</div></div>
+
+
+<!-- ═══ Tab Switching Script（不需要修改） ═══ -->
+<script>
+function sw(i){
+  document.querySelectorAll('.t').forEach((t,j)=>t.classList.toggle('a',j===i));
+  document.querySelectorAll('.pw').forEach(p=>p.classList.remove('a'));
+  var el=document.getElementById('t'+i);
+  if(el)el.classList.add('a');
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>

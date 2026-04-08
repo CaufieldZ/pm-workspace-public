@@ -1,0 +1,16 @@
+node_modules/
+.vscode/
+.DS_Store
+*.bak
+/tmp/
+__pycache__/
+.claude/settings.local.json
+.mcp.json
+projects/
+diagnostic-dump.md
+/references/
+.claude/rules/soul.md
+.markdownlint.json
+deliverables/
+package-lock.json
+.claude/skills/docx/scripts/office/schemas/

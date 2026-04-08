@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# 防腐化 hook：Skill/规则文件变更时自动跑轻量审计
+# 激活方式：git config core.hooksPath .githooks
+
+CHANGED=$(git diff --cached --name-only --diff-filter=ACMR)
+
+NEEDS_AUDIT=false
+echo "$CHANGED" | grep -qE '^\.claude/skills/|^\.claude/rules/|^CLAUDE\.md$' && NEEDS_AUDIT=true
+
+if [ "$NEEDS_AUDIT" = false ]; then
+  exit 0
+fi
+
+echo "🔍 检测到 Skill/规则文件变更，运行防腐化审计..."
+echo ""
+
+bash .claude/skills/workspace-audit/references/audit.sh 1,2,3,4,7
+
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "❌ 审计不通过，commit 被拦截。请修复后重新 commit。"
+  exit 1
+fi
+
+echo ""
+echo "✅ 审计通过"
+exit 0

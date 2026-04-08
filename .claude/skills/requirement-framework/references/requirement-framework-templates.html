@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{项目名}} · 需求框架</title>
+<!-- CSS 已抽离至 requirement-framework.css，骨架通过 open().read() 拼接，此处不重复 -->
+</head>
+<body>
+
+<!-- ╔══════════════════════════════════════════════════╗
+     ║  区块 1：顶部 Header                              ║
+     ║  - h1 = 项目名 · 文档阶段（如"二、需求框架"）        ║
+     ║  - sub = 核心模块关键词罗列 ｜ 版本号 ｜ 作者        ║
+     ╚══════════════════════════════════════════════════╝ -->
+<div class="hd">
+  <h1>{{项目名}} · {{文档阶段编号}}、需求框架</h1>
+  <div class="sub">{{模块关键词1}} + {{模块关键词2}} + {{模块关键词3}} + … ｜ V{{版本号}} ｜ {{作者}}</div>
+</div>
+
+<div class="wrap">
+
+<!-- ╔══════════════════════════════════════════════════╗
+     ║  区块 2：项目概览卡片组                             ║
+     ║  - 固定 3 张卡片：涉及平台、需求模块数、优先级分布    ║
+     ║  - val = 大数字/核心指标                            ║
+     ║  - desc = 对 val 的拆解说明                         ║
+     ╚══════════════════════════════════════════════════╝ -->
+<div class="st"><h2>项目概览</h2></div>
+<div class="summary">
+  <div class="scard">
+    <div class="label">涉及平台</div>
+    <div class="val">{{N}}</div>
+    <div class="desc">{{逐个列出平台及其职责}}</div>
+  </div>
+  <div class="scard">
+    <div class="label">需求模块</div>
+    <div class="val">{{N}}</div>
+    <div class="desc">{{按模块列出子项数量，如：模块A x · 模块B y · …}}</div>
+  </div>
+  <div class="scard">
+    <div class="label">优先级分布</div>
+    <div class="val" style="font-size:16px;">P0×{{n}} · P1×{{n}} · 后续×{{n}}</div>
+    <div class="desc">{{P0 涵盖哪些模块，为什么是 P0 的一句话理由}}</div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════╗
+     ║  区块 3：需求框架明细表                             ║
+     ║  固定 5 列：# / 所属模块 / 所属平台 / 大致描述 / 优先级║
+     ║                                                    ║
+     ║  结构规则：                                         ║
+     ║  ① 模块用大写字母编号 A/B/C/…                       ║
+     ║  ② 每个模块先插一行 .mod-group 彩色标题行            ║
+     ║     颜色 4 种轮换：默认蓝 → .green → .amber → .red ║
+     ║  ③ 标题行下跟该模块的需求行，编号 = 模块字母+序号     ║
+     ║     如 A1, A2, B1, B2…                             ║
+     ║  ④ 平台标签用 .plat.app / .plat.web / .plat.srv    ║
+     ║     / .plat.cms，可组合                             ║
+     ║  ⑤ 优先级用 .pri.p0 / .pri.p1 / .pri.p2 / .pri.later ║
+     ║  ⑥ 新增/版本变更项加 .tag-new 或 .tag-v2 标签       ║
+     ╚══════════════════════════════════════════════════╝ -->
+<div class="st"><h2>需求框架明细</h2></div>
+<table>
+  <thead>
+    <tr>
+      <th style="width:36px;">#</th>
+      <th style="width:140px;">所属模块</th>
+      <th style="width:120px;">所属平台</th>
+      <th>大致描述</th>
+      <th style="width:80px;">期望优先级</th>
+    </tr>
+  </thead>
+  <tbody>
+
+    <!-- ═══ 模块 A（默认蓝色）═══ -->
+    <tr class="mod-group"><td colspan="5">A · {{模块A名称}}</td></tr>
+    <tr>
+      <td>A1</td>
+      <td>{{子模块名}}</td>
+      <td><span class="plat app">App</span>端</td>
+      <td>{{一句话描述该需求点的核心动作和规则}}</td>
+      <td><span class="pri p0">P0</span></td>
+    </tr>
+    <tr>
+      <td>A2</td>
+      <td>{{子模块名}}</td>
+      <td><span class="plat app">App</span><span class="plat srv">后端</span></td>
+      <td>{{描述}}</td>
+      <td><span class="pri p0">P0</span></td>
+    </tr>
+
+    <!-- ═══ 模块 B（绿色）═══ -->
+    <tr class="mod-group green"><td colspan="5">B · {{模块B名称}}</td></tr>
+    <tr>
+      <td>B1</td>
+      <td>{{子模块名}}</td>
+      <td><span class="plat app">App</span>端</td>
+      <td>{{描述}}</td>
+      <td><span class="pri p0">P0</span></td>
+    </tr>
+
+    <!-- ═══ 模块 C（默认蓝色）═══ -->
+    <tr class="mod-group"><td colspan="5">C · {{模块C名称}}</td></tr>
+    <tr>
+      <td>C1</td>
+      <td>{{子模块名}}</td>
+      <td><span class="plat app">App</span>端</td>
+      <td>{{描述}}</td>
+      <td><span class="pri p1">P1</span></td>
+    </tr>
+
+    <!-- ═══ 模块 D（琥珀色）═══ -->
+    <tr class="mod-group amber"><td colspan="5">D · {{模块D名称}} <span class="tag-v2">V2</span></td></tr>
+    <tr>
+      <td>D1</td>
+      <td>{{子模块名}}</td>
+      <td><span class="plat srv">后端</span><span class="plat app">App</span>端</td>
+      <td>{{描述}}</td>
+      <td><span class="pri p0">P0</span></td>
+    </tr>
+
+    <!-- ═══ 模块 E（红色）═══ -->
+    <tr class="mod-group red"><td colspan="5">E · {{模块E名称}}</td></tr>
+    <tr>
+      <td>E1</td>
+      <td>{{子模块名}}</td>
+      <td><span class="plat cms">Web</span>CMS 管理台</td>
+      <td>{{描述}}</td>
+      <td><span class="pri p0">P0</span></td>
+    </tr>
+
+    <!--
+      继续按需添加模块 F / G / H / …
+      颜色轮换规则（4 色循环）：默认蓝 → .green → .amber → .red → 默认蓝 → …
+      根据模块数量自然轮换即可，不必严格周期
+    -->
+
+    <!-- ═══ 末尾模块：后续迭代方向（固定放最后）═══ -->
+    <tr class="mod-group"><td colspan="5">{{末字母}} · 后续迭代方向</td></tr>
+    <tr>
+      <td>{{末字母}}1</td>
+      <td>{{迭代方向1}}</td>
+      <td><span class="plat app">App</span>端</td>
+      <td>{{描述}}</td>
+      <td><span class="pri later">后续迭代</span></td>
+    </tr>
+
+  </tbody>
+</table>
+
+<!-- ╔══════════════════════════════════════════════════╗
+     ║  区块 4：底部 Callout 组                           ║
+     ║  固定 3 条，顺序不变：                              ║
+     ║  ① 蓝色 .co.bl = 平台说明（各平台职责解释）         ║
+     ║  ② 绿色 .co.gn = 优先级说明（P0/P1/后续定义）       ║
+     ║  ③ 琥珀色 .co.am = 版本变更说明（V2 vs V1 差异）    ║
+     ║  首版无版本变更时，③ 改为"开放问题 / 待确认项"       ║
+     ╚══════════════════════════════════════════════════╝ -->
+<div class="co bl">
+  <b>平台说明</b> —
+  <span class="plat app" style="vertical-align:middle;">App</span> 端 = {{App端职责描述}}；
+  <span class="plat cms" style="vertical-align:middle;">Web</span> CMS 管理台 = {{CMS职责描述}}；
+  <span class="plat srv" style="vertical-align:middle;">后端</span> = {{后端服务职责描述}}。
+</div>
+
+<div class="co gn">
+  <b>优先级说明</b> —
+  <span class="pri p0">P0</span> {{P0 定义：哪些模块构成最小闭环，缺一不可的理由}}；
+  <span class="pri p1">P1</span> {{P1 定义：增强能力但不阻塞核心链路}}；
+  <span class="pri later">后续迭代</span> {{后续定义：依赖 V1 数据验证的方向}}。
+</div>
+
+<div class="co am">
+  <b>V{{版本号}} 相对 V{{上一版本号}} 的变化</b> —
+  ① {{变更点1}}；
+  ② {{变更点2}}；
+  ③ {{变更点3}}。
+  <!-- 首版（V1.0）无历史对比时，替换为：
+  <b>开放问题 / 待确认项</b> —
+  ① {{待确认项1}}；② {{待确认项2}}；…
+  -->
+</div>
+
+</div>
+</body>
+</html>
