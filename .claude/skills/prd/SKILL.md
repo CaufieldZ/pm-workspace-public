@@ -209,9 +209,47 @@ PRD 不是一口气写完再审。每完成一个核心区块后暂停，以 QC 
 3. **引用要闭环**：提到其他场景时用 `→ 见 [编号]`，确保编号存在
 4. **枚举要穷举**：所有下拉选项、状态值、业务线等在业务规则章节完整列出
 5. **数值要量化**：目标、阈值、限制都用具体数字，不用「若干」「多个」
-6. **截图占位符**：左列固定为截图占位，写 `← 此处粘贴原型截图`
+6. **截图自动插入**：左列通过 Playwright 截图 + python-docx 自动插入，不留占位符交付（见 Step 4）
 7. **平台差异要说明**：Web/App/后台有差异时分别描述
 8. **组件复用表**：跨 View 复用的组件在业务规则章节用矩阵表标注
+
+## Step 4：原型截图插入（docx 产出时必做）
+
+PRD 两列表格左列的「← 此处粘贴原型截图」必须替换为真实截图，不允许交付占位符。
+
+**流程**：Playwright 打开原型 HTML → 切换到目标视图/Tab → 元素级截图 → python-docx 插入到对应 Table 左列 cell。
+
+**截图脚本**（Node.js，依赖 `playwright`）：
+```
+projects/{项目}/scripts/screenshot_for_prd.js
+```
+
+**插入脚本**（Python，依赖 `python-docx`）：
+```
+projects/{项目}/scripts/insert_screenshots_to_prd.py
+```
+
+**截图规范**：
+- viewport: 1440x900, deviceScaleFactor: 2（Retina）
+- Web/MGT 视图：截对应容器元素（`#acDeviceWeb` / `#czDeviceWeb` / `#mgt-view`）
+- App 视图：只截手机壳（`.app-shell`），不截外层容器
+- 抽屉/弹窗：先触发 JS 打开，再截父容器
+- MGT 各子页：通过 `swPage()` / `swView()` 切换后截图
+- 截图存放：`projects/{项目}/screenshots/prd/`
+- **浮层清理（强制）**：每次切换视图前 + 每次截图前，必须调用 `dismissAllOverlays()` 清除所有 `position: fixed` 浮层（drawer / modal / overlay / sheet），用 `el.style.display='none'` 强制隐藏，仅 `classList.remove('show')` 不够（JS 副作用可能重新触发）
+
+**插入规范**：
+- 前端 Scene 截图宽度 7.0cm，App 截图 5.0cm
+- Table 索引与 PRD 结构对应（Table 5 起为 Scene 表格，按章节顺序）
+- M-7 同步逻辑无独立视图时复用 M-1 截图
+
+**已有项目复用**：先检查 `projects/{项目}/scripts/` 下是否已有 `screenshot_for_prd.js` + `insert_screenshots_to_prd.py`，有则复用修改，无则新写。
+
+**依赖安装**：
+```bash
+npm init playwright@latest   # 首次安装
+npx playwright install chromium
+```
 
 ## 自检清单
 
@@ -221,6 +259,9 @@ PRD 不是一口气写完再审。每完成一个核心区块后暂停，以 QC 
 - [ ] 所有 `→ 见 [编号]` 跳转编号存在
 - [ ] 枚举值、状态名穷举完整
 - [ ] 变更项已在 1.3 核心变更汇总
+- [ ] 两列表格左列全部为真实截图，无「此处粘贴」占位符残留
+- [ ] App 截图为手机壳级别（`.app-shell`），非全屏容器
+- [ ] MGT 截图无浮层/弹窗/遮罩泄露（逐张目视确认）
 
 **强制验证脚本**（自检最后一步，不可跳过）：
 ```bash

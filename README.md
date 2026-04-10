@@ -201,7 +201,7 @@ PRD ─────┼─→ page-structure ─→ Design AI (Frontend AI)
 pm-workspace/
 ├── CLAUDE.md                  # Claude Code 项目指令入口
 ├── .githooks/pre-commit       # 防腐化 hook
-├── requirements.txt           # Python 依赖（python-docx）
+├── requirements.txt           # Python 依赖（python-docx, playwright）
 ├── package.json               # Node.js 依赖（docx）
 ├── scripts/                   # 公共验证脚本
 │   ├── check_html.sh          #   HTML 产出物自检

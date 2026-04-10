@@ -216,6 +216,16 @@ columnWidths: [7000, 2360]  // Must sum to table width
 - **Override built-in styles** - use exact IDs: "Heading1", "Heading2", etc.
 - **Include `outlineLevel`** - required for TOC (0 for H1, 1 for H2, etc.)
 
+### python-docx 编辑规范
+
+用 `python-docx` 修改已有 docx 时（拆分章节、改标题、改元数据等）：
+
+- **禁止 `p.text = xxx`** — 会清掉所有 run 的 bold/size/font/color 格式
+- **正确写法**：`p.runs[0].text = new_text`（保留第一个 run 的格式，多余 run 先 remove）
+- **表格单元格同理**：`cell.paragraphs[0].runs[0].text = new_text`
+- **删除章节**：按 Heading 1 style 定位边界 → `doc.element.body.remove(el)` 逐个移除
+- **拆分后必须验证**：标题 bold/size/alignment 是否保留、元数据表内容是否更新
+
 ---
 
 ## Editing Existing Documents

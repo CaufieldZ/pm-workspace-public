@@ -186,6 +186,39 @@ body{font-family:'Noto Sans SC','DM Sans',sans-serif;background:var(--bg);color:
 .pipe-arrow::after{content:'▼';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);font-size:8px;color:var(--t3);}
 .pipe-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
 
+/* ===== HERO PAGE · 呼吸页 ===== */
+.page-hero{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 160px);text-align:center;padding:80px 40px;}
+.page-hero .hero-headline{font-size:42px;font-weight:900;letter-spacing:-.04em;line-height:1.15;margin-bottom:16px;max-width:700px;}
+.page-hero .hero-sub{font-size:16px;color:var(--t2);line-height:1.8;max-width:520px;font-weight:400;}
+.page-hero .hero-accent{display:inline-block;padding:6px 18px;border-radius:8px;font-size:13px;font-weight:700;margin-bottom:24px;}
+
+/* ===== DIVIDER PAGE · 分隔页 ===== */
+.page-split{display:flex;align-items:center;min-height:calc(100vh - 160px);padding:60px 48px;gap:40px;}
+.page-split .split-num{font-size:72px;font-weight:900;font-family:'JetBrains Mono',monospace;line-height:1;opacity:.15;flex-shrink:0;}
+.page-split .split-title{font-size:28px;font-weight:900;letter-spacing:-.03em;margin-bottom:10px;}
+.page-split .split-desc{font-size:15px;color:var(--t2);line-height:1.8;max-width:600px;}
+
+/* ===== HORIZONTAL FLOW · 横向时间线 ===== */
+.flow-h{display:flex;align-items:stretch;gap:0;margin:24px 0;overflow-x:auto;padding-bottom:8px;}
+.flow-h-step{flex:1;min-width:140px;padding:20px 16px;background:var(--surface);border:1px solid var(--border2);position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;}
+.flow-h-step:first-child{border-radius:12px 0 0 12px;}
+.flow-h-step:last-child{border-radius:0 12px 12px 0;}
+.flow-h-step:not(:last-child)::after{content:'';position:absolute;right:-1px;top:50%;transform:translateY(-50%);width:0;height:0;border:8px solid transparent;border-left-color:var(--border);z-index:2;}
+.flow-h-step .fh-num{width:28px;height:28px;border-radius:14px;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;flex-shrink:0;}
+.flow-h-step .fh-label{font-size:13px;font-weight:700;color:var(--t1);}
+.flow-h-step .fh-desc{font-size:11px;color:var(--t3);line-height:1.5;font-weight:500;}
+.flow-h-step.active{background:var(--blue-bg);border-color:rgba(56,139,253,.3);}
+.flow-h-step.done{background:var(--green-bg);border-color:rgba(63,185,80,.3);}
+
+/* ===== EXTRACTED UTILITIES ===== */
+.icon-box{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.flow-chip{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:var(--surface2);border-radius:8px;font-size:12px;font-weight:600;}
+.stat-card{text-align:center;padding:24px 16px;}
+.stat-card .stat-val{font-size:36px;font-weight:900;font-family:'JetBrains Mono','DM Sans',sans-serif;letter-spacing:-.02em;}
+.stat-card .stat-lbl{font-size:12px;color:var(--t2);margin-top:6px;font-weight:500;}
+.quote-block{font-size:18px;font-weight:600;color:var(--t2);line-height:1.8;padding:32px 0;text-align:center;font-style:italic;max-width:600px;margin:0 auto;}
+.quote-block em{color:var(--blue);font-style:normal;font-weight:800;}
+
 /* ===== MISC ===== */
 .divider{height:1px;background:var(--border2);margin:24px 0;}
 code{background:var(--surface2);padding:2px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue);}

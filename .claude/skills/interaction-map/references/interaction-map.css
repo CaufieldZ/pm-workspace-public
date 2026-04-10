@@ -364,7 +364,7 @@ body {
 
 /* Phone 下方流程说明 */
 .flow-note {
-  font-size: 11px; color: var(--text3); text-align: center;
+  font-size: 12px; color: var(--text2); text-align: center;
   margin-top: 10px; max-width: 375px; line-height: 1.6;
   padding: 0 8px;
 }
@@ -451,8 +451,8 @@ body {
 
 /* Tag 标签 */
 .ann-tag {
-  display: inline-block; padding: 1px 7px;
-  border-radius: 4px; font-size: 9px;
+  display: inline-block; padding: 2px 8px;
+  border-radius: 4px; font-size: 10px;
   font-weight: 800; letter-spacing: .3px;
 }
 .ann-tag.new { background: #dcfce7; color: #15803d; }
@@ -469,27 +469,23 @@ body {
   width: 80px; flex-shrink: 0; align-self: center;
 }
 .aw .al {
-  width: 100%; height: 3px; border-radius: 2px;
-  position: relative;
-}
-.aw .al::after {
-  content: ''; position: absolute; right: -1px; top: -4px;
-  border: 5px solid transparent;
+  width: 100%; height: 14px;
+  clip-path: polygon(
+    0 35%, calc(100% - 10px) 35%,
+    calc(100% - 10px) 0, 100% 50%,
+    calc(100% - 10px) 100%, calc(100% - 10px) 65%,
+    0 65%
+  );
 }
 /* 箭头颜色 */
 .aw .al.b { background: var(--blue); }
-.aw .al.b::after { border-left-color: var(--blue); }
 .aw .al.g { background: var(--green); }
-.aw .al.g::after { border-left-color: var(--green); }
 .aw .al.r { background: var(--red); }
-.aw .al.r::after { border-left-color: var(--red); }
 .aw .al.p { background: var(--purple); }
-.aw .al.p::after { border-left-color: var(--purple); }
 .aw .al.a { background: var(--amber); }
-.aw .al.a::after { border-left-color: var(--amber); }
 /* 箭头文字 */
 .aw .tx {
-  font-size: 10px; font-weight: 700; white-space: nowrap;
+  font-size: 11px; font-weight: 700; white-space: nowrap;
   margin-top: 5px; text-align: center; line-height: 1.4;
 }
 .aw .tx.b { color: var(--blue); }

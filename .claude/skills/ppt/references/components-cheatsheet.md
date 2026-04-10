@@ -41,6 +41,79 @@
   <div class="pipe-node">...</div>
 </div>
 ```
+- 适合 ≥5 步流程
+- 与 `.flow-h` 交替使用，避免全文都是竖向 pipe
+
+### `.flow-h` — 横向时间线
+
+```html
+<div class="flow-h">
+  <div class="flow-h-step">
+    <div class="fh-num" style="background:var(--blue-bg);color:var(--blue);">1</div>
+    <div class="fh-label">步骤标题</div>
+    <div class="fh-desc">简短描述</div>
+  </div>
+  <div class="flow-h-step active"><!-- 高亮当前步 -->...</div>
+  <div class="flow-h-step done"><!-- 已完成步 -->...</div>
+</div>
+```
+- 适合 ≤4 步流程、依赖链展示
+- 首尾自动圆角，中间步骤间有 `::after` 三角箭头
+- `.active` = 蓝色高亮，`.done` = 绿色高亮
+
+### `.page-hero` — 呼吸页
+
+```html
+<div class="page-hero">
+  <div class="hero-accent" style="background:var(--blue-bg);color:var(--blue);">标签文字</div>
+  <div class="hero-headline">大标题<br><span class="text-blue">高亮词</span></div>
+  <div class="hero-sub">副标题描述，一两句话。</div>
+</div>
+```
+- 垂直居中，大量留白，用于首页开场或章节金句
+- 每 4-6 个内容页之间应插入一个
+
+### `.page-split` — 分隔带
+```html
+<div class="page-split">
+  <div class="split-num text-blue">01</div>
+  <div class="split-body">
+    <div class="split-title">Part 标题</div>
+    <div class="split-desc">一句话描述这个 Part 讲什么。</div>
+  </div>
+</div>
+```
+- 编号超大半透明 + 右侧标题，打破内容页的节奏
+- 用在 Part/Track 之间的转场
+
+### `.stat-card` — 数字统计卡
+
+```html
+<div class="card stat-card">
+  <div class="stat-val text-green">2 min</div>
+  <div class="stat-lbl">场景清单</div>
+</div>
+```
+- 替代 `.hero-num` 的 inline style 写法
+- 搭配 `.grid3` 展示 3 个核心数字
+
+### `.quote-block` — 金句/引言块
+```html
+<div class="quote-block">
+  你的下游研发是<em>人在写代码</em>，还是 <em>AI 在写代码</em>？
+</div>
+```
+- 大字居中斜体，`<em>` 标签自动蓝色加粗高亮
+- 用于核心判断、分叉问题，替代塞进 `.note` 里的金句
+
+### `.icon-box` / `.flow-chip` — 通用 utility
+
+```html
+<div class="icon-box" style="background:var(--blue-bg);">📋</div>
+<span class="flow-chip">会议纪要</span>
+```
+- `.icon-box`: 44px 圆角图标容器，替代 inline 的 width+height+border-radius 组合
+- `.flow-chip`: 行内胶囊标签，替代 inline 的 padding+bg+border-radius 组合
 
 ## 内容组件
 
