@@ -1,11 +1,11 @@
 <!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
-name: screenshot-collector
+name: intel-collector
 description: >
-  当用户提到「截竞品」「竞品截图」「抓竞品页面」「capture competitor」时触发。
-  也在用户说「截 XX 的 YY」（XX 为任意交易所名）时触发。
-  即使用户只说「截一下」并指明平台也应触发。
-argument-hint: "平台 + 功能模块，如 binance 活动中心；可选 --web / --content"
+  当用户提到「截竞品」「竞品截图」「抓竞品页面」「抓情报」「采集 XX」「capture competitor」时触发。
+  也在用户说「截 XX 的 YY」「看看 XX 最近动态」「抓 XX 的报道」时触发。
+  即使用户只说「截一下」「抓一下」并指明平台或媒体也应触发。
+argument-hint: "平台/媒体 + 功能模块，如 binance 活动中心、coindesk 最新报道；可选 --web / --content"
 type: tool
 output_format: 目录
 output_prefix: —
@@ -15,14 +15,14 @@ consumed_by: [competitor-analysis]
 ---
 <!-- pm-ws-canary-236a5364 -->
 
-# 竞品截图采集 Skill（Screenshot Collector）
+# 情报采集 Skill（Intel Collector）
 
 ## 定位
 
-工具型 Skill，自动采集竞品交易所的 APP/Web 截图和公告内容，归档到 `references/competitors/{平台}/{模块}/`。
-是 competitor-analysis 的上游素材供给工具——先截图，再分析。
+工具型 Skill，自动采集竞品交易所的 APP/Web 截图、公告内容、以及 Crypto 媒体报道，归档到 `references/competitors/`。
+是 competitor-analysis 的上游素材供给工具——先采集，再分析。
 
-支持所有主流 Crypto 交易所（Binance、OKX、Gate、Bybit、MEXC、Bitget、Kucoin 等），平台列表不封闭。
+支持所有主流 Crypto 交易所（Binance、OKX、Gate、Bybit、MEXC、Bitget、Kucoin 等）及权威 Crypto 媒体（CoinDesk、The Block、BlockBeats、PANews 等），平台列表不封闭。
 
 ## 三种模式
 
@@ -57,7 +57,7 @@ mkdir -p references/competitors/{platform}/{module}/
 #### APP 模式
 
 ```bash
-python3 .claude/skills/screenshot-collector/references/capture.py \
+python3 .claude/skills/intel-collector/references/capture.py \
   --output-dir /tmp/captures-{timestamp}/
 ```
 

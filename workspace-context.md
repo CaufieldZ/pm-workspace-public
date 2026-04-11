@@ -95,7 +95,7 @@ pm-workspace/
 | prototype | pipeline | .html | proto- | [scene-list] | [prd] |
 | requirement-framework | pipeline | .html | rf- | [scene-list] | [interaction-map] |
 | scene-list | pipeline | .md | scene- | [] | [requirement-framework, architecture-diagrams, interaction-map, prototype, prd, behavior-spec, page-structure, test-cases, cross-check] |
-| screenshot-collector | tool | 目录 | — | [] | [competitor-analysis] |
+| intel-collector | tool | 目录 | — | [] | [competitor-analysis] |
 | workspace-audit | tool | 对话内 | — | [] | [] |
 | skill-creator | tool | 新目录 | — | [] | [] |
 | test-cases | pipeline | .md | tc- | [scene-list, prd] | [cross-check] |

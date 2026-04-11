@@ -13,4 +13,4 @@ package-lock.json
 .claude/settings.local.json
 
 # 登录态 cookies（含敏感凭证，不跟踪）
-.claude/skills/screenshot-collector/references/auth/
+.claude/skills/intel-collector/references/auth/
