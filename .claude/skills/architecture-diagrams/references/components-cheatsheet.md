@@ -321,7 +321,7 @@
 |------|------|--------|
 | Binance | BN | `#F0B90B` |
 | OKX | OK | `#000000` |
-| HTX | HT | `#2B3139` |
+| Platform C | PC | `#2B3139` |
 | Gate.io | GT | `#2354E6` |
 | Bybit | BB | `#F7A600` |
 | Ethereum | ET | `#627EEA` |

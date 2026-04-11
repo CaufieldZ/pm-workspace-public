@@ -30,20 +30,22 @@ consumed_by: [competitor-analysis]
 |------|--------|------|------|
 | APP | 「截竞品 XX YY」（默认） | iPhone 镜像 + screencapture | PNG 截图 |
 | Web | 「截竞品 XX YY --web」「截网页版」 | Playwright 桌面端全页截图 | PNG 截图 |
-| Content | 「截竞品 XX 最新公告」「看看 XX 最近活动」 | Firecrawl MCP | Markdown + 可选截图 |
+| Content | 「截竞品 XX 最新公告」「看看 XX 最近活动」「抓 XX 媒体报道」 | Firecrawl MCP | Markdown + 可选截图 |
 
 ## 执行步骤
 
 ### Step 1: 确认采集目标
 
 问用户两个问题（如果参数未提供）：
-1. **平台**：哪个交易所？（不给固定选项，用户说什么就是什么）
-2. **模块**：哪个功能模块？（如：活动中心、社区、earn、直播间等）
+1. **平台**：哪个交易所或媒体？（不给固定选项，用户说什么就是什么）
+2. **模块**：哪个功能模块或内容类型？（如：活动中心、社区、earn、直播间、新闻、访谈等）
 
 确定模式：
 - 默认 APP 模式
 - 用户说 `--web` / 「网页版」→ Web 模式
-- 用户说「公告」「活动列表」「最近动态」→ Content 模式
+- 用户说「公告」「活动列表」「最近动态」「媒体报道」「访谈」「新功能讲解」→ Content 模式
+
+> **媒体源**：url-registry.json 的 `_media` 分区收录了 CoinDesk / The Block / CoinTelegraph / Decrypt / BlockBeats / PANews / Foresight News / ChainCatcher / Odaily / 吴说区块链 等权威 Crypto 媒体。用户说「抓 XX 的报道」「看看 XX 媒体怎么说」时，从 `_media` 查 URL。
 
 创建目标目录（如不存在）：
 ```bash
@@ -93,10 +95,14 @@ npx playwright screenshot --load-storage=references/auth/{platform}.json --viewp
 
 #### Content 模式
 
-1. 读取 `references/url-registry.json` 查找公告/活动页 URL
+1. 读取 `references/url-registry.json` 查找 URL
+   - 交易所公告/活动 → 从对应平台分区查找
+   - Crypto 媒体 → 从 `_media` 分区查找（key 格式 `{媒体名}-{栏目}`）
 2. 调 `firecrawl_scrape`（markdown 格式）提取列表
 3. 解析标题、日期、链接
-4. 保存为 `references/competitors/{platform}/announcements/YYYY-MM.md`
+4. 保存位置：
+   - 交易所内容 → `references/competitors/{platform}/announcements/YYYY-MM.md`
+   - 媒体内容 → `references/competitors/_media/{媒体名}/YYYY-MM.md`
 
 ### Step 3: Vision 过滤 + 自动命名（APP/Web 模式）
 
@@ -155,7 +161,7 @@ npx playwright screenshot --load-storage=references/auth/{platform}.json --viewp
 - [ ] 临时文件已清理
 - [ ] 非竞品截图已跳过（APP 模式）
 - [ ] url-registry.json 已追加新 URL（Web/Content 模式，如有新增）
-- [ ] Content 模式产出存入 `references/competitors/{platform}/announcements/YYYY-MM.md`
+- [ ] Content 模式产出存入正确目录（交易所 → `{platform}/announcements/`，媒体 → `_media/{媒体名}/`）
 
 ## Troubleshooting
 
