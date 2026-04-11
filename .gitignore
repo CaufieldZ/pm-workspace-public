@@ -11,3 +11,6 @@ package-lock.json
 # 本机配置（含密钥或机器级设置，不跟踪）
 .mcp.json
 .claude/settings.local.json
+
+# 登录态 cookies（含敏感凭证，不跟踪）
+.claude/skills/screenshot-collector/references/auth/

@@ -9,8 +9,6 @@
 
 > 分界原则：本文件只放「跟 Claude Code 工具绑定」的操作规则（换 Cursor 就不适用的）。PM 方法论、业务规则、链路定义全部在 pm-workflow.md。唯一例外：context.md 只读规则放在本文件以确保模型启动时第一时间遵守。
 
-【禁止后台代理】不要使用 Background Agent/子代理/并行代理。所有任务在当前 session 串行执行。
-
 【并行读取】收到产出物指令时，context.md + scene-list.md + SKILL.md + references 并行读取（一次性发多个 Read 工具调用），不要串行等待。
 
 【计时】每个产出物步骤完成后，用 bash 执行 `date +%s` 获取时间戳。在 Step A 开始前记一次，每个 Step 完成后记一次，报告耗时。
@@ -28,11 +26,13 @@
 context.md 由 Chat Opus 输出，共九章。本地模型默认只读。
 
 **允许的修改**（用户明确指示时）：
+
 - 用户说"把 XX 决策加到 context"→ 追加到第 7 章
 - 用户说"加一条业务规则"→ 追加到第 6 章
 - 用户说"加个术语"→ 追加到第 5 章
 
 **禁止的修改**：
+
 - 模型自行判断后修改（遇到 context.md 未覆盖的问题，停下来问用户）
 - 删除或改写已有条目（提示用户回 Chat 讨论）
 - 修改第 4 章场景编号（编号锁定不可改，新增只追加）
@@ -40,6 +40,7 @@ context.md 由 Chat Opus 输出，共九章。本地模型默认只读。
 ### 项目状态获取
 
 不依赖 context.md 中的状态描述。每次 session 开始时直接查看文件系统：
+
 ```bash
 ls projects/{项目名}/inputs/
 ls projects/{项目名}/deliverables/

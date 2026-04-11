@@ -244,7 +244,107 @@
 - 横向箭头：y 相同，x 从源右边到目标左边
 - 纵向箭头：x 相同，y 从源底边到目标顶边
 
-## 4. Section 分隔线在 Dashboard 中的用法
+## 4. 产品图标库（SVG 圆标）
+
+> 用于架构拓扑图中快速识别技术组件。圆形背景 + 品牌色 + 缩写文字，无需外部图片。
+> 统一尺寸：r=16（直径 32px），字号 10px，font-weight 700。
+
+### 4.1 SVG 模板
+
+```html
+<!-- 通用模板：cx/cy 按节点位置调整 -->
+<circle cx="CX" cy="CY" r="16" fill="BRAND_COLOR"/>
+<text x="CX" y="CY+3.5" text-anchor="middle" fill="#fff" font-size="10" font-weight="700" font-family="'DM Sans','Noto Sans SC',sans-serif">ABBR</text>
+```
+
+### 4.2 AI / LLM
+
+| 产品 | 缩写 | 品牌色 | 示例 |
+|------|------|--------|------|
+| OpenAI / GPT | OAI | `#10A37F` | `<circle ... fill="#10A37F"/><text ...>OAI</text>` |
+| Claude | CL | `#D97757` | `<circle ... fill="#D97757"/><text ...>CL</text>` |
+| Gemini | GE | `#4285F4` | `<circle ... fill="#4285F4"/><text ...>GE</text>` |
+| LLaMA | LL | `#0467DF` | `<circle ... fill="#0467DF"/><text ...>LL</text>` |
+| DeepSeek | DS | `#4D6BFE` | `<circle ... fill="#4D6BFE"/><text ...>DS</text>` |
+| Qwen | QW | `#6236FF` | `<circle ... fill="#6236FF"/><text ...>QW</text>` |
+
+### 4.3 AI 框架 / Agent
+
+| 产品 | 缩写 | 品牌色 |
+|------|------|--------|
+| LangChain | LC | `#1C3C3C` |
+| LlamaIndex | LI | `#8B5CF6` |
+| Mem0 | M0 | `#6366F1` |
+| CrewAI | CR | `#FF4F00` |
+| AutoGen | AG | `#0078D4` |
+| Dify | DF | `#1677FF` |
+
+### 4.4 向量数据库
+
+| 产品 | 缩写 | 品牌色 |
+|------|------|--------|
+| Pinecone | PC | `#000000` |
+| Weaviate | WV | `#FA0050` |
+| Qdrant | QD | `#DC244C` |
+| Milvus | MV | `#00A1EA` |
+| ChromaDB | CH | `#FF6446` |
+| pgvector | PG | `#336791` |
+
+### 4.5 数据库 / 存储
+
+| 产品 | 缩写 | 品牌色 |
+|------|------|--------|
+| PostgreSQL | PG | `#336791` |
+| MySQL | MY | `#4479A1` |
+| MongoDB | MG | `#47A248` |
+| Redis | RD | `#DC382D` |
+| Elasticsearch | ES | `#FEC514` |
+| ClickHouse | CK | `#FFCC00` |
+| Neo4j | N4 | `#008CC1` |
+
+### 4.6 云 / 基础设施
+
+| 产品 | 缩写 | 品牌色 |
+|------|------|--------|
+| AWS | AW | `#FF9900` |
+| GCP | GC | `#4285F4` |
+| Azure | AZ | `#0078D4` |
+| Docker | DK | `#2496ED` |
+| Kubernetes | K8 | `#326CE5` |
+| Nginx | NX | `#009639` |
+| Kafka | KF | `#231F20` |
+| RabbitMQ | RQ | `#FF6600` |
+
+### 4.7 区块链 / 交易所（PM-WORKSPACE 常用）
+
+| 产品 | 缩写 | 品牌色 |
+|------|------|--------|
+| Binance | BN | `#F0B90B` |
+| OKX | OK | `#000000` |
+| HTX (火币) | HT | `#2B3139` |
+| Gate.io | GT | `#2354E6` |
+| Bybit | BB | `#F7A600` |
+| Ethereum | ET | `#627EEA` |
+| Solana | SO | `#9945FF` |
+| TRON | TR | `#FF0013` |
+
+### 4.8 组合用法示例
+
+```html
+<!-- 在拓扑图节点内嵌品牌标 -->
+<g transform="translate(180, 95)">
+  <!-- 节点背景 -->
+  <rect x="0" y="0" width="160" height="52" rx="8" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1.5"/>
+  <!-- 品牌圆标（左侧） -->
+  <circle cx="24" cy="26" r="14" fill="#D97757"/>
+  <text x="24" y="30" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">CL</text>
+  <!-- 节点文字（右侧） -->
+  <text x="48" y="22" fill="#6d28d9" font-size="11" font-weight="700">Claude Opus</text>
+  <text x="48" y="36" fill="#8b5cf6" font-size="9">主推理引擎</text>
+</g>
+```
+
+## 5. Section 分隔线在 Dashboard 中的用法
 
 架构图中 `.sec` 是绝对定位的（用于 `.dia` 内），但在 Dashboard 页面中需要改为相对定位：
 ```html
