@@ -153,6 +153,35 @@ npx playwright screenshot --load-storage=references/auth/{platform}.json --viewp
 
 3. 清理临时目录
 
+## 定时采集（Scheduled Scrape）
+
+独立于 Claude Code session 运行的 Playwright 脚本，零 AI Token 消耗。
+
+**脚本位置**：`.claude/skills/intel-collector/references/scheduled-scrape.py`
+
+```bash
+# 手动运行
+python3 .claude/skills/intel-collector/references/scheduled-scrape.py --all          # 全部
+python3 .claude/skills/intel-collector/references/scheduled-scrape.py --platforms okx # 指定平台
+python3 .claude/skills/intel-collector/references/scheduled-scrape.py --media        # 仅媒体
+```
+
+**crontab**：每月 1 号和 15 号 10:03 自动运行（`scripts/intel-cron.sh`）
+
+**产出位置**：
+- 交易所 → `references/competitors/{platform}/announcements/YYYY-MM-DD.md`
+- 媒体 → `references/competitors/_media/{媒体名}/YYYY-MM-DD.md`
+- 日志 → `references/competitors/_logs/scrape-YYYYMMDD.log`
+
+**去重**：对比同目录最新 .md，内容无变化则跳过不存。
+
+**提取策略**（按优先级）：
+1. JSON-LD 结构化数据（最干净，CoinDesk 等支持）
+2. `main` / `article` / `[role="main"]` 容器的 inner_text
+3. `body` inner_text 兜底 + 噪音过滤
+
+**已知限制**：Binance 有 WAF/CAPTCHA 反爬，headless 被拦（即使带 storage_state）。其他交易所和媒体均正常。
+
 ## 自检清单
 
 - [ ] 截图存入了正确目录 `references/competitors/{platform}/{module}/`

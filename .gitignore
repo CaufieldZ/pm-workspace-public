@@ -14,3 +14,6 @@ package-lock.json
 
 # 登录态 cookies（含敏感凭证，不跟踪）
 .claude/skills/intel-collector/references/auth/
+
+# 采集日志
+references/competitors/_logs/
