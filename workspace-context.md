@@ -79,7 +79,7 @@ pm-workspace/
 
 ---
 
-## 四、Skill 体系（16 个）
+## 四、Skill 体系（17 个）
 
 | Skill | 类型 | 输出格式 | 前缀 | 必须依赖 | 被谁消费 |
 |-------|------|---------|------|---------|---------|
@@ -97,7 +97,9 @@ pm-workspace/
 | scene-list | pipeline | .md | scene- | [] | [requirement-framework, architecture-diagrams, interaction-map, prototype, prd, behavior-spec, page-structure, test-cases, cross-check] |
 | intel-collector | tool | 目录 | — | [] | [competitor-analysis] |
 | workspace-audit | tool | 对话内 | — | [] | [] |
+| pdf-tools | tool | 原文件同目录 | — | [] | [] |
 | skill-creator | tool | 新目录 | — | [] | [] |
+| data-report | standalone | .md + .png | report- | [] | [] |
 | test-cases | pipeline | .md | tc- | [scene-list, prd] | [cross-check] |
 
 ### Skill 执行模式（通用）

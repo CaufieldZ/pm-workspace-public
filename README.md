@@ -4,10 +4,10 @@
 
 **AI-Native Product Management System**
 
-从会议纪要到交互大图、PRD、行为规格 —— 16 个 Skill 覆盖产品经理全链路。
+从会议纪要到交互大图、PRD、行为规格 —— 18 个 Skill 覆盖产品经理全链路。
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge)](LICENSE)
-[![Skills](https://img.shields.io/badge/Skills-16-58a6ff?style=for-the-badge)](.claude/skills)
+[![Skills](https://img.shields.io/badge/Skills-18-58a6ff?style=for-the-badge)](.claude/skills)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776ab?style=for-the-badge&logo=python&logoColor=white)]()
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)]()
 [![Built with Claude Code](https://img.shields.io/badge/Built_with-Claude_Code-bc8cff?style=for-the-badge&logo=anthropic&logoColor=white)](https://docs.anthropic.com/en/docs/claude-code)
@@ -126,7 +126,7 @@ Layer 3 · 项目文件（= 具体项目资料）
 
 ## ⚙️ Skill 流水线
 
-> 10 个 Pipeline Skill 按顺序执行，6 个独立/工具 Skill 随时调用。
+> 10 个 Pipeline Skill 按顺序执行，7 个独立/工具 Skill 随时调用。
 
 ```
 1 scene-list ─→ 2 req-framework* ─→ 2.5 arch-diagrams* ─→ 3 interaction-map
@@ -160,6 +160,7 @@ Layer 3 · 项目文件（= 具体项目资料）
 | **competitor-analysis** | 竞品调研，三角对比 + 可借鉴点提取                |
 | **ppt**                 | 方案/SOP → HTML 多 Tab 演示文档 + 配套口播稿    |
 | **docx**                | 读取/编辑/接受修订已有 Word 文档                 |
+| **pdf-tools**           | PDF 合并/拆分/加密/水印/页码/签名/转换（Word/Excel/PPT/JPG） |
 | **intel-collector** | 情报采集：APP 截图 / Web 全页截图 / 公告及媒体内容抓取 |
 | **workspace-audit**     | 6 类全局诊断（文件/数值/依赖/规则/Token/产出物） |
 | **skill-creator**       | 创建新 Skill，自动生成 frontmatter + 注册        |
@@ -221,7 +222,7 @@ pm-workspace/
 │   ├── rules/
 │   │   ├── pm-workflow.md     #   全局工作流规范
 │   │   └── soul.md            #   个人偏好（gitignored）
-│   ├── skills/                #   16 个 Skill（各含 SKILL.md + references/）
+│   ├── skills/                #   18 个 Skill（各含 SKILL.md + references/）
 │   └── chat-templates/        #   Chat 轨模板 + context.md 九章模板
 ├── references/                # 本地素材（gitignored）
 │   └── competitors/           # 竞品素材
