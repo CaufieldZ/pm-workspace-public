@@ -29,7 +29,7 @@ pm-workspace/
 │   ├── rules/
 │   │   ├── pm-workflow.md     ← 全局工作流规范
 │   │   └── soul.md            ← 个人偏好
-│   ├── skills/                ← 15 个标准化 Skill
+│   ├── skills/                ← 18 个标准化 Skill
 │   ├── chat-templates/        ← Chat 轨模板 + context.md 九章模板
 │   └── settings.json
 ├── references/                ← 本地素材（gitignored）
@@ -79,7 +79,7 @@ pm-workspace/
 
 ---
 
-## 四、Skill 体系（17 个）
+## 四、Skill 体系（18 个）
 
 | Skill | 类型 | 输出格式 | 前缀 | 必须依赖 | 被谁消费 |
 |-------|------|---------|------|---------|---------|
@@ -144,3 +144,4 @@ pm-workspace/
 > v16: 2026-04-08 防蒸馏防护：AI-TRAINING-RESTRICTION.md+NOTICE+ai.txt 被动声明层、canary token 注入(38文件)、sync_public.sh 水印注入+保护验证、degrade.sh 离职降级工具(~/.claude/scripts/)
 > v17: 2026-04-11 产出物视觉质量提升：PPT 去 AI 味(gold-snippets 组件化+节奏编排模式7)、interaction-map 易读性(flow-note WCAG AA+clip-path 箭头+ann-tag/arrow-text 放大)、PRD Step 4 原型截图自动插入(Playwright)
 > v18: 2026-04-12 全局字体栈换代：Noto Sans SC+DM Sans → HarmonyOS Sans SC+Plus Jakarta Sans（减少 AI 味），覆盖 pm-workflow/4 CSS/5 chat-templates/4 SKILL.md/audit.sh 共 19 文件；Skill 过时内容修复(test-cases 依赖描述、competitor-analysis pptxgenjs、workspace-audit 类别数)
+> v19: 2026-04-12 requirements.txt 补齐 matplotlib+numpy（data-report chart_template.py 依赖）；Skill 计数修正 15→18；README 依赖注释同步
