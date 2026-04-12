@@ -15,5 +15,8 @@ package-lock.json
 # 登录态 cookies（含敏感凭证，不跟踪）
 .claude/skills/intel-collector/references/auth/
 
+# 工作素材（竞品截图、数据源、报告等，非框架代码）
+/references/
+
 # 采集日志
 references/competitors/_logs/
