@@ -101,7 +101,7 @@ CSS 通过 `open().read()` 拼接到骨架 `<style>` 标签，不需要模型逐
 ## 输出规则
 - 文件名格式：`requirement-framework-{{项目简称}}.html`
 - 纯内联 HTML + CSS，单文件，无外部依赖（字体 CDN 除外）
-- 字体：Noto Sans SC + IBM Plex Mono
+- 字体：HarmonyOS Sans SC + Plus Jakarta Sans + IBM Plex Mono
 - 编号一旦确定不可改动
 - 描述列写核心动作 + 关键规则，不写空泛描述
 - 跨模块依赖在描述中用 `→ {{编号}}` 标注（如「→ D1」）

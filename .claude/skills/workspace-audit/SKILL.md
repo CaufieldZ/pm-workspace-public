@@ -4,8 +4,9 @@ name: workspace-audit
 description: >
   当用户说「审计」「诊断」「跑一遍审计」「audit」「health check」时触发。
   注意：「检查一致性」优先触发 cross-check（产出物间一致性），而非本 skill（全局诊断）。
-  替代原 skill-auditor，覆盖全局诊断：文件完整性、数值一致性、依赖链路、
-  规则冲突、Token 预算、产出物一致性、规则层矛盾、安全扫描。支持按类别选择执行。
+  替代原 skill-auditor，覆盖全局诊断共 11 类：Phase 1 脚本硬检查 7 类（文件完整性、
+  数值一致、依赖链路、规则冲突、Token 预算、产出物一致、SKILL_TABLE 同步）+
+  Phase 2 模型软检查 4 类（规则层矛盾、安全扫描、工程健壮性、瘦身优化）。支持按类别选择执行。
 type: tool
 output_format: .md
 depends_on: []

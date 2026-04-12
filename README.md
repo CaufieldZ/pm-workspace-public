@@ -193,7 +193,7 @@ PRD ─────┼─→ page-structure ─→ Design AI (Frontend AI)
 | **防腐化 hook**     | `.githooks/pre-commit` — Skill/规则变更时自动跑 `audit.sh`（完整性+依赖+规则冲突），不通过拦截 commit                                                                           |
 | **自检反压**        | 每个 Skill 自带 checklist，不通过最多自动修复 2 次，仍失败停下报告，禁止静默跳过                                                                                                     |
 | **impact-check**    | `bash scripts/impact-check.sh <项目名>` 或 `/变更影响 <项目名>` — 改完 scene-list 后一键识别哪些 deliverable 需同步更新                                                         |
-| **workspace-audit** | 双阶段审计（脚本硬检查 + 模型软检查），11 类全局诊断：文件完整性、数值一致、依赖链路、规则冲突、Token 预算、产出物一致、SKILL_TABLE 同步、深度规则矛盾、安全扫描、优化建议、综合评估 |
+| **workspace-audit** | 双阶段审计（脚本硬检查 7 类 + 模型软检查 4 类），共 11 类全局诊断 |
 | **HTML 铁律**       | >200 行必须脚本生成（骨架 → 填充 → 自检），禁止 Write 直写                                                                                                                         |
 | **变更级联**        | 改了 context.md → 依赖链自动扫描波及范围 → 按 pipeline 顺序升版下游产出物 → cross-check 拉通验证。PM 不用自己记哪些文档要同步改                                                   |
 | **编号锁定**        | 场景编号确认后不可改动，新增只追加                                                                                                                                                   |
@@ -209,11 +209,14 @@ pm-workspace/
 ├── .githooks/pre-commit       # 防腐化 hook
 ├── requirements.txt           # Python 依赖（python-docx, playwright）
 ├── package.json               # Node.js 依赖（docx）
-├── scripts/                   # 公共验证脚本
+├── scripts/                   # 公共脚本
 │   ├── check_html.sh          #   HTML 产出物自检
 │   ├── check_prd.sh           #   PRD docx 自检
 │   ├── fill_utils.py          #   fill 脚本公共模块
-│   └── impact-check.sh        #   场景变更影响面扫描
+│   ├── impact-check.sh        #   场景变更影响面扫描
+│   ├── inject-canary.sh       #   canary token 注入
+│   ├── intel-cron.sh          #   竞品情报定时采集
+│   └── version-bump.sh        #   产出物升版（归档旧版 + 改版本号）
 ├── .claude/
 │   ├── rules/
 │   │   ├── pm-workflow.md     #   全局工作流规范

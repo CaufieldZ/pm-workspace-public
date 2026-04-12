@@ -277,7 +277,7 @@ HTML 产出物交付后，生成配套的口播稿 Markdown 文件。
 继承 pm-workflow 第三章暗色主题：
 - 侧边栏 240px，深色 `--bg2`
 - 主内容区 max-width 1200px
-- 字体：DM Sans + Noto Sans SC + JetBrains Mono
+- 字体：HarmonyOS Sans SC + Plus Jakarta Sans + JetBrains Mono
 - 配色变量：以 `--bg: #0a0c10` 系为准
 
 ### 组件规范

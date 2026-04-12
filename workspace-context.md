@@ -141,3 +141,4 @@ pm-workspace/
 > v15: 2026-04-08 能力升级：test-cases Pairwise 建模+覆盖密度+依赖改为 prd、PRD 边写边审+迭代模式(冲突检测+存量数据)+埋点模板重写、逻辑拼图(方案变更自动推演)、一键开项目+会议纪要自动处理、/变更影响 command
 > v16: 2026-04-08 防蒸馏防护：AI-TRAINING-RESTRICTION.md+NOTICE+ai.txt 被动声明层、canary token 注入(38文件)、sync_public.sh 水印注入+保护验证、degrade.sh 离职降级工具(~/.claude/scripts/)
 > v17: 2026-04-11 产出物视觉质量提升：PPT 去 AI 味(gold-snippets 组件化+节奏编排模式7)、interaction-map 易读性(flow-note WCAG AA+clip-path 箭头+ann-tag/arrow-text 放大)、PRD Step 4 原型截图自动插入(Playwright)
+> v18: 2026-04-12 全局字体栈换代：Noto Sans SC+DM Sans → HarmonyOS Sans SC+Plus Jakarta Sans（减少 AI 味），覆盖 pm-workflow/4 CSS/5 chat-templates/4 SKILL.md/audit.sh 共 19 文件；Skill 过时内容修复(test-cases 依赖描述、competitor-analysis pptxgenjs、workspace-audit 类别数)

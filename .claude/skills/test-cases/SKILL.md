@@ -3,7 +3,7 @@
 name: test-cases
 description: >
   当需要生成 QA 文档、测试用例，或用户说「出测试用例」「QA 文档」「测试场景」「tc」时触发。
-  依赖 behavior-spec 已完成。无测试自动化需求时可跳过此步。
+  依赖 PRD 已完成，behavior-spec 为可选增强输入。无测试自动化需求时可跳过此步。
 type: pipeline
 output_format: .md
 output_prefix: tc-

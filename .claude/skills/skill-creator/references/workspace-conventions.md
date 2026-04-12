@@ -74,7 +74,7 @@ PM-WORKSPACE/
 
 ## 4. 字体
 
-- 正文：`Noto Sans SC` + `IBM Plex Mono`
+- 正文：`HarmonyOS Sans SC` + `Plus Jakarta Sans` + `IBM Plex Mono`
 - PPT 标题：Arial Black
 - PPT 正文：Arial
 - PRD：Arial 11pt

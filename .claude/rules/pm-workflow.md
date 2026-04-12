@@ -250,7 +250,7 @@ commit message 使用前缀：
 - Write 工具连续失败 2 次 → 停下来，将当前函数拆为 2 个更小的函数，不要重试相同内容
 - 禁止在修复 SyntaxError 时凭记忆改代码，必须先 `python3 -c "import ast; ..."` 定位具体行号
 - **组件完整性**：交互大图 fill 函数必须包含全部 9 类组件（见 interaction-map SKILL.md「Fill 必需组件清单」），每 Scene 至少 1 个 `.aw` + 1 个 `.anno` + 1 个 `.ann-tag` + 1 个 `.flow-note`
-- **字体栈 CJK 优先**：所有 HTML 产出物 body font-family 必须 `'Noto Sans SC','DM Sans',sans-serif`，禁止英文字体排在 CJK 前面
+- **字体栈 CJK 优先**：所有 HTML 产出物 body font-family 必须 `'HarmonyOS Sans SC','Plus Jakarta Sans',system-ui,sans-serif`，禁止英文字体排在 CJK 前面
 - **排版三级层次**：font-weight 至少使用 3 级（900 标题/PART 头 → 700 卡片标题/按钮 → 400 正文说明），禁止全文只用 700
 - **填充后逐 Scene 自检**：每完成一个 Scene 后必须 grep 验证 `.aw` / `.anno` / `.ann-tag` / `.flow-note` 计数，任一为 0 则返工后再继续下一个 Scene
 
@@ -356,7 +356,7 @@ commit message 使用前缀：
 
 设备尺寸、字体、配色以各 skill 的 ref CSS 为准。通用约定：
 - App 壳：375×812px，border-radius: 44px，深色底
-- 正文字体：`'Noto Sans SC', 'DM Sans', sans-serif`
+- 正文字体：`'HarmonyOS Sans SC','Plus Jakarta Sans',system-ui,sans-serif`
 - 等宽字体：`'IBM Plex Mono', monospace`（PPT skill 使用 `JetBrains Mono`，视觉风格需要）
 - 弹窗：全屏遮罩 + 居中卡片，遮罩点击 / ✕ 均可关闭
 

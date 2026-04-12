@@ -4,7 +4,7 @@
    GLOBAL RESET & GNAV（全局导航）
 ═══════════════════════════════════════ */
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:#f0f2f5;font-family:'Noto Sans SC','DM Sans',sans-serif;font-size:13px;color:#1e293b;min-height:100vh;}
+body{background:#f0f2f5;font-family:'HarmonyOS Sans SC','Plus Jakarta Sans',system-ui,sans-serif;font-size:13px;color:#1e293b;min-height:100vh;}
 
 .gnav{position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,#0a0f1a,#111827);border-bottom:1px solid rgba(45,129,255,.15);display:flex;align-items:center;padding:0 32px;height:52px;gap:20px;box-shadow:0 2px 12px rgba(0,0,0,.3);}
 .gnav-logo{font-size:15px;font-weight:800;color:#e2e8f0;white-space:nowrap;display:flex;align-items:center;gap:8px;}

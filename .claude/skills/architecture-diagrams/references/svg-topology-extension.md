@@ -117,7 +117,7 @@
 #### 图例组件（推荐放在拓扑图右下角）
 
 ```html
-<g transform="translate(X, Y)" font-size="9" font-family="'Noto Sans SC','DM Sans',sans-serif">
+<g transform="translate(X, Y)" font-size="9" font-family="'HarmonyOS Sans SC','Plus Jakarta Sans',sans-serif">
   <text x="0" y="0" fill="#64748b" font-weight="700" font-size="10">图例</text>
   <!-- 同步数据流 -->
   <line x1="0" y1="14" x2="36" y2="14" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#ab)"/>

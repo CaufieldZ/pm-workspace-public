@@ -547,7 +547,7 @@ JS 数组 itemData[] → renderItems() 渲染列表 → 弹窗按索引读/写
 - Web 框：960px 全宽深色（无浏览器壳，直接当网站用）
 - 后台：深色侧边栏 200px + 浅灰内容区，Arco 风格
 - 弹窗：`.modal-bg` 全屏遮罩 + 居中卡片
-- 字体：系统字体栈（-apple-system, PingFang SC, Noto Sans SC）
+- 字体：HarmonyOS Sans SC + Plus Jakarta Sans + system-ui
 - 深色板：`--dk-bg:#0B0E11` `--blue:#2D81FF` `--green:#0ECB81` `--red:#F6465D` `--gold:#FFD740`
 - 浅色板：`--lt-bg:#F5F6FA` `--blue:#2D81FF` `--green:#00B42A` `--red:#F53F3F` `--orange:#FF7D00`
 

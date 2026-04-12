@@ -167,7 +167,7 @@ consumed_by: []
 
 ### PPT（用户要求时）
 
-使用 pptxgenjs 创建。详见 `references/ppt-spec.md`（仅 PPT 输出时读取）。
+使用 ppt skill（HTML 多 Tab 文档）生成。详见 `references/ppt-spec.md`（仅 PPT 输出时读取）。
 
 ## 执行步骤
 

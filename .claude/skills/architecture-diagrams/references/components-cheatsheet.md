@@ -254,7 +254,7 @@
 ```html
 <!-- 通用模板：cx/cy 按节点位置调整 -->
 <circle cx="CX" cy="CY" r="16" fill="BRAND_COLOR"/>
-<text x="CX" y="CY+3.5" text-anchor="middle" fill="#fff" font-size="10" font-weight="700" font-family="'DM Sans','Noto Sans SC',sans-serif">ABBR</text>
+<text x="CX" y="CY+3.5" text-anchor="middle" fill="#fff" font-size="10" font-weight="700" font-family="'Plus Jakarta Sans','HarmonyOS Sans SC',sans-serif">ABBR</text>
 ```
 
 ### 4.2 AI / LLM

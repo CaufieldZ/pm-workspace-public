@@ -26,7 +26,7 @@ ARCO_COLORS=$(grep 'Arco Design 浅色系' "$WORKFLOW_FILE" 2>/dev/null | grep -
 SPEC_BODY=$(grep "字体：" "$WORKFLOW_FILE" 2>/dev/null | grep -oE "'[^']+'" | head -1 | tr -d "'")
 SPEC_MONO=$(grep "字体：" "$WORKFLOW_FILE" 2>/dev/null | grep -oE "'[^']+'" | tail -1 | tr -d "'")
 # 兜底默认值
-[ -z "$SPEC_BODY" ] && SPEC_BODY="Noto Sans SC"
+[ -z "$SPEC_BODY" ] && SPEC_BODY="HarmonyOS Sans SC"
 [ -z "$SPEC_MONO" ] && SPEC_MONO="IBM Plex Mono"
 
 # ─────────────────────────────────────────────
@@ -227,16 +227,16 @@ if run_cat 2; then
     [ -f "$f" ] || continue
     short=$(echo "$f" | sed 's|.claude/skills/||')
     # 检查 body font-family 中英文字体是否排在 CJK 前面
-    if grep -q "font-family:.*'DM Sans'.*'Noto Sans SC'" "$f" 2>/dev/null; then
-      echo "    ❌ $short: DM Sans 在 Noto Sans SC 前面（违反 CJK 优先）"
+    if grep -q "font-family:.*'Plus Jakarta Sans'.*'HarmonyOS Sans SC'" "$f" 2>/dev/null; then
+      echo "    ❌ $short: Plus Jakarta Sans 在 HarmonyOS Sans SC 前面（违反 CJK 优先）"
       ORDER_FAIL=1; GLOBAL_FAIL=1
     fi
-    if grep -q "font-family:.*-apple-system.*'Noto Sans SC'" "$f" 2>/dev/null; then
-      echo "    ❌ $short: -apple-system 在 Noto Sans SC 前面（违反 CJK 优先）"
+    if grep -q "font-family:.*-apple-system.*'HarmonyOS Sans SC'" "$f" 2>/dev/null; then
+      echo "    ❌ $short: -apple-system 在 HarmonyOS Sans SC 前面（违反 CJK 优先）"
       ORDER_FAIL=1; GLOBAL_FAIL=1
     fi
-    if grep -q "font-family:.*'Helvetica Neue'.*'Noto Sans SC'" "$f" 2>/dev/null; then
-      echo "    ❌ $short: Helvetica Neue 在 Noto Sans SC 前面（违反 CJK 优先）"
+    if grep -q "font-family:.*'Noto Sans SC'.*'HarmonyOS Sans SC'" "$f" 2>/dev/null; then
+      echo "    ❌ $short: Noto Sans SC 在 HarmonyOS Sans SC 前面（应使用新字体栈）"
       ORDER_FAIL=1; GLOBAL_FAIL=1
     fi
   done
