@@ -45,7 +45,8 @@ git clone git@github.com:CaufieldZ/pm-workspace.git
 cd pm-workspace
 
 # 2. 安装依赖
-pip install -r requirements.txt   # python-docx
+pip install -r requirements.txt   # python-docx, defusedxml, playwright
+npx playwright install chromium   # 竞品采集用的无头浏览器
 npm install                       # docx (Node.js)
 
 # 3. 激活防腐化 hook
