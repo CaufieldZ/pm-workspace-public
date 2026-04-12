@@ -54,7 +54,11 @@ git config core.hooksPath .githooks
 # 4. 个性化（可选）
 #    编辑 .claude/rules/soul.md 写入你的沟通偏好
 
-# 5. 开始第一个项目
+# 5. 用 VSCode 打开项目（推荐）
+#    安装 Claude Code 扩展后，在 VSCode 内直接使用
+#    ⚠️ 不推荐 Cursor——其 Agent 会与 Claude Code 的 Skill/Hook 体系冲突
+
+# 6. 开始第一个项目
 #    在 Claude Code 中输入：
 #    > 新项目 my-first-project，需求是……
 ```
