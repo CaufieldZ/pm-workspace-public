@@ -101,6 +101,7 @@ pm-workspace/
 | skill-creator | tool | 新目录 | — | [] | [] |
 | data-report | standalone | .md + .png | report- | [] | [] |
 | test-cases | pipeline | .md | tc- | [scene-list, prd] | [cross-check] |
+| meeting-autopilot | tool | 对话内 | — | [] | [] |
 
 ### Skill 执行模式（通用）
 

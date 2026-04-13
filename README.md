@@ -4,10 +4,10 @@
 
 **AI-Native Product Management System**
 
-从会议纪要到交互大图、PRD、行为规格 —— 18 个 Skill 覆盖产品经理全链路。
+从会议纪要到交互大图、PRD、行为规格 —— 19 个 Skill 覆盖产品经理全链路。
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge)](LICENSE)
-[![Skills](https://img.shields.io/badge/Skills-18-58a6ff?style=for-the-badge)](.claude/skills)
+[![Skills](https://img.shields.io/badge/Skills-19-58a6ff?style=for-the-badge)](.claude/skills)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776ab?style=for-the-badge&logo=python&logoColor=white)]()
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)]()
 [![Built with Claude Code](https://img.shields.io/badge/Built_with-Claude_Code-bc8cff?style=for-the-badge&logo=anthropic&logoColor=white)](https://docs.anthropic.com/en/docs/claude-code)
@@ -222,7 +222,7 @@ pm-workspace/
 │   ├── rules/
 │   │   ├── pm-workflow.md     #   全局工作流规范
 │   │   └── soul.md            #   个人偏好（gitignored）
-│   ├── skills/                #   18 个 Skill（各含 SKILL.md + references/）
+│   ├── skills/                #   19 个 Skill（各含 SKILL.md + references/）
 │   └── chat-templates/        #   Chat 轨模板 + context.md 九章模板
 ├── references/                # 本地素材（gitignored）
 │   └── competitors/           # 竞品素材

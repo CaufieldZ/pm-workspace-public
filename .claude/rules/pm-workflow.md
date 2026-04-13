@@ -73,14 +73,11 @@
 
 【Context 分级执行策略】
 
-按当前模型的 context window 查表：
-
 | 模型 | context | 单 session 范围 | 分 session 建议 |
 |------|---------|----------------|----------------|
-| Opus 4.6 | 1M | 全链路可串联 | — |
-| Sonnet 4.6 | 1M | 全链路可串联 | — |
-| GLM 5.1 / Kimi K2.5（备选） | 256K | 最多 2 步串联 | 交互大图完成后 commit + 新 session，用户逐步确认 |
-| ≤ 128K 模型 | ≤ 128K | 单步执行 | 每个产出物独立 session，context.md 待办标记进度 |
+| Opus 4.6 / Sonnet 4.6 | 1M | 全链路可串联 | — |
+| GLM 5.1 / Kimi K2.5（备选） | 256K | 最多 2 步串联 | 交互大图完成后 commit + 新 session |
+| ≤ 128K 模型 | ≤ 128K | 单步执行 | 每个产出物独立 session |
 
 > 模型分工：Opus → 需求理解、架构决策、复杂推理；Sonnet → 日常编码施工、格式化输出；GLM 5.1/Kimi K2.5 → Sonnet 用不起时的备选。按次/token 计费场景下即使 context 充裕，仍建议控制单 session 步骤数以降低消耗。
 
