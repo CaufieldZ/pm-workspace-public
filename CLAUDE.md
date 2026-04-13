@@ -49,7 +49,7 @@ context.md 由 Chat Opus 输出，共九章。本地模型默认只读。
 - 钉钉文档先 `list_document_blocks` 看结构，按 `startIndex/endIndex` 取段落，不一次 `get_document_content` 拉全文（除非文件很短或用户要全文）
 - Confluence INTERNAL_DOMAIN_REDACTED 链接用 Confluence MCP 抓取，不走 Firecrawl（认证墙）
 - Agent 探索 prompt 加返回长度限制（"report in under 200 words"），能用 Grep/Glob 直接查的不开 agent
-- 禁止用 MiniMax understand_image，图片分析统一用 Claude Read 工具
+- 图片分析统一用 Claude Read 工具（多模态），不走第三方 MCP
 
 【禁止重复读取】同一 session 内已读过的文件不再整体重读（soul.md 规则）。HTML 产出物允许 grep 局部回读，禁止 Read 全文。需要局部信息时用 Grep 或 Read offset/limit。
 
@@ -67,6 +67,8 @@ context.md 由 Chat Opus 输出，共九章。本地模型默认只读。
 【MCP 调用克制】
 - 神策查询：先确认事件名和属性名再 query，不要先 `list_events_all`（返回量大）。用 `get_event_properties` 精准取
 - Confluence：`search_pages` 优先于 `execute_cql_search`，后者返回量更大
+- Outlook Calendar：仅在用户明确要求查 HTX 工作日历时调用，产出物流程中不主动触发
+- Figma：仅在用户给出 Figma 链接或明确要求读设计稿时调用，不主动探索 Figma 项目
 - 所有 MCP 工具：调用前想一想"这次返回会吃多少 token"，能缩小 scope 就缩小
 
 【格式规范】

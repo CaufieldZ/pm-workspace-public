@@ -340,7 +340,7 @@ commit message 使用前缀：
 ### 需求变更处理
 
 编号只追加不改，已有编号锁定。变更流程：
-① 更新 context.md 第 4 章 → ② 更新 scene-list.md → ③ `grep -l 'depends_on:.*scene-list' .claude/skills/*/SKILL.md` 识别受影响下游 → ④ 等用户确认后按 pipeline_position 顺序升版 → ⑤ 旧版归档 archive/。
+① 在 context.md 第 4 章追加新场景 → ② 更新 scene-list.md → ③ `grep -l 'depends_on:.*scene-list' .claude/skills/*/SKILL.md` 识别受影响下游 → ④ 等用户确认后按 pipeline_position 顺序升版 → ⑤ 旧版归档 archive/。
 
 ### 2.6 Skill 依赖矩阵
 

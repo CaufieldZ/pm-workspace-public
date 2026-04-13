@@ -35,6 +35,10 @@ view .claude/skills/requirement-framework/references/requirement-framework.css
 
 CSS 通过 `open().read()` 拼接到骨架 `<style>` 标签，不需要模型逐行阅读或手写。SKILL.md 下方的标签对照表已包含所有需要的 class 名。
 
+## Fill 内容契约
+
+骨架提供完整 HTML 结构（`<style>` + Header + 概览卡片 + 表格表头 + 模块标题行占位 + Callout），Fill 提供每个模块的需求行内容。无设备壳组件。
+
 ## ★ 分步生成策略
 
 需求框架文档通常 200-400 行，按以下两步执行：

@@ -48,7 +48,7 @@ consumed_by: []
 ### Step 1：读取参考文件
 
 并行读取：
-- `references/ppt-template.html` — 骨架模板（CSS + JS + 空壳结构）
+- `references/ppt-template.html` — 骨架模板（CSS + JS + 空壳结构，脚本运行时 `open().read()` 自动拼接，模型不需要读入 context）
 - `references/components-cheatsheet.md` — 组件速查表
 - `references/gold-snippets.md` — 满分产物片段库（叙事模式 + 结构骨架参考）
 - 用户提供的内容大纲（文件或口述）

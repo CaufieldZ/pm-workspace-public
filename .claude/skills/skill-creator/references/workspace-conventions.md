@@ -75,6 +75,7 @@ PM-WORKSPACE/
 ## 4. 字体
 
 - 正文：`HarmonyOS Sans SC` + `Plus Jakarta Sans` + `IBM Plex Mono`
+- 等宽：`IBM Plex Mono, monospace`（PPT 例外用 `JetBrains Mono`，见 pm-workflow §三白名单）
 - PPT 标题：Arial Black
 - PPT 正文：Arial
 - PRD：Arial 11pt

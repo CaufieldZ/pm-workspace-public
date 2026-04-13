@@ -23,3 +23,4 @@ package-lock.json
 
 # 采集日志
 references/competitors/_logs/
+.mcp-servers/
