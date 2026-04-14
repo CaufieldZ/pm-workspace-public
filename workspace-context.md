@@ -36,7 +36,7 @@ pm-workspace/
 │   └── competitors/           ← 竞品素材（Binance/OKX/Gate/Bybit）
 └── projects/                  ← 工作项目（gitignored）
     └── {项目名}/
-        ├── context.md         ← Chat Opus 输出，本地模型只读
+        ├── context.md         ← Chat Opus 输出，本地模型只读（九章：静态1-6 当前真相 / 动态7,9 演进记录 / 混合8）
         ├── scene-list.md
         ├── inputs/
         ├── scripts/

@@ -98,7 +98,10 @@ npx playwright screenshot --load-storage=references/auth/{platform}.json --viewp
 1. 读取 `references/url-registry.json` 查找 URL
    - 交易所公告/活动 → 从对应平台分区查找
    - Crypto 媒体 → 从 `_media` 分区查找（key 格式 `{媒体名}-{栏目}`）
-2. 调 `firecrawl_scrape`（markdown 格式）提取列表
+2. 抓取策略（省 firecrawl 配额）：
+   - **首选**：调 `WebFetch`（内置），prompt 设为「提取文章标题、日期、链接列表，markdown 格式」
+   - **降级**：若返回内容 < 300 字或明显为空 HTML（判断特征：含 `<noscript>` 无正文、标题数为 0），再调 `firecrawl_scrape`（markdown + `onlyMainContent: true`）
+   - 媒体源（CoinDesk / PANews / BlockBeats 等服务端渲染）通常首选即可；交易所 SPA 页面（OKX / Gate 活动列表）通常需降级
 3. 解析标题、日期、链接
 4. 保存位置：
    - 交易所内容 → `references/competitors/{platform}/announcements/YYYY-MM.md`
@@ -199,5 +202,6 @@ python3 .claude/skills/intel-collector/references/scheduled-scrape.py --media   
 | `iPhone镜像` 窗口找不到 | APP 未打开 | 打开 iPhone 镜像 APP |
 | 截图全黑 | screencapture 权限问题 | 系统设置 → 隐私 → 屏幕录制 → 允许终端 |
 | Playwright 404 | 反爬或 URL 变更 | 换 URL 或加 --wait-for-timeout=10000 |
+| WebFetch 返回空 | JS 渲染的 SPA 页面 | 降级走 firecrawl_scrape + waitFor: 5000 |
 | Firecrawl 返回空 | JS 渲染页面 | 加 waitFor: 5000 参数 |
 | capture.py 检测不到页面变化 | 页面只有微小动画 | 降低 diff 阈值或手动截（screencapture -l） |
