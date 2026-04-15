@@ -1,5 +1,18 @@
 {
   "permissions": {
-    "allowedTools": ["Read", "Write", "Glob", "Grep", "Bash(open:*)"]
+    "allowedTools": ["Read", "Write", "Glob", "Grep", "Bash(open:*)"],
+    "denyTools": [
+      "mcp__confluence__confluence_execute_cql_search",
+      "mcp__confluence__confluence_get_current_user",
+      "mcp__sensors__list_events_all",
+      "mcp__sensors__list_event_properties_all",
+      "mcp__sensors__list_event_tags",
+      "mcp__firecrawl__firecrawl_crawl",
+      "mcp__firecrawl__firecrawl_agent",
+      "mcp__firecrawl__firecrawl_browser_create",
+      "mcp__firecrawl__firecrawl_browser_execute",
+      "mcp__firecrawl__firecrawl_browser_delete",
+      "mcp__firecrawl__firecrawl_browser_list"
+    ]
   }
 }

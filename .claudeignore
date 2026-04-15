@@ -1,0 +1,59 @@
+# ===== 竞品大型媒体文件（Keynote/PDF 截图包，140MB+）=====
+references/competitors/**/*.key
+references/competitors/**/*.pdf
+references/competitors/_media/
+
+# ===== 竞品截图 PNG =====
+references/competitors/**/*.png
+
+# ===== 数据源 CSV/XLSX =====
+references/data-sources/
+
+# ===== 项目截图目录下的 PDF（竞品截图 PDF）=====
+projects/*/screenshots/**/*.pdf
+
+# ===== 产出物归档（旧版本）=====
+projects/*/deliverables/archive/
+
+# ===== SOP 备份 =====
+projects/htx-workflow-pre/SOP-final-backup*.html
+projects/htx-workflow-pre/SOP-old.html
+
+# ===== intel-collector auth JSON（单文件 1MB+）=====
+.claude/skills/intel-collector/references/auth/
+
+# ===== docx skill Office XML schemas（900KB+）=====
+.claude/skills/docx/scripts/office/schemas/
+
+# ===== chat-templates HTML（按需读取，不需要索引）=====
+.claude/chat-templates/*.html
+
+# ===== node / build =====
+node_modules/
+.mcp-servers/
+dist/
+build/
+.next/
+out/
+coverage/
+__pycache__/
+
+# ===== OS / 编辑器 =====
+.DS_Store
+Thumbs.db
+.vscode/
+
+# ===== 法律声明 =====
+LICENSE
+NOTICE
+ai.txt
+AI-TRAINING-RESTRICTION.md
+
+# ===== npm 锁文件 =====
+package-lock.json
+
+# ===== lint 配置 =====
+.markdownlint.json
+
+# ===== 环境变量（含密钥）=====
+.env

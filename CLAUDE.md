@@ -9,7 +9,7 @@
 
 > 分界原则：本文件只放「跟 Claude Code 工具绑定」的操作规则（换 Cursor 就不适用的）。PM 方法论、业务规则、链路定义全部在 pm-workflow.md。唯一例外：context.md 只读规则放在本文件以确保模型启动时第一时间遵守。
 
-【并行读取】收到产出物指令时，context.md + scene-list.md + SKILL.md + references 并行读取（一次性发多个 Read 工具调用），不要串行等待。
+【并行读取】收到产出物指令时，context.md + scene-list.md + SKILL.md 并行读取。references/ 按 SKILL.md Step 1 声明的文件清单按需加载，Step 声明的文件可并入首批并行读取，未声明的 CSS/JS 不预加载。
 
 【计时】每个产出物步骤完成后，用 bash 执行 `date +%s` 获取时间戳。在 Step A 开始前记一次，每个 Step 完成后记一次，报告耗时。
 
@@ -86,6 +86,13 @@ context.md 由 Chat Opus 输出，共九章。本地模型默认只读。
 - 编号：产出物不用圈数字（①②③），统一用 1. 2. 3.
 
 【数据结构变更】修改上游数据结构时，必须一次想完整个链路（上游产出 → 下游消费 → 老数据降级），一个 commit 搞定，不分多次。
+
+### Public Repo 脱敏同步
+
+`sync_public.sh` 将框架层脱敏同步到独立 public repo，private repo 不动。
+- 排除：`projects/`、`references/`、`deliverables/`、`.private/`、`.claude/projects/`
+- `.public/overrides/` 存放通用替换文件（biz-trading/social/livestream、prd-example）
+- 只改 skill/rules/脚本/模板 才需同步，改项目内容不触发
 
 ### 项目状态获取
 

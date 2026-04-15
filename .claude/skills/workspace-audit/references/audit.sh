@@ -7,7 +7,7 @@
 set -o pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-CATEGORIES="${1:-1,2,3,4,5,6}"
+CATEGORIES="${1:-1,2,3,4,7}"
 GLOBAL_FAIL=0
 
 # ─── 常量 ───
@@ -329,31 +329,67 @@ if run_cat 4; then
   echo "[context-template 实际章节]："
   grep '^## ' .claude/chat-templates/context-template.md 2>/dev/null | sed 's/^/  /'
 
-  # 4.2 触发词重叠
+  # 4.2 触发词重叠（自动检测，Python 处理中文避免 macOS sed/grep 编码问题）
   echo ""
   echo "--- 触发词重叠 ---"
-  for f in .claude/skills/*/SKILL.md; do
-    name=$(sed -n 's/^name: *//p' "$f")
-    desc=$(awk '/^---$/{n++; next} n==1 && /^description:/{sub(/^description: *>/,""); p=1; print; next} n==1 && p && /^  /{print; next} {p=0} n>=2{exit}' "$f" | head -3 | tr '\n' ' ' | sed 's/  */ /g')
-    echo "  [$name] $desc"
-  done
-  echo ""
-  echo "  >> 人工检查：是否有两个 skill 被同一个指令同时触发"
+  python3 -c "
+import re, os, glob
+from collections import defaultdict
+trigger_map = defaultdict(list)
+for f in sorted(glob.glob('.claude/skills/*/SKILL.md')):
+    lines = open(f, encoding='utf-8').readlines()
+    name = ''
+    in_fm = 0
+    desc_lines = []
+    for line in lines:
+        if line.strip() == '---':
+            in_fm += 1
+            continue
+        if in_fm == 1:
+            if line.startswith('name:'):
+                name = line.split(':', 1)[1].strip()
+            if line.startswith('description:'):
+                desc_lines.append(line.split(':', 1)[1])
+            elif desc_lines and line.startswith('  '):
+                desc_lines.append(line)
+        if in_fm >= 2:
+            break
+    desc = ' '.join(desc_lines)
+    triggers = re.findall(r'「([^」]+)」', desc)
+    for t in set(triggers):
+        trigger_map[t].append(name)
+overlap = False
+for trigger, owners in sorted(trigger_map.items()):
+    if len(owners) > 1:
+        print(f'  ⚠️  「{trigger}」被多个 skill 使用: {\", \".join(owners)}')
+        overlap = True
+if not overlap:
+    print('  ✅ 无触发词重叠')
+"
 
-  # 4.3 术语一致性
+  # 4.3 术语一致性（从 context-template 第 5 章 + skill name 动态提取）
   echo ""
   echo "--- 术语一致性 ---"
-  check_term() {
-    local label="$1"
-    local count
-    count=$(grep -rl "$label" CLAUDE.md .claude/rules/ .claude/skills/*/SKILL.md 2>/dev/null | wc -l | tr -d ' ')
-    printf '  「%s」→ %s 个文件\n' "$label" "$count"
-  }
-  check_term "交互大图"
-  check_term "可交互原型"
-  check_term "行为规格"
-  check_term "场景清单"
-  check_term "拉通自检"
+  TERMS_FILE=$(mktemp)
+  # 来源 1：各 skill 的 name 字段中的中文名
+  for f in .claude/skills/*/SKILL.md; do
+    sname=$(sed -n 's/^name: *//p' "$f")
+    # 只取含中文的名称
+    if echo "$sname" | grep -qE '[\x{4e00}-\x{9fff}]' 2>/dev/null || echo "$sname" | grep -qP '[\p{Han}]' 2>/dev/null; then
+      echo "$sname" >> "$TERMS_FILE"
+    fi
+  done
+  # 来源 2：pm-workflow 中定义的核心术语
+  for term in "交互大图" "可交互原型" "行为规格" "页面结构" "场景清单" "需求框架" "拉通自检" "架构图"; do
+    echo "$term" >> "$TERMS_FILE"
+  done
+  sort -u "$TERMS_FILE" -o "$TERMS_FILE"
+  while read -r term; do
+    [ -z "$term" ] && continue
+    count=$(grep -rl "$term" CLAUDE.md .claude/rules/ .claude/skills/*/SKILL.md 2>/dev/null | wc -l | tr -d ' ')
+    printf '  「%s」→ %s 个文件\n' "$term" "$count"
+  done < "$TERMS_FILE"
+  rm -f "$TERMS_FILE"
   echo ""
 fi
 
@@ -516,7 +552,7 @@ if run_cat 6; then
     # 6.1 场景编号
     if [ -f "${proj_dir}scene-list.md" ]; then
       echo "[场景编号]："
-      scene_ids=$(grep -oE '[A-Z]-[0-9]+[a-z]?' "${proj_dir}scene-list.md" | sort -u)
+      scene_ids=$(grep -oE '[A-Z](-[0-9]+[a-z]?)?' "${proj_dir}scene-list.md" | sort -u)
       scene_count=$(echo "$scene_ids" | grep -c '.' || echo 0)
       echo "  scene-list.md 中有 $scene_count 个编号"
 
