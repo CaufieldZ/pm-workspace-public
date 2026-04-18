@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>流程图 Demo · 私募</title>
+<script src="https://unpkg.com/@antv/x6@2.18.1/dist/index.js"></script>
+<script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+<style>
+/* PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 */
+/* ═══════════════════════════════════════════════════════════
+   flowchart.css · 流程图产出物样式
+   深色画布 + 浅色白板卡片，承载 AntV X6 渲染的流程图
+   ═══════════════════════════════════════════════════════════ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'HarmonyOS Sans SC','Plus Jakarta Sans',system-ui,sans-serif;
+  background: #0B0E11;
+  color: #EAECEF;
+  padding: 60px 40px;
+  min-height: 100vh;
+}
+
+.page-title {
+  font-size: 20px; font-weight: 900;
+  margin-bottom: 6px; color: #F0F2F5;
+}
+.page-sub {
+  font-size: 12px; color: #8B949E;
+  margin-bottom: 32px;
+}
+
+.section-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+  color: #5E6673; margin: 36px 0 12px 2px;
+}
+
+/* 白板卡片：浅底嵌入深色画布，模拟设计师白板效果 */
+.whiteboard {
+  background: #FAFBFC;
+  border-radius: 12px;
+  border: 1px solid #E5E6EB;
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.3),
+    0 8px 24px rgba(0,0,0,0.4);
+  padding: 32px 36px;
+  position: relative;
+}
+.whiteboard::before {
+  content: "";
+  position: absolute; top: 14px; left: 18px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #F6465D; opacity: 0.4;
+  box-shadow:
+    14px 0 0 rgba(246,195,14,0.4),
+    28px 0 0 rgba(14,203,129,0.4);
+}
+.wb-title {
+  font-size: 15px; font-weight: 700;
+  color: #1F2329; margin: 6px 0 4px 38px;
+}
+.wb-sub {
+  font-size: 11px; color: #86909C;
+  margin: 0 0 24px 38px;
+}
+
+/* 分支流程图容器 */
+.g-flow { width: 100%; height: 500px; }
+
+/* 泳道图容器 */
+.lane-wrap { position: relative; width: 100%; overflow-x: auto; }
+.lane-inner { position: relative; }
+.lane-bg {
+  position: absolute; inset: 0;
+  border: 1px solid #E5E6EB; border-radius: 4px;
+  z-index: 0; pointer-events: none;
+}
+.lane-row {
+  position: absolute; left: 0; width: 100%; height: 90px;
+  border-bottom: 1px solid #E5E6EB;
+}
+.lane-row:last-child { border-bottom: none; }
+.lane-row.alt   { background: #F7F8FA; }
+.lane-row.white { background: #FFFFFF; }
+.lane-header-col {
+  position: absolute; left: 0; top: 0; width: 84px; height: 100%;
+  background: #F2F3F5; border-right: 1px solid #E5E6EB;
+  display: flex; flex-direction: column;
+  z-index: 1; pointer-events: none;
+}
+.lane-header-col > div {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: #1F2329;
+  border-bottom: 1px solid #E5E6EB;
+}
+.lane-header-col > div:last-child { border-bottom: none; }
+.g-lane { position: absolute; inset: 0; z-index: 2; }
+
+/* 自检输出面板 */
+.check-out {
+  margin-top: 16px; padding: 10px 14px;
+  background: #141821; border: 1px solid #1F2329; border-radius: 6px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  color: #8B949E; line-height: 1.7;
+}
+.check-out .pass { color: #0ECB81; font-weight: 700; }
+.check-out .fail { color: #F6465D; font-weight: 700; }
+
+</style>
+</head>
+<body>
+
+<div class="page-title">流程图 Demo · 私募</div>
+<div class="page-sub">X6 + dagre(分支)/ 泳道二维定位 · 深色画布 + 浅色白板卡片 · 自动自检</div>
+
+<div class="section-label">—— 01 · 分支流程图 · 合格投资者校验 ——</div>
+<div class="whiteboard">
+  <div class="wb-title">合格投资者认证流程(R1/R2)</div>
+  <div class="wb-sub">用户进入认购前的前后端双重校验,失败分支走引导或拦截</div>
+  <div id="g-flow-0" class="g-flow"></div>
+</div>
+
+<div class="section-label">—— 02 · 泳道图 · 大额赎回审批 ——</div>
+<div class="whiteboard">
+  <div class="wb-title">大额赎回审批流程(含资料回流 / 风险驳回 / 联席签字)</div>
+  <div class="wb-sub">投资人 / 运营 / 风控 / 基金经理 四泳道 · 14 节点 · 4 判定 · 3 条跨泳道回流</div>
+  <div class="lane-wrap" id="lane-wrap-1">
+    <div class="lane-inner" id="lane-inner-1">
+      <div class="lane-bg" id="lane-bg-1"></div>
+      <div class="lane-header-col">
+        <div>投资人</div>
+        <div>运营</div>
+        <div>风控</div>
+        <div>基金经理</div>
+      </div>
+      <div class="g-lane" id="g-lane-1"></div>
+    </div>
+  </div>
+  <div class="check-out" id="check-out-1"></div>
+</div>
+
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   flowchart-core.js · AntV X6 流程图核心
+   节点类型:terminal/process/decision/success/fail
+   路由: 同行相邻 → normal(直线), 其他 → manhattan(圆角折线)
+   ═══════════════════════════════════════════════════════════ */
+
+const { Graph } = window.X6;
+
+// ── 主题常量 ────────────────────────────────────────
+const FONT = "'HarmonyOS Sans SC','Plus Jakarta Sans',system-ui,sans-serif";
+const STROKE = '#1F2329';
+const FILL = {
+  terminal: '#E8E5FF',
+  process:  '#E7EFFE',
+  decision: '#FDF3D5',
+  success:  '#D9F5E5',
+  fail:     '#FEE3E6',
+};
+const SIZE = {
+  terminal: { w: 118, h: 42 },
+  process:  { w: 130, h: 46 },
+  decision: { w: 130, h: 58 },
+  success:  { w: 140, h: 46 },
+  fail:     { w: 140, h: 46 },
+};
+
+// ── 菱形节点注册 ──────────────────────────────────────
+Graph.registerNode('diamond', {
+  inherit: 'polygon',
+  attrs: {
+    body: { refPoints: '0,10 10,0 20,10 10,20', strokeWidth: 1.5 },
+    label: {
+      fontFamily: FONT, fontSize: 11, fontWeight: 600,
+      fill: STROKE, textVerticalAnchor: 'middle'
+    },
+  },
+}, true);
+
+const PORTS = {
+  groups: {
+    top:    { position: 'top',    attrs: { circle: { r: 0, magnet: true } } },
+    bottom: { position: 'bottom', attrs: { circle: { r: 0, magnet: true } } },
+    left:   { position: 'left',   attrs: { circle: { r: 0, magnet: true } } },
+    right:  { position: 'right',  attrs: { circle: { r: 0, magnet: true } } },
+  },
+  items: ['top','bottom','left','right'].map(g => ({ id: g, group: g })),
+};
+
+// ── 工厂函数 ────────────────────────────────────────
+function nodeConfig(n) {
+  const s = SIZE[n.type];
+  const common = { id: n.id, width: s.w, height: s.h, label: n.label, ports: PORTS };
+  if (n.type === 'decision') {
+    return { ...common, shape: 'diamond',
+      attrs: { body: { fill: FILL.decision, stroke: STROKE, strokeWidth: 1.5 } } };
+  }
+  const strokeCol = n.type === 'fail' ? '#F6465D'
+                  : n.type === 'success' ? '#0ECB81' : STROKE;
+  const rx = n.type === 'terminal' ? 21 : 8;
+  return { ...common, shape: 'rect',
+    attrs: {
+      body: { rx, ry: rx, fill: FILL[n.type], stroke: strokeCol, strokeWidth: 1.5 },
+      label: { fontFamily: FONT, fontSize: 11, fontWeight: 600, fill: STROKE },
+    } };
+}
+
+function choosePorts(sPos, tPos) {
+  const dx = tPos.x - sPos.x, dy = tPos.y - sPos.y;
+  const TH = 20;
+  let sp, tp;
+  if (dy > TH)       { sp = 'bottom'; tp = 'top'; }
+  else if (dy < -TH) { sp = 'top';    tp = 'bottom'; }
+  else               { sp = dx > 0 ? 'right' : 'left';
+                       tp = dx > 0 ? 'left'  : 'right'; }
+  return { sp, tp };
+}
+
+function edgeConfig(sId, tId, sp, tp, label) {
+  // 同行相邻 right→left / left→right 用 normal router(直线),避免 manhattan 降级 orth 产生绕圈
+  const isHoriz = (sp === 'right' && tp === 'left') || (sp === 'left' && tp === 'right');
+  const router = isHoriz
+    ? { name: 'normal' }
+    : { name: 'manhattan', args: {
+        startDirections: [sp], endDirections: [tp], step: 8, padding: 10,
+      } };
+  return {
+    id: `${sId}->${tId}`,
+    source: { cell: sId, port: sp },
+    target: { cell: tId, port: tp },
+    router,
+    connector: { name: 'rounded', args: { radius: 8 } },
+    attrs: {
+      line: { stroke: STROKE, strokeWidth: 1.2,
+        targetMarker: { name: 'block', width: 7, height: 7 } },
+    },
+    labels: label ? [{
+      position: 0.5,
+      attrs: {
+        text: { text: label, fontFamily: FONT, fontSize: 10, fontWeight: 700, fill: STROKE },
+        rect: {
+          ref: 'text',
+          refWidth: 1.5, refHeight: 1.5,
+          refX: -0.25, refY: -0.25,
+          fill: '#FFFFFF', stroke: STROKE, strokeWidth: 0.6,
+          rx: 3, ry: 3,
+        },
+      }
+    }] : [],
+  };
+}
+
+// ── 分支流程图渲染(dagre 自动布局) ─────────────────────
+function renderBranch(containerId, chart) {
+  const dg = new dagre.graphlib.Graph();
+  dg.setGraph({
+    rankdir: chart.layout || 'TB',
+    nodesep: chart.nodesep || 70,
+    ranksep: chart.ranksep || 60,
+    marginx: 20, marginy: 20,
+  });
+  dg.setDefaultEdgeLabel(() => ({}));
+  chart.nodes.forEach(n => {
+    const s = SIZE[n.type];
+    dg.setNode(n.id, { width: s.w, height: s.h });
+  });
+  chart.edges.forEach(e => dg.setEdge(e.s, e.t));
+  dagre.layout(dg);
+
+  const g = new Graph({
+    container: document.getElementById(containerId),
+    background: { color: 'transparent' },
+    grid: false, interacting: false, panning: false,
+  });
+  chart.nodes.forEach(n => {
+    const d = dg.node(n.id), s = SIZE[n.type];
+    g.addNode({ ...nodeConfig(n), x: d.x - s.w/2, y: d.y - s.h/2 });
+  });
+  chart.edges.forEach(e => {
+    const { sp, tp } = choosePorts(dg.node(e.s), dg.node(e.t));
+    g.addEdge(edgeConfig(e.s, e.t, sp, tp, e.label));
+  });
+  g.zoomToFit({ padding: 24, maxScale: 1 });
+  return g;
+}
+
+// ── 泳道图渲染(栅格定位) ───────────────────────────────
+function renderSwimlane(containerIds, chart) {
+  const { laneBgId, laneInnerId, laneWrapSelector, graphId, checkOutId } = containerIds;
+  const LANES = chart.lanes;
+  const LANE_H  = chart.laneHeight || 90;
+  const COL_W   = chart.colWidth   || 150;
+  const HEAD_W  = chart.headWidth  || 84;
+  const PAD_X   = chart.padX       || 12;
+  const laneIdx = id => LANES.indexOf(id);
+
+  const centerOf = n => ({
+    x: HEAD_W + PAD_X + n.col * COL_W + COL_W / 2,
+    y: laneIdx(n.lane) * LANE_H + LANE_H / 2,
+  });
+
+  const COLS = Math.max(...chart.nodes.map(n => n.col)) + 1;
+  const W = HEAD_W + PAD_X * 2 + COLS * COL_W;
+  const H = LANES.length * LANE_H;
+
+  // CSS 泳道背景
+  const inner = document.getElementById(laneInnerId);
+  inner.style.width  = W + 'px';
+  inner.style.height = H + 'px';
+  document.querySelector(laneWrapSelector).style.height = H + 'px';
+  const bgEl = document.getElementById(laneBgId);
+  LANES.forEach((_, i) => {
+    const row = document.createElement('div');
+    row.className = 'lane-row ' + (i % 2 === 0 ? 'white' : 'alt');
+    row.style.top = (i * LANE_H) + 'px';
+    bgEl.appendChild(row);
+  });
+
+  const g = new Graph({
+    container: document.getElementById(graphId),
+    width: W, height: H,
+    background: { color: 'transparent' }, grid: false,
+    interacting: false, panning: false,
+  });
+
+  const byId = Object.fromEntries(chart.nodes.map(n => [n.id, n]));
+  chart.nodes.forEach(n => {
+    const c = centerOf(n), s = SIZE[n.type];
+    g.addNode({ ...nodeConfig(n), x: c.x - s.w/2, y: c.y - s.h/2 });
+  });
+  chart.edges.forEach(e => {
+    let sp = e.sp, tp = e.tp;
+    if (!sp || !tp) {
+      const auto = choosePorts(centerOf(byId[e.s]), centerOf(byId[e.t]));
+      sp = sp || auto.sp;
+      tp = tp || auto.tp;
+    }
+    g.addEdge(edgeConfig(e.s, e.t, sp, tp, e.label));
+  });
+
+  // 自检:边路径采样 vs 节点形状(菱形内切 + rect bbox 4px buffer)
+  if (checkOutId) {
+    setTimeout(() => runSelfCheck(graphId, checkOutId), 600);
+  }
+  return g;
+}
+
+// ── 自检:边不穿节点 ───────────────────────────────────
+function runSelfCheck(graphId, outId) {
+  const out = document.getElementById(outId);
+  const svg = document.querySelector('#' + graphId + ' svg.x6-graph-svg');
+  if (!svg) { out.textContent = '⚠ svg not found'; return; }
+
+  const nodeEls = [...svg.querySelectorAll(
+    'g.x6-cell[data-shape="rect"], g.x6-cell[data-shape="diamond"]'
+  )];
+  const boxes = nodeEls.map(el => {
+    const r = el.getBoundingClientRect();
+    return {
+      id: el.getAttribute('data-cell-id'),
+      shape: el.getAttribute('data-shape'),
+      l: r.left, r: r.right, t: r.top, b: r.bottom,
+      cx: (r.left + r.right) / 2, cy: (r.top + r.bottom) / 2,
+      hw: (r.right - r.left) / 2, hh: (r.bottom - r.top) / 2,
+    };
+  });
+
+  function hitInside(x, y, nb, excludeId) {
+    if (nb.id === excludeId) return false;
+    if (nb.shape === 'diamond') {
+      const nx = Math.abs(x - nb.cx) / nb.hw;
+      const ny = Math.abs(y - nb.cy) / nb.hh;
+      return nx + ny < 0.82;
+    }
+    return x > nb.l + 4 && x < nb.r - 4 && y > nb.t + 4 && y < nb.b - 4;
+  }
+
+  const edgeCells = [...svg.querySelectorAll('g.x6-cell[data-shape="edge"]')];
+  const issues = [];
+  edgeCells.forEach(cell => {
+    const edgeId = cell.getAttribute('data-cell-id') || '?';
+    const [sId, tId] = edgeId.split('->');
+    const p = cell.querySelector('path.x6-edge, path[stroke]:not([stroke="none"])');
+    if (!p || !p.getAttribute('d') || p.getAttribute('d').length < 5) return;
+    const L = p.getTotalLength();
+    if (L < 10) return;
+    const ctm = p.getScreenCTM();
+    if (!ctm) return;
+    for (let k = 5; k <= 15; k++) {
+      const pt = p.getPointAtLength(k * L / 20);
+      const x = pt.x * ctm.a + pt.y * ctm.c + ctm.e;
+      const y = pt.x * ctm.b + pt.y * ctm.d + ctm.f;
+      for (const nb of boxes) {
+        if (hitInside(x, y, nb, sId) && nb.id !== tId) {
+          issues.push(`❌ ${edgeId} 穿过 ${nb.id}`);
+          return;
+        }
+      }
+    }
+  });
+
+  if (issues.length === 0) {
+    out.innerHTML = `<span class="pass">✓ 自检通过</span> · ${edgeCells.length} 条边 × ${boxes.length} 节点 · 无穿节点`;
+  } else {
+    out.innerHTML = `<span class="fail">✗ 自检失败</span> · ${issues.length} 处:<br>` +
+      [...new Set(issues)].map(x => `&nbsp;&nbsp;${x}`).join('<br>');
+  }
+  console.log('[SELF-CHECK]', issues.length === 0 ? 'PASS' : 'FAIL', [...new Set(issues)]);
+}
+
+window.FLOWCHART = { renderBranch, renderSwimlane };
+
+
+// ── 数据注入 ───────────────────────────────
+const CHARTS = [{"type": "branch", "short_title": "合格投资者校验", "title": "合格投资者认证流程(R1/R2)", "subtitle": "用户进入认购前的前后端双重校验,失败分支走引导或拦截", "layout": "TB", "nodes": [{"id": "START", "type": "terminal", "label": "点击「立即认购」"}, {"id": "FETCH", "type": "process", "label": "前端请求 QI 状态"}, {"id": "Q1", "type": "decision", "label": "QI 已认证?"}, {"id": "AUTH", "type": "fail", "label": "拦截+引导「去认证」"}, {"id": "READC", "type": "process", "label": "读取风险等级 C"}, {"id": "Q2", "type": "decision", "label": "C 级 ≥ R 级?"}, {"id": "BLOCK", "type": "fail", "label": "拦截+提示不匹配"}, {"id": "BADGE", "type": "success", "label": "Badge「C3 匹配 R3」"}, {"id": "NEXT", "type": "terminal", "label": "进入认购下单"}], "edges": [{"s": "START", "t": "FETCH"}, {"s": "FETCH", "t": "Q1"}, {"s": "Q1", "t": "AUTH", "label": "No"}, {"s": "Q1", "t": "READC", "label": "Yes"}, {"s": "READC", "t": "Q2"}, {"s": "Q2", "t": "BLOCK", "label": "No"}, {"s": "Q2", "t": "BADGE", "label": "Yes"}, {"s": "BADGE", "t": "NEXT"}]}, {"type": "swimlane", "short_title": "大额赎回审批", "title": "大额赎回审批流程(含资料回流 / 风险驳回 / 联席签字)", "subtitle": "投资人 / 运营 / 风控 / 基金经理 四泳道 · 14 节点 · 4 判定 · 3 条跨泳道回流", "lanes": ["投资人", "运营", "风控", "基金经理"], "nodes": [{"id": "I1", "lane": "投资人", "col": 0, "type": "terminal", "label": "发起赎回申请"}, {"id": "O1", "lane": "运营", "col": 1, "type": "process", "label": "接收+资料核验"}, {"id": "Q1", "lane": "运营", "col": 2, "type": "decision", "label": "资料完整?"}, {"id": "I2", "lane": "投资人", "col": 2, "type": "fail", "label": "补充资料"}, {"id": "Q2", "lane": "运营", "col": 3, "type": "decision", "label": "金额≥300万?"}, {"id": "I3", "lane": "投资人", "col": 4, "type": "success", "label": "普通赎回 T+1"}, {"id": "R1", "lane": "风控", "col": 4, "type": "process", "label": "风险评估"}, {"id": "Q3", "lane": "风控", "col": 5, "type": "decision", "label": "风险通过?"}, {"id": "I4", "lane": "投资人", "col": 6, "type": "fail", "label": "收到驳回通知"}, {"id": "F1", "lane": "基金经理", "col": 6, "type": "process", "label": "基金经理审批"}, {"id": "Q4", "lane": "基金经理", "col": 7, "type": "decision", "label": "≥1000万?"}, {"id": "F2", "lane": "基金经理", "col": 8, "type": "process", "label": "联席签字"}, {"id": "F3", "lane": "基金经理", "col": 9, "type": "terminal", "label": "结算完成"}, {"id": "I5", "lane": "投资人", "col": 9, "type": "success", "label": "到账确认"}], "edges": [{"s": "I1", "t": "O1"}, {"s": "O1", "t": "Q1"}, {"s": "Q1", "t": "I2", "label": "No"}, {"s": "I2", "t": "O1"}, {"s": "Q1", "t": "Q2", "label": "Yes"}, {"s": "Q2", "t": "I3", "label": "No"}, {"s": "Q2", "t": "R1", "label": "Yes"}, {"s": "R1", "t": "Q3"}, {"s": "Q3", "t": "I4", "label": "No"}, {"s": "Q3", "t": "F1", "label": "Yes"}, {"s": "F1", "t": "Q4"}, {"s": "Q4", "t": "F2", "label": "Yes"}, {"s": "Q4", "t": "F3", "label": "No", "sp": "bottom", "tp": "bottom"}, {"s": "F2", "t": "F3"}, {"s": "F3", "t": "I5"}]}];
+
+// ── 渲染 ──────────────────────────────────
+CHARTS.forEach((chart, idx) => {
+  if (chart.type === 'branch') {
+    window.FLOWCHART.renderBranch(`g-flow-${idx}`, chart);
+  } else if (chart.type === 'swimlane') {
+    window.FLOWCHART.renderSwimlane({
+      laneBgId: `lane-bg-${idx}`,
+      laneInnerId: `lane-inner-${idx}`,
+      laneWrapSelector: `#lane-wrap-${idx}`,
+      graphId: `g-lane-${idx}`,
+      checkOutId: `check-out-${idx}`,
+    }, chart);
+  }
+});
+</script>
+
+</body>
+</html>

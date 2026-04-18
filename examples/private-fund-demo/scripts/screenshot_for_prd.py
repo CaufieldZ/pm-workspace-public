@@ -1,4 +1,3 @@
-# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 """从交互大图截取各 Scene 第一个设备框作为 PRD 截图"""
 from playwright.sync_api import sync_playwright
 from PIL import Image, ImageDraw
@@ -33,10 +32,12 @@ with sync_playwright() as p:
     page = browser.new_page(viewport={"width": 1440, "height": 900}, device_scale_factor=2)
     page.goto(IMAP)
     page.wait_for_load_state("networkidle")
-    # 让所有 fade-section 可见 + 隐藏 side-nav（避免 fixed 元素闯入截图）
+    # 让所有 fade-section 可见 + 隐藏标注/导航（避免叠加到设备框里被截进去）
     page.evaluate("""
         document.querySelectorAll('.fade-section').forEach(el=>el.classList.add('visible'));
-        const nav = document.querySelector('.side-nav'); if (nav) nav.style.display = 'none';
+        document.querySelectorAll(
+          '.anno, .anno-n, .ann-card, .ann-tag, .aw, .flow-note, .side-nav'
+        ).forEach(el => el.style.display = 'none');
     """)
     time.sleep(0.6)
 
