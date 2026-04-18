@@ -1,3 +1,4 @@
+# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 """从交互大图截取各 Scene 第一个设备框作为 PRD 截图"""
 from playwright.sync_api import sync_playwright
 from PIL import Image, ImageDraw

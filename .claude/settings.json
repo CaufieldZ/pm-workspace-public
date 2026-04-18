@@ -16,7 +16,9 @@
       "Bash(cp -R /Users/felix.zhi/pm-workspace/projects/demo-private-fund/screenshots /Users/felix.zhi/pm-workspace-public/examples/private-fund-demo/)",
       "Bash(md5 /tmp/a1_remote.png ~/pm-workspace-public/examples/private-fund-demo/screenshots/prd/a1.png)",
       "Edit(/.claude/skills/flowchart/**)",
-      "Bash(CLAUDE_PROJECT_DIR=$\\(pwd\\) bash .claude/hooks/pre-risky-op.sh)"
+      "Bash(CLAUDE_PROJECT_DIR=$\\(pwd\\) bash .claude/hooks/pre-risky-op.sh)",
+      "Bash(git -C ~/pm-workspace-public log --oneline -3)",
+      "Bash(git -C ~/pm-workspace-public push)"
     ],
     "additionalDirectories": [
       "/Users/felix.zhi/pm-workspace/.claude",

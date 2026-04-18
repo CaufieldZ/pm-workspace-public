@@ -17,7 +17,7 @@ from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
 from docx.enum.section import WD_ORIENT
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
-import os
+import os, re
 
 # ── 颜色常量 ──────────────────────────────────────────────────────────────
 C = {
@@ -41,6 +41,8 @@ C = {
 def set_cell_bg(cell, hex_color):
     tc = cell._tc
     tcPr = tc.get_or_add_tcPr()
+    for old in tcPr.findall(qn('w:shd')):
+        tcPr.remove(old)
     shd = OxmlElement('w:shd')
     shd.set(qn('w:val'), 'clear')
     shd.set(qn('w:color'), 'auto')
@@ -211,13 +213,18 @@ def scene_table(doc, scene_id, scene_name, right_blocks):
     doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
 
-def fill_cell_blocks(cell, blocks):
+_NUMBERED_PREFIX_RE = re.compile(r"^\d+\.\s")
+
+def fill_cell_blocks(cell, blocks, numbered=True):
     """
     在已存在的 cell 内填充结构化 blocks（title 粗体 + 子条目缩进）。
     假设 cell 的首段已为空或将被覆写。不清空 cell，不会处理旧内容。
     被 scene_table 和 update_prd_base.set_cell_blocks 共用。
 
     blocks: list[tuple[str, list[str]]]
+    numbered: True 时自动给每个 block 内的主级 line 加 "1./2./3." 前缀
+              （已含 "N. " 前缀的 line 保持原样，二级缩进行 "  - " 不编号）。
+              prd-template.md 规定"每个模块下用 1./2./3. 数字编号"，默认开启。
     """
     first = True
     for (title, lines) in blocks:
@@ -232,18 +239,23 @@ def fill_cell_blocks(cell, blocks):
             para_run(p, tag, size_pt=10, bold=True, color=C["tagChange"])
         else:
             para_run(p, title, size_pt=10, bold=True, color=C["textHeading"])
+        counter = 0
         for line in lines:
             pl = cell.add_paragraph()
             pl.paragraph_format.space_before = Pt(0)
             pl.paragraph_format.space_after = Pt(1)
-            # 二级缩进：以「  - 」或「\t- 」开头的行缩进更深
             stripped = line.lstrip()
-            if stripped.startswith("- ") and line != stripped:
+            is_sublevel = stripped.startswith("- ") and line != stripped
+            if is_sublevel:
                 pl.paragraph_format.left_indent = Cm(0.9)
-                body = stripped  # 保留 "- " 前缀作为 bullet 标记
+                body = stripped
             else:
                 pl.paragraph_format.left_indent = Cm(0.3)
-                body = line
+                if numbered and not _NUMBERED_PREFIX_RE.match(line):
+                    counter += 1
+                    body = f"{counter}. {line}"
+                else:
+                    body = line
             para_run_md(pl, body, size_pt=9, color=C["textPrimary"])
 
 # ── 文档初始化 ────────────────────────────────────────────────────────────

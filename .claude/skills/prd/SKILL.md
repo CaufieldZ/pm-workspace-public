@@ -150,9 +150,10 @@ from update_prd_base import *
 | `replace_para_text` | `(para, new_text: str)` | 整体替换段落文字，保留首 run 格式 |
 | `search_replace_para` | `(para, old: str, new: str) → bool` | 段落内搜索替换（跨 run 拼接匹配），命中返回 True |
 | `set_cell_text` | `(cell, text: str)` | 清空单元格全部内容，写入纯文本（仅限短字符串，多行用 set_cell_blocks） |
-| `set_cell_blocks` | `(cell, blocks: list[tuple[str, list[str]]])` | 清空单元格，按结构化 blocks 重建（title 粗体 + 子条目缩进），视觉与 scene_table 右列一致。**升版 Scene/后台 table 时优先用它** |
+| `set_cell_blocks` | `(cell, blocks: list[tuple[str, list[str]]], numbered=True)` | 清空单元格，按结构化 blocks 重建（title 粗体 + 子条目自动加 `1./2./3.` 编号），视觉与 scene_table 右列一致。**升版 Scene/后台 table 时优先用它**。lines 已含 `N. ` 前缀或以 `  - ` 开头的二级缩进行不会被重复编号；纯序号数据（如 P0 同步"Launch Pool / 现货充值赛"列表）传 `numbered=False` |
 | `replace_cell_image` | `(cell, img_path, width_cm=7.0)` | 清空单元格旧图，插入新截图（**内部自动调 fix_dpi，无需手动调**） |
 | `fix_dpi` | `(png_path, dpi=144) → str` | 修正 @2x 截图 DPI 元数据，防止 docx 里虚化（replace_cell_image 已内置，单独调用于调试） |
+| `normalize_headings` | `(doc) → (h1_count, h2_count)` | 旧 docx 修缮专用:补 Heading 1/2 的 run 级字色字号粗体 + H1 段落下边框 #2E75B6。幂等。老脚本常用 `add_paragraph(style='Heading N')` 直接产段落,run 级属性缺失,渲染成黑色无下划线,视觉与 `gen_prd_base.h1()/h2()` 产出不一致——升版前调此函数归一化 |
 
 **⚠️ set_cell_text vs set_cell_blocks 选择**：升版 Scene 表格右列、后台 table 这种"多段落+层次"的单元格，**必须**用 `set_cell_blocks` 结构化填充。用 `set_cell_text` 塞多行含 `\n` 的字符串会被渲染成**单段落无层次纯文本**（历史项目已有此类问题，如 htx-activity-center v4.7）。
 
@@ -169,6 +170,21 @@ from update_prd_base import *
 反过来（先截图再改内容）会导致截图与内容不匹配，或插入的截图被内容变更覆盖。
 
 **python-docx `table.add_row()` 格式陷阱**：新增行只继承表级属性（边框/列宽），**不继承** cell 级格式（bold / font.size / font.color / shading）。新增行后必须手动对齐格式——参照同表已有数据行的 bold、size、color 逐 cell 设置，否则新行会和旧行视觉不一致。
+
+### ⛔ 升版硬规则（违反即重来，check_prd.sh 会自动拦截）
+
+1. **禁止在项目脚本里重定义** `set_cell_text` / `set_cell_blocks` / `replace_para_text` / `fill_cell_blocks` / `fix_dpi`。必须 `from update_prd_base import *`。
+   - 旧脚本常见错误：自己写一个 `set_cell_text(cell, text)`，把含 `\n` 的多行字符串塞进单段落——右列会塌成无层次纯文本。
+   - 正确做法：多段落/多层次内容用 `set_cell_blocks(cell, [(title, [lines])...])`，它会渲染粗体模块 title + numbered 子项。
+2. **禁止圈数字 ①②③④⑤⑥⑦⑧⑨⑩**（CLAUDE.md 格式规范）。章节/小节/步骤一律 `1. 2. 3.`。
+3. **Scene 右列 lines 默认被 `fill_cell_blocks` 自动加 `1./2./3.` 编号**（`numbered=True`）。lines 里写白话即可：
+   - 已含 `N. ` 前缀的行保持原样（不重复编号）
+   - 以 `  - ` 开头的二级缩进行跳过编号
+   - 需要关闭自动编号时显式传 `numbered=False`（如纯序号列表"1. Launch Pool / 2. 现货充值赛"这种本来就是数据枚举）
+4. **docx 已有 PNG 截图 DPI 默认 72（Playwright deviceScaleFactor=2 产物）**，需遍历 `doc.part.rels` 用 PIL 重写 `dpi=(144, 144)`。`replace_cell_image` 会自动 `fix_dpi`；批量修旧 docx 时自己写 loop。
+5. **Phone 比例截图（aspect < 0.7）必须圆角透明化**，否则深色主题里 4 角残留白方块。用 `PIL.ImageDraw.rounded_rectangle` 生成 alpha mask。
+6. **所有 docx 产出必调 `normalize_punctuation(doc)`**（soul.md 硬规则：中文相邻的半角 `,:()` 必须全角 `，：（）`）。gen/update/refine 脚本保存 docx 前调用，check_prd.sh 会扫残留。
+7. **升旧 docx 必调 `normalize_headings(doc)`**：老脚本用 `add_paragraph(style='Heading 1')` 直接产 H1/H2 时不染 run，Word 渲染成黑色无下划线，视觉与新 PRD 不一致。`normalize_headings` 幂等：H1 补 `fg=#1A1A2E + 下边框#2E75B6`，H2 补 `fg=#2E75B6`。同步处理表头 bg 从旧 `D5E8F0` 升到 `2D81FF` + 白字（`set_cell_bg` 已修复旧 shd 残留 bug，可直接调）。
 
 ### Step 2：收集产品信息
 
@@ -249,15 +265,43 @@ PRD 不是一口气写完再审。每完成一个核心区块后暂停，以 QC 
 
 **跳过条件**：用户说「快速模式」「不用审直接写完」→ 一气呵成写完，最后在末尾输出完整预审问题清单。
 
-### Step 3：生成 docx
+### Step 3：生成 docx（强制分步，违反即重来）
 
 **脚本复用优先**：先检查 `projects/{项目名}/scripts/` 下是否有已有的 `gen_prd_*.py`：
 - 有 → 读取已有脚本，修改数据/参数后重跑
-- 没有 → 新写脚本，使用上方 API 速查表的导入方式和函数，只写内容区
+- 没有 → 按下方 3a/3b/3c 三步分段产出，**禁止单次 Write 写完整脚本**
 
-脚本完成后保存到 `scripts/gen_prd_v{N}.py`。
+**⛔ 新建 PRD 硬规则（check_prd.sh 会拦截）**：
 
-**⛔ 禁止从头重写框架函数。** gen_prd_base.py 已包含上表全部函数和颜色常量。直接 import 调用，不要自己重新定义 `set_cell_bg`、`para_run`、`h1` 等函数。
+1. **禁止单次 Write > 300 行**。骨架一次、每个 View 一次、业务规则+埋点+排期一次，至少 3 次 Write。
+2. **每次 Write 后立即 `python3 gen_prd_v{N}.py` 跑通验证无 SyntaxError / 无异常**，失败先修复再继续。
+3. **3a 骨架完成后必须停下等用户确认结构**，除非用户明确说「快速模式 / 不用暂停」。
+4. **⛔ 禁止重写框架函数**。`set_cell_bg` / `para_run` / `h1` / `h2` / `scene_table` / `make_table` / `bullet` / `fill_cell_blocks` 全部来自 `gen_prd_base`，直接 import 调用。自定义一个立刻被 check_prd.sh 拦截。
+
+**为什么分步**：PRD 15+ scene 的脚本常到 500-700 行，一把梭容易埋 SyntaxError、scene 编号串味、章节漏章。分段写每段 200-300 行好 review、好定位错、弱模型也能照抄骨架补填。
+
+#### Step 3a · 骨架（≤ 80 行）
+
+只写：import + `init_doc` + `cover_page` + 第 1-2 章（背景 / 目标 / 核心变更 / 用户角色 / 场景地图两个 View 的 `make_table`）+ 各 H1 占位（第 3/4/5/6/7/8/9 章用 `h1(doc, "3. ...")` 留题头，不填内容）+ `doc.save()`。
+
+产出后立即 `python3 scripts/gen_prd_v{N}.py` 验证产出 docx 打得开、章节结构对，**停下来告诉用户「骨架完成，章节 X/Y/Z，可以继续填内容吗」**。
+
+#### Step 3b · 按 View 填充 scene_table（每次 ≤ 300 行）
+
+每个 View 一次 Write 追加，内容为该 View 全部 `scene_table(doc, scene_id, name, [(title, [lines]), ...])` 调用。典型节奏：
+- View 1（H5 主场景 + 组件）一次
+- View 2（后台 / 第二端）一次
+- 场景 ≥ 10 个的 View 继续拆（先主场景、再组件弹窗）
+
+每次追加后立即 python3 跑通 + grep 确认 scene 数量对齐 `scene-list.md`。scene 编号错、内容塌成扁平字符串、忘记 `[(title, lines)]` 结构——这些 bug 此时就能发现。
+
+#### Step 3c · 收尾（业务规则 + 非功能 + 埋点 + 里程碑）
+
+一次追加第 6-9 章（`make_table` + `bullet` 为主，内容来自 context.md 第 6 章业务规则表）。
+
+产出后跑 **Step 4 截图** → **check_prd.sh 自检**。
+
+**重复 Scene 抽函数**：相似结构场景（如"结果公示" A-2/B-2/C-2 只是文案换）写一个 `render_result_scene(doc, scene_id, stage_name, next_stage)` 调用 `scene_table`，省 15-20% 行数。
 
 ## 写作规范
 

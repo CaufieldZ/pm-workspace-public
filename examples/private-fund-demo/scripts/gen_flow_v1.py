@@ -1,3 +1,4 @@
+# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 """
 gen_flow_v1.py · 私募基金流程图(合格投资者校验 + 大额赎回审批)
 

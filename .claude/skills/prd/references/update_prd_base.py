@@ -12,8 +12,9 @@ update_prd_base.py — PRD 升版/更新的通用辅助函数
     from update_prd_base import *
 """
 
-from docx.shared import Cm
+from docx.shared import Cm, Pt, RGBColor
 from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
 
 # ── fix_dpi ────────────────────────────────────────────────────────────────────
 
@@ -84,7 +85,7 @@ def set_cell_text(cell, text: str):
         p.add_run(text)
 
 
-def set_cell_blocks(cell, blocks):
+def set_cell_blocks(cell, blocks, numbered=True):
     """
     清空单元格，按结构化 blocks 重建（title 粗体 + 子条目缩进 + 「（变更）」「（新增）」染色）。
     视觉和 gen_prd_base.scene_table 的右列一致。
@@ -122,7 +123,7 @@ def set_cell_blocks(cell, blocks):
     _DIR = os.path.dirname(os.path.abspath(__file__))
     sys.path.insert(0, _DIR)
     from gen_prd_base import fill_cell_blocks
-    fill_cell_blocks(cell, blocks)
+    fill_cell_blocks(cell, blocks, numbered=numbered)
 
 
 def replace_cell_image(cell, img_path: str, width_cm: float = 7.0):
@@ -149,3 +150,130 @@ def replace_cell_image(cell, img_path: str, width_cm: float = 7.0):
     p = cell.paragraphs[0]
     run = p.add_run()
     run.add_picture(img_path, width=Cm(width_cm))
+
+
+# ── 标题样式归一化 ─────────────────────────────────────────────────────────────
+
+def normalize_headings(doc):
+    """
+    修旧 docx 的 H1/H2 样式:补 run 级字色/字号/粗体 + H1 补下划线 pBdr。
+    旧脚本常用 add_paragraph(style='Heading 1') 直接产段落,run 级属性缺失,
+    渲染效果取决于 Word 默认 style(黑无线),和 gen_prd_base.h1()/h2() 产出的标准
+    视觉不一致。本函数幂等:已有 run 属性的跳过不覆盖。
+
+    H1: fg=#1A1A2E + 16pt + bold + 段落下边框 #2E75B6
+    H2: fg=#2E75B6 + 13pt + bold
+
+    返回修复数 (h1_count, h2_count)。
+    """
+    import sys, os
+    _DIR = os.path.dirname(os.path.abspath(__file__))
+    sys.path.insert(0, _DIR)
+    from gen_prd_base import C
+
+    h1_fixed = h2_fixed = 0
+    for p in doc.paragraphs:
+        s = p.style.name if p.style else ""
+        if s == "Heading 1":
+            _apply_heading_style(p, C["textHeading"], 16, add_border=C["accentBlue"])
+            h1_fixed += 1
+        elif s == "Heading 2":
+            _apply_heading_style(p, C["accentBlue"], 13, add_border=None)
+            h2_fixed += 1
+    return h1_fixed, h2_fixed
+
+
+def _apply_heading_style(p, hex_color, size_pt, add_border=None):
+    """给 heading 段落强制刷 run 样式,可选追加段落下边框。
+    强制覆盖颜色/字号/粗体:老 docx 里即使 H1 已设错颜色(如黑色)也统一刷成标准色。
+    """
+    for r in p.runs:
+        r.font.color.rgb = RGBColor.from_string(hex_color)
+        r.font.size = Pt(size_pt)
+        r.bold = True
+    # 无 run(段落只有 text 没 run)时新建一个
+    if not p.runs and p.text:
+        text = p.text
+        for child in list(p._p):
+            if child.tag.endswith('}r') or child.tag.endswith('}t'):
+                p._p.remove(child)
+        run = p.add_run(text)
+        run.font.color.rgb = RGBColor.from_string(hex_color)
+        run.font.size = Pt(size_pt)
+        run.bold = True
+    # 段落下边框(H1 专用)
+    if add_border:
+        pPr = p._p.get_or_add_pPr()
+        if pPr.find(qn('w:pBdr')) is None:
+            pBdr = OxmlElement('w:pBdr')
+            bottom = OxmlElement('w:bottom')
+            bottom.set(qn('w:val'), 'single')
+            bottom.set(qn('w:sz'), '6')
+            bottom.set(qn('w:space'), '1')
+            bottom.set(qn('w:color'), add_border)
+            pBdr.append(bottom)
+            pPr.append(pBdr)
+
+
+def normalize_punctuation(doc):
+    """
+    中文标点规范化:中文相邻的半角 , : ( ) 改为全角 ，：（）。
+    遵循 soul.md「中文里禁止混半角逗号冒号括号」。
+    幂等;保留 run 级样式(bold / color 不变)。
+
+    段落级判定:拼接段落所有 run 的文字后做上下文判断,避免 run 边界把
+    「中文<run1 end>:<run2 start>英文」这种场景看成孤立冒号漏改。
+
+    判定规则:
+      - 半角 , : ( ) 只要左右任一是中文字符 → 替换全角
+      - 排除 URL 场景:前 6 字符含 http / ftp
+    代码/URL/纯英文上下文不触发(两侧都没中文)。
+    """
+    import re
+    CJK_RE = re.compile(r'[\u4e00-\u9fff]')
+    MAP = {',': '\uff0c', ':': '\uff1a', '(': '\uff08', ')': '\uff09'}
+
+    def process_paragraph(p):
+        runs = p.runs
+        if not runs: return 0
+        # 拼接 + 记录 run 边界
+        full = ''.join(r.text or '' for r in runs)
+        if not any(c in MAP for c in full): return 0
+
+        out = list(full)
+        for i, c in enumerate(full):
+            if c not in MAP: continue
+            prev = full[i-1] if i > 0 else ''
+            nxt  = full[i+1] if i+1 < len(full) else ''
+            if not (CJK_RE.match(prev) or CJK_RE.match(nxt)):
+                continue
+            if c == ':':
+                window = full[max(0, i-6):i].lower()
+                if 'http' in window or 'ftp' in window:
+                    continue
+            out[i] = MAP[c]
+
+        new_full = ''.join(out)
+        if new_full == full: return 0
+
+        # 按原 run 边界切回写入;替换都是 1:1 字符,偏移不变
+        n = 0
+        pos = 0
+        for r in runs:
+            L = len(r.text or '')
+            new_slice = new_full[pos:pos+L]
+            if new_slice != (r.text or ''):
+                r.text = new_slice
+                n += sum(1 for a, b in zip(r.text, full[pos:pos+L]) if a != b)
+            pos += L
+        return n
+
+    total = 0
+    for p in doc.paragraphs:
+        total += process_paragraph(p)
+    for t in doc.tables:
+        for row in t.rows:
+            for cell in row.cells:
+                for p in cell.paragraphs:
+                    total += process_paragraph(p)
+    return total

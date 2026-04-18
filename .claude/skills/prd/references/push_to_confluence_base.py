@@ -144,6 +144,21 @@ def convert_docx(docx_path: str, page_id: str, img_width: int = 600) -> str:
         return m.group(0)   # 外链图片保留原样
 
     html = re.sub(r'<img[^>]+src="([^"]+)"[^>]*/?>', to_ac, html)
+
+    # 恢复段落缩进(mammoth 默认丢失)。
+    # fill_cell_blocks 产出两级缩进:一级 "N. xxx"(Cm 0.3),二级 "  - xxx"(Cm 0.9)。
+    # 映射到 HTML 的 padding-left,让 Confluence 渲染保留层次。
+    def indent_p(m):
+        inner = m.group(1)
+        # 去掉段落内前置 <strong>/<em>/<br/> 标签,看真实文本首字符
+        txt = re.sub(r'<[^>]+>', '', inner).lstrip()
+        if re.match(r'^\s*-\s', txt) or inner.startswith(('  -', '\t-')):
+            return f'<p style="padding-left:40px;">{inner}</p>'
+        if re.match(r'^\d+\.\s', txt):
+            return f'<p style="padding-left:20px;">{inner}</p>'
+        return m.group(0)
+    html = re.sub(r'<p>(.*?)</p>', indent_p, html, flags=re.DOTALL)
+
     return html
 
 
