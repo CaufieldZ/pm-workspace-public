@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>私募基金认申赎 · 前端交互大图 v1.0</title>
+<style>
+/* pm-ws-canary-236a5364 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=IBM+Plex+Mono:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;0,9..40,900;1,9..40,400&display=swap');
+
+/* ════ DESIGN TOKENS ════ */
+:root {
+  /* 基础色 */
+  --bg: #F4F5F7;
+  --bg2: #EBEDF0;
+  --surface: #fff;
+  --text: #0f172a;
+  --text2: #475569;
+  --text3: #94a3b8;
+  --border: #E2E6EB;
+
+  /* 功能色（按需修改色值，但保留变量名） */
+  --blue: #2979FF;      /* 布局/主操作 */
+  --green: #0ECB81;     /* 新增/正向 */
+  --red: #F6465D;       /* 重要/策略 */
+  --purple: #8b5cf6;    /* Web端 */
+  --amber: #d97706;     /* 流程/链路 */
+  --gold: #FFD740;      /* 打赏/特殊 */
+
+  /* 深色主题（Phone Mockup 用） */
+  --dark: #0B0E11;
+  --dark2: #1B1D22;
+  --dark3: #2B2F36;
+  --dark-text: #EAECEF;
+  --dark-text2: #848E9C;
+  --dark-text3: #5E6673;
+
+  /* 圆角 & 阴影 */
+  --radius: 16px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,.08), 0 12px 40px rgba(0,0,0,.06);
+  --shadow-phone: 0 8px 40px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.08);
+}
+
+/* ════ RESET ════ */
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'HarmonyOS Sans SC', 'Plus Jakarta Sans', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ════ PROGRESS BAR · 顶部滚动进度条 ════ */
+.progress-bar {
+  position: fixed; top: 0; left: 0; height: 3px;
+  background: linear-gradient(90deg, var(--blue), var(--purple), var(--red));
+  z-index: 1000; width: 0; transition: width .1s linear;
+}
+
+/* ════ SIDE NAV · 左侧导航 ════ */
+.side-nav {
+  position: fixed; left: 0; top: 50%; transform: translateY(-50%);
+  z-index: 99; padding: 8px;
+  display: flex; flex-direction: column; gap: 2px;
+  background: rgba(244,245,247,.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-right: 1px solid rgba(0,0,0,.06);
+  border-radius: 0 12px 12px 0;
+  max-width: 220px;
+}
+.side-nav a {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; border-radius: 0 8px 8px 0;
+  font-size: 11px; font-weight: 600; color: var(--text3);
+  text-decoration: none; transition: all .2s;
+  background: transparent; white-space: nowrap;
+  border-left: 3px solid transparent;
+}
+.side-nav a:hover, .side-nav a.active {
+  color: var(--blue); background: rgba(41,121,255,.06);
+  border-left-color: var(--blue);
+}
+.side-nav a .dot {
+  width: 6px; height: 6px; border-radius: 3px;
+  flex-shrink: 0;
+}
+@media (max-width: 1400px) { .side-nav { display: none; } }
+
+/* ════ HEADER · 粘性头部 ════ */
+.hd {
+  background: rgba(255,255,255,.85);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  border-bottom: 1px solid rgba(0,0,0,.06);
+  padding: 16px 48px;
+  display: flex; justify-content: space-between; align-items: center;
+  position: sticky; top: 0; z-index: 100;
+}
+.hd h1 {
+  font-size: 20px; font-weight: 900; color: var(--text);
+  letter-spacing: -.5px; line-height: 1.3;
+}
+.hd .sub {
+  font-size: 12px; color: var(--text3); margin-top: 2px;
+  font-weight: 400; letter-spacing: .2px;
+}
+/* 图例 */
+.lg {
+  display: flex; gap: 16px; font-size: 11px; color: var(--text3);
+  align-items: center; flex-wrap: wrap;
+}
+.lg .item { display: flex; align-items: center; gap: 6px; }
+.lg .line { width: 18px; height: 0; border-top: 2.5px dashed; }
+.lg .tag {
+  font-size: 9px; padding: 2px 7px; border-radius: 4px;
+  font-weight: 800; letter-spacing: .3px; text-transform: uppercase;
+}
+.lg .tag.new { background: #dcfce7; color: #15803d; }
+.lg .tag.chg { background: #dbeafe; color: #2563eb; }
+.lg .tag.del { background: #fef2f2; color: #991b1b; }
+
+/* ════ CONTENT AREA · 主内容区 ════ */
+.cv { padding: 40px 48px 100px; margin-left: 0; overflow-x: hidden; }
+@media (min-width: 1400px) { .cv { margin-left: 240px; } }
+
+/* ════ GROUP DIVIDER · PART 分组 ════ */
+.gd {
+  margin: 64px 0 28px; padding: 20px 28px;
+  border-radius: var(--radius); display: flex;
+  align-items: center; gap: 16px;
+  position: relative; overflow: hidden;
+}
+.gd::before {
+  content: ''; position: absolute; inset: 0;
+  opacity: .04; pointer-events: none;
+  background: repeating-linear-gradient(
+    -45deg, transparent, transparent 8px,
+    currentColor 8px, currentColor 9px
+  );
+}
+/* 预设主题 */
+.gd.viewer  { background: linear-gradient(135deg, #0B0E11, #161b22); color: var(--dark-text); }
+.gd.host    { background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #1e40af; }
+.gd.cross   { background: linear-gradient(135deg, #f0fdf4, #dcfce7); color: #166534; }
+.gd:first-child { margin-top: 0; }
+.gd .gd-num {
+  font-size: 10px; font-weight: 800; padding: 4px 12px;
+  border-radius: 6px; letter-spacing: 1px; flex-shrink: 0;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.gd.viewer .gd-num { background: rgba(255,255,255,.08); }
+.gd.host .gd-num   { background: rgba(37,99,235,.08); }
+.gd.cross .gd-num  { background: rgba(22,101,52,.08); }
+.gd h2 { font-size: 18px; font-weight: 900; letter-spacing: -.3px; }
+.gd .gd-desc { font-size: 12px; opacity: .65; margin-top: 3px; }
+
+/* ════ SECTION TITLE · 场景标题 ════ */
+.st {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 20px; margin-top: 56px;
+}
+.st h2 {
+  font-size: 16px; font-weight: 900; color: var(--text);
+  letter-spacing: .2px; white-space: nowrap;
+}
+.st::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
+}
+.st .note {
+  font-size: 11px; color: var(--text3);
+  font-style: italic; white-space: nowrap;
+  background: var(--bg2); padding: 3px 10px;
+  border-radius: 20px;
+}
+
+/* ════ FLOW LAYOUT · 横向流式布局 ════ */
+.flow {
+  display: flex; align-items: flex-start; gap: 24px;
+  margin-bottom: 56px; flex-wrap: nowrap;
+  overflow-x: auto; padding-bottom: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.flow::-webkit-scrollbar { height: 6px; }
+.flow::-webkit-scrollbar-track { background: transparent; }
+.flow::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.flow-col {
+  display: flex; flex-direction: column;
+  align-items: center; flex-shrink: 0;
+}
+
+/* ════ PHONE MOCKUP · 手机模拟器 ════ */
+.phone {
+  width: 375px; background: var(--dark);
+  border-radius: 36px;
+  border: 4px solid #3a3d44;
+  overflow: hidden;
+  box-shadow: var(--shadow-phone),
+    inset 0 0 0 1px rgba(255,255,255,.05);
+  flex-shrink: 0; position: relative;
+}
+.phone-label {
+  text-align: center; font-size: 12px; font-weight: 700;
+  color: var(--text); background: var(--surface);
+  border: 1.5px solid var(--border); border-radius: 8px;
+  padding: 5px 16px; margin-bottom: 10px;
+  display: inline-block; box-shadow: var(--shadow);
+}
+
+/* Phone 内部元素 */
+.ph-status {
+  display: flex; justify-content: space-between;
+  padding: 8px 24px 4px; font-size: 10px;
+  color: var(--dark-text2);
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
+}
+.ph-top {
+  display: flex; align-items: center;
+  padding: 10px 14px; gap: 8px;
+  border-bottom: 1px solid var(--dark2);
+}
+.ph-av {
+  width: 36px; height: 36px; border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.ph-name { font-size: 14px; font-weight: 700; color: var(--dark-text); }
+.ph-meta { font-size: 10px; color: var(--dark-text2); margin-top: 1px; }
+.ph-follow {
+  padding: 4px 12px; border-radius: 6px; font-size: 11px;
+  font-weight: 700; background: var(--blue); color: #fff;
+}
+.ph-online {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 11px; color: var(--dark-text2); margin-left: auto;
+}
+.ph-dot { width: 6px; height: 6px; border-radius: 3px; background: var(--green); }
+.ph-close { font-size: 14px; color: var(--dark-text3); margin-left: 8px; }
+
+/* 主舞台 */
+.ph-stage {
+  height: 180px;
+  background: linear-gradient(135deg, #0d1117, #161b22, var(--dark2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; color: var(--dark-text3);
+  position: relative; border-bottom: 1px solid var(--dark2);
+}
+.ph-stage-lbl {
+  position: absolute; top: 8px; left: 10px;
+  font-size: 9px; color: var(--dark-text2);
+  background: rgba(0,0,0,.65); padding: 2px 8px;
+  border-radius: 4px; font-weight: 600;
+  backdrop-filter: blur(4px);
+}
+.ph-pip {
+  position: absolute; bottom: 8px; right: 10px;
+  font-size: 9px; color: var(--dark-text2);
+  background: rgba(0,0,0,.6); padding: 2px 8px; border-radius: 4px;
+}
+
+/* 多人协作区 */
+.ph-mic {
+  display: flex; gap: 8px; padding: 10px 14px;
+  align-items: center; border-bottom: 1px solid var(--dark2);
+  background: rgba(27,29,34,.4);
+}
+.ph-seat {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 3px; width: 44px;
+}
+.ph-seat-av {
+  width: 36px; height: 36px; border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: #fff; position: relative;
+}
+.ph-seat-av.speaking {
+  box-shadow: 0 0 0 3px rgba(14,203,129,.45), 0 0 16px rgba(14,203,129,.15);
+}
+.ph-seat-badge {
+  position: absolute; bottom: -2px; right: -2px;
+  width: 14px; height: 14px; border-radius: 7px;
+  font-size: 8px; display: flex; align-items: center;
+  justify-content: center; border: 2px solid var(--dark);
+}
+.ph-seat-name {
+  font-size: 10px; color: var(--dark-text2);
+  text-align: center; max-width: 44px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ph-empty {
+  width: 36px; height: 36px; border-radius: 18px;
+  border: 2px dashed var(--dark-text3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: var(--dark-text3);
+}
+
+/* 聊天区 */
+.ph-chat-area {
+  flex: 1; display: flex; gap: 8px;
+  padding: 8px 14px; min-height: 0; position: relative;
+}
+.ph-chat {
+  flex: 1; font-size: 12px; color: var(--dark-text2);
+  line-height: 1.8; overflow: hidden;
+}
+.ph-chat .msg { margin-bottom: 2px; }
+.ph-chat .msg .u { color: var(--dark-text2); font-weight: 600; margin-right: 4px; }
+.ph-chat .msg .t { color: var(--dark-text); }
+.ph-chat .badge {
+  display: inline-block; font-size: 8px; font-weight: 700;
+  padding: 1px 4px; border-radius: 2px;
+  margin-right: 3px; vertical-align: middle;
+}
+.ph-chat .b-gold { background: #F9A825; color: #000; }
+.ph-chat .b-vip  { background: #E040FB; color: #fff; }
+.ph-chat .b-mod  { background: var(--blue); color: #fff; }
+
+/* 悬浮卡 */
+.ph-scard-float {
+  position: absolute; bottom: 8px; right: 8px;
+  width: 140px; background: rgba(11,14,17,.92);
+  border: 1.5px solid rgba(41,121,255,.25);
+  border-radius: 10px; padding: 8px 10px;
+  font-size: 10px; color: var(--dark-text);
+  z-index: 5; backdrop-filter: blur(12px);
+}
+
+/* 底部栏 */
+.ph-bar {
+  display: flex; align-items: center; padding: 8px 14px 12px;
+  gap: 8px; border-top: 1px solid var(--dark2); background: var(--dark);
+}
+.ph-input {
+  flex: 1; background: var(--dark2); border-radius: 20px;
+  padding: 8px 16px; font-size: 12px; color: var(--dark-text3);
+  border: 1px solid var(--dark3);
+}
+.ph-bbtn {
+  width: 34px; height: 34px; border-radius: 17px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0; background: var(--dark2);
+  border: 1px solid var(--dark3);
+}
+
+/* 底部弹层 */
+.ph-overlay {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(11,14,17,.97);
+  border-radius: 16px 16px 0 0;
+  border: 1.5px solid var(--dark3); border-bottom: none;
+  z-index: 5; backdrop-filter: blur(12px);
+}
+
+/* Home 指示器 */
+.home-ind {
+  padding: 5px 0 3px; display: flex; justify-content: center;
+}
+.home-ind div {
+  width: 120px; height: 4px; background: var(--dark3);
+  border-radius: 2px;
+}
+
+/* Phone 下方流程说明 */
+.flow-note {
+  font-size: 12px; color: var(--text2); text-align: center;
+  margin-top: 10px; max-width: 375px; line-height: 1.6;
+  padding: 0 8px;
+}
+
+/* ════ WEB FRAME · 浏览器模拟器 ════ */
+.webframe {
+  background: var(--surface); border-radius: 14px;
+  border: 2px solid var(--border);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  flex-shrink: 0; position: relative;
+}
+.wf-bar {
+  background: #f8f9fb; border-bottom: 1px solid var(--border);
+  padding: 10px 14px; display: flex; align-items: center; gap: 7px;
+}
+.wf-dot { width: 11px; height: 11px; border-radius: 6px; }
+.wf-url {
+  flex: 1; background: #fff; border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 12px; font-size: 11px;
+  color: var(--text3); font-family: 'IBM Plex Mono', monospace;
+  margin-left: 6px;
+}
+
+/* ════ ANNOTATIONS · 标注系统 ════ */
+/* 虚线框 */
+.anno {
+  position: absolute; border: 2.5px dashed;
+  border-radius: 8px; z-index: 10; pointer-events: none;
+}
+.anno.blue   { border-color: var(--blue); }
+.anno.green  { border-color: var(--green); }
+.anno.red    { border-color: var(--red); }
+.anno.purple { border-color: var(--purple); }
+.anno.amber  { border-color: var(--amber); }
+
+/* 编号圆点 */
+.anno-n {
+  position: absolute; top: -11px; right: -11px;
+  width: 22px; height: 22px; border-radius: 11px;
+  font-size: 11px; font-weight: 900; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,.2);
+  font-family: 'IBM Plex Mono', monospace;
+}
+.anno-n.blue   { background: var(--blue); }
+.anno-n.green  { background: var(--green); color: #000; }
+.anno-n.red    { background: var(--red); }
+.anno-n.purple { background: var(--purple); }
+.anno-n.amber  { background: var(--amber); }
+
+/* ════ ANNOTATION CARD · 注释卡片 ════ */
+.ann-card {
+  width: 320px; flex-shrink: 0; font-size: 13px;
+  line-height: 1.7; color: var(--text2);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  box-shadow: var(--shadow);
+}
+.ann-card .card-title {
+  font-size: 15px; font-weight: 900; color: var(--text);
+  margin-bottom: 14px; padding-bottom: 10px;
+  border-bottom: 2px solid var(--bg2);
+  display: flex; align-items: center; gap: 8px;
+}
+.ann-item {
+  display: flex; gap: 10px; margin-bottom: 12px;
+  align-items: flex-start;
+}
+.ann-num {
+  width: 22px; height: 22px; min-width: 22px;
+  border-radius: 11px; font-size: 11px; font-weight: 900;
+  color: #fff; display: flex; align-items: center;
+  justify-content: center; margin-top: 2px;
+  box-shadow: 0 2px 4px rgba(0,0,0,.12);
+  font-family: 'IBM Plex Mono', monospace;
+}
+.ann-num.blue   { background: var(--blue); }
+.ann-num.green  { background: var(--green); color: #000; }
+.ann-num.red    { background: var(--red); }
+.ann-num.purple { background: var(--purple); }
+.ann-num.amber  { background: var(--amber); }
+.ann-text b { font-weight: 700; color: var(--text); }
+
+/* Tag 标签 */
+.ann-tag {
+  display: inline-block; padding: 2px 8px;
+  border-radius: 4px; font-size: 10px;
+  font-weight: 800; letter-spacing: .3px;
+}
+.ann-tag.new { background: #dcfce7; color: #15803d; }
+.ann-tag.chg { background: #dbeafe; color: #2563eb; }
+.ann-tag.del { background: #fef2f2; color: #991b1b; }
+.ann-tag.p0  { background: #dcfce7; color: #15803d; }
+.ann-tag.p1  { background: #dbeafe; color: #2563eb; }
+.ann-tag.p2  { background: #fef3c7; color: #92400e; }
+
+/* ════ FLOW ARROWS · 连接箭头 ════ */
+.aw {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  width: 80px; flex-shrink: 0; align-self: center;
+}
+.aw .al {
+  width: 100%; height: 14px;
+  clip-path: polygon(
+    0 35%, calc(100% - 10px) 35%,
+    calc(100% - 10px) 0, 100% 50%,
+    calc(100% - 10px) 100%, calc(100% - 10px) 65%,
+    0 65%
+  );
+}
+/* 箭头颜色 */
+.aw .al.b { background: var(--blue); }
+.aw .al.g { background: var(--green); }
+.aw .al.r { background: var(--red); }
+.aw .al.p { background: var(--purple); }
+.aw .al.a { background: var(--amber); }
+/* 箭头文字 */
+.aw .tx {
+  font-size: 11px; font-weight: 700; white-space: nowrap;
+  margin-top: 5px; text-align: center; line-height: 1.4;
+}
+.aw .tx.b { color: var(--blue); }
+.aw .tx.g { color: var(--green); }
+.aw .tx.r { color: var(--red); }
+.aw .tx.p { color: var(--purple); }
+.aw .tx.a { color: var(--amber); }
+
+/* ════ CALLOUTS · 提示框 ════ */
+.co {
+  border-radius: var(--radius-sm); padding: 16px 22px;
+  font-size: 13px; line-height: 1.7;
+  border-left: 4px solid; margin-top: 24px;
+}
+.co.bl { border-color: var(--blue); background: #eff6ff; color: #1e40af; }
+.co.gn { border-color: #22c55e; background: #f0fdf4; color: #166534; }
+.co.am { border-color: var(--amber); background: #fffbeb; color: #92400e; }
+
+/* ════ INFO BOX · 信息框 ════ */
+.info-box {
+  padding: 10px 14px; border-radius: var(--radius-sm);
+  font-size: 12px; line-height: 1.6; margin-top: 12px;
+}
+.info-box.blue   { background: #f0f4ff; color: #1e40af; }
+.info-box.purple { background: #f5f3ff; color: #5b21b6; }
+.info-box.amber  { background: #fffbeb; color: #92400e; }
+.info-box.green  { background: #f0fdf4; color: #166534; }
+
+/* ════ FADE IN ANIMATION · 滚动淡入 ════ */
+.fade-section {
+  opacity: 0; transform: translateY(20px);
+  transition: opacity .5s ease, transform .5s ease;
+}
+.fade-section.visible {
+  opacity: 1; transform: translateY(0);
+}
+
+/* ════ K线图条（可选装饰） ════ */
+.ph-stage .kline { position: absolute; bottom: 20px; left: 20px; right: 20px; height: 80px; opacity: .12; }
+.ph-stage .kline-bar { position: absolute; bottom: 0; width: 6px; border-radius: 1px 1px 0 0; }
+
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<nav class="side-nav" id="sideNav">
+  <a href="#part0"><div class="dot" style="background:var(--amber);"></div>PART 0 📱 H5 投资人端</a>
+  <a href="#scene-a-1"><div class="dot" style="background:var(--amber);"></div>A-1 基金详情 + 认购下单</a>
+  <a href="#scene-a-2"><div class="dot" style="background:var(--amber);"></div>A-2 认购协议签署 + 冷静期提示</a>
+  <a href="#scene-b-1"><div class="dot" style="background:var(--amber);"></div>B-1 持仓列表 + 赎回入口</a>
+  <a href="#scene-b-2"><div class="dot" style="background:var(--amber);"></div>B-2 赎回下单（含大额顺延提示）</a>
+  <a href="#part1"><div class="dot" style="background:var(--blue);"></div>PART 1 🖥️ Web 运营后台</a>
+  <a href="#scene-c-1"><div class="dot" style="background:var(--blue);"></div>C-1 订单审核队列（认购 + 赎回）</a>
+</nav>
+
+<header class="hd">
+  <div>
+    <h1>私募基金认申赎 · 前端交互大图 v1.0</h1>
+    <div class="sub">H5 投资人端 → Web 运营后台 ｜ 分 PART 阅读</div>
+  </div>
+  <div class="lg">
+    <span class="item"><span class="line" style="border-color:var(--blue);"></span>合规校验</span>
+    <span class="item"><span class="line" style="border-color:var(--green);"></span>新增功能</span>
+    <span class="item"><span class="line" style="border-color:var(--red);"></span>风控拦截</span>
+    <span class="item"><span class="line" style="border-color:var(--amber);"></span>流程跳转</span>
+    <span class="item"><span class="line" style="border-color:var(--purple);"></span>运营后台</span>
+    <span style="margin-left:6px;" class="tag new">NEW</span>
+    <span class="tag chg">改动</span>
+  </div>
+</header>
+
+<div class="cv">
+
+
+<!-- ████████████████████████████████████████████████████████████████████████ -->
+<div class="gd viewer fade-section" id="part0">
+  <span class="gd-num">PART 0</span>
+  <div>
+    <h2>📱 H5 投资人端</h2>
+    <div class="gd-desc">合格投资者认购 / 赎回全流程（H5）</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════ -->
+<div class="fade-section" id="scene-a-1">
+  <div class="st">
+    <h2>A-1 · 基金详情 + 认购下单</h2>
+    <span class="note">基金列表点入 → 点「立即认购」</span>
+  </div>
+  <div class="flow">
+    
+    <div class="flow-col">
+      <span class="phone-label">A-1 · 基金详情</span>
+      <div class="phone" style="display:flex;flex-direction:column;">
+        <div class="ph-status"><span>9:41</span><span>⚡ 📶 ■■■</span></div>
+        <div class="ph-top">
+          <span style="font-size:14px;color:var(--dark-text3);">‹</span>
+          <div style="flex:1;text-align:center;"><div class="ph-name">基金详情</div></div>
+          <div style="width:14px;"></div>
+        </div>
+        <div style="padding:14px 16px;flex:1;overflow:hidden;">
+          <div style="font-size:15px;font-weight:800;color:var(--dark-text);margin-bottom:4px;">鑫远稳健一期私募证券基金</div>
+          <div style="display:flex;gap:6px;margin-bottom:12px;">
+            <span style="background:rgba(41,121,255,.15);color:#2979FF;font-size:10px;padding:2px 6px;border-radius:4px;">私募证券 · R3</span>
+          </div>
+          <div style="position:relative;margin-bottom:10px;">
+            <div class="anno blue" style="top:-3px;left:-3px;right:-3px;bottom:-3px;"><div class="anno-n blue">1</div></div>
+            <div style="background:rgba(14,203,129,.1);border:1px solid rgba(14,203,129,.3);border-radius:6px;padding:8px 10px;">
+              <span style="font-size:11px;color:#0ECB81;font-weight:600;">✓ 合格投资者已认证 · 风险等级 C3 匹配 R3</span>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+            <div style="background:var(--dark2);border-radius:6px;padding:8px 10px;">
+              <div style="font-size:9px;color:var(--dark-text3);">单位净值 (NAV)</div>
+              <div style="font-size:15px;font-weight:800;color:var(--dark-text);font-family:'IBM Plex Mono',monospace;">1.2843</div>
+            </div>
+            <div style="background:var(--dark2);border-radius:6px;padding:8px 10px;">
+              <div style="font-size:9px;color:var(--dark-text3);">成立以来收益</div>
+              <div style="font-size:15px;font-weight:800;color:#0ECB81;font-family:'IBM Plex Mono',monospace;">+28.43%</div>
+            </div>
+          </div>
+          <div style="position:relative;margin-bottom:10px;">
+            <div class="anno red" style="top:-3px;left:-3px;right:-3px;bottom:-3px;"><div class="anno-n red">2</div></div>
+            <div style="background:var(--dark2);border-radius:6px;padding:8px 10px;font-size:11px;color:var(--dark-text2);">
+              风险等级 R3 · 本产品可能存在本金亏损风险，请仔细阅读产品说明书
+            </div>
+          </div>
+          <div style="font-size:10px;color:var(--dark-text3);">开放日：每月最后一个工作日</div>
+        </div>
+        <div style="padding:12px 16px;background:var(--dark2);">
+          <div style="background:var(--blue);color:#fff;border-radius:10px;padding:12px;text-align:center;font-size:14px;font-weight:700;">立即认购</div>
+        </div>
+        <div class="home-ind"><div></div></div>
+      </div>
+      <div class="flow-note">详情页 · QI 校验通过态</div>
+    </div>
+    <div class="aw"><div class="al b"></div><div class="tx b">点击「立即认购」</div></div>
+    <div class="flow-col">
+      <span class="phone-label">A-1 · 认购下单</span>
+      <div class="phone" style="display:flex;flex-direction:column;">
+        <div class="ph-status"><span>9:41</span><span>⚡ 📶 ■■■</span></div>
+        <div class="ph-top">
+          <span style="font-size:14px;color:var(--dark-text3);">‹</span>
+          <div style="flex:1;text-align:center;"><div class="ph-name">认购下单</div></div>
+          <div style="width:14px;"></div>
+        </div>
+        <div style="padding:14px 16px;flex:1;overflow:hidden;">
+          <div style="font-size:12px;color:var(--dark-text2);margin-bottom:12px;">鑫远稳健一期 · NAV 1.2843</div>
+          <div style="font-size:11px;color:var(--dark-text3);margin-bottom:4px;">认购金额（元）</div>
+          <div style="position:relative;margin-bottom:4px;">
+            <div class="anno amber" style="top:-3px;left:-3px;right:-3px;bottom:-3px;"><div class="anno-n amber">3</div></div>
+            <div style="background:var(--dark2);border-radius:8px;padding:12px 14px;">
+              <div style="font-size:20px;font-weight:800;color:var(--dark-text);font-family:'IBM Plex Mono',monospace;">1,000,000</div>
+            </div>
+          </div>
+          <div style="font-size:10px;color:#d97706;margin-bottom:14px;">最低认购金额 ¥1,000,000（100万元）</div>
+          <div style="background:var(--dark2);border-radius:6px;padding:10px 12px;margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">
+              <span style="color:var(--dark-text3);">认购费率</span><span style="color:var(--dark-text);">1.00%</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;">
+              <span style="color:var(--dark-text3);">预计获得份额</span>
+              <span style="color:var(--dark-text);font-family:'IBM Plex Mono',monospace;">7,788.08 份</span>
+            </div>
+          </div>
+        </div>
+        <div style="padding:12px 16px;background:var(--dark2);">
+          <div style="background:var(--blue);color:#fff;border-radius:10px;padding:12px;text-align:center;font-size:14px;font-weight:700;">下一步 · 签署协议</div>
+        </div>
+        <div class="home-ind"><div></div></div>
+      </div>
+      <div class="flow-note">认购下单 · 金额输入态</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
+      <div class="ann-card">
+        <div class="card-title">A-1 · 基金详情 + 认购下单 <span class="ann-tag new">NEW</span><span class="ann-tag p0">P0</span></div>
+        <div class="ann-item"><div class="ann-num blue">1</div><div class="ann-text"><b>合格投资者校验</b><span class="ann-tag p0">R1</span><br>进入认购前校验 QI 状态 + 风险等级匹配（C ≥ R）；未通过则拦截并引导认证入口</div></div>
+        <div class="ann-item"><div class="ann-num red">2</div><div class="ann-text"><b>风险披露</b><span class="ann-tag p0">R2</span><br>合规要求强制展示风险等级说明，用户须知晓亏损可能</div></div>
+        <div class="ann-item"><div class="ann-num amber">3</div><div class="ann-text"><b>最低认购额校验</b><span class="ann-tag p0">R3</span><br>单笔认购 ≥ 100 万元（¥1,000,000），低于此值「下一步」按钮置灰，实时提示</div></div>
+        <div class="info-box blue"><b>跳转说明：</b>点击「下一步 · 签署协议」→ A-2 认购协议签署页</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════ -->
+<div class="fade-section" id="scene-a-2">
+  <div class="st">
+    <h2>A-2 · 认购协议签署 + 冷静期提示</h2>
+    <span class="note">A-1 完成下单后</span>
+  </div>
+  <div class="flow">
+    
+    <div class="flow-col">
+      <span class="phone-label">A-2 · 协议签署</span>
+      <div class="phone" style="display:flex;flex-direction:column;">
+        <div class="ph-status"><span>9:41</span><span>⚡ 📶 ■■■</span></div>
+        <div class="ph-top">
+          <span style="font-size:14px;color:var(--dark-text3);">‹</span>
+          <div style="flex:1;text-align:center;"><div class="ph-name">认购协议</div></div>
+          <div style="width:14px;"></div>
+        </div>
+        <div style="padding:14px 16px;flex:1;overflow:hidden;">
+          <div style="background:var(--dark2);border-radius:6px;padding:10px;height:200px;overflow:hidden;margin-bottom:12px;">
+            <div style="font-size:10px;font-weight:700;color:var(--dark-text);margin-bottom:6px;">鑫远稳健一期私募证券投资基金认购协议</div>
+            <div style="font-size:9px;color:var(--dark-text3);line-height:1.6;">第一条 基本信息……本基金由XX基金管理人依法设立……投资者应仔细阅读本协议……</div>
+          </div>
+          <div style="position:relative;margin-bottom:10px;">
+            <div class="anno green" style="top:-3px;left:-3px;right:-3px;bottom:-3px;"><div class="anno-n green">1</div></div>
+            <div style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;background:var(--dark2);border-radius:6px;">
+              <div style="width:14px;height:14px;border:2px solid var(--blue);border-radius:3px;flex-shrink:0;background:var(--blue);margin-top:1px;"></div>
+              <div style="font-size:11px;color:var(--dark-text2);">我已阅读并同意《认购协议》《风险揭示书》《回访确认书》</div>
+            </div>
+          </div>
+          <div style="position:relative;">
+            <div class="anno amber" style="top:-3px;left:-3px;right:-3px;bottom:-3px;"><div class="anno-n amber">2</div></div>
+            <div style="background:rgba(217,119,6,.1);border:1px solid rgba(217,119,6,.3);border-radius:6px;padding:8px 10px;">
+              <div style="font-size:11px;font-weight:700;color:#d97706;margin-bottom:2px;">⚠ 冷静期提醒</div>
+              <div style="font-size:10px;color:var(--dark-text2);">签署后 24 小时内可无条件撤销本次认购，资金原路退回，不收取任何费用</div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:12px 16px;background:var(--dark2);">
+          <div style="background:var(--blue);color:#fff;border-radius:10px;padding:12px;text-align:center;font-size:14px;font-weight:700;">确认签署</div>
+        </div>
+        <div class="home-ind"><div></div></div>
+      </div>
+      <div class="flow-note">协议签署 · 勾选同意 + 冷静期提示</div>
+    </div>
+    <div class="aw"><div class="al g"></div><div class="tx g">签署成功</div></div>
+    <div class="flow-col">
+      <span class="phone-label">A-2 · 认购成功</span>
+      <div class="phone" style="display:flex;flex-direction:column;">
+        <div class="ph-status"><span>9:41</span><span>⚡ 📶 ■■■</span></div>
+        <div class="ph-top">
+          <span style="font-size:14px;color:var(--dark-text3);">‹</span>
+          <div style="flex:1;text-align:center;"><div class="ph-name">认购成功</div></div>
+          <div style="width:14px;"></div>
+        </div>
+        <div style="padding:24px 16px;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+          <div style="font-size:40px;margin-bottom:12px;">✅</div>
+          <div style="font-size:16px;font-weight:800;color:var(--dark-text);margin-bottom:4px;">认购申请已提交</div>
+          <div style="font-size:11px;color:var(--dark-text3);margin-bottom:16px;text-align:center;">订单号：SUB-20260418-0001</div>
+          <div style="position:relative;width:100%;">
+            <div class="anno amber" style="top:-3px;left:-3px;right:-3px;bottom:-3px;"><div class="anno-n amber">3</div></div>
+            <div style="background:var(--dark2);border-radius:6px;padding:10px 12px;">
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">
+                <span style="color:var(--dark-text3);">冷静期截止</span>
+                <span style="color:#d97706;font-weight:600;">2026-04-19 14:32</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;">
+                <span style="color:var(--dark-text3);">基金成立确认</span>
+                <span style="color:var(--dark-text2);">募集期结束后</span>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:16px;font-size:11px;color:var(--dark-text3);text-align:center;">冷静期内可前往「我的 → 订单」撤销认购</div>
+        </div>
+        <div class="home-ind"><div></div></div>
+      </div>
+      <div class="flow-note">认购成功 · 冷静期倒计时</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
+      <div class="ann-card">
+        <div class="card-title">A-2 · 协议签署 + 冷静期 <span class="ann-tag new">NEW</span><span class="ann-tag p0">P0</span></div>
+        <div class="ann-item"><div class="ann-num green">1</div><div class="ann-text"><b>三书签署</b><span class="ann-tag p0">R5</span><br>认购协议 + 风险揭示书 + 回访确认书，三者全勾选才可提交（替代「双录」合规要求）</div></div>
+        <div class="ann-item"><div class="ann-num amber">2</div><div class="ann-text"><b>冷静期强制展示</b><span class="ann-tag p0">R4</span><br>签署前页面必须展示 24h 冷静期说明，不可折叠或隐藏</div></div>
+        <div class="ann-item"><div class="ann-num amber">3</div><div class="ann-text"><b>冷静期截止时间</b><span class="ann-tag new">NEW</span><br>成功页展示精确截止时间戳 + 撤销入口（→ 我的订单）；超过截止时间后撤销按钮消失</div></div>
+        <div class="info-box amber"><b>跨端：</b>认购提交后 → 运营后台 C-1 生成「待审核」订单，运营人员在 T+1 确认份额</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════ -->
+<div class="fade-section" id="scene-b-1">
+  <div class="st">
+    <h2>B-1 · 持仓列表 + 赎回入口</h2>
+    <span class="note">我的 → 持仓</span>
+  </div>
+  <div class="flow">
+    
+    <div class="flow-col">
+      <span class="phone-label">B-1 · 持仓列表</span>
+      <div class="phone" style="display:flex;flex-direction:column;">
+        <div class="ph-status"><span>9:41</span><span>⚡ 📶 ■■■</span></div>
+        <div class="ph-top">
+          <span style="font-size:14px;color:var(--dark-text3);">‹</span>
+          <div style="flex:1;text-align:center;"><div class="ph-name">我的持仓</div></div>
+          <div style="width:14px;"></div>
+        </div>
+        <div style="padding:14px 16px;flex:1;overflow:hidden;">
+          <div style="background:var(--dark2);border-radius:8px;padding:10px 12px;margin-bottom:10px;">
+            <div style="font-size:10px;color:var(--dark-text3);margin-bottom:2px;">持仓总市值（元）</div>
+            <div style="font-size:20px;font-weight:800;color:var(--dark-text);font-family:'IBM Plex Mono',monospace;">1,284,300.00</div>
+            <div style="font-size:11px;color:#0ECB81;margin-top:2px;">↑ +28,430.00（+28.43%）</div>
+          </div>
+          <div style="position:relative;margin-bottom:6px;">
+            <div class="anno green" style="top:-3px;left:-3px;right:-3px;bottom:-3px;"><div class="anno-n green">1</div></div>
+            <div style="background:var(--dark2);border-radius:8px;padding:10px 12px;">
+              <div style="font-size:13px;font-weight:700;color:var(--dark-text);margin-bottom:4px;">鑫远稳健一期</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px;">
+                <div><div style="font-size:9px;color:var(--dark-text3);">持有份额</div><div style="font-size:12px;font-weight:700;color:var(--dark-text);font-family:'IBM Plex Mono',monospace;">7,788.08</div></div>
+                <div><div style="font-size:9px;color:var(--dark-text3);">当前净值</div><div style="font-size:12px;font-weight:700;color:var(--dark-text);font-family:'IBM Plex Mono',monospace;">1.2843</div></div>
+                <div><div style="font-size:9px;color:var(--dark-text3);">持仓市值</div><div style="font-size:12px;font-weight:700;color:var(--dark-text);font-family:'IBM Plex Mono',monospace;">1,284,300</div></div>
+                <div><div style="font-size:9px;color:var(--dark-text3);">浮动盈亏</div><div style="font-size:12px;font-weight:700;color:#0ECB81;font-family:'IBM Plex Mono',monospace;">+284,300</div></div>
+              </div>
+              <div style="position:relative;">
+                <div class="anno amber" style="top:-3px;left:-3px;right:-3px;bottom:-3px;"><div class="anno-n amber">2</div></div>
+                <div style="background:var(--blue);color:#fff;border-radius:8px;padding:8px;text-align:center;font-size:13px;font-weight:700;">申请赎回</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="home-ind"><div></div></div>
+      </div>
+      <div class="flow-note">持仓列表 · 开放日可见「申请赎回」</div>
+    </div>
+    <div class="aw"><div class="al a"></div><div class="tx a">点击「申请赎回」</div></div>
+    <div class="flow-col">
+      <span class="phone-label">B-1 · 赎回须知</span>
+      <div class="phone" style="display:flex;flex-direction:column;">
+        <div class="ph-status"><span>9:41</span><span>⚡ 📶 ■■■</span></div>
+        <div class="ph-top">
+          <span style="font-size:14px;color:var(--dark-text3);">‹</span>
+          <div style="flex:1;text-align:center;"><div class="ph-name">赎回须知</div></div>
+          <div style="width:14px;"></div>
+        </div>
+        <div style="padding:14px 16px;flex:1;overflow:hidden;">
+          <div style="background:rgba(217,119,6,.08);border:1px solid rgba(217,119,6,.3);border-radius:8px;padding:10px 12px;margin-bottom:12px;">
+            <div style="font-size:12px;font-weight:700;color:#d97706;margin-bottom:6px;">⚠ 赎回须知</div>
+            <div style="font-size:10px;color:var(--dark-text2);line-height:1.7;">
+              · 赎回申请当日（T 日）为本月最后工作日<br>
+              · T+5 工作日内资金到账<br>
+              · 赎回申请提交后不可撤销
+            </div>
+          </div>
+          <div style="position:relative;">
+            <div class="anno red" style="top:-3px;left:-3px;right:-3px;bottom:-3px;"><div class="anno-n red">3</div></div>
+            <div style="background:rgba(246,70,93,.08);border:1px solid rgba(246,70,93,.2);border-radius:8px;padding:10px 12px;">
+              <div style="font-size:11px;font-weight:700;color:#F6465D;margin-bottom:4px;">大额赎回说明</div>
+              <div style="font-size:10px;color:var(--dark-text2);line-height:1.6;">若本次赎回份额超过基金总份额的 10%，超出部分将顺延至下一开放日，按下一开放日净值结算</div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:12px 16px;background:var(--dark2);">
+          <div style="background:var(--blue);color:#fff;border-radius:10px;padding:12px;text-align:center;font-size:14px;font-weight:700;">我已了解，继续赎回</div>
+        </div>
+        <div class="home-ind"><div></div></div>
+      </div>
+      <div class="flow-note">赎回须知 · B4/B5 规则披露</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
+      <div class="ann-card">
+        <div class="card-title">B-1 · 持仓列表 + 赎回入口 <span class="ann-tag new">NEW</span><span class="ann-tag p0">P0</span></div>
+        <div class="ann-item"><div class="ann-num green">1</div><div class="ann-text"><b>持仓卡片</b><span class="ann-tag new">NEW</span><br>展示：持有份额 / 当前 NAV / 持仓市值 / 浮动盈亏（差额和百分比双展示）</div></div>
+        <div class="ann-item"><div class="ann-num amber">2</div><div class="ann-text"><b>赎回按钮可见性</b><span class="ann-tag p0">B1</span><br>仅在开放日（每月最后工作日）展示「申请赎回」；非开放日显示「下次开放日：XX-XX-XX」</div></div>
+        <div class="ann-item"><div class="ann-num red">3</div><div class="ann-text"><b>大额赎回预警</b><span class="ann-tag p0">B5</span><br>进入赎回前强制展示大额顺延说明，用户知情后方可继续</div></div>
+        <div class="info-box green"><b>后台联动：</b>赎回申请提交后 → C-1 生成「待风控审核」赎回订单，需合规风控双签</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════ -->
+<div class="fade-section" id="scene-b-2">
+  <div class="st">
+    <h2>B-2 · 赎回下单（含大额顺延提示）</h2>
+    <span class="note">B-1 点「赎回」</span>
+  </div>
+  <div class="flow">
+    
+    <div class="flow-col">
+      <span class="phone-label">B-2 · 赎回下单</span>
+      <div class="phone" style="display:flex;flex-direction:column;">
+        <div class="ph-status"><span>9:41</span><span>⚡ 📶 ■■■</span></div>
+        <div class="ph-top">
+          <span style="font-size:14px;color:var(--dark-text3);">‹</span>
+          <div style="flex:1;text-align:center;"><div class="ph-name">申请赎回</div></div>
+          <div style="width:14px;"></div>
+        </div>
+        <div style="padding:14px 16px;flex:1;overflow:hidden;">
+          <div style="font-size:12px;color:var(--dark-text2);margin-bottom:12px;">鑫远稳健一期 · 可赎回份额 7,788.08</div>
+          <div style="font-size:11px;color:var(--dark-text3);margin-bottom:4px;">赎回份额</div>
+          <div style="background:var(--dark2);border-radius:8px;padding:12px 14px;margin-bottom:6px;">
+            <div style="font-size:20px;font-weight:800;color:var(--dark-text);font-family:'IBM Plex Mono',monospace;">5,000.00</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <div style="background:var(--dark2);border-radius:6px;padding:5px 10px;font-size:11px;color:var(--dark-text2);">25%</div>
+            <div style="background:var(--dark2);border-radius:6px;padding:5px 10px;font-size:11px;color:var(--dark-text2);">50%</div>
+            <div style="background:var(--blue);border-radius:6px;padding:5px 10px;font-size:11px;color:#fff;font-weight:700;">全部赎回</div>
+          </div>
+          <div style="position:relative;margin-bottom:10px;">
+            <div class="anno amber" style="top:-3px;left:-3px;right:-3px;bottom:-3px;"><div class="anno-n amber">1</div></div>
+            <div style="background:var(--dark2);border-radius:6px;padding:10px 12px;">
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">
+                <span style="color:var(--dark-text3);">预计赎回金额</span>
+                <span style="color:var(--dark-text);font-family:'IBM Plex Mono',monospace;">¥6,421.50</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;">
+                <span style="color:var(--dark-text3);">预计到账日（T+5）</span>
+                <span style="color:var(--dark-text2);">2026-05-08（工作日）</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:12px 16px;background:var(--dark2);">
+          <div style="background:#F6465D;color:#fff;border-radius:10px;padding:12px;text-align:center;font-size:14px;font-weight:700;">确认提交赎回</div>
+        </div>
+        <div class="home-ind"><div></div></div>
+      </div>
+      <div class="flow-note">正常赎回 · 份额 &lt; 10% 总份额</div>
+    </div>
+    <div class="aw"><div class="al r"></div><div class="tx r">份额 > 10% 触发</div></div>
+    <div class="flow-col">
+      <span class="phone-label">B-2 · 大额顺延弹窗</span>
+      <div class="phone" style="display:flex;flex-direction:column;position:relative;">
+        <div class="ph-status"><span>9:41</span><span>⚡ 📶 ■■■</span></div>
+        <div style="flex:1;opacity:.3;background:var(--dark);"></div>
+        <div style="position:absolute;top:80px;left:20px;right:20px;background:#1e2329;border-radius:12px;padding:16px;">
+          <div style="font-size:14px;font-weight:800;color:var(--dark-text);margin-bottom:6px;">大额赎回顺延提醒</div>
+          <div style="position:relative;margin-bottom:12px;">
+            <div class="anno red" style="top:-3px;left:-3px;right:-3px;bottom:-3px;"><div class="anno-n red">2</div></div>
+            <div style="background:rgba(246,70,93,.08);border-radius:6px;padding:10px;">
+              <div style="font-size:11px;color:var(--dark-text2);line-height:1.7;">
+                本次赎回 <b style="color:#F6465D;">7,788.08 份</b>，超出当前基金总份额的 10%（上限 350 份）。<br><br>
+                超出部分 <b style="color:#F6465D;">7,438.08 份</b> 将顺延至下一开放日（2026-05-29）按当日净值结算。
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <div style="flex:1;background:var(--dark2);border-radius:8px;padding:10px;text-align:center;font-size:13px;color:var(--dark-text2);">取消</div>
+            <div style="flex:1;background:#F6465D;border-radius:8px;padding:10px;text-align:center;font-size:13px;font-weight:700;color:#fff;">知悉并确认</div>
+          </div>
+        </div>
+        <div class="home-ind"><div></div></div>
+      </div>
+      <div class="flow-note">大额赎回 · 顺延规则强提示</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
+      <div class="ann-card">
+        <div class="card-title">B-2 · 赎回下单 + 大额顺延 <span class="ann-tag new">NEW</span><span class="ann-tag p0">P0</span></div>
+        <div class="ann-item"><div class="ann-num amber">1</div><div class="ann-text"><b>T+5 到账说明</b><span class="ann-tag p0">B4</span><br>实时展示预计到账日（跳过节假日计算），让投资者清楚预期</div></div>
+        <div class="ann-item"><div class="ann-num red">2</div><div class="ann-text"><b>大额赎回顺延弹窗</b><span class="ann-tag p0">B5</span><br>超出 10% 阈值时强制弹出：展示可赎回份额 + 顺延份额 + 下次开放日，用户知情才可确认</div></div>
+        <div class="info-box red"><b>合规约束：</b>顺延份额按下一开放日净值（非申请日净值）结算，可能不利于投资者，必须醒目提示</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ████████████████████████████████████████████████████████████████████████ -->
+<div class="gd host fade-section" id="part1">
+  <span class="gd-num">PART 1</span>
+  <div>
+    <h2>🖥️ Web 运营后台</h2>
+    <div class="gd-desc">基金运营人员订单审核（Web）</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════ -->
+<div class="fade-section" id="scene-c-1">
+  <div class="st">
+    <h2>C-1 · 订单审核队列（认购 + 赎回）</h2>
+    <span class="note">运营后台 → 订单中心</span>
+  </div>
+  <div class="flow">
+    
+    <div class="flow-col">
+      <span class="phone-label">C-1 · 订单审核队列</span>
+      <div class="webframe" style="width:820px;min-height:520px;">
+        <div class="wf-bar">
+          <div class="wf-dots"><i></i><i></i><i></i></div>
+          <div class="wf-url">fund-admin.example.com/orders/review</div>
+        </div>
+        <div class="webframe-body" style="padding:0;">
+          <!-- 顶部导航 -->
+          <div style="background:#001529;padding:0 20px;height:48px;display:flex;align-items:center;gap:20px;">
+            <span style="font-size:14px;font-weight:800;color:#fff;">Fund Admin</span>
+            <span style="font-size:12px;color:rgba(255,255,255,.5);">订单中心</span>
+            <span style="font-size:12px;color:#1890FF;font-weight:600;border-bottom:2px solid #1890FF;padding-bottom:2px;">审核队列</span>
+            <span style="margin-left:auto;font-size:11px;color:rgba(255,255,255,.6);">运营专员 · admin</span>
+          </div>
+          <div style="padding:16px 20px;">
+            <!-- Tab 切换 -->
+            <div style="display:flex;gap:0;margin-bottom:14px;border-bottom:1px solid #e8e8e8;">
+              <div style="position:relative;">
+                <div class="anno purple" style="top:-3px;left:-3px;right:-3px;bottom:0;"><div class="anno-n purple">1</div></div>
+                <div style="padding:8px 16px;font-size:13px;font-weight:600;color:#1890FF;border-bottom:2px solid #1890FF;">认购订单 <span style="background:#F6465D;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px;">3</span></div>
+              </div>
+              <div style="padding:8px 16px;font-size:13px;color:#595959;">赎回订单 <span style="background:#d97706;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px;">1</span></div>
+            </div>
+            <!-- 筛选栏 -->
+            <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">
+              <div style="background:#f5f5f5;border-radius:4px;padding:5px 12px;font-size:12px;color:#595959;">状态：待审核 ▾</div>
+              <div style="background:#f5f5f5;border-radius:4px;padding:5px 12px;font-size:12px;color:#595959;">基金：全部 ▾</div>
+              <div style="background:#1890FF;border-radius:4px;padding:5px 12px;font-size:12px;color:#fff;margin-left:auto;">+ 批量审核</div>
+            </div>
+            <!-- 表头 -->
+            <div style="display:grid;grid-template-columns:120px 130px 160px 100px 80px 100px 100px;gap:0;background:#fafafa;border:1px solid #e8e8e8;border-radius:4px 4px 0 0;">
+              <div style="padding:8px 10px;font-size:11px;font-weight:600;color:#595959;">订单号</div>
+              <div style="padding:8px 10px;font-size:11px;font-weight:600;color:#595959;">投资人</div>
+              <div style="padding:8px 10px;font-size:11px;font-weight:600;color:#595959;">基金</div>
+              <div style="padding:8px 10px;font-size:11px;font-weight:600;color:#595959;text-align:right;">认购金额</div>
+              <div style="padding:8px 10px;font-size:11px;font-weight:600;color:#595959;">状态</div>
+              <div style="padding:8px 10px;font-size:11px;font-weight:600;color:#595959;">申请时间</div>
+              <div style="padding:8px 10px;font-size:11px;font-weight:600;color:#595959;text-align:center;">操作</div>
+            </div>
+            <!-- 数据行 1 -->
+            <div style="position:relative;">
+              <div class="anno green" style="top:0;left:-2px;right:-2px;bottom:0;"><div class="anno-n green">2</div></div>
+              <div style="display:grid;grid-template-columns:120px 130px 160px 100px 80px 100px 100px;border:1px solid #e8e8e8;border-top:none;background:#fff;">
+                <div style="padding:8px 10px;font-size:11px;color:#1d2129;font-family:'IBM Plex Mono',monospace;">SUB-0418-001</div>
+                <div style="padding:8px 10px;font-size:11px;color:#1d2129;">张**（QI）</div>
+                <div style="padding:8px 10px;font-size:11px;color:#1d2129;">鑫远稳健一期</div>
+                <div style="padding:8px 10px;font-size:11px;color:#1d2129;text-align:right;font-family:'IBM Plex Mono',monospace;">100万</div>
+                <div style="padding:8px 10px;"><span style="background:#fff7e6;color:#d97706;border-radius:4px;padding:2px 6px;font-size:10px;font-weight:600;">待审核</span></div>
+                <div style="padding:8px 10px;font-size:10px;color:#8c8c8c;">04-18 14:32</div>
+                <div style="padding:8px 10px;display:flex;gap:4px;justify-content:center;">
+                  <div style="background:#1890FF;color:#fff;border-radius:3px;padding:3px 8px;font-size:10px;font-weight:600;cursor:pointer;">通过</div>
+                  <div style="background:#fff;border:1px solid #F6465D;color:#F6465D;border-radius:3px;padding:3px 8px;font-size:10px;cursor:pointer;">驳回</div>
+                </div>
+              </div>
+            </div>
+            <!-- 数据行 2 -->
+            <div style="display:grid;grid-template-columns:120px 130px 160px 100px 80px 100px 100px;border:1px solid #e8e8e8;border-top:none;background:#fff;">
+              <div style="padding:8px 10px;font-size:11px;color:#1d2129;font-family:'IBM Plex Mono',monospace;">SUB-0418-002</div>
+              <div style="padding:8px 10px;font-size:11px;color:#1d2129;">李**（QI）</div>
+              <div style="padding:8px 10px;font-size:11px;color:#1d2129;">鑫远稳健一期</div>
+              <div style="padding:8px 10px;font-size:11px;color:#1d2129;text-align:right;font-family:'IBM Plex Mono',monospace;">500万</div>
+              <div style="padding:8px 10px;"><span style="background:#f6ffed;color:#52c41a;border-radius:4px;padding:2px 6px;font-size:10px;font-weight:600;">已通过</span></div>
+              <div style="padding:8px 10px;font-size:10px;color:#8c8c8c;">04-18 10:15</div>
+              <div style="padding:8px 10px;display:flex;gap:4px;justify-content:center;">
+                <div style="background:#f5f5f5;color:#bfbfbf;border-radius:3px;padding:3px 8px;font-size:10px;">查看</div>
+              </div>
+            </div>
+            <!-- 数据行 3 -->
+            <div style="position:relative;">
+              <div class="anno red" style="top:0;left:-2px;right:-2px;bottom:0;"><div class="anno-n red">3</div></div>
+              <div style="display:grid;grid-template-columns:120px 130px 160px 100px 80px 100px 100px;border:1px solid #e8e8e8;border-top:none;border-radius:0 0 4px 4px;background:#fffbe6;">
+                <div style="padding:8px 10px;font-size:11px;color:#1d2129;font-family:'IBM Plex Mono',monospace;">SUB-0418-003</div>
+                <div style="padding:8px 10px;font-size:11px;color:#1d2129;">王**（QI）</div>
+                <div style="padding:8px 10px;font-size:11px;color:#1d2129;">鑫远稳健一期</div>
+                <div style="padding:8px 10px;font-size:11px;color:#1d2129;text-align:right;font-family:'IBM Plex Mono',monospace;">3000万</div>
+                <div style="padding:8px 10px;"><span style="background:#fff7e6;color:#d97706;border-radius:4px;padding:2px 6px;font-size:10px;font-weight:600;">待双签</span></div>
+                <div style="padding:8px 10px;font-size:10px;color:#8c8c8c;">04-18 09:00</div>
+                <div style="padding:8px 10px;display:flex;gap:4px;justify-content:center;">
+                  <div style="background:#d97706;color:#fff;border-radius:3px;padding:3px 8px;font-size:10px;font-weight:600;">合规双签</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="flow-note">运营后台 · 认购订单审核队列</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
+      <div class="ann-card">
+        <div class="card-title">C-1 · 订单审核队列 <span class="ann-tag new">NEW</span><span class="ann-tag p0">P0</span></div>
+        <div class="ann-item"><div class="ann-num purple">1</div><div class="ann-text"><b>认购 / 赎回双 Tab</b><span class="ann-tag new">NEW</span><br>Tab 上展示待审核计数 badge，切换 Tab 共享同一套筛选器</div></div>
+        <div class="ann-item"><div class="ann-num green">2</div><div class="ann-text"><b>常规订单审核</b><span class="ann-tag p0">P0</span><br>运营专员一键通过/驳回；驳回需填写原因；通过后 T+1 系统自动确认份额</div></div>
+        <div class="ann-item"><div class="ann-num red">3</div><div class="ann-text"><b>大额订单双签</b><span class="ann-tag p0">B5</span><br>单笔 ≥ 1000 万进入「待双签」状态，需运营专员 + 合规风控分别确认后生效</div></div>
+        <div class="info-box blue"><b>状态机：</b>待审核 → 已通过（T+1 确认份额）/ 已驳回（资金原路退回 T+3）<br>大额路径：待审核 → 待双签 → 已通过 / 已驳回</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- .cv -->
+
+
+<script>
+// pm-ws-canary-236a5364
+// ── 进度条 ──
+const progressBar = document.getElementById('progressBar');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+  progressBar.style.width = pct + '%';
+});
+
+// ── 侧导航高亮 ──
+const navLinks = document.querySelectorAll('.side-nav a');
+const sections = [];
+navLinks.forEach(a => {
+  const id = a.getAttribute('href').slice(1);
+  const el = document.getElementById(id);
+  if (el) sections.push({ el, link: a });
+});
+
+function updateNav() {
+  const scrollY = window.scrollY + 200;
+  let current = sections[0];
+  for (const s of sections) {
+    if (s.el.offsetTop <= scrollY) current = s;
+  }
+  navLinks.forEach(a => a.classList.remove('active'));
+  if (current) current.link.classList.add('active');
+}
+window.addEventListener('scroll', updateNav);
+updateNav();
+
+// ── 滚动淡入 ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.05, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.fade-section').forEach(el => observer.observe(el));
+
+</script>
+
+
+<!-- ═══ 跨端数据流表格 ═══ -->
+<div style="padding:40px 60px 0;">
+  <div style="background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.06);max-width:960px;margin:0 auto;">
+    <div style="font-size:15px;font-weight:800;color:#1d2129;margin-bottom:4px;">跨端数据流 · H5 投资人端 ↔ Web 运营后台</div>
+    <div style="font-size:11px;color:#8c8c8c;margin-bottom:16px;">以下交互跨越两个产品端，需确保前后端接口对齐</div>
+    <div style="display:grid;grid-template-columns:28px 1fr 40px 1fr 1fr 1fr;gap:0;border:1px solid #e8e8e8;border-radius:6px;overflow:hidden;font-size:12px;">
+      <div style="background:#fafafa;padding:8px 10px;font-weight:600;color:#595959;">#</div>
+      <div style="background:#fafafa;padding:8px 10px;font-weight:600;color:#595959;">起点（H5 投资人端）</div>
+      <div style="background:#fafafa;padding:8px 10px;font-weight:600;color:#595959;text-align:center;">→</div>
+      <div style="background:#fafafa;padding:8px 10px;font-weight:600;color:#595959;">终点（Web 运营后台）</div>
+      <div style="background:#fafafa;padding:8px 10px;font-weight:600;color:#595959;">传递数据</div>
+      <div style="background:#fafafa;padding:8px 10px;font-weight:600;color:#595959;">触发方式</div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;color:#8c8c8c;">1</div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;">A-2 签署认购协议</div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;text-align:center;color:#1890FF;">→</div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;">C-1 生成「待审核」认购订单</div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;font-size:11px;color:#595959;">投资人 ID / 基金 ID / 认购金额 / 冷静期截止时间</div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;"><span style="background:#fff7e6;color:#d97706;border-radius:3px;padding:2px 6px;font-size:10px;">用户提交</span></div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;color:#8c8c8c;">2</div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;">A-2 冷静期内撤销认购</div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;text-align:center;color:#F6465D;">→</div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;">C-1 订单状态 → 已撤销</div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;font-size:11px;color:#595959;">订单 ID / 撤销时间（需在冷静期内）</div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;"><span style="background:#fff1f0;color:#F6465D;border-radius:3px;padding:2px 6px;font-size:10px;">用户主动</span></div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;color:#8c8c8c;">3</div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;">B-2 确认赎回（知情大额顺延）</div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;text-align:center;color:#1890FF;">→</div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;">C-1 生成「待风控审核」赎回订单</div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;font-size:11px;color:#595959;">赎回份额 / 是否大额 / 顺延份额（如有）</div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;"><span style="background:#fff7e6;color:#d97706;border-radius:3px;padding:2px 6px;font-size:10px;">用户提交</span></div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;color:#8c8c8c;">4</div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;">B-1 持仓市值展示</div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;text-align:center;color:#52c41a;">←</div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;">运营发布当日净值（NAV）</div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;font-size:11px;color:#595959;">基金 ID / NAV / 净值日期（每月末 ≤17:00）</div>
+      <div style="padding:8px 10px;border-top:1px solid #e8e8e8;"><span style="background:#f6ffed;color:#52c41a;border-radius:3px;padding:2px 6px;font-size:10px;">系统推送</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 底部 Callout ═══ -->
+<div style="padding:32px 60px 60px;">
+  <div style="max-width:960px;margin:0 auto;display:flex;flex-direction:column;gap:10px;">
+    <div class="co bl">📖 <b>阅读指引：</b>横向滚动查看各 Scene，场景间箭头表示页面跳转方向。标注编号（圆圈数字）与右侧注释卡对应。两个 PART 分别代表 H5 投资人端和 Web 运营后台。</div>
+    <div class="co am">
+      <b>优先级说明：</b>
+      <span class="ann-tag p0">P0</span> 合规强制要求，必须上线 ·
+      <span class="ann-tag new">NEW</span> v1.1 新增功能 ·
+      <span class="ann-tag chg">改动</span> 在原有功能上调整 ·
+      <b style="color:#d97706;font-size:11px;">R1-R5</b> 监管合规规则编号（详见 context.md §6）
+    </div>
+  </div>
+</div>
+</body>
+</html>

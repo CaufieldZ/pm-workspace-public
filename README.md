@@ -28,6 +28,31 @@
 
 ---
 
+## 🖼️ See It In Action
+
+一个 **虚构的私募证券基金认申赎项目**，从 context.md 到 PRD 全流程在 20 分钟内跑通 —— 合规链条（合格投资者 / 冷静期 / 大额赎回）完整体现。
+
+### H5 投资人端 · 基金详情 + 认购
+
+<img src="examples/private-fund-demo/screenshots/prd/a1.png" alt="H5 投资人端 · 基金详情 + 认购下单" width="380">
+
+### Web 运营后台 · 订单审核队列
+
+<img src="examples/private-fund-demo/screenshots/prd/c1.png" alt="Web 运营后台 · 订单审核队列">
+
+### 交付物速览
+
+| 产出物 | 文件 | 规模 |
+|---|---|---|
+| 产品 Context | [context.md](examples/private-fund-demo/context.md) | 9 章 · 5 个场景锁定 |
+| 场景清单 | [scene-list.md](examples/private-fund-demo/scene-list.md) | 2 个 View / 5 个场景 |
+| 交互大图 | [imap HTML](examples/private-fund-demo/deliverables/imap-private-fund-v1.html) | 单文件 / 1173 行 / 9 个 mockup + 跨端数据流表 |
+| PRD 文档 | [prd docx](examples/private-fund-demo/deliverables/prd-private-fund-v1.docx) | Landscape / 8 章 / 20 表格 / 5 张截图 |
+
+**👉 [完整 demo 说明及生成脚本 → examples/private-fund-demo/](examples/private-fund-demo/)**
+
+---
+
 ## 🚀 Quick Start（5 分钟上手）
 
 ### 方式一：Chat 轨（零门槛）
