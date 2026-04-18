@@ -26,6 +26,14 @@
 
 `.claude/hooks/pre-risky-op.sh` 会在命中上述模式时打印 stderr warning（不拦截），看到 warning 立刻 Write session-state 再继续。
 
+【UI / webapp 验证】需要跑本地 server 测前端时，走 `scripts/with_server.py`（fork 自 Anthropic webapp-testing）托管 server 生命周期，不要自己起后台进程忘了关：
+
+```bash
+python3 scripts/with_server.py --server "npm run dev" --port 5173 -- python3 your_playwright.py
+```
+
+脚本 `--help` 有完整用法。Playwright 统一 `headless=True` + `wait_for_load_state('networkidle')` 再操作 DOM，不要立刻截屏。
+
 【省钱提醒】当本 session 完成方案讨论并更新 context.md 后，如果接下来要进入产出物链路（交互大图/原型/PRD 等），主动提醒用户：「context.md 已更新并 commit。建议新开 session 切 Sonnet 执行产出物，可省约 46% 成本。命令：/交互大图 {项目名}」。用户说"不用换"则继续。
 
 ### MCP 配置

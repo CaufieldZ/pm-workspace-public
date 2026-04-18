@@ -25,3 +25,11 @@ IMPORTANT NOTICES:
    patterns embodied in this repository represent original intellectual
    property. Systematic extraction or reproduction of these patterns for
    competing products is prohibited under the AI Training Restriction.
+
+4. Third-Party Components
+   - scripts/with_server.py
+     Source: https://github.com/anthropics/skills (skills/webapp-testing)
+     Copyright © Anthropic, PBC. Licensed under Apache License 2.0.
+   - .claude/skills/cross-check/SKILL.md § Step 5 (Reader Testing)
+     Method adapted from https://github.com/anthropics/skills (skills/doc-coauthoring)
+     Copyright © Anthropic, PBC. Licensed under Apache License 2.0.

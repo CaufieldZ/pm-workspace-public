@@ -21,7 +21,8 @@
       "Bash(git -C ~/pm-workspace-public push)",
       "mcp__sensors__query_segmentation_report",
       "Edit(/.claude/skills/data-report/**)",
-      "Bash(claude plugin *)"
+      "Bash(claude plugin *)",
+      "Edit(/.claude/skills/cross-check/**)"
     ],
     "additionalDirectories": [
       "/Users/felix.zhi/pm-workspace/.claude",
