@@ -2,9 +2,7 @@
 ---
 name: intel-collector
 description: >
-  当用户提到「截竞品」「竞品截图」「抓竞品页面」「抓情报」「采集 XX」「capture competitor」时触发。
-  也在用户说「截 XX 的 YY」「看看 XX 最近动态」「抓 XX 的报道」时触发。
-  即使用户只说「截一下」「抓一下」并指明平台或媒体也应触发。
+  当用户提到「截竞品」「抓情报」「采集 XX」时触发。指明平台 / 媒体名 + 「截一下 / 抓一下」亦触发。
 argument-hint: "平台/媒体 + 功能模块，如 binance 活动中心、coindesk 最新报道；可选 --web / --content"
 type: tool
 output_format: 目录

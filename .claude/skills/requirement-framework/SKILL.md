@@ -2,9 +2,7 @@
 ---
 name: requirement-framework
 description: >
-  当场景数较多（≥5 个场景）需要在交互大图前先整理每条具体需求时触发，
-  或用户提到「需求框架」「先整理需求」「需求明细」时触发。
-  场景 <5 个的简单需求、或已有清晰 context.md 时可跳过此步。
+  场景 ≥5 个需在 IMAP 前整理每条需求时触发,或用户提到「需求框架」「需求明细」时触发。
 argument-hint: "项目名或需求描述"
 type: pipeline
 output_format: .html

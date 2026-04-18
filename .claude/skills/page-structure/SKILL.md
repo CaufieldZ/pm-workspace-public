@@ -2,9 +2,7 @@
 ---
 name: page-structure
 description: >
-  当 PRD 完成后需要给设计师 AI 或前端 AI 提供消费文档时触发，
-  或用户说「页面结构」「给设计师的文档」「给前端的说明」「pspec」时触发。
-  无 AI 消费需求时可跳过此步。
+  当用户说「页面结构」「pspec」,或需给设计 / 前端 AI 消费文档时触发。
 type: pipeline
 output_format: .md
 output_prefix: pspec-

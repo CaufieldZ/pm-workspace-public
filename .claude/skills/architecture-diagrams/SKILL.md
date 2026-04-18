@@ -2,10 +2,7 @@
 ---
 name: architecture-diagrams
 description: >
-  当需求涉及多系统对接、资金流转、架构设计、商业测算，或用户提到「架构图」「架构大图」
-  「方案架构」「技术架构」「architecture diagram」「system diagram」「tech architecture」时触发。
-  超复杂链路中在场景清单后、交互大图前自动接续触发。
-  也适用于：系统设计文档、技术方案评审、风险分析、Phase 路线图等。
+  当需求涉及多系统对接 / 资金流转,或用户提到「架构图」「技术架构」时触发。超复杂链路中场景清单后、IMAP 前自动接续,也适用于:系统设计文档、技术方案评审、风险分析、Phase 路线图等。
 type: pipeline
 output_format: .html
 output_prefix: arch-

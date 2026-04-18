@@ -2,9 +2,7 @@
 ---
 name: cross-check
 description: >
-  当 PRD 完成后需要最终交付前验收时触发，或用户说「自检」「拉通检查」「校验一下」
-  「cross-check」「检查一致性」时触发。PRD 完成后应主动建议执行此步。
-  即使用户只说「检查一下有没有问题」也应触发。
+  当 PRD 完成后最终交付前验收,或用户说「拉通检查」「校验一下」「检查一致性」时触发。
 type: pipeline
 output_format: 对话内
 pipeline_position: 8

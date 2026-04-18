@@ -2,11 +2,7 @@
 ---
 name: prd
 description: >
-  当用户提到「PRD」「产品需求文档」「需求文档」「产品文档」「写个文档」
-  「product requirements document」「product spec」时触发此 skill。
-  也适用于：用户要求写功能需求、产品规格、feature spec、
-  或基于交互大图/原型图输出需求文档。
-  即使用户只说「写个需求文档」或「把这个功能写成文档」也应触发。
+  当用户提到「PRD」「需求文档」时触发。基于 IMAP / 原型输出 PRD 亦触发。
 type: pipeline
 output_format: .docx
 output_prefix: prd-

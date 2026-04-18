@@ -2,9 +2,7 @@
 ---
 name: behavior-spec
 description: >
-  当 PRD 完成后需要给研发 AI 或 Vibe Coding 场景提供消费文档时触发，
-  或用户说「行为规格」「行为文档」「研发侧文档」「给 AI 用的文档」「bspec」时触发。
-  无研发 AI 需求时可跳过此步。
+  当用户说「行为规格」「bspec」,或需给研发 AI / Vibe Coding 消费文档时触发。
 type: pipeline
 output_format: .md
 output_prefix: bspec-

@@ -2,11 +2,7 @@
 ---
 name: prototype
 description: >
-  当用户提到「原型」「可交互原型」「交互原型」「prototype」「mockup」
-  「高保真原型」「可点击原型」时触发此 skill。
-  也适用于：用户要求做产品 demo、可演示的页面、
-  前后台联动的原型、或把 PRD/交互大图转为可交互版本。
-  即使用户只说「做个原型」或「把这个做成可点击的」也应触发。
+  当用户提到「原型」「可交互原型」「prototype」时触发。PRD / IMAP 完成后可转为可交互版本。
 type: pipeline
 output_format: .html
 output_prefix: proto-

@@ -2,11 +2,7 @@
 ---
 name: pdf-tools
 description: >
-  当用户提到「pdf 合并」「合并 pdf」「拆分 pdf」「pdf 拆分」「加页码」「加水印」
-  「旋转 pdf」「pdf 加密」「整理 pdf 页面」「pdf 签名」「pdf 转 word」「pdf 转 excel」
-  「pdf 转 ppt」「pdf 转 jpg」「pdf 转图片」「pdf 转 pdf/a」「pdf compress」「pdf 压缩」
-  或直接说「处理一下这个 pdf」时触发。
-  不触发：PRD 生成（走 prd skill）、PDF 阅读提取文本（直接用 Read 工具）。
+  当用户提到 PDF 操作(合并 / 拆分 / 加页码 / 水印 / 加密 / 签名 / 转 Word / Excel / PPT / 图片 / 压缩等)时触发。
 argument-hint: ["<输入文件路径> [子命令/参数]"]
 type: tool
 output_format: 原文件同目录

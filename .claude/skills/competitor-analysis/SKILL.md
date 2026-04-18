@@ -2,10 +2,7 @@
 ---
 name: competitor-analysis
 description: >
-  当用户提到「竞品分析」「竞品调研」「competitor analysis」「看看 XX 怎么做」
-  「帮我分析下 Binance/OKX/Gate/Bybit 的 XX」时触发。
-  也在用户丢竞品截图/链接要求分析，或立项前需要竞品背景调研时触发。
-  即使用户只说「看看行业怎么做」也应触发。
+  当用户提到「竞品分析」「竞品调研」,或丢竞品截图 / 链接要求分析时触发。
 argument-hint: "竞品平台 + 功能模块，如 Binance 活动中心"
 type: standalone
 output_format: .md

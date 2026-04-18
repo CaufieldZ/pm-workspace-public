@@ -2,9 +2,7 @@
 ---
 name: skill-creator
 description: >
-  当用户需要新建一个 skill（说「创建 skill」「做个新 skill」「帮我设计一个新技能」）时触发。
-  已有 skill 的内容修改直接编辑对应 SKILL.md，不走此 skill。
-  即使用户只说「我想让你记住一个新规则/新流程」也应询问是否要创建 skill。
+  当用户说「创建 skill」「做个新 skill」时触发。已有 skill 的修改直接编辑对应 SKILL.md,不走此 skill。
 type: tool
 output_format: 新目录
 depends_on: []

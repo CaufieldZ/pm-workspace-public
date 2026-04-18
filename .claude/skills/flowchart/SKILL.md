@@ -2,11 +2,7 @@
 ---
 name: flowchart
 description: >
-  当用户提到「流程图」「分支流程」「泳道图」「流程梳理」「flow chart」「swimlane」
-  「业务流程图」「审批流」「流程可视化」时触发。
-  也适用于:需要把复杂判定/审批/跨角色流程可视化,或 PRD/交互大图/PPT 内需要嵌入流程示意图时。
-  定位独立产出,不走链路,可被 interaction-map/prd/ppt/architecture-diagrams 消费(截图或嵌入)。
-  不触发:交互大图(页面跳转走 interaction-map)、架构图(系统模块走 architecture-diagrams)。
+  当用户提到「流程图」「泳道图」「审批流」时触发。独立产出,可被 IMAP / PRD / PPT / 架构图消费(截图或嵌入)。
 argument-hint: [主题 或 data 文件]
 type: standalone
 output_format: .html

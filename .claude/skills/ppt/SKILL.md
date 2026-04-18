@@ -2,11 +2,7 @@
 ---
 name: ppt
 description: >
-  当用户提到「PPT」「演示文档」「方案文档」「信息文档」「宣讲材料」「SOP 手册」
-  「方法论文档」「团队分享」「对外宣讲」「pptx」「多Tab文档」时触发。
-  也适用于：把方案/SOP/方法论类内容生成 HTML 多Tab信息文档（等同PPT给人讲方案）。
-  即使用户只说「做个PPT」或「把这个做成可点击的文档」也应触发。
-  不触发：architecture-diagrams 是项目内链路型（依赖 scene-list），ppt 是独立的，不依赖任何链路。
+  当用户提到「PPT」「方案文档」「宣讲材料」「SOP 手册」时触发,产物为 HTML 多 Tab 信息文档。
 argument-hint: [内容大纲文件 或 口述大纲]
 type: standalone
 output_format: .html

@@ -2,9 +2,8 @@
 ---
 name: interaction-map
 description: >
-  当用户提到「交互大图」「UI flow」「交互流程图」「前端交互图」「画个交互图」
-  「screen flow」「interaction map」时触发。也在场景清单已确认、复杂/超复杂链路
-  进入视觉化阶段时自动接续触发。即使用户只说「画图」也应先确认是否需要交互大图。
+  当用户提到「交互大图」「交互流程图」「IMAP」时触发。
+  场景清单确认后进入视觉化阶段自动接续触发。
 type: pipeline
 output_format: .html
 output_prefix: imap-
