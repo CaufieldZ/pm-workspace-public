@@ -169,7 +169,7 @@ python3 .claude/skills/intel-collector/references/scheduled-scrape.py --platform
 python3 .claude/skills/intel-collector/references/scheduled-scrape.py --media        # 仅媒体
 ```
 
-**crontab**：每月 1 号和 15 号 10:03 自动运行（`scripts/intel-cron.sh`）
+**crontab**：每月 1 号和 15 号 10:03 自动运行（`references/intel-cron.sh`）
 
 **产出位置**：
 - 交易所 → `references/competitors/{platform}/announcements/YYYY-MM-DD.md`

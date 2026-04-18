@@ -13,13 +13,15 @@
 
 【计时】每个产出物步骤完成后，用 bash 执行 `date +%s` 获取时间戳。在 Step A 开始前记一次，每个 Step 完成后记一次，报告耗时。
 
-【compact 指引】上下文压缩时，必须保留：当前执行到哪个 Step（A/B/C）、已填充的 Scene 编号列表、context.md 的项目名和待办进度。
+【compact 指引】每完成一个 Skill Step（A/B/C）或切换项目后，用 Write 工具覆盖 `.claude/session-state.md`，更新项目名/Skill/Step/已填 Scene/下一步。PreCompact hook 会在 compact 前自动注入该文件到摘要，防止进度丢失。手动切换项目（非通过 Skill 流程）必须立刻同步，否则残留旧状态会误导后续执行。
 
 【省钱提醒】当本 session 完成方案讨论并更新 context.md 后，如果接下来要进入产出物链路（交互大图/原型/PRD 等），主动提醒用户：「context.md 已更新并 commit。建议新开 session 切 Sonnet 执行产出物，可省约 46% 成本。命令：/交互大图 {项目名}」。用户说"不用换"则继续。
 
 ### MCP 配置
 
-所有 MCP Server 统一在项目根目录 `.mcp.json` 配置，这是唯一配置源。禁止在 `~/.claude.json` 的全局或项目级 `mcpServers` 中添加配置。
+- **stdio MCP**（`command` 启动）：统一在项目根目录 `.mcp.json` 配置，禁止手写到 `~/.claude.json`。
+- **HTTP / SSE MCP**（`type: "http"` 或 `"sse"`）：Claude Code 的 `.mcp.json` 不支持 HTTP transport（写了会被静默忽略），必须用 `claude mcp add --transport http <name> <url>` 注册，它会写入 `~/.claude.json` 项目级 `mcpServers`。禁止手改该 JSON。
+- **验证**：配置后跑 `claude mcp list`，所有 server 应显示 `✓ Connected`；出现 `✗` 或缺失说明注册失败。
 
 ### Skill 路径约定
 
@@ -68,10 +70,18 @@ context.md 由 Chat Opus 输出，共九章。本地模型默认只读。
 - references/ 下 CSS/JS 文件：不主动读取，SKILL.md 的 API 速查表已够用
 
 【Web 工具选择】
-- 已知 URL 取内容 → `firecrawl_scrape`（最快）
-- 不知道 URL → `firecrawl_search`（搜索+内容一步到位），不要先 WebSearch 再 WebFetch 两步
-- 抓多页 → `firecrawl_map` 找 URL 列表，再逐个 `firecrawl_scrape`，不用 `firecrawl_crawl`（返回量不可控）
-- `firecrawl_agent` 是最后手段——异步+昂贵，只在 map+scrape 失败后用
+- **默认用 Claude Code 内建**：已知 URL → `WebFetch`；不知道 URL → `WebSearch`。内建工具 0 schema 开销，够用 90% 场景
+- **firecrawl 默认禁用**（省 6-8k tokens/session），需要时用 `./scripts/toggle-firecrawl.sh on` 开启并重启 Claude Code
+- firecrawl 适用场景：SPA 页面 JS 渲染（WebFetch 返空）、多页站点批量抓取、需要 `onlyMainContent` / `waitFor` 参数
+- 启用后：已知 URL → `firecrawl_scrape`；抓多页 → `firecrawl_map` 先找 URL 再逐个 scrape，不用 `crawl`（返回量不可控）
+
+【Skill 优先于裸 MCP】用户意图匹配已有 Skill 时，必须走 Skill 而非自行拼 MCP 调用：
+- 「拉会议纪要」「A1 录音」「闪记」→ 走 meeting-autopilot skill（内含 A1 设备查询 + 钉钉文档搜索完整流程），不要先试 Firecrawl 抓闪记 URL（需登录态，必然失败）
+- 「截竞品」→ 走 intel-collector skill，不要手动 firecrawl_scrape
+- 「出 PRD」→ 走 prd skill，不要手动 python-docx
+- 原则：Skill 封装了完整流程和最佳实践，裸 MCP 调用容易漏步骤或走错路径
+
+【PRD 截图规范】从交互大图截图给 PRD 时，只截设备框（.phone / .webframe），不截虚线标注框和注解卡。迭代 docx 时先改内容再插图。
 
 【MCP 调用克制】
 - 神策查询：先确认事件名和属性名再 query，不要先 `list_events_all`（返回量大）。用 `get_event_properties` 精准取

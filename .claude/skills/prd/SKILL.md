@@ -35,6 +35,24 @@ consumed_by: [behavior-spec, page-structure, test-cases, cross-check]
 - Markdown + mermaid 代码块（flowchart 优先）+ Markdown table
 - **禁 HTML**，兼容飞书/钉钉文档原生渲染
 
+### 方案型项目（不走标准 pipeline）
+
+满足以下任一条件时为方案型项目：
+- 跨两个或以上独立系统（不是前后端分离，是真的两个系统对接）
+- 涉及资金流转 / 结算 / 授信
+- 需要多团队共建（PRD 有"🔲 待填"占位）
+- 没有用户界面改动（纯后端/架构方案）
+
+方案型项目**不走标准 pipeline**（scene-list → imap → proto → PRD），产出物由 PM 按实际需要决定。context.md 章节结构按项目特点自定义（建议对标共建 PRD 章节），不强制九章模板。
+
+文档分工：
+
+| 文档 | 定位 | 谁维护 | 体量 |
+|------|------|--------|------|
+| context.md | Claude Code 工作上下文：当前状态+关键决策+术语+待办 | PM + Claude Code | 300-500 行 |
+| 共建 PRD（inputs/） | 完整方案自包含，各组填空 | PM（骨架）+ 各组（填空）| 1000+ 行 |
+| 机制说明等深度推演 | Chat 讨论产出，归档到 inputs/ | Chat Opus | 归档后不单独维护 |
+
 ## 输出格式
 
 **输出 .docx 文件**，使用 `python-docx` 库生成。框架函数已封装在 `references/gen_prd_base.py` 中，直接 `from gen_prd_base import *` 调用，无需了解 docx 底层 API。
@@ -82,9 +100,11 @@ view .claude/skills/prd/references/gen_prd_base.py
 - `context.md` — 项目唯一真相源（第 4/5/6 章）
 - `prd-example.md` — 实际 PRD 范例，仅当 template 描述不足以支撑或用户主动要求参考时才读
 - `prd-docx-styles.md` — 样式定义，正常生成不需要读（gen_prd_base.py 已内置所有默认样式）
-- `gen_prd_base.py` — 框架函数库源码，正常生成不需要读（看下方 API 速查即可）
+- `gen_prd_base.py` — **新建** PRD 的框架函数库源码，正常生成不需要读（看下方 API 速查即可）
+- `update_prd_base.py` — **升版/更新**已有 PRD 的辅助函数（replace_para_text / set_cell_text / replace_cell_image / fix_dpi），正常不需要读源码
+- `push_to_confluence_base.py` — 推送到 Confluence Server 的脚本（mammoth 转换 + 附件上传）
 
-### gen_prd_base.py API 速查
+### gen_prd_base.py API 速查（新建 PRD）
 
 项目脚本开头写 `from gen_prd_base import *` 即可使用以下全部函数和常量，**不需要读源码**：
 
@@ -112,6 +132,40 @@ from gen_prd_base import *
 | `set_cell_border` | `(cell, bottom={...}, top={...}, ...)` | 设置单元格边框 |
 | `para_run` | `(para, text, font="Arial", size_pt=10, bold=False, color=None, italic=False) → Run` | 底层：给段落加 run |
 | `C` | `dict` | 颜色常量：`C["textHeading"]="1A1A2E"`, `C["tableHeaderBg"]="2D81FF"`, `C["tagChange"]="D97706"` 等 |
+
+### update_prd_base.py API 速查（升版/更新已有 PRD）
+
+升版脚本写 `from update_prd_base import *` 即可使用以下函数，**不需要读源码**：
+
+```python
+# 导入方式（同 gen_prd_base）
+import sys, os
+_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..'))
+sys.path.insert(0, os.path.join(_ROOT, '.claude/skills/prd/references'))
+from update_prd_base import *
+```
+
+| 函数 | 签名 | 用途 |
+|------|------|------|
+| `replace_para_text` | `(para, new_text: str)` | 整体替换段落文字，保留首 run 格式 |
+| `search_replace_para` | `(para, old: str, new: str) → bool` | 段落内搜索替换（跨 run 拼接匹配），命中返回 True |
+| `set_cell_text` | `(cell, text: str)` | 清空单元格全部内容，写入纯文本 |
+| `replace_cell_image` | `(cell, img_path, width_cm=7.0)` | 清空单元格旧图，插入新截图（**内部自动调 fix_dpi，无需手动调**） |
+| `fix_dpi` | `(png_path, dpi=144) → str` | 修正 @2x 截图 DPI 元数据，防止 docx 里虚化（replace_cell_image 已内置，单独调用于调试） |
+
+**⛔ 禁止在项目脚本里重新定义这些函数。** 已有实现处理了 python-docx 的段落/run 边界、多余段落清理、DPI 修正等细节，手写容易遗漏导致行为漂移。
+
+### Step 1.5：迭代已有 docx 的操作顺序（升版时必读）
+
+当任务是「更新已有 PRD docx」（而非从头生成）时，严格按此顺序：
+
+1. **先改内容**：更新文字、表格、章节标题等文本变更
+2. **再插截图**：内容定稿后再截图插入左列
+3. **最后推送**：Confluence / 归档
+
+反过来（先截图再改内容）会导致截图与内容不匹配，或插入的截图被内容变更覆盖。
+
+**python-docx `table.add_row()` 格式陷阱**：新增行只继承表级属性（边框/列宽），**不继承** cell 级格式（bold / font.size / font.color / shading）。新增行后必须手动对齐格式——参照同表已有数据行的 bold、size、color 逐 cell 设置，否则新行会和旧行视觉不一致。
 
 ### Step 2：收集产品信息
 
@@ -219,9 +273,13 @@ PRD 两列表格左列的「← 此处粘贴原型截图」必须替换为真实
 
 **流程**：Playwright 打开原型 HTML → 切换到目标视图/Tab → 元素级截图 → python-docx 插入到对应 Table 左列 cell。
 
-**截图脚本**（Node.js，依赖 `playwright`）：
+**截图来源优先级（强制）**：可交互原型 > 交互大图（降级）
+- 有原型时，截图必须来自原型，不得从交互大图截
+- 交互大图截图仅在「无原型」或「原型未覆盖该场景」时使用（如 M-7 同步逻辑图等纯流程场景）
+
+**截图脚本**（Python 优先，依赖 `playwright`）：
 ```
-projects/{项目}/scripts/screenshot_for_prd.js
+projects/{项目}/scripts/screenshot_for_prd.py
 ```
 
 **插入脚本**（Python，依赖 `python-docx`）：
@@ -231,14 +289,26 @@ projects/{项目}/scripts/insert_screenshots_to_prd.py
 
 **截图规范**：
 - viewport: 1440x900, deviceScaleFactor: 2（Retina）
+- 格式：**必须 PNG**（`path` 以 `.png` 结尾），禁止 JPEG，避免压缩失真
 - Web/MGT 视图：截对应容器元素（`#acDeviceWeb` / `#czDeviceWeb` / `#mgt-view`）
 - App 视图：只截手机壳（`.app-shell`），不截外层容器
+- **交互大图截图（无原型时的降级方案）**：只截设备框元素（`.phone` / `.webframe`），计算同一 Scene 内所有设备框的 bounding box 合并截取。**禁止截整个 Scene 区域**——右侧标注（`.anno` / `.aw` / `.flow-note`）是大图的阅读辅助，不属于 PRD 截图范围
 - 抽屉/弹窗：先触发 JS 打开，再截父容器
 - MGT 各子页：通过 `swPage()` / `swView()` 切换后截图
-- 截图存放：`projects/{项目}/screenshots/prd/`
+- 截图存放：新建 PRD → `screenshots/prd/`；升版 PRD → `screenshots/prd_v{N}/`（避免覆盖旧截图）
 - **浮层清理（强制）**：每次切换视图前 + 每次截图前，必须调用 `dismissAllOverlays()` 清除所有 `position: fixed` 浮层（drawer / modal / overlay / sheet），用 `el.style.display='none'` 强制隐藏，仅 `classList.remove('show')` 不够（JS 副作用可能重新触发）
 
 **插入规范**：
+- **DPI 修正（必做，否则截图在 docx 里虚化）**：`deviceScaleFactor: 2` 截图的 PNG DPI 元数据默认 72，python-docx 会误判尺寸并强行缩放导致模糊。插入前必须用 Pillow 修正为 144：
+  ```python
+  from PIL import Image
+  def fix_dpi(path: str) -> str:
+      """修正 @2x 截图 DPI 元数据，返回原路径（in-place）"""
+      img = Image.open(path)
+      img.save(path, dpi=(144, 144))
+      return path
+  # 调用：fix_dpi(screenshot_path) 后再 cell.add_picture(...)
+  ```
 - 前端 Scene 截图宽度 7.0cm，App 截图 5.0cm
 - Table 索引与 PRD 结构对应（Table 5 起为 Scene 表格，按章节顺序）
 - M-7 同步逻辑无独立视图时复用 M-1 截图
@@ -249,6 +319,44 @@ projects/{项目}/scripts/insert_screenshots_to_prd.py
 ```bash
 npm init playwright@latest   # 首次安装
 npx playwright install chromium
+```
+
+## Step 5：推送到 Confluence（可选，每次问用户）
+
+PRD 自检通过后，主动询问：「PRD 已生成，是否推送到 Confluence？」
+
+### 路径 A：新建页面 / 按标题 upsert
+
+```bash
+python3 .claude/skills/prd/references/push_to_confluence_base.py \
+    "projects/{项目}/deliverables/{PRD文件}.docx" \
+    "{页面标题}" \
+    "{spaceKey}" \
+    "{父页面 pageId（可选）}"
+```
+
+- **页面标题格式**：`HTX · {项目名} · {版本号}`（例：HTX · 活动中心 · v4.7）
+- spaceKey / 父页面 pageId 由用户提供，或用 Confluence MCP `confluence_get_page` 查父页面
+- 重复推送自动 upsert；图片默认宽 600px，App 截图可传 `img_width=300`
+
+### 路径 B：用户给了 Confluence URL（已知 pageId）
+
+从 URL `?pageId=XXXXXX` 提取 pageId，先用 `confluence_get_page` 查当前版本号，再调内部函数直接更新（跳过 title 搜索，同时可重命名标题）：
+
+```python
+python3 -c "
+import sys; sys.path.insert(0, '.claude/skills/prd/references')
+from push_to_confluence_base import convert_docx, update_page
+
+PAGE_ID = 'XXXXXX'          # 从 URL ?pageId= 提取
+NEW_TITLE = 'HTX · 活动中心 · v4.7'
+CURRENT_VERSION = 2         # 从 confluence_get_page 的 version 字段取
+DOCX = 'projects/{项目}/deliverables/{PRD}.docx'
+
+body = convert_docx(DOCX, PAGE_ID)
+update_page(PAGE_ID, NEW_TITLE, body, CURRENT_VERSION)
+print('完成')
+"
 ```
 
 ## 自检清单
@@ -262,8 +370,11 @@ npx playwright install chromium
 - [ ] 两列表格左列全部为真实截图，无「此处粘贴」占位符残留
 - [ ] App 截图为手机壳级别（`.app-shell`），非全屏容器
 - [ ] MGT 截图无浮层/弹窗/遮罩泄露（逐张目视确认）
+- [ ] 所有截图已经过 `fix_dpi()` 修正（DPI=144），在 docx 中无虚化/模糊
 
 **强制验证脚本**（自检最后一步，不可跳过）：
 ```bash
-bash scripts/check_prd.sh projects/{项目}/deliverables/XXX.docx projects/{项目}/scene-list.md
+bash references/check_prd.sh projects/{项目}/deliverables/XXX.docx projects/{项目}/scene-list.md
 ```
+
+**注意**：mammoth 会尽力转换表格结构，但 docx 的复杂排版（合并单元格、多级列表）在 Confluence 中可能有轻微变形，建议推送后目视确认一次。

@@ -174,6 +174,19 @@ Step C：收尾（跨端表 + Callout + 自检）
 3. **执行自检**（见下方自检清单）
 4. **告知用户交付**
 
+### 增量升版（已有 Vn → Vn+1）
+
+当已有完整交互大图需要升级（而非从零生成）时，走增量 patch 而非重新骨架→填充：
+
+1. **归档旧版**：`cp Vn.html archive/` + `cp Vn.html V{n+1}.html`
+2. **版本号替换**：HTML 内 title + h1 的版本号
+3. **按 Scene 写 patch 脚本**：每个受影响 Scene 一个 `patch_imap_v{n+1}_{scene}.py`，用 `re.sub` 锚定 `<div class="fade-section" id="{scene}">` 到下一个 `<!-- ═══` 边界，整块替换
+4. **逐个执行 + 验证**：每个 patch 跑完验证 div 平衡 + grep 关键术语
+5. **自检同完整生成**（Step C 自检清单）
+6. **不要用 Edit 工具逐行改大块 HTML**——正则替换更安全，且可回滚（`git checkout -- deliverables/xxx.html`）
+
+**端能力校验**：patch 前检查每个 Screen 画的交互是否能在目标端实际执行（H5 不能跑 TRTC 推流、OBS 主播看不到 Web 工作台等），不要画目标端做不到的按钮/功能。
+
 ### 分步生成的占位模板
 
 骨架中每个 Scene 有 1 个占位块（`FILL_START:scene-{id小写}` / `FILL_END:scene-{id小写}`），fill 脚本替换该块为完整的屏幕组 + 箭头 + 注释卡：

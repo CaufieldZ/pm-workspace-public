@@ -1,7 +1,7 @@
 <!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # PM-WORKSPACE 仓库全貌（给 Claude Opus 的系统背景）
 
-> 导出时间：2026-04-07 | 目的：供 Opus 了解仓库结构、Skill 体系、工作流规则，用于诊断或协作
+> 导出时间：2026-04-18 | 目的：供 Opus 了解仓库结构、Skill 体系、工作流规则，用于诊断或协作
 
 ---
 
@@ -24,13 +24,16 @@ pm-workspace/
 ├── workspace-context.md       ← 本文件：给 Opus 的系统全貌
 ├── package.json               ← docx 生成依赖（docx/jszip/pako）
 ├── .githooks/
-│   └── pre-commit             ← 防腐化 hook（Skill/规则变更时自动审计）
+│   └── pre-commit             ← 防腐化 hook（git commit 时自动审计）
 ├── .claude/
 │   ├── rules/
 │   │   ├── pm-workflow.md     ← 全局工作流规范
 │   │   └── soul.md            ← 个人偏好
-│   ├── skills/                ← 18 个标准化 Skill
+│   ├── skills/                ← 19 个标准化 Skill
+│   ├── hooks/
+│   │   └── pre-compact.sh     ← Claude Code runtime hook（compact 前注入 session-state）
 │   ├── chat-templates/        ← Chat 轨模板 + context.md 九章模板
+│   ├── session-state.md       ← 当前 session 进度快照（gitignored，Claude 维护）
 │   └── settings.json
 ├── references/                ← 本地素材（gitignored）
 │   └── competitors/           ← 竞品素材（Binance/OKX/Gate/Bybit）
@@ -128,6 +131,7 @@ pm-workspace/
 | 自检反压 | 自检不通过最多自动修复 2 次，仍失败则停下报告用户，禁止静默跳过 |
 | 决策缺口处理 | 缺少必需决策信息时停下来提问给 A/B/C 选项，禁止自行假设后继续 |
 | 防腐化 hook | `.githooks/pre-commit` 检测 Skill/规则文件变更时自动跑 `audit.sh 1,2,3,4,7`（文件完整性 + 数值一致 + 依赖链路 + 规则冲突 + SKILL_TABLE 一致性），不通过拦截 commit。激活：`git config core.hooksPath .githooks` |
+| Session 状态保活 | `.claude/hooks/pre-compact.sh` 在上下文压缩前自动注入 `.claude/session-state.md`（项目名/Skill/Step/已填 Scene/待办）到 compact 摘要。Claude 在 Skill Step 边界主动 Write 更新此文件。防 compact 后丢失进度 |
 
 > 执行优先级：全局规则（CLAUDE.md / pm-workflow）< Skill 硬规则
 
@@ -146,3 +150,5 @@ pm-workspace/
 > v17: 2026-04-11 产出物视觉质量提升：PPT 去 AI 味(gold-snippets 组件化+节奏编排模式7)、interaction-map 易读性(flow-note WCAG AA+clip-path 箭头+ann-tag/arrow-text 放大)、PRD Step 4 原型截图自动插入(Playwright)
 > v18: 2026-04-12 全局字体栈换代：Noto Sans SC+DM Sans → HarmonyOS Sans SC+Plus Jakarta Sans（减少 AI 味），覆盖 pm-workflow/4 CSS/5 chat-templates/4 SKILL.md/audit.sh 共 19 文件；Skill 过时内容修复(test-cases 依赖描述、competitor-analysis pptxgenjs、workspace-audit 类别数)
 > v19: 2026-04-12 requirements.txt 补齐 matplotlib+numpy（data-report chart_template.py 依赖）；Skill 计数修正 15→18；README 依赖注释同步
+> v20: 2026-04-15 脚本归位：check_prd.sh/intel-cron.sh/capture.py 移入各自 Skill 的 references/；confluence_sync.py 移入 data-report/references/；新增 sync-holidays.py；Skill 计数修正 18→19；references 改为按 SKILL.md Step 1 按需加载
+> v21: 2026-04-18 Session 状态保活：新增 `.claude/hooks/pre-compact.sh` + `.claude/session-state.md` 机制，PreCompact hook 自动注入进度快照到 compact 摘要，Claude 在 Step 边界主动 Write 更新；CLAUDE.md 【compact 指引】从被动规则改为主动维护；README/workspace-context 同步工程保障一栏

@@ -42,6 +42,18 @@ consumed_by: []
 - Tab 能切换，侧边栏高亮跟随 = 通过
 - 所有组件 class 名在 cheatsheet 中有定义 = 通过
 - 产出物 > 200 行 → 必须用 Node.js 脚本生成（见 Step 3）
+- 产出物 > 1500 行或 Tab ≥ 10 → 必须按「大文档源码拆分」模式（见 Step 3b），不能把所有页面塞进单脚本
+
+### 修改纪律（强制）
+
+PPT 产出物一旦脚本化生成，HTML 就是**只读产物**：
+
+- 禁止直接 Edit / Write 生成出来的 HTML 产物（如 SOP-final.html）
+- 改动只进 `scripts/sop-src/pages/{id}.js` 或对应 source 文件，改完 `node gen_{主题}_v{N}.js` 重新生成
+- 小到改一个文案也走脚本，不要「就这一处我直接改 HTML」——下次升版脚本会把改动覆盖
+- 修改后必须 diff 验证产出物结构是否预期（行数对齐、关键页面存在）
+
+违反此规则 = 下次迭代必定改错。
 
 ## 执行步骤
 
@@ -143,6 +155,58 @@ fillTemplate({
 - 主脚本 `gen_ppt_{主题}_v1.js`：≤ 80 行，只做 require + NAV 定义 + 调用 fillTemplate
 - 渲染函数按 NAV group 拆分为 `pages_group0.js` / `pages_group1.js`，每文件 ≤ 150 行
 - 每个渲染函数返回 HTML 字符串，用 JS 模板字符串（反引号 `` `...` ``）包裹，HTML 属性用双引号
+
+### Step 3b：大文档源码拆分（产出物 > 1500 行或 Tab ≥ 10）
+
+当 PPT 规模达到「SOP 手册」级（3000+ 行、20+ Tab），单脚本会膨胀到 2000 行以上，修改一页仍需在巨型文件里 grep 定位——失去脚本化的意义。此时必须采用「每页一个源文件 + orchestrator 编排」模式。
+
+**标准目录结构**（以 `projects/htx-workflow-pre/` 下 SOP-final.html 为参考实现）：
+
+```
+scripts/
+  gen_sop_v1.js              # orchestrator（≤ 150 行，只做读文件 + concat）
+  sop-src/
+    head.html                # <head> 头部（meta + title + 字体）
+    styles.css               # 全局 CSS（不含 <style> 标签）
+    shell.html               # </head><body> + 壳（modal/sidebar/main 骨架）
+    nav.js                   # NAV 数组 + renderNav + goPage
+    prompts.js               # PROMPTS 数据（如有）
+    templates.js             # TEMPLATES 数据（如有）
+    renderer-head.js         # renderPage + const PAGE_RENDERERS = {}
+    renderer-track-a.js      # 泛用辅助函数（如有跨页复用的 renderer）
+    utils.js                 # 工具函数（escHtml / copyPrompt 等）
+    init.js                  # renderNav(); renderPage();
+    pages/
+      home.js                # PAGE_RENDERERS['home'] = function(c) { ... };
+      context.js             # 每页一个独立文件
+      ...                    # 文件名 = NAV 中的 id
+```
+
+**orchestrator 职责**（极简）：
+
+- 按固定顺序读取 sop-src/ 下的各文件
+- concat 时在正确位置插入 `<style>` / `</style>` / `<script>` / `</script>` 等包装标签
+- 写到 `../{产出物}.html`，打印行数和字节数供核对
+
+**反向拆分方法**（对已有大 HTML）：
+
+1. `grep -n "^PAGE_RENDERERS\[" {产出物}` 列出所有页面起始行
+2. 用 `awk 'NR==N {print}'` 核对页面边界（comment / 空行 / `};`）
+3. `sed -n 'start,endp' {产出物} > sop-src/pages/{id}.js` 字节级抽取每页
+4. 同法抽取 CSS / shell / 数据区 / 工具函数
+5. 写 orchestrator → 运行 → `diff -q` 验证产出物与原文件字节级一致
+
+**修改流程**：
+
+- 改一页 = 改 `sop-src/pages/{id}.js`（通常 < 300 行，可以 Read 全文）
+- 改导航 = 改 `sop-src/nav.js`
+- 改全局样式 = 改 `sop-src/styles.css`
+- 改完 `node gen_{主题}_v1.js` 重新生成，diff 确认只改了预期部分
+
+**收益**：
+- 原来改一页要在 3000+ 行 HTML 里 grep 定位、担心改错 → 现在改 100-300 行的独立文件
+- 新增页面 = 加一个 pages/xxx.js + 在 nav.js 注册，不用在巨型文件里插入
+- 回退单页变更 = git checkout 一个文件，不影响其他页
 
 **为什么用 Node.js 而不是 Python**：
 

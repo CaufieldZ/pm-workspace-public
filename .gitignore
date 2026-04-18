@@ -13,7 +13,11 @@ package-lock.json
 
 # 本机配置（含密钥或机器级设置，不跟踪）
 .mcp.json
+.mcp-disabled.json
 .claude/settings.local.json
+
+# Session 进度快照（由 Claude 维护，PreCompact hook 读取注入，不跟踪）
+.claude/session-state.md
 
 # 登录态 cookies（含敏感凭证，不跟踪）
 .claude/skills/intel-collector/references/auth/

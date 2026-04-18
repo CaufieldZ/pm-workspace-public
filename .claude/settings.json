@@ -1,6 +1,24 @@
 {
   "permissions": {
-    "allowedTools": ["Read", "Write", "Glob", "Grep", "Bash(open:*)"],
+    "allow": [
+      "Edit(/.claude/skills/ppt/**)",
+      "mcp__figma__whoami",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:docs.claude-mem.ai)",
+      "WebFetch(domain:claude-mem.ai)",
+      "WebFetch(domain:awesomeclaude.ai)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public remote -v)"
+    ],
+    "additionalDirectories": [
+      "/Users/felix.zhi/pm-workspace/.claude"
+    ],
+    "allowedTools": [
+      "Read",
+      "Write",
+      "Glob",
+      "Grep",
+      "Bash(open:*)"
+    ],
     "denyTools": [
       "mcp__confluence__confluence_execute_cql_search",
       "mcp__confluence__confluence_get_current_user",
@@ -13,6 +31,19 @@
       "mcp__firecrawl__firecrawl_browser_execute",
       "mcp__firecrawl__firecrawl_browser_delete",
       "mcp__firecrawl__firecrawl_browser_list"
+    ]
+  },
+  "hooks": {
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-compact.sh"
+          }
+        ]
+      }
     ]
   }
 }
