@@ -1,6 +1,18 @@
 """从交互大图截取各 Scene 第一个设备框作为 PRD 截图"""
 from playwright.sync_api import sync_playwright
+from PIL import Image, ImageDraw
 import time, os
+
+
+def round_phone_corners(png_path, radius_px=72):
+    """给 phone 截图的 4 个角加透明蒙版。
+    CSS 圆角 36px × deviceScaleFactor 2 = 72px 像素半径。
+    截图在深色主题（如 GitHub README dark mode）下不再露白边。"""
+    img = Image.open(png_path).convert("RGBA")
+    mask = Image.new("L", img.size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle([(0, 0), img.size], radius=radius_px, fill=255)
+    img.putalpha(mask)
+    img.save(png_path, "PNG")
 
 IMAP = "file:///Users/felix.zhi/pm-workspace/projects/demo-private-fund/deliverables/imap-private-fund-v1.html"
 OUT_DIR = "/Users/felix.zhi/pm-workspace/projects/demo-private-fund/screenshots/prd"
@@ -37,7 +49,10 @@ with sync_playwright() as p:
         selector = ".phone" if device_type == "phone" else ".webframe"
         device = scene.locator(selector).first
         out_path = os.path.join(OUT_DIR, fname)
-        device.screenshot(path=out_path)
+        device.screenshot(path=out_path, omit_background=True)
+        # phone 截图需要圆角透明化（webframe 是矩形，不处理）
+        if device_type == "phone":
+            round_phone_corners(out_path)
         print(f"  captured: {fname}")
 
     browser.close()
