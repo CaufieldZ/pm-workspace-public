@@ -83,6 +83,8 @@ if half_punct:
     fail = 1
 
 flat = []
+no_numbered = []
+NUMBERED = re.compile(r'^\d+\.\s')
 for ti, t in enumerate(doc.tables):
     if len(t.columns) != 2 or len(t.rows) < 1:
         continue
@@ -90,8 +92,17 @@ for ti, t in enumerate(doc.tables):
     ps = [p for p in right.paragraphs if p.text.strip()]
     if len(ps) == 1 and len(ps[0].text) > 100:
         flat.append(f'T{ti}({len(ps[0].text)}字)')
+        continue
+    # scene 右列段落数 >= 4 但没有任何段以 "N. " 开头 = 违反 numbered list 规范
+    if len(ps) >= 4:
+        has_num = any(NUMBERED.match(p.text) for p in ps)
+        if not has_num:
+            no_numbered.append(f'T{ti}({len(ps)}段)')
 if flat:
-    print(f'❌ Scene 右列疑似扁平化(单段落>100字符, 用 set_cell_blocks 重建): {", ".join(flat)}')
+    print(f'❌ Scene 右列扁平化(单段落>100字符, 用 set_cell_blocks 重建): {", ".join(flat)}')
+    fail = 1
+if no_numbered:
+    print(f'❌ Scene 右列缺 numbered list(≥4 段且无 "N." 编号, prd-template 强制): {", ".join(no_numbered)}')
     fail = 1
 
 import io
