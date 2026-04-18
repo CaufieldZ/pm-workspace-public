@@ -84,6 +84,47 @@ def set_cell_text(cell, text: str):
         p.add_run(text)
 
 
+def set_cell_blocks(cell, blocks):
+    """
+    清空单元格，按结构化 blocks 重建（title 粗体 + 子条目缩进 + 「（变更）」「（新增）」染色）。
+    视觉和 gen_prd_base.scene_table 的右列一致。
+
+    用途：升版/更新 PRD 时，给 Scene 表格右列或后台 table 的复杂内容做结构化替换，
+          替代 set_cell_text —— 后者只能单 run 纯文本，没有层次。
+
+    参数：
+        cell   — python-docx Table cell
+        blocks — list[tuple[str, list[str]]]
+                 [(title, [line1, line2, ...]), ...]
+                 title 含「（变更）」或「（新增）」会自动拆 run 染成强调色。
+
+    示例：
+        set_cell_blocks(cell, [
+            ("合格投资者校验（R1/R2）", [
+                "进入认购流程前后端双重校验：QI 认证 + 风险匹配",
+                "校验通过：展示绿色 Badge；失败：拦截 + 引导认证",
+            ]),
+            ("基金信息展示（变更）", [
+                "产品全称 + 风险等级标签",
+                "单位净值 + 成立以来收益率",
+            ]),
+        ])
+    """
+    # 清空 cell 所有现有内容（文字 + 图片）
+    for para in cell.paragraphs:
+        para.clear()
+    # 仅保留第一个段落壳
+    while len(cell.paragraphs) > 1:
+        p = cell.paragraphs[-1]
+        p._element.getparent().remove(p._element)
+    # 调用 gen_prd_base 的公共填充逻辑（避免 DRY 违反）
+    import os, sys
+    _DIR = os.path.dirname(os.path.abspath(__file__))
+    sys.path.insert(0, _DIR)
+    from gen_prd_base import fill_cell_blocks
+    fill_cell_blocks(cell, blocks)
+
+
 def replace_cell_image(cell, img_path: str, width_cm: float = 7.0):
     """
     清空单元格（文字+旧图），插入新截图。

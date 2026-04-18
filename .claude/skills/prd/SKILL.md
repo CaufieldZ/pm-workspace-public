@@ -149,9 +149,12 @@ from update_prd_base import *
 |------|------|------|
 | `replace_para_text` | `(para, new_text: str)` | 整体替换段落文字，保留首 run 格式 |
 | `search_replace_para` | `(para, old: str, new: str) → bool` | 段落内搜索替换（跨 run 拼接匹配），命中返回 True |
-| `set_cell_text` | `(cell, text: str)` | 清空单元格全部内容，写入纯文本 |
+| `set_cell_text` | `(cell, text: str)` | 清空单元格全部内容，写入纯文本（仅限短字符串，多行用 set_cell_blocks） |
+| `set_cell_blocks` | `(cell, blocks: list[tuple[str, list[str]]])` | 清空单元格，按结构化 blocks 重建（title 粗体 + 子条目缩进），视觉与 scene_table 右列一致。**升版 Scene/后台 table 时优先用它** |
 | `replace_cell_image` | `(cell, img_path, width_cm=7.0)` | 清空单元格旧图，插入新截图（**内部自动调 fix_dpi，无需手动调**） |
 | `fix_dpi` | `(png_path, dpi=144) → str` | 修正 @2x 截图 DPI 元数据，防止 docx 里虚化（replace_cell_image 已内置，单独调用于调试） |
+
+**⚠️ set_cell_text vs set_cell_blocks 选择**：升版 Scene 表格右列、后台 table 这种"多段落+层次"的单元格，**必须**用 `set_cell_blocks` 结构化填充。用 `set_cell_text` 塞多行含 `\n` 的字符串会被渲染成**单段落无层次纯文本**（历史项目已有此类问题，如 htx-activity-center v4.7）。
 
 **⛔ 禁止在项目脚本里重新定义这些函数。** 已有实现处理了 python-docx 的段落/run 边界、多余段落清理、DPI 修正等细节，手写容易遗漏导致行为漂移。
 
@@ -293,6 +296,29 @@ projects/{项目}/scripts/insert_screenshots_to_prd.py
 - Web/MGT 视图：截对应容器元素（`#acDeviceWeb` / `#czDeviceWeb` / `#mgt-view`）
 - App 视图：只截手机壳（`.app-shell`），不截外层容器
 - **交互大图截图（无原型时的降级方案）**：只截设备框元素（`.phone` / `.webframe`），计算同一 Scene 内所有设备框的 bounding box 合并截取。**禁止截整个 Scene 区域**——右侧标注（`.anno` / `.aw` / `.flow-note`）是大图的阅读辅助，不属于 PRD 截图范围
+- **标注清理（强制，交互大图截图专用）**：截 `.phone` / `.webframe` 前必须隐藏所有标注元素，避免 `.anno-n` 编号圆点、`.anno` 虚线框叠加在设备上被截进：
+  ```js
+  page.evaluate("""
+      document.querySelectorAll(
+        '.anno, .anno-n, .ann-card, .ann-tag, .aw, .flow-note, .side-nav'
+      ).forEach(el => el.style.display = 'none');
+  """)
+  ```
+- **Phone 圆角透明化（强制，仅 `.phone` 截图）**：`.phone` 是圆角矩形（`border-radius: 36px`），Playwright 元素截图的 bounding box 是正矩形，4 个角会残留 imap 画布背景色。PNG 在深色主题下（GitHub README dark mode、docx 以外的任何深色阅读器）呈现为 4 个突兀方块。插入前必须 Pillow 圆角蒙版处理：
+  ```python
+  from PIL import Image, ImageDraw
+  def round_phone_corners(png_path: str, radius_px: int = 72):
+      """CSS border-radius 36px × deviceScaleFactor 2 = 72 像素半径。
+      CSS 改 radius 后此处同步。仅 phone 处理，webframe 本就是矩形。"""
+      img = Image.open(png_path).convert("RGBA")
+      mask = Image.new("L", img.size, 0)
+      ImageDraw.Draw(mask).rounded_rectangle(
+          [(0, 0), img.size], radius=radius_px, fill=255)
+      img.putalpha(mask)
+      img.save(png_path, "PNG")
+  # 调用：device.screenshot(path=out, omit_background=True) 后
+  #       if device_type == "phone": round_phone_corners(out)
+  ```
 - 抽屉/弹窗：先触发 JS 打开，再截父容器
 - MGT 各子页：通过 `swPage()` / `swView()` 切换后截图
 - 截图存放：新建 PRD → `screenshots/prd/`；升版 PRD → `screenshots/prd_v{N}/`（避免覆盖旧截图）

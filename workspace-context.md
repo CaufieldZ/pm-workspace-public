@@ -82,7 +82,7 @@ pm-workspace/
 
 ---
 
-## 四、Skill 体系（18 个）
+## 四、Skill 体系（20 个）
 
 | Skill | 类型 | 输出格式 | 前缀 | 必须依赖 | 被谁消费 |
 |-------|------|---------|------|---------|---------|
@@ -91,6 +91,7 @@ pm-workspace/
 | competitor-analysis | standalone | .md | comp- | [] | [] |
 | cross-check | pipeline | 对话内 | — | [scene-list] | [] |
 | docx | tool | .docx | — | [] | [] |
+| flowchart | standalone | .html | flow- | [] | [] |
 | interaction-map | pipeline | .html | imap- | [scene-list] | [prototype, prd] |
 | page-structure | pipeline | .md | pspec- | [scene-list, prd] | [cross-check] |
 | ppt | standalone | .html | ppt- | [] | [] |
@@ -152,3 +153,4 @@ pm-workspace/
 > v19: 2026-04-12 requirements.txt 补齐 matplotlib+numpy（data-report chart_template.py 依赖）；Skill 计数修正 15→18；README 依赖注释同步
 > v20: 2026-04-15 脚本归位：check_prd.sh/intel-cron.sh/capture.py 移入各自 Skill 的 references/；confluence_sync.py 移入 data-report/references/；新增 sync-holidays.py；Skill 计数修正 18→19；references 改为按 SKILL.md Step 1 按需加载
 > v21: 2026-04-18 Session 状态保活：新增 `.claude/hooks/pre-compact.sh` + `.claude/session-state.md` 机制，PreCompact hook 自动注入进度快照到 compact 摘要，Claude 在 Step 边界主动 Write 更新；CLAUDE.md 【compact 指引】从被动规则改为主动维护；README/workspace-context 同步工程保障一栏
+> v22: 2026-04-19 新增 flowchart skill：AntV X6 + dagre 渲染分支流程图/泳道图，浅色白板嵌入深色画布（参照飞书风），内置边不穿节点自检；独立产出型（standalone，可被 imap/prd/ppt 截图消费）；节点类型 terminal/process/decision/success/fail；同行相邻边自动用 normal router 避免 manhattan 降级 orth 绕圈；Skill 计数 19→20

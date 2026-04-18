@@ -1,3 +1,4 @@
+# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 # Scene B-1, B-2 · H5 投资人端 · 赎回流程
 
 def _aw(color, label):

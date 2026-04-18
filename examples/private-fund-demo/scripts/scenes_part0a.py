@@ -1,3 +1,4 @@
+# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 # Scene A-1, A-2 · H5 投资人端 · 认购流程
 
 def _phone_open(label):

@@ -4,10 +4,10 @@
 
 **AI-Native Product Management System**
 
-从会议纪要到交互大图、PRD、行为规格 —— 19 个 Skill 覆盖产品经理全链路。
+从会议纪要到交互大图、PRD、行为规格 —— 20 个 Skill 覆盖产品经理全链路。
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge)](LICENSE)
-[![Skills](https://img.shields.io/badge/Skills-19-58a6ff?style=for-the-badge)](.claude/skills)
+[![Skills](https://img.shields.io/badge/Skills-20-58a6ff?style=for-the-badge)](.claude/skills)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776ab?style=for-the-badge&logo=python&logoColor=white)]()
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)]()
 [![Built with Claude Code](https://img.shields.io/badge/Built_with-Claude_Code-bc8cff?style=for-the-badge&logo=anthropic&logoColor=white)](https://docs.anthropic.com/en/docs/claude-code)
@@ -25,31 +25,6 @@
 | **耗时**     | 3-5 天                               | 10 分钟 - 2 小时                                                        |
 | **一致性**   | 每次结果不同，术语混乱               | 编号锁定 + 术语全局一致 + 自检拉通                                      |
 | **下游交付** | PRD 扔给研发自己理解                 | 自动切分 behavior-spec / page-structure / test-cases，AI Agent 直接消费 |
-
----
-
-## 🖼️ See It In Action
-
-一个 **虚构的私募证券基金认申赎项目**，从 context.md 到 PRD 全流程在 20 分钟内跑通 —— 合规链条（合格投资者 / 冷静期 / 大额赎回）完整体现。
-
-### H5 投资人端 · 基金详情 + 认购
-
-<img src="examples/private-fund-demo/screenshots/prd/a1.png" alt="H5 投资人端 · 基金详情 + 认购下单" width="380">
-
-### Web 运营后台 · 订单审核队列
-
-<img src="examples/private-fund-demo/screenshots/prd/c1.png" alt="Web 运营后台 · 订单审核队列">
-
-### 交付物速览
-
-| 产出物 | 文件 | 规模 |
-|---|---|---|
-| 产品 Context | [context.md](examples/private-fund-demo/context.md) | 9 章 · 5 个场景锁定 |
-| 场景清单 | [scene-list.md](examples/private-fund-demo/scene-list.md) | 2 个 View / 5 个场景 |
-| 交互大图 | [imap HTML](examples/private-fund-demo/deliverables/imap-private-fund-v1.html) | 单文件 / 1173 行 / 9 个 mockup + 跨端数据流表 |
-| PRD 文档 | [prd docx](examples/private-fund-demo/deliverables/prd-private-fund-v1.docx) | Landscape / 8 章 / 20 表格 / 5 张截图 |
-
-**👉 [完整 demo 说明及生成脚本 → examples/private-fund-demo/](examples/private-fund-demo/)**
 
 ---
 

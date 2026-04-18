@@ -15,6 +15,17 @@
 
 【compact 指引】每完成一个 Skill Step（A/B/C）或切换项目后，用 Write 工具覆盖 `.claude/session-state.md`，更新项目名/Skill/Step/已填 Scene/下一步。PreCompact hook 会在 compact 前自动注入该文件到摘要，防止进度丢失。手动切换项目（非通过 Skill 流程）必须立刻同步，否则残留旧状态会误导后续执行。
 
+【高风险操作前强制保存 session-state】以下操作前必须先 Write `.claude/session-state.md`（1-2 句话描述当前在做什么 + 下一步），操作完成后再 Write 一次更新结果：
+
+- Playwright / headless 浏览器调用（`chromium.launch`、`page.screenshot(full_page=True)`、`page.goto`）
+- 大文件渲染验证脚本（含 render 关键字的 py，或生成 > 500 行 HTML 的 node 脚本）
+- 连续 ≥ 3 次 Write/Edit 同一 > 500 行文件
+- 一次预期输出 > 200 行的 bash 命令（日志/诊断/长 grep）
+
+理由：PreCompact hook 只在 auto-compact 触发时注入 session-state，防不住「tool output 超 50K 截断」或「API 响应挂住」这两种 session 假死场景——这些场景不触发 compact，状态直接丢。
+
+`.claude/hooks/pre-risky-op.sh` 会在命中上述模式时打印 stderr warning（不拦截），看到 warning 立刻 Write session-state 再继续。
+
 【省钱提醒】当本 session 完成方案讨论并更新 context.md 后，如果接下来要进入产出物链路（交互大图/原型/PRD 等），主动提醒用户：「context.md 已更新并 commit。建议新开 session 切 Sonnet 执行产出物，可省约 46% 成本。命令：/交互大图 {项目名}」。用户说"不用换"则继续。
 
 ### MCP 配置

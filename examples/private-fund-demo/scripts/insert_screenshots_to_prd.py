@@ -1,3 +1,4 @@
+# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 """将截图插入 PRD docx 左列，修正 DPI 防模糊"""
 import sys, os
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..'))

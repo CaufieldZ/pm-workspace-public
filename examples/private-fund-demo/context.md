@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # demo-private-fund · Context
 
 > **Demo 项目说明**：本项目用于 pm-workspace public repo 的 gallery 展示，业务场景为虚构，不对应任何真实公司或产品。

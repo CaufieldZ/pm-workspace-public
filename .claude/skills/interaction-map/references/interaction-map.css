@@ -65,7 +65,7 @@ body {
   -webkit-backdrop-filter: blur(8px);
   border-right: 1px solid rgba(0,0,0,.06);
   border-radius: 0 12px 12px 0;
-  max-width: 150px;
+  max-width: 220px;
 }
 .side-nav a {
   display: flex; align-items: center; gap: 8px;
@@ -74,7 +74,6 @@ body {
   text-decoration: none; transition: all .2s;
   background: transparent; white-space: nowrap;
   border-left: 3px solid transparent;
-  overflow: hidden; text-overflow: ellipsis;
 }
 .side-nav a:hover, .side-nav a.active {
   color: var(--blue); background: rgba(41,121,255,.06);
@@ -121,7 +120,7 @@ body {
 
 /* ════ CONTENT AREA · 主内容区 ════ */
 .cv { padding: 40px 48px 100px; margin-left: 0; overflow-x: hidden; }
-@media (min-width: 1400px) { .cv { margin-left: 160px; } }
+@media (min-width: 1400px) { .cv { margin-left: 240px; } }
 
 /* ════ GROUP DIVIDER · PART 分组 ════ */
 .gd {

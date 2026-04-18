@@ -1,3 +1,4 @@
+# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 # Scene C-1 · Web 运营后台 · 订单审核队列
 
 def fill_c1():

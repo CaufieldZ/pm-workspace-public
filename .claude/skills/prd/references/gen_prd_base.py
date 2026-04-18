@@ -79,6 +79,21 @@ def para_run(para, text, font="Arial", size_pt=10, bold=False, color=None, itali
     rPr.insert(0, rFonts)
     return run
 
+
+_MD_BOLD_RE = __import__("re").compile(r"\*\*(.+?)\*\*")
+
+def para_run_md(para, text, size_pt=10, color=None):
+    """渲染内联 **bold** 片段。非 bold 段落继承默认颜色，bold 段落用 textHeading。"""
+    pos = 0
+    for m in _MD_BOLD_RE.finditer(text):
+        if m.start() > pos:
+            para_run(para, text[pos:m.start()], size_pt=size_pt, color=color)
+        para_run(para, m.group(1), size_pt=size_pt, bold=True,
+                 color=C["textHeading"] if color is None else color)
+        pos = m.end()
+    if pos < len(text):
+        para_run(para, text[pos:], size_pt=size_pt, color=color)
+
 # ── 段落级 ────────────────────────────────────────────────────────────────
 
 def add_p(doc, text="", size_pt=10, bold=False, color=None, italic=False,
@@ -92,7 +107,7 @@ def add_p(doc, text="", size_pt=10, bold=False, color=None, italic=False,
     return p
 
 def h1(doc, text):
-    p = doc.add_paragraph()
+    p = doc.add_paragraph(style='Heading 1')
     p.paragraph_format.space_before = Pt(16)
     p.paragraph_format.space_after = Pt(6)
     para_run(p, text, size_pt=16, bold=True, color=C["textHeading"])
@@ -107,13 +122,13 @@ def h1(doc, text):
     pPr.append(pBdr)
 
 def h2(doc, text):
-    p = doc.add_paragraph()
+    p = doc.add_paragraph(style='Heading 2')
     p.paragraph_format.space_before = Pt(12)
     p.paragraph_format.space_after = Pt(4)
     para_run(p, text, size_pt=13, bold=True, color=C["accentBlue"])
 
 def h3(doc, text):
-    p = doc.add_paragraph()
+    p = doc.add_paragraph(style='Heading 3')
     p.paragraph_format.space_before = Pt(8)
     p.paragraph_format.space_after = Pt(3)
     para_run(p, text, size_pt=11, bold=True, color=C["textHeading"])
@@ -191,9 +206,22 @@ def scene_table(doc, scene_id, scene_name, right_blocks):
     para_run(p2, "\u2190 \u6b64\u5904\u7c98\u8d34\u539f\u578b\u622a\u56fe", size_pt=8, color=C["textMuted"], italic=True)
 
     right_cell.vertical_alignment = WD_ALIGN_VERTICAL.TOP
+    fill_cell_blocks(right_cell, right_blocks)
+
+    doc.add_paragraph().paragraph_format.space_after = Pt(4)
+
+
+def fill_cell_blocks(cell, blocks):
+    """
+    在已存在的 cell 内填充结构化 blocks（title 粗体 + 子条目缩进）。
+    假设 cell 的首段已为空或将被覆写。不清空 cell，不会处理旧内容。
+    被 scene_table 和 update_prd_base.set_cell_blocks 共用。
+
+    blocks: list[tuple[str, list[str]]]
+    """
     first = True
-    for (title, lines) in right_blocks:
-        p = right_cell.paragraphs[0] if first else right_cell.add_paragraph()
+    for (title, lines) in blocks:
+        p = cell.paragraphs[0] if first else cell.add_paragraph()
         first = False
         p.paragraph_format.space_before = Pt(3)
         p.paragraph_format.space_after = Pt(1)
@@ -205,13 +233,18 @@ def scene_table(doc, scene_id, scene_name, right_blocks):
         else:
             para_run(p, title, size_pt=10, bold=True, color=C["textHeading"])
         for line in lines:
-            pl = right_cell.add_paragraph()
+            pl = cell.add_paragraph()
             pl.paragraph_format.space_before = Pt(0)
             pl.paragraph_format.space_after = Pt(1)
-            pl.paragraph_format.left_indent = Cm(0.3)
-            para_run(pl, line, size_pt=9, color=C["textPrimary"])
-
-    doc.add_paragraph().paragraph_format.space_after = Pt(4)
+            # 二级缩进：以「  - 」或「\t- 」开头的行缩进更深
+            stripped = line.lstrip()
+            if stripped.startswith("- ") and line != stripped:
+                pl.paragraph_format.left_indent = Cm(0.9)
+                body = stripped  # 保留 "- " 前缀作为 bullet 标记
+            else:
+                pl.paragraph_format.left_indent = Cm(0.3)
+                body = line
+            para_run_md(pl, body, size_pt=9, color=C["textPrimary"])
 
 # ── 文档初始化 ────────────────────────────────────────────────────────────
 

@@ -1,3 +1,4 @@
+# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 import sys, os
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..'))
 sys.path.insert(0, os.path.join(_ROOT, '.claude/skills/prd/references'))

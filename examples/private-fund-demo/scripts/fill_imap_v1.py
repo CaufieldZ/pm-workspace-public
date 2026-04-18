@@ -1,3 +1,4 @@
+# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 import os, sys
 _DIR = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.join(_DIR, '../../..')

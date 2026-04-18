@@ -1,3 +1,4 @@
+# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 """Step C: 插入跨端数据流表格 + 底部 Callout"""
 import os
 

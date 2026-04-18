@@ -7,10 +7,22 @@
       "WebFetch(domain:docs.claude-mem.ai)",
       "WebFetch(domain:claude-mem.ai)",
       "WebFetch(domain:awesomeclaude.ai)",
-      "Bash(git -C /Users/felix.zhi/pm-workspace-public remote -v)"
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public remote -v)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public push origin main)",
+      "Edit(/.claude/skills/prd/**)",
+      "Edit(/.claude/skills/interaction-map/**)",
+      "Bash(cp -R /Users/felix.zhi/pm-workspace/projects/demo-private-fund/deliverables /Users/felix.zhi/pm-workspace-public/examples/private-fund-demo/)",
+      "Bash(cp -R /Users/felix.zhi/pm-workspace/projects/demo-private-fund/scripts /Users/felix.zhi/pm-workspace-public/examples/private-fund-demo/)",
+      "Bash(cp -R /Users/felix.zhi/pm-workspace/projects/demo-private-fund/screenshots /Users/felix.zhi/pm-workspace-public/examples/private-fund-demo/)",
+      "Bash(md5 /tmp/a1_remote.png ~/pm-workspace-public/examples/private-fund-demo/screenshots/prd/a1.png)",
+      "Edit(/.claude/skills/flowchart/**)",
+      "Bash(CLAUDE_PROJECT_DIR=$\\(pwd\\) bash .claude/hooks/pre-risky-op.sh)"
     ],
     "additionalDirectories": [
-      "/Users/felix.zhi/pm-workspace/.claude"
+      "/Users/felix.zhi/pm-workspace/.claude",
+      "/Users/felix.zhi/pm-workspace-public/examples",
+      "/Users/felix.zhi/pm-workspace/projects/demo-private-fund/screenshots/prd",
+      "/Users/felix.zhi/pm-workspace/.claude/skills/flowchart"
     ],
     "allowedTools": [
       "Read",
@@ -41,6 +53,17 @@
           {
             "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-compact.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-risky-op.sh"
           }
         ]
       }

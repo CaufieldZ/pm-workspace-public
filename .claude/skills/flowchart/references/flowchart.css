@@ -1,0 +1,100 @@
+/* PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 */
+/* ═══════════════════════════════════════════════════════════
+   flowchart.css · 流程图产出物样式
+   深色画布 + 浅色白板卡片，承载 AntV X6 渲染的流程图
+   ═══════════════════════════════════════════════════════════ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'HarmonyOS Sans SC','Plus Jakarta Sans',system-ui,sans-serif;
+  background: #0B0E11;
+  color: #EAECEF;
+  padding: 60px 40px;
+  min-height: 100vh;
+}
+
+.page-title {
+  font-size: 20px; font-weight: 900;
+  margin-bottom: 6px; color: #F0F2F5;
+}
+.page-sub {
+  font-size: 12px; color: #8B949E;
+  margin-bottom: 32px;
+}
+
+.section-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+  color: #5E6673; margin: 36px 0 12px 2px;
+}
+
+/* 白板卡片：浅底嵌入深色画布，模拟设计师白板效果 */
+.whiteboard {
+  background: #FAFBFC;
+  border-radius: 12px;
+  border: 1px solid #E5E6EB;
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.3),
+    0 8px 24px rgba(0,0,0,0.4);
+  padding: 32px 36px;
+  position: relative;
+}
+.whiteboard::before {
+  content: "";
+  position: absolute; top: 14px; left: 18px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #F6465D; opacity: 0.4;
+  box-shadow:
+    14px 0 0 rgba(246,195,14,0.4),
+    28px 0 0 rgba(14,203,129,0.4);
+}
+.wb-title {
+  font-size: 15px; font-weight: 700;
+  color: #1F2329; margin: 6px 0 4px 38px;
+}
+.wb-sub {
+  font-size: 11px; color: #86909C;
+  margin: 0 0 24px 38px;
+}
+
+/* 分支流程图容器 */
+.g-flow { width: 100%; height: 500px; }
+
+/* 泳道图容器 */
+.lane-wrap { position: relative; width: 100%; overflow-x: auto; }
+.lane-inner { position: relative; }
+.lane-bg {
+  position: absolute; inset: 0;
+  border: 1px solid #E5E6EB; border-radius: 4px;
+  z-index: 0; pointer-events: none;
+}
+.lane-row {
+  position: absolute; left: 0; width: 100%; height: 90px;
+  border-bottom: 1px solid #E5E6EB;
+}
+.lane-row:last-child { border-bottom: none; }
+.lane-row.alt   { background: #F7F8FA; }
+.lane-row.white { background: #FFFFFF; }
+.lane-header-col {
+  position: absolute; left: 0; top: 0; width: 84px; height: 100%;
+  background: #F2F3F5; border-right: 1px solid #E5E6EB;
+  display: flex; flex-direction: column;
+  z-index: 1; pointer-events: none;
+}
+.lane-header-col > div {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: #1F2329;
+  border-bottom: 1px solid #E5E6EB;
+}
+.lane-header-col > div:last-child { border-bottom: none; }
+.g-lane { position: absolute; inset: 0; z-index: 2; }
+
+/* 自检输出面板 */
+.check-out {
+  margin-top: 16px; padding: 10px 14px;
+  background: #141821; border: 1px solid #1F2329; border-radius: 6px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  color: #8B949E; line-height: 1.7;
+}
+.check-out .pass { color: #0ECB81; font-weight: 700; }
+.check-out .fail { color: #F6465D; font-weight: 700; }

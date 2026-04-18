@@ -1,3 +1,4 @@
+<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # demo-private-fund · 场景清单 v1.0
 
 > 编号锁定后不可改动，新增只追加。所有产出物（交互大图 / PRD）复用此编号和 View 划分。
