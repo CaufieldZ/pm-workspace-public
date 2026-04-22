@@ -3,24 +3,33 @@
 """
 push_to_confluence_base.py — 推送 PRD docx 到 Confluence Server
 
-用法:
-    python3 push_to_confluence_base.py <docx路径> <页面标题> <space_key> [parent_page_id]
+两种模式:
+    A. 按 space + title upsert(找不到则建新页):
+        python3 push_to_confluence_base.py <docx> --title <标题> --space <key> [--parent-id <id>]
+    B. 按 pageId 直接覆盖(已知页面,跳过 title 查找):
+        python3 push_to_confluence_base.py <docx> --page-id <id> [--title <新标题>]
 
 说明:
-    - 凭证自动从 pm-workspace/.mcp.json 读取，不需要手动配置
-    - 图片提取后作为附件上传，再用 ac:image 宏引用
-    - 页面存在则更新版本，不存在则新建
+    - 凭证自动从 pm-workspace/.mcp.json 读取,不需要手动配置
+    - 图片提取后作为附件上传,再用 ac:image 宏引用
+    - push 前 pre-flight 检查 docx 的 Heading 1/2 计数,为 0 时 warning
+      (memory #1/#3 踩坑:gen 脚本 BASE 路径错 → h1/h2 函数失效 → docx 全 Normal
+       → Confluence 大纲树失效,不先检查事后很难发现)
     - 依赖: pip install mammoth requests
 
 示例:
+    # 模式 A:新建/upsert
     python3 .claude/skills/prd/references/push_to_confluence_base.py \\
         projects/htx-activity-center/deliverables/prd-htx-v1.docx \\
-        "HTX 活动中心 PRD v1" \\
-        HTX \\
-        12345678
+        --title "HTX 活动中心 PRD v1" --space HTX --parent-id 12345678
+
+    # 模式 B:按 pageId 覆盖
+    python3 .claude/skills/prd/references/push_to_confluence_base.py \\
+        projects/htx-community/deliverables/prd-htx-community-v3.4.docx \\
+        --page-id 155652375
 """
 
-import sys, re, json, requests
+import sys, re, json, argparse, requests
 from pathlib import Path
 
 try:
@@ -174,26 +183,111 @@ def update_page(page_id: str, title: str, body: str, current_version: int):
           extra_headers={"Content-Type": "application/json"})
 
 
+def get_page_info(page_id: str) -> dict:
+    """按 pageId 直接取当前页面 title + version + spaceKey,跳过 title 查找。
+    模式 B 用;当 page 已知时比 get_or_create_page 稳(无同名页歧义)。"""
+    info = _rest("GET", f"content/{page_id}", params={"expand": "version,space"})
+    return {
+        "id": info["id"],
+        "title": info["title"],
+        "version": info["version"]["number"],
+        "space_key": info["space"]["key"],
+    }
+
+
+# ── Pre-flight:docx 结构体检 ─────────────────────────────────────────────────
+
+def preflight_check_headings(docx_path: str) -> tuple:
+    """扫 docx Heading 1/2 计数。为 0 时 stderr 打印 warning 但不中止。
+    memory #1/#3 踩坑:gen 脚本 BASE 路径错时 h1/h2 函数无声失败,
+    所有章节都是 Normal style,推 Confluence 后大纲树失效。
+    事前 5 秒检查省事后几小时排查。
+    返回 (h1_count, h2_count)。"""
+    try:
+        from docx import Document
+    except ImportError:
+        print("  ⚠ 跳过 Heading 体检(python-docx 未安装)", file=sys.stderr)
+        return (-1, -1)
+    doc = Document(docx_path)
+    h1 = sum(1 for p in doc.paragraphs if (p.style and p.style.name == "Heading 1"))
+    h2 = sum(1 for p in doc.paragraphs if (p.style and p.style.name == "Heading 2"))
+    print(f"🔍 pre-flight: Heading 1={h1}, Heading 2={h2}")
+    if h1 == 0 and h2 == 0:
+        print(
+            "⚠️  docx 里没有任何 Heading 1/2!推到 Confluence 后左侧大纲树会失效。\n"
+            "   常见原因:① gen 脚本 sys.path 路径错,h1/h2 函数无声失败(memory #1)\n"
+            "            ② 章节全部用 add_paragraph 直接写,没调 h1/h2\n"
+            "   先跑 normalize_headings(doc) 归一化或修 gen 脚本,再 push。",
+            file=sys.stderr,
+        )
+    elif h1 == 0:
+        print("⚠️  docx 里没有 Heading 1,只有 H2 — Confluence 大纲树会缺顶层。", file=sys.stderr)
+    return (h1, h2)
+
+
 # ── 主流程 ───────────────────────────────────────────────────────────────────
 
-def main():
-    if len(sys.argv) < 4:
-        print(__doc__)
-        sys.exit(1)
+def _build_parser():
+    p = argparse.ArgumentParser(
+        description="推送 PRD docx 到 Confluence Server(两种模式)",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=__doc__,
+    )
+    p.add_argument("docx", help="PRD docx 文件路径")
+    p.add_argument("--page-id", dest="page_id", default=None,
+                   help="已知 pageId,直接按 ID 覆盖(模式 B);与 --space/--parent-id 互斥")
+    p.add_argument("--title", default=None,
+                   help="页面标题。模式 A 必填;模式 B 可选(不传则保留 Confluence 现有 title)")
+    p.add_argument("--space", dest="space_key", default=None,
+                   help="Confluence spaceKey(模式 A 必填)")
+    p.add_argument("--parent-id", dest="parent_id", default=None,
+                   help="父页面 pageId(模式 A 可选)")
+    p.add_argument("--img-width", type=int, default=600,
+                   help="图片附件展示宽度(像素),默认 600")
+    p.add_argument("--skip-preflight", action="store_true",
+                   help="跳过 Heading 体检(不推荐,除非明知 docx 故意无 H1/H2)")
+    return p
 
-    docx_path  = sys.argv[1]
-    title      = sys.argv[2]
-    space_key  = sys.argv[3]
-    parent_id  = sys.argv[4] if len(sys.argv) > 4 else None
 
-    if not Path(docx_path).exists():
-        sys.exit(f"文件不存在: {docx_path}")
+def _resolve_mode(args):
+    """返回 (page_id, title, version, space_key) —— 无论模式 A/B 都归一化为这 4 个字段。"""
+    if args.page_id:
+        info = get_page_info(args.page_id)
+        title = args.title or info["title"]
+        return info["id"], title, info["version"], info["space_key"]
+    # 模式 A:按 title upsert
+    if not args.title or not args.space_key:
+        sys.exit("❌ 模式 A 必须传 --title 和 --space(或用 --page-id 走模式 B)")
+    page_id, version = get_or_create_page(args.space_key, args.title, args.parent_id)
+    return page_id, args.title, version, args.space_key
 
-    print(f"📄 转换: {docx_path}")
-    page_id, version = get_or_create_page(space_key, title, parent_id)
-    print(f"📑 页面 ID: {page_id}  当前版本: {version}")
 
-    body = convert_docx(docx_path, page_id)
+def main(argv=None):
+    # 向后兼容:旧位置参数 `docx title space [parent]` 仍能工作
+    if argv is None:
+        argv = sys.argv[1:]
+    if argv and not argv[0].startswith("-") and len(argv) >= 3 and not any(
+        a.startswith("--") for a in argv[:4]
+    ):
+        # 位置参数模式:[docx, title, space, parent_id?]
+        legacy = ["--title", argv[1], "--space", argv[2]]
+        if len(argv) >= 4:
+            legacy += ["--parent-id", argv[3]]
+        argv = [argv[0]] + legacy
+
+    args = _build_parser().parse_args(argv)
+
+    if not Path(args.docx).exists():
+        sys.exit(f"❌ 文件不存在: {args.docx}")
+
+    if not args.skip_preflight:
+        preflight_check_headings(args.docx)
+
+    print(f"📄 转换: {args.docx}")
+    page_id, title, version, space_key = _resolve_mode(args)
+    print(f"📑 页面 ID: {page_id}  标题: {title}  space: {space_key}  当前版本: {version}")
+
+    body = convert_docx(args.docx, page_id, img_width=args.img_width)
 
     print("📤 更新页面内容...")
     update_page(page_id, title, body, version)

@@ -25,6 +25,17 @@ if [ -d "$SCRIPTS_DIR" ]; then
         fail=1
     fi
 
+    # ── 1b. 项目脚本禁止硬编码 BASE 路径(memory #1) ──
+    # `BASE = Path('/Users/xxx/pm-workspace')` 换机器/换用户名即炸,
+    # 统一用 Path(__file__).resolve().parents[N] 相对定位
+    hardcoded=$(grep -lE "^BASE\s*=\s*(Path\()?['\"]?/Users/[^'\"]+pm-workspace" "$SCRIPTS_DIR"/*.py 2>/dev/null || true)
+    if [ -n "$hardcoded" ]; then
+        echo "❌ 项目脚本硬编码 /Users/xxx/pm-workspace 路径(换机器即炸, 见 prd SKILL.md 硬规则 #9):"
+        echo "$hardcoded" | sed 's/^/   /'
+        echo "   修法: BASE = Path(__file__).resolve().parents[3]  # pm-workspace 根"
+        fail=1
+    fi
+
     # ── gen_prd_v*.py 单脚本体积告警 ───────────────
     for f in "$SCRIPTS_DIR"/gen_prd_v*.py; do
         [ -f "$f" ] || continue

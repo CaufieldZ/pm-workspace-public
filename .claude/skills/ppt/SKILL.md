@@ -101,6 +101,7 @@ AI 生成 PPT 最大破绽不在「花哨」，而在「太均匀」——每页
 3. **横竖交替** — 竖向流程（`pipe`）和横向流程（`flow-h`）交替使用，同文档内不要全是 `pipe`。≤4 步用 `flow-h`，≥5 步用 `pipe`，中间混排最佳。
 4. **emoji 密度控制** — `section-label` 不放 emoji，只在 `page-title` 和 `pipe-icon` 放。密度：每页 ≤3 个 emoji。
 5. **文字密度控制** — 单页 HTML 渲染函数 ≤60 行。超过则拆分为子组件或用 accordion 折叠。金句/判断句用 `quote-block`（大字居中斜体）单独成段，不要塞进 `note` 盒子里。
+6. **分步揭示节奏** — 呼吸页（`page-hero`）金句和清单页条目可加 `data-step`，演示时逐步揭示增加悬念。呼吸页主标题加 `data-step="1"`，清单各条加 `data-step="1"/"2"/"3"`。Doc 模式查阅不受影响（自动全显）。
 
 ### Step 3：生成 Node.js 骨架脚本
 
@@ -260,6 +261,55 @@ const renderers = {
 - 内容中如果包含反引号 `` ` `` 需要转义为 `\``（很少见）
 - 如需展示可复制文本，用 prompt-block 组件
 
+### 演示模式（Presenter Mode）
+
+所有通过 `fill-template.js` 生成的产物自动内置演示模式，无需额外操作。
+
+**切换方式**：打开 HTML 后按 `P` 键切换 Doc ⇄ Presenter。
+
+**键盘操作**：
+
+| 按键 | 动作 |
+|------|------|
+| `→` / `Space` / `PageDown` | 下一步（先显 data-step，再翻页） |
+| `←` / `PageUp` | 上一步（先退 data-step，再退页） |
+| `Home` / `End` | 跳到首页 / 末页 |
+| `ESC` | 退出演示，回到 Doc 模式 |
+| `P` | 再次按返回 Doc 模式 |
+
+**分步揭示（Keynote Build-in 同款）**：
+
+元素加 `data-step="N"` 属性，演示时按 `→` 逐步显现，全部显完才翻到下一页：
+
+```html
+<div class="page-hero">
+  <div class="hero-headline" data-step="1">核心结论</div>
+  <div class="hero-sub" data-step="2">补充说明</div>
+</div>
+
+<div class="card">
+  <div class="ck-item" data-step="1">第一条</div>
+  <div class="ck-item" data-step="2">第二条</div>
+  <div class="ck-item" data-step="3">第三条</div>
+</div>
+```
+
+Doc 模式（侧边栏查阅）下所有 `data-step` 内容自动全显，不影响查阅体验。
+
+**大文档模式（Step 3b）演示模式集成**：
+
+Step 3b 拆分模式下 fill-template.js 不参与，需手动集成：
+
+1. 将 `skill/references/presenter-mode.css` 复制到 `sop-src/presenter.css`
+2. 将 `skill/references/presenter-mode.js` 复制到 `sop-src/presenter.js`
+3. 在 `sop-src/shell.html` 的 `</main>` 后追加：
+   ```html
+   <div id="presenterHUD"></div>
+   <div id="presenterHelp">← → 翻页 · Space 下一步 · ESC 退出</div>
+   <div id="presenterEnterHint">[P] 演示</div>
+   ```
+4. 在 orchestrator 中，`styles.css` 后拼接 `presenter.css`，`init.js` 前拼接 `presenter.js`
+
 ### Step 5：自检
 
 产出物声称完成前必须执行：
@@ -287,43 +337,44 @@ wc -l {产出物}
 
 全部通过后交付 HTML 产出物，然后进入 Step 6。
 
-### Step 6：生成口播稿
+### Step 6：生成口播稿 docx（可选）
 
-HTML 产出物交付后，生成配套的口播稿 Markdown 文件。
+**触发规则**：默认不生成。HTML 产出物交付后 Claude 主动问一次：
 
-**规格**：
-- 格式：单独 Markdown 文件
-- 命名：`ppt-{主题}-notes-v{N}.md`
-- 存放：与 HTML 产出物同目录
+> 「这是最终版吗？需要生成 docx 口播稿吗？（微信发手机当提词器）」
 
-**结构**：按 sidebar 页面顺序，每页一个二级标题章节。参考 `references/notes-template.md` 模板。
+用户说「要」才执行；用户明示「最终版了」或「出口播稿」也直接触发；迭代版本说「不要」则跳过。
 
-```markdown
-# {文档标题} — 口播稿
+**产物**：`ppt-{主题}-notes-v{N}.docx`（放 deliverables 同目录）
 
-## Tab 名称
+**技术选型**：python-docx（参考模板 `references/gen-notes-docx.py`）
 
-**核心论点**：这一页要传递的 1 个关键信息
+项目使用时复制到 `projects/{项目}/scripts/gen_notes_v{N}.py`，填入 NOTES 数据：
 
-**讲解要点**：
-- 要点 1（引用页面中的具体数据/图表）
-- 要点 2
-- 要点 3
-
-**过渡**：→ 下一页讲 XXX，承接关系是 YYY
+```python
+NOTES = [
+  { 'id': 'home', 'title': '总览 & 选路',
+    'core': '一句话核心论点',
+    'points': ['要点 1', '要点 2', '要点 3'],
+    'transition': '→ 下一页讲 XXX，承接关系是 YYY' },
+  # ... 每页一个对象
+]
+OUTPUT_PATH = '../deliverables/ppt-{主题}-notes-v1.docx'
 ```
+
+运行 `python3 gen_notes_v1.py` 生成 docx。
+
+**排版规格**（手机阅读优化）：
+- 正文 16pt，行距 1.5
+- 标题 20pt 粗体（微软雅黑）
+- 每页之间分页符——微信打开翻一页看一页
+- 过渡句斜体灰色，视觉上和正文内容区分
 
 **写作要求**：
 - 每页 100-200 字，整份 ≤ 3000 字
 - 是演讲提纲不是逐字稿——看着能讲，不是照念
 - 引用的数据/术语必须和 HTML 内容一致
 - 过渡句帮演讲者自然衔接到下一页
-
-**口播稿自检**：
-- Tab 数量与 HTML 产出物的 NAV items 一致
-- 每个 Tab 都有内容（无空章节）
-- 数据/术语与 HTML 内容一致
-- 过渡句覆盖每个页面切换点
 
 ## 输出格式
 
@@ -375,3 +426,6 @@ HTML 产出物交付后，生成配套的口播稿 Markdown 文件。
 - [ ] > 200 行的产出物通过 Node.js 脚本生成
 - [ ] 产出物命名符合 `ppt-{主题}-v{N}.html` 规范
 - [ ] 如有 prompt 展示，复制按钮功能正常
+- [ ] 按 `P` 键可进入演示模式（sidebar/header 消失，内容居中放大）
+- [ ] 演示模式下 `→`/`Space` 能翻页，`ESC` 退出回 Doc 模式
+- [ ] 含 `data-step` 的元素在 Doc 模式下全显；演示模式下默认隐藏，按 `→` 逐步揭示

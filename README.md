@@ -226,7 +226,7 @@ pm-workspace/
 │   ├── rules/
 │   │   ├── pm-workflow.md     #   全局工作流规范
 │   │   └── soul.md            #   个人偏好（gitignored）
-│   ├── skills/                #   19 个 Skill（各含 SKILL.md + references/）
+│   ├── skills/                #   20 个 Skill（各含 SKILL.md + references/）
 │   └── chat-templates/        #   Chat 轨模板 + context.md 九章模板
 ├── references/                # 本地素材（gitignored）
 │   └── competitors/           # 竞品素材

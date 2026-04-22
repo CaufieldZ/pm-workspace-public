@@ -1,34 +1,73 @@
 {
+  "env": {
+    "BROWSER_USE_DISABLE_EXTENSIONS": "1"
+  },
   "permissions": {
     "allow": [
-      "Edit(/.claude/skills/ppt/**)",
+      "Edit(/.claude/skills/**)",
       "mcp__figma__whoami",
-      "WebFetch(domain:raw.githubusercontent.com)",
-      "WebFetch(domain:docs.claude-mem.ai)",
-      "WebFetch(domain:claude-mem.ai)",
-      "WebFetch(domain:awesomeclaude.ai)",
-      "Bash(git -C /Users/felix.zhi/pm-workspace-public remote -v)",
-      "Bash(git -C /Users/felix.zhi/pm-workspace-public push origin main)",
-      "Edit(/.claude/skills/prd/**)",
-      "Edit(/.claude/skills/interaction-map/**)",
-      "Bash(cp -R /Users/felix.zhi/pm-workspace/projects/demo-private-fund/deliverables /Users/felix.zhi/pm-workspace-public/examples/private-fund-demo/)",
-      "Bash(cp -R /Users/felix.zhi/pm-workspace/projects/demo-private-fund/scripts /Users/felix.zhi/pm-workspace-public/examples/private-fund-demo/)",
-      "Bash(cp -R /Users/felix.zhi/pm-workspace/projects/demo-private-fund/screenshots /Users/felix.zhi/pm-workspace-public/examples/private-fund-demo/)",
-      "Bash(md5 /tmp/a1_remote.png ~/pm-workspace-public/examples/private-fund-demo/screenshots/prd/a1.png)",
-      "Edit(/.claude/skills/flowchart/**)",
-      "Bash(CLAUDE_PROJECT_DIR=$\\(pwd\\) bash .claude/hooks/pre-risky-op.sh)",
-      "Bash(git -C ~/pm-workspace-public log --oneline -3)",
-      "Bash(git -C ~/pm-workspace-public push)",
+      "mcp__figma__get_screenshot",
+      "mcp__figma__get_metadata",
+      "mcp__figma__get_design_context",
       "mcp__sensors__query_segmentation_report",
-      "Edit(/.claude/skills/data-report/**)",
+      "mcp__sensors__query_funnel_report",
+      "mcp__sensors__get_event_properties",
+      "mcp__sensors__list_funnels",
+      "mcp__confluence__confluence_create_page",
+      "mcp__confluence__confluence_get_page",
+      "mcp__confluence__confluence_search_pages",
+      "mcp__firecrawl__firecrawl_scrape",
+      "mcp__outlook-calendar__list-events",
+      "Bash(git -C ~/pm-workspace-public *)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public *)",
+      "Bash(git check-ignore *)",
+      "Bash(cp -R /Users/felix.zhi/pm-workspace/projects/* /Users/felix.zhi/pm-workspace-public/*)",
+      "Bash(browser-use:*)",
+      "Bash(bu:*)",
+      "Bash(BROWSER_USE_DISABLE_EXTENSIONS=1 browser-use:*)",
+      "Bash(BROWSER_USE_DISABLE_EXTENSIONS=1 bu:*)",
+      "Bash(pkill -9 -f browser_use)",
+      "Bash(rm -f ~/.browser-use/*.sock ~/.browser-use/*.pid)",
       "Bash(claude plugin *)",
+      "Bash(uv tool *)",
+      "Bash(python3 scripts/*)",
+      "Bash(bash scripts/*)",
+      "Bash(python3 /Users/felix.zhi/pm-workspace/scripts/*)",
+      "Bash(bash /Users/felix.zhi/pm-workspace/scripts/*)",
+      "Bash(python3 projects/*)",
+      "Bash(node projects/*)",
+      "Bash(bash projects/*)",
+      "Bash(python3 /Users/felix.zhi/pm-workspace/projects/*)",
+      "Bash(node /Users/felix.zhi/pm-workspace/projects/*)",
+      "Bash(bash /Users/felix.zhi/pm-workspace/projects/*)",
+      "mcp__sensors__query_retention_report",
+      "mcp__sensors__query_sql",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "WebSearch",
+      "WebFetch",
+      "mcp__dingtalk-doc__list_document_blocks",
+      "mcp__dingtalk-doc__get_document_info",
+      "mcp__dingtalk-doc__get_document_content",
+      "Read(//Users/felix.zhi/pm-workspace/**)",
+      "mcp__sensors__list_events_all",
+      "Bash(mkdir -p /Users/felix.zhi/pm-workspace/projects/htx-community/scripts/archive)",
+      "Bash(mv merge_v47_into_v48.py merge_v47_part2.py archive/)",
+      "mcp__confluence__confluence_upload_attachment",
+      "Edit(/.claude/skills/prd/**)",
+      "Bash(set +e)",
+      "Edit(/.claude/skills/interaction-map/**)",
+      "Edit(/.claude/skills/requirement-framework/**)",
       "Edit(/.claude/skills/cross-check/**)"
     ],
     "additionalDirectories": [
       "/Users/felix.zhi/pm-workspace/.claude",
       "/Users/felix.zhi/pm-workspace-public/examples",
       "/Users/felix.zhi/pm-workspace/projects/demo-private-fund/screenshots/prd",
-      "/Users/felix.zhi/pm-workspace/.claude/skills/flowchart"
+      "/Users/felix.zhi/pm-workspace/.claude/skills/flowchart",
+      "/Users/felix.zhi/pm-workspace/.claude/skills/ppt/references",
+      "/Users/felix.zhi/.browser-use",
+      "/Users/felix.zhi/pm-workspace/.claude/skills/interaction-map/references"
     ],
     "allowedTools": [
       "Read",
@@ -70,6 +109,17 @@
           {
             "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-risky-op.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-cjk-punct-check.sh"
           }
         ]
       }

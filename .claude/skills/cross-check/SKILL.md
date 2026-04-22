@@ -126,6 +126,33 @@ done
 - [ ] 测试用例集异常场景用例覆盖了 behavior-spec 中定义的异常场景
 - [ ] 所有文件的异常处理策略一致
 
+#### 2.8 PRD 变更范围一致性（仅迭代项目,且 PRD 已产出）
+
+校验 PRD 1.3 变更范围章节，防止回落成"PRD 版本间 diff 流水"。
+
+- [ ] 1.3 标题为「变更范围」，不是「核心变更」（旧名，改名后不应残留）
+- [ ] 新项目可省略 1.3 或仅写「新项目首发」一句；迭代项目必须有基线声明行（格式"基线：V[x.x]（YYYY-MM-DD 上线）"或"基线：当前线上 [产品名]"）
+- [ ] 1.3 条目不含 PM 内部迭代标签 — 禁止出现 `[v4.6]` `(V2.5)` `(V2.7)` `(vs 上一版)` 之类按 PRD 版本分段的标签
+- [ ] 1.3 条目不含 `(2026-04-22)` `(反转决策 #N)` 之类会议讨论日期标签（讨论流水归 context.md 第 7 章）
+- [ ] 1.3 条目数量与 PRD 场景表 `(变更)` `(新增)` 标签数量量级一致（差距 > 3× 时 warning，不是等号，允许 1.3 做主题合并）
+- [ ] req-framework 若存在，其 `.tag-new` / `.tag-v2` 标注范围与 PRD 1.3 条目覆盖范围语义一致（都是 vs 线上基线）
+
+检测脚本示例：
+
+```bash
+# 检查 1.3 是否已改名且有基线声明
+python3 -c "
+from docx import Document
+d = Document('projects/{项目}/deliverables/{prd.docx}')
+for i, p in enumerate(d.paragraphs):
+    if p.text.strip().startswith('1.3'):
+        print(f'  1.3 标题: {p.text}')
+        nxt = d.paragraphs[i+1].text.strip()
+        print(f'  下一段: {nxt[:60]}')
+        break
+"
+```
+
 ---
 
 ### Step 3：输出报告

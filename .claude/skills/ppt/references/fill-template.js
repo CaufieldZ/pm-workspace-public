@@ -1,5 +1,5 @@
-// pm-ws-canary-236a5364
 #!/usr/bin/env node
+// pm-ws-canary-236a5364
 /**
  * PPT Skill 填充脚本 (Node.js 版)
  * 用途：读取骨架模板，填充 NAV 和 PAGE_RENDERERS，生成最终 HTML
@@ -42,18 +42,49 @@ function fillTemplate(options) {
    * @param {Array} options.nav - NAV 数组
    * @param {Object} options.renderers - { key: htmlContent }
    * @param {string} options.outputPath - 输出文件路径
+   * @param {string} [options.logoChar] - logo 图标字符（默认 P）
+   * @param {string} [options.logoTitle] - logo 标题（默认 title）
+   * @param {string} [options.logoSub] - logo 副标题（默认 Presentation）
+   * @param {string} [options.headerTags] - header 右侧 tags HTML（默认空）
    */
-  const { title, nav, renderers, outputPath } = options;
+  const {
+    title, nav, renderers, outputPath,
+    logoChar = 'P',
+    logoTitle,
+    logoSub = 'Presentation',
+    headerTags = '',
+  } = options;
+
+  // 第一个 item 作为 home_id + breadcrumb
+  const firstItem = nav[0] && nav[0].items && nav[0].items[0];
+  const homeId = firstItem ? firstItem.id : '';
+  const breadcrumbDefault = firstItem ? firstItem.label : '';
 
   // 读取骨架模板
   let template = fs.readFileSync(TEMPLATE_PATH, 'utf8');
 
-  // 替换标题
-  template = template.replace(/__TITLE__/g, title);
+  // 注入 presenter-mode CSS / JS（placeholder 不存在时 silently skip）
+  const presenterCSSPath = path.join(SKILL_DIR, 'references', 'presenter-mode.css');
+  const presenterJSPath  = path.join(SKILL_DIR, 'references', 'presenter-mode.js');
+  if (fs.existsSync(presenterCSSPath)) {
+    template = template.replace('/* __PRESENTER_CSS__ */', fs.readFileSync(presenterCSSPath, 'utf8'));
+  }
+  if (fs.existsSync(presenterJSPath)) {
+    template = template.replace('/* __PRESENTER_JS__ */', fs.readFileSync(presenterJSPath, 'utf8'));
+  }
 
-  // 生成 NAV JSON
+  // 替换简单 placeholder
+  template = template.replace(/__TITLE__/g, title);
+  template = template.replace(/__LOGO_CHAR__/g, logoChar);
+  template = template.replace(/__LOGO_TITLE__/g, logoTitle || title);
+  template = template.replace(/__LOGO_SUB__/g, logoSub);
+  template = template.replace(/__HEADER_TAGS__/g, headerTags);
+  template = template.replace(/__HOME_ID__/g, homeId);
+  template = template.replace(/__BREADCRUMB_DEFAULT__/g, breadcrumbDefault);
+
+  // 生成 NAV（加 const 前缀）
   const navJSON = JSON.stringify(nav, null, 2);
-  template = template.replace('/* __NAV_PLACEHOLDER__ */', navJSON);
+  template = template.replace('/* __NAV_PLACEHOLDER__ */', `const NAV = ${navJSON};`);
 
   // 生成 PAGE_RENDERERS
   const rendererLines = Object.entries(renderers).map(([key, content]) => {

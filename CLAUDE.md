@@ -34,6 +34,8 @@ python3 scripts/with_server.py --server "npm run dev" --port 5173 -- python3 you
 
 脚本 `--help` 有完整用法。Playwright 统一 `headless=True` + `wait_for_load_state('networkidle')` 再操作 DOM，不要立刻截屏。
 
+【Playwright 验证纪律】默认 assertion 验证功能（`is_visible` / `get_attribute` / `text_content` / `evaluate`），不截图。截图 + Read 仅用于：① 视觉 bug 确认（溢出/遮挡/样式错位）② 最终交付给用户看效果。一次验证截图 ≤ 2 张，`full_page` 仅在需要看超出视口内容时才用。理由：viewport 截图 ~2K image token、full_page ~3-4K，和 20 项 assertion 总和相当——验证力几乎不变但成本 5×。
+
 【省钱提醒】当本 session 完成方案讨论并更新 context.md 后，如果接下来要进入产出物链路（交互大图/原型/PRD 等），主动提醒用户：「context.md 已更新并 commit。建议新开 session 切 Sonnet 执行产出物，可省约 46% 成本。命令：/交互大图 {项目名}」。用户说"不用换"则继续。
 
 ### MCP 配置
@@ -78,7 +80,6 @@ context.md 由 Chat Opus 输出，共九章。本地模型默认只读。
 - GitHub 信息用 `gh api` 取 JSON，不用 Firecrawl 抓整页 README
 - 钉钉文档先 `list_document_blocks` 看结构，按 `startIndex/endIndex` 取段落，不一次 `get_document_content` 拉全文（除非文件很短或用户要全文）
 - Confluence 内部 wiki 链接用 Confluence MCP 抓取，不走 Firecrawl（认证墙）
-- Agent 探索 prompt 加返回长度限制（"report in under 200 words"），能用 Grep/Glob 直接查的不开 agent
 - 图片分析统一用 Claude Read 工具（多模态），不走第三方 MCP
 
 【禁止重复读取】同一 session 内已读过的文件不再整体重读（soul.md 规则）。HTML 产出物允许 grep 局部回读，禁止 Read 全文。需要局部信息时用 Grep 或 Read offset/limit。
@@ -108,6 +109,38 @@ context.md 由 Chat Opus 输出，共九章。本地模型默认只读。
 - Outlook Calendar：仅在用户明确要求查工作日历时调用，产出物流程中不主动触发
 - Figma：仅在用户给出 Figma 链接或明确要求读设计稿时调用，不主动探索 Figma 项目
 - 所有 MCP 工具：调用前想一想"这次返回会吃多少 token"，能缩小 scope 就缩小
+
+【子 Agent 调度】子 Agent 跑 Haiku（较笨），派不派看三条同时满足：中间输出 ≫ 最终结论 + 主线程不需要过程 + 任务有客观对错标准。
+
+**必须派**（机械活，Haiku 稳）：
+
+- 审计脚本执行 → `workspace-audit`/`impact-check.sh`，收红绿表
+- HTML/md 产出物 grep 校验 → 找 `.aw`/`.anno` 计数、找 `FILL_START` 残留，收 pass/fail
+- 长日志 / > 200 行 bash 输出判断 → 找 ERROR/FAIL 关键字
+- git 考古（客观事实）→ 「谁什么时候改的」，返回 commit hash + 日期
+- 结构化数据批量提取 → 「抓 10 个页面的 H1/按钮文案列表」只提事实
+
+**压窄后再派**（半机械半智力，主线程做加工）：
+
+- 竞品批量采集：子 Agent 抓原料（文案/按钮/流程步骤），**对比表主线程做**
+- 大 PDF / 钉钉文档：子 Agent 结构化提取（决策/数字/节点），**意义判断主线程做**
+- 神策数据探查：精确事件名查询派，**模糊语义查询（「用户行为相关」）主线程做**
+- 并行多路探索：「各有没有 X 功能」派，**方案选型主线程做**
+
+**禁止派**：
+
+- Skill 主流程产出（交互大图/PRD/原型 Step A/B/C）—— 上下文连续性是硬依赖
+- context.md / scene-list.md 读写 —— 项目状态必须在主线程
+- 跨项目方法论总结（「看 XX 怎么写的给我们写一版」）—— Haiku 容易出套话，必须主线程 Opus 读
+- 方案选型 / 权衡 / 推荐 —— 含「好不好/该选哪个/应该怎么做」的判断
+
+**prompt 强制规则**：
+
+- 必须指定 `subagent_type`（探索用 Explore，其他 general-purpose）
+- 末尾加长度限制（"report in under 200 words" 或 "返回 ≤ 20 行表格"）
+- 禁用词：总结 / 评估 / 推荐 / 建议 / 判断 / 权衡 / 选择哪个
+- 必用词：列出 / 抓取 / 提取 / 搜索 / 计数 / 验证
+- 返回格式只接受：列表 / 表格 / 计数 / pass-fail / commit hash，不收自然语言结论段
 
 【格式规范】
 

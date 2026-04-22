@@ -1,7 +1,7 @@
 <!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # PM-WORKSPACE 仓库全貌（给 Claude Opus 的系统背景）
 
-> 导出时间：2026-04-18 | 目的：供 Opus 了解仓库结构、Skill 体系、工作流规则，用于诊断或协作
+> 导出时间：2026-04-23 | 目的：供 Opus 了解仓库结构、Skill 体系、工作流规则，用于诊断或协作
 
 ---
 
@@ -29,9 +29,10 @@ pm-workspace/
 │   ├── rules/
 │   │   ├── pm-workflow.md     ← 全局工作流规范
 │   │   └── soul.md            ← 个人偏好
-│   ├── skills/                ← 19 个标准化 Skill
+│   ├── skills/                ← 20 个标准化 Skill
 │   ├── hooks/
-│   │   └── pre-compact.sh     ← Claude Code runtime hook（compact 前注入 session-state）
+│   │   ├── pre-compact.sh     ← Claude Code runtime hook（compact 前注入 session-state）
+│   │   └── post-cjk-punct-check.sh ← PostToolUse hook（Write/Edit 后扫 CJK 旁半角标点）
 │   ├── chat-templates/        ← Chat 轨模板 + context.md 九章模板
 │   ├── session-state.md       ← 当前 session 进度快照（gitignored，Claude 维护）
 │   └── settings.json
@@ -133,6 +134,7 @@ pm-workspace/
 | 决策缺口处理 | 缺少必需决策信息时停下来提问给 A/B/C 选项，禁止自行假设后继续 |
 | 防腐化 hook | `.githooks/pre-commit` 检测 Skill/规则文件变更时自动跑 `audit.sh 1,2,3,4,7`（文件完整性 + 数值一致 + 依赖链路 + 规则冲突 + SKILL_TABLE 一致性），不通过拦截 commit。激活：`git config core.hooksPath .githooks` |
 | Session 状态保活 | `.claude/hooks/pre-compact.sh` 在上下文压缩前自动注入 `.claude/session-state.md`（项目名/Skill/Step/已填 Scene/待办）到 compact 摘要。Claude 在 Skill Step 边界主动 Write 更新此文件。防 compact 后丢失进度 |
+| CJK 标点护栏 | `.claude/hooks/post-cjk-punct-check.sh` + `scripts/check_cjk_punct.py` 在每次 Write/Edit md/html/含中文 py/js 后自动扫中文字旁的半角 `:,;()`，stderr 报行号。看到 warning 立刻改成全角，防产出物漏转换被嘲讽像 AI 写的 |
 
 > 执行优先级：全局规则（CLAUDE.md / pm-workflow）< Skill 硬规则
 
@@ -154,3 +156,4 @@ pm-workspace/
 > v20: 2026-04-15 脚本归位：check_prd.sh/intel-cron.sh/capture.py 移入各自 Skill 的 references/；confluence_sync.py 移入 data-report/references/；新增 sync-holidays.py；Skill 计数修正 18→19；references 改为按 SKILL.md Step 1 按需加载
 > v21: 2026-04-18 Session 状态保活：新增 `.claude/hooks/pre-compact.sh` + `.claude/session-state.md` 机制，PreCompact hook 自动注入进度快照到 compact 摘要，Claude 在 Step 边界主动 Write 更新；CLAUDE.md 【compact 指引】从被动规则改为主动维护；README/workspace-context 同步工程保障一栏
 > v22: 2026-04-19 新增 flowchart skill：AntV X6 + dagre 渲染分支流程图/泳道图，浅色白板嵌入深色画布（参照飞书风），内置边不穿节点自检；独立产出型（standalone，可被 imap/prd/ppt 截图消费）；节点类型 terminal/process/decision/success/fail；同行相邻边自动用 normal router 避免 manhattan 降级 orth 绕圈；Skill 计数 19→20
+> v23: 2026-04-23 三项升级：(1) PRD 1.3「核心变更」→「变更范围」改名 + 语义修正（基线 = 当前线上版本，非 PRD 版本间 diff；PM 从讨论流水收敛成线上→终稿 delta，不直搬），pm-workflow/chat-templates/prd/imap/req-framework/cross-check 全链路同步；cross-check 新增 §2.8 变更范围一致性校验；(2) PRD 无截图 Scene 降级模式：新增 `insert_scene_blocks` + `remove_table` helpers，CMS / 纯后台 / 本期不改 UI 的 Scene 走 body 级 H3 + numbered list，取代空占位的 2 列 scene_table（SKILL.md 硬规则 #9）；(3) 中文标点护栏：新增 PostToolUse hook `post-cjk-punct-check.sh` + `scripts/check_cjk_punct.py`，Write/Edit 后自动扫 md/html/含中文 py/js 的半角标点（`:,;()`）并 stderr 报行号，防产出物漏全角转换被嘲讽像 AI 写的

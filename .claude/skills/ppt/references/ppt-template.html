@@ -231,6 +231,8 @@ code{background:var(--surface2);padding:2px 7px;border-radius:4px;font-family:'J
 .text-pink{color:var(--pink);}
 .fw9{font-weight:900;}
 .mono{font-family:'JetBrains Mono',monospace;}
+
+/* __PRESENTER_CSS__ */
 </style>
 </head>
 <body>
@@ -275,6 +277,11 @@ code{background:var(--surface2);padding:2px 7px;border-radius:4px;font-family:'J
   </header>
   <div class="main-content" id="mainContent"></div>
 </main>
+
+<!-- ===== PRESENTER HUD ===== -->
+<div id="presenterHUD"></div>
+<div id="presenterHelp">← → 翻页 &nbsp;·&nbsp; Space 下一步 &nbsp;·&nbsp; ESC 退出</div>
+<div id="presenterEnterHint">[P] 演示</div>
 
 <script>
 // ================================================================
@@ -349,6 +356,8 @@ function toggleAcc(el) {
 // ================================================================
 renderNav();
 renderPage();
+
+/* __PRESENTER_JS__ */
 </script>
 </body>
 </html>

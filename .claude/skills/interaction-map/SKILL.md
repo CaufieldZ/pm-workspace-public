@@ -19,12 +19,50 @@ consumed_by: [prototype, prd]
 > 通用分步生成规则（强制规则 / 快速模式 / Fill 脚本规范 / 通用自检）见 `pm-workflow.md`「HTML 分步生成通用规则」。以下为本 Skill 补充规则：
 > - Step B 每填充 1-3 个 Scene 后停下报告进度（非快速模式）
 > - Step C 自检时逐个对照 scene-list.md 编号，列出「已覆盖 / 缺失」清单
+
+## IMAP 三大规则（2026-04 起新规范）
+
+> 本章节是新规范，覆盖以下所有「标注」「Tag 系统」相关条目。老 references/ 里的 `.anno` overlay 和 `ann-tag.new/chg/del` 示例按本章节为准，不要复制。
+
+### 1. 场景粒度 = 主场景，不是子场景
+
+IMAP scene 对齐 scene-list 的**主场景**（A/B/C/M/F/G 等一级编号），严禁把子场景（A-1/A-2/B-3）升为独立 scene。
+
+子场景降为**主场景内部的手机节点**：同主场景下的子场景横排摆成一条故事流水线，`.phone-label` 写子场景编号（如「A-1 · 首页 Feed」），子场景间用 `.aw` 箭头连接。
+
+跨 skill 编号契约不变：PRD / prototype / bspec / pspec 章节仍用子场景编号（A-1 章节对应 IMAP scene A 里面 phone-label="A-1" 的手机节点）。
+
+### 2. `.anno` overlay 限用场景（不是禁用）
+
+`.anno` / `.anno-n` 虚线框 + 编号徽章是合法的视觉工具，用途是为 `.ann-card` 里的编号（1/2/3...）提供屏幕上的定位锚点——读者知道「注释条目 1」对应手机哪个区块。
+
+**允许场景**：复杂手机（多区块、多 UI 元素）需要 ann-card 精确定位时，在屏幕区块外套 `.anno.{色}` + `.anno-n.{色}`，和 ann-card 里的 `.ann-num` 一一对应。
+
+**禁止场景**：
+- 用 anno overlay 做差量标注（圈"改动"/"新增"区域）——这是差量叙事，归第 3 条
+- 滥用（每个 UI section 都套一个，却没有 ann-card 对应）——让手机看起来全是虚线框
+
+**判断**：如果每个 anno-n 编号在右侧 ann-card 里有对应的 ann-num 条目，就是合法定位工具；如果 anno overlay 单独存在或配合差量文案/标签，就是违规。
+
+注解主体仍然用 `.flow-note`（每屏下方一行）+ 可选 `.ann-card`（横排末尾侧栏）。anno overlay 只是 ann-card 的辅助。
+
+### 3. IMAP 不承载变更
+
+IMAP 是静态数据，只画新态全景。禁止出现差量叙事：
+
+- 禁用 `ann-tag.new` / `ann-tag.chg` / `ann-tag.del`（仅保留 `.p0` / `.p1` / `.p2` 优先级标签）
+- 禁止出现 `V\d+\.\d+`（V2.6、V3.1 等版本号）、`NEW`、`变更`、`新增`、`改动` 等差量文案
+
+变更叙事归 PRD 1.3「变更范围」章节。迭代项目也画新态全景，老 IMAP 归档，不增量叠。
+
+---
+
 ## 核心输出规范
 
 1. **单文件 HTML**：所有 CSS/JS 内联，无外部依赖（字体 CDN 除外）。`interaction-map.css` 和 `interaction-map.js` 由骨架脚本 `gen_imap_skeleton.py` 通过 `open().read()` 自动内联，不在本文件中显式引用
 2. **Web + Mobile 双端 Mockup**：App 用 `.phone`（深色），Web/CMS 用 `.webframe`（浅色）
-3. **横向 Flow 布局**：`.flow` 容器 → `.flow-col` 屏幕 → `.aw` 箭头 → `.ann-card` 说明
-4. **标注系统**：`.anno` 虚线框 + `.anno-n` 编号圆点（多色）
+3. **横向 Flow 布局**：`.flow` 容器 → 多个 `.flow-col` 屏幕（= 主场景下的子场景）→ 屏幕间 `.aw` 箭头 → 末尾可选 `.ann-card` 说明
+4. **主注解 = `.flow-note`**：每屏幕下方一行写状态 / 触发。复杂 scene 可加 `.ann-card` 侧栏 + `.anno` 屏幕锚点（详见三大规则 #2）
 5. **分组结构**：`.gd` 分隔符区分产品模块（PART 0/1/2/3/4...）
 6. **响应式**：侧导航 1400px+ 显示，内容区水平滚动
 
@@ -60,23 +98,25 @@ consumed_by: [prototype, prd]
 
 > **theme vs device**：theme 控制 PART 分隔条样式（深灰/蓝色/绿色），device 控制 Scene 内的设备壳类型。两者独立。
 
-### Fill 必需组件清单（强制）
+### Fill 必需组件清单（按新规范）
 
-每个 Scene 的 fill 函数必须包含以下全部组件，缺一不可：
+每个**主场景** fill 函数必须包含以下组件（一个主场景 = 横排多个子场景手机 + 箭头）：
 
-| # | 组件 | class | 缺失后果 | 检查方式 |
-|---|------|-------|---------|---------|
-| 1 | 屏幕 | `.phone` 或 `.webframe` | 无内容 | 目视 |
-| 2 | 箭头 | `.aw` > `.al` + `.tx` | 屏幕间无流向 | `grep -c 'class="aw"'` |
-| 3 | 标注框 | `.anno.{色}` > `.anno-n` | 注释无法对应屏幕区域 | `grep -c 'class="anno '` |
-| 4 | 注释卡 | `.ann-card` | 无改动说明 | `grep -c 'ann-card'` |
-| 5 | 卡片标题 | `.card-title` + `.ann-tag` | 卡片无标题和优先级 | `grep -c 'card-title'` |
-| 6 | 注释条目 | `.ann-item` > `.ann-num` + `.ann-text` | 说明不可读 | `grep -c 'ann-item'` |
-| 7 | 优先级标签 | `.ann-tag.{new/chg/del/p0/p1/p2}` | 无优先级区分 | `grep -c 'ann-tag'` |
-| 8 | 屏幕说明 | `.flow-note` | 屏幕缺状态描述 | `grep -c 'flow-note'` |
-| 9 | 信息框 | `.info-box.{色}` (至少 1 个/PART) | 缺补充说明 | `grep -c 'info-box'` |
+| # | 组件 | class | 必需性 | 检查方式 |
+|---|------|-------|--------|---------|
+| 1 | 屏幕（子场景手机） | `.phone` 或 `.webframe` | **必需，多个**（= 该主场景下的子场景数） | 目视 + `grep -c` |
+| 2 | 屏幕标签 | `.phone-label` | **必需**，每屏一个，写子场景编号（如「A-1 · 首页」） | `grep -c 'phone-label'` |
+| 3 | 箭头 | `.aw` > `.al` + `.tx` | **必需**，子场景间连接 | `grep -c 'class="aw"'` |
+| 4 | 屏幕说明 | `.flow-note` | **必需**，主注解载体 | `grep -c 'flow-note'` |
+| 5 | 注释卡 | `.ann-card`（含 `.card-title` + `.ann-item` > `.ann-num` + `.ann-text`）| **可选**，复杂 scene 在末尾挂一张 | `grep -c 'ann-card'` |
+| 6 | 优先级标签 | `.ann-tag.{p0/p1/p2}` | 可选，仅在 ann-card 内强调优先级时用 | `grep -c 'ann-tag'` |
+| 7 | 信息框 | `.info-box.{色}` | 可选，按需补充说明 | `grep -c 'info-box'` |
 
-> **注意**：ann-card 不是只写外壳 + ann-num，必须包含完整子结构（card-title + ann-item > ann-num + ann-text + ann-tag）。参考 `fill-template.py` 和 `gold-snippets.md` 示例。
+**限用 / 退役组件**：
+- `.anno` / `.anno-n`（手机内部 overlay）：**限用**——允许作为 ann-card 编号的屏幕锚点，禁止配合差量标签/文案滥用（详见三大规则 #2）
+- ~~`.ann-tag.new` / `.ann-tag.chg` / `.ann-tag.del`~~（差量标签）：**退役**
+
+> ann-card 不是只写外壳 + ann-num，必须包含完整子结构（card-title + ann-item > ann-num + ann-text）。`.ann-tag` 若使用仅限 p0/p1/p2。手机内部视觉还原密度按场景复杂度自行拿捏，不设行数硬上限——参考 `projects/htx-community/deliverables/imap-htx-community-v6.html` 的密集 inline-style 风格。
 
 ## Fill 执行规则（所有模型强制）
 
@@ -103,11 +143,12 @@ fill 函数中的 HTML 字符串统一用 Python 三引号 `'''...'''` 包裹：
 - SyntaxError → 用 `python3 -c "import ast; ast.parse(open('xxx.py').read())"` 定位行号，不要盲改
 - fill 后 HTML 结构破坏 → `git checkout -- deliverables/xxx.html` 恢复骨架，重新执行 fill
 
-### 组件完整性规则（强制）
+### 组件完整性规则
 
-5. **每个 fill 函数必须包含上方"Fill 必需组件清单"全部 9 类组件**（info-box 至少每 PART 1 个）
-6. **填充完成后，对每个 Scene 执行 grep 验证**：`grep -c 'class="aw"\|class="anno \|ann-tag\|info-box\|flow-note' deliverables/xxx.html` — 任一为 0 则返工
-7. **禁止"裸 ann-card"**：ann-card 内部必须有 `.card-title`（含至少 1 个 `.ann-tag`）+ 至少 1 个 `.ann-item`（含 `.ann-num` + `.ann-text`）
+5. **每个主场景 fill 函数必须包含必需组件**：多屏幕 + phone-label + 箭头 + flow-note。ann-card 可选
+6. **填充完成后 grep 验证必需项**：`grep -c 'class="phone\|class="webframe\|class="aw"\|phone-label\|flow-note' deliverables/xxx.html` — 必需项任一为 0 则返工
+7. **反模式 grep 断言**（必须全部为 0）：`grep -cE 'ann-tag (new|chg|del)|V[0-9]+\.[0-9]+|>NEW<|>改动<|>变更<'` — 新 IMAP 禁用差量标签和差量文案。注意 `.anno` overlay 本身允许，只有配合差量标签/文案才算违规
+8. **ann-card 使用规则**（若使用）：内部必须有 `.card-title` + 至少 1 个 `.ann-item`（含 `.ann-num` + `.ann-text`）。`.ann-tag` 仅限 `p0/p1/p2`
 
 ## ★ 分步生成策略（性能优化）
 
@@ -159,7 +200,7 @@ Step C：收尾（跨端表 + Callout + 自检）
 
 > fill 脚本参考：references/fill-template.py（仅写 fill 脚本时读取）
 
-**每个 fill 函数包含**：Phone/Web Mockup + UI 元素 + `.aw` 箭头 + `.anno` 标注 + `.ann-card` 注释 + `.flow-note` 说明
+**每个主场景 fill 函数包含**：多个 Phone/Web Mockup（= 主场景下的子场景数，每个 phone-label 写子场景编号）+ 子场景间 `.aw` 箭头 + 每屏 `.flow-note` 说明 + 末尾可选 `.ann-card`（复杂 scene 用）+ 可选 `.anno` 屏幕锚点（和 ann-card 编号对应时使用）
 
 **填充节奏**（非快速模式）：简单 Scene 3 个一批，复杂 Scene 1 个一批，每批报告进度。
 填充时不能破坏已有 CSS / JS / 其他 Scene。
@@ -301,17 +342,17 @@ generate_skeleton(project, legends, parts, output_path)
 2. 顶部导航栏 — 产品名 + 状态
 3. 内容区 — 自由布局
 
-**标注规则**：
-- 用 `.anno.{color}` 虚线框圈住改动区域
-- 用 `.anno-n.{color}` 编号（右上角）
-- 颜色分类：`blue`（布局）、`green`（新增）、`red`（策略/重要）、`purple`（Web 端）、`amber`（流程）
-- 在 `.ann-card` 中用 `.ann-item` + `.ann-num` 逐条解释
+**注解策略（新规范）**：
+
+主注解写在 `.flow-note`（每屏幕下方一行）。复杂 scene 可在横排末尾挂一张 `.ann-card` 侧栏说明业务规则，用 `.ann-item` + `.ann-num` 编号列条目。
+
+- 颜色分类（用于 `.aw` 箭头、`.ann-num`、`.anno-n`）：`blue`（导航/布局）、`green`（正向操作）、`red`（警示/重要）、`purple`（Web 端）、`amber`（跨端/流程）
+- `.anno` overlay 限用场景：**仅作为 ann-card 编号的屏幕锚点**（每个 anno-n 编号要在 ann-card 的 ann-num 里有对应条目）。禁止用来圈"改动/新增"区域——那是差量叙事
 
 **Tag 系统**：
-- `.ann-tag.new` — 绿底 NEW
-- `.ann-tag.chg` — 蓝底 改动
-- `.ann-tag.del` — 红底 删除
-- `.ann-tag.p0` / `.p1` / `.p2` — 优先级
+
+- `.ann-tag.p0` / `.p1` / `.p2` — 优先级（唯一允许的 ann-tag 类型）
+- ~~`.ann-tag.new`~~ / ~~`.ann-tag.chg`~~ / ~~`.ann-tag.del`~~ — 已退役（IMAP 不承载变更，差量叙事归 PRD 1.3）
 
 ## 设计系统速查
 
@@ -347,16 +388,23 @@ generate_skeleton(project, legends, parts, output_path)
 
 ## 注意事项
 
-1. **标注要匹配**：`.anno` 框的编号要与 `.ann-card` 内的 `.ann-num` 一一对应
-2. **跨端表格**：用 `grid-template-columns` 6列布局（序号/起点/箭头/终点/数据/触发方式）
+1. **ann-card 编号 ↔ anno-n 编号对应**：若使用 anno overlay 做屏幕锚点，每个 `.anno-n` 的编号必须在 ann-card 的 `.ann-num` 里有对应条目（1↔1, 2↔2）。这是 anno overlay 合法性的判断依据
+2. **phone-label 是跨 skill 编号对齐的唯一入口**：`<span class="phone-label">A-1 · 首页 Feed</span>` 让 PRD/prototype/bspec 的 A-1 章节能定位到 IMAP scene A 里面这个手机节点
+3. **跨端表格**：用 `grid-template-columns` 6列布局（序号/起点/箭头/终点/数据/触发方式）
 
 ## 自检清单（Step C 执行）
 
 > 通用条目（编号一致、脚本保存、FILL 残留、术语一致）见 pm-workflow.md，以下为本 Skill 专项：
 
+**新规范三条硬断言**（必须全过）：
+- [ ] **主场景粒度**：IMAP scene id 只是主场景（A/B/C 等），子场景（A-1/A-2）作为手机节点放在主场景内部；`grep -c 'phone-label'` ≥ 手机节点数
+- [ ] **anno overlay 合法性**：若使用，每个 `.anno-n` 编号必须在对应 ann-card 的 `.ann-num` 里有条目（1↔1, 2↔2）；孤立 anno 或配差量标签/文案的一律不合法
+- [ ] **零差量叙事**：`grep -cE 'ann-tag (new|chg|del)|V[0-9]+\.[0-9]+|>NEW<|>改动<|>变更<'` = 0（「新增」作为数据表字段值不计，仅禁标签和主体差量文案）
+
+**传统条目**：
 - [ ] 异常场景已覆盖
 - [ ] 箭头零交叉
-- [ ] 每个 Scene 的标注编号与 `.ann-card` 编号一一对应
+- [ ] ann-card 内编号（若使用）自洽
 - [ ] 侧导航锚点全部可跳转
 - [ ] 数据（字段名/枚举值/状态）全文一致
 

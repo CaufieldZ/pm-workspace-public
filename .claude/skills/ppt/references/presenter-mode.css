@@ -1,0 +1,126 @@
+/* PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 */
+/* ===== PRESENTER MODE ===== */
+
+/* Page transition — applies in both Doc and Presenter */
+.page { position: relative; }
+.page.active { animation: none; } /* override fadeUp in presenter */
+
+/* Presenter: full-screen takeover */
+body.presenter-mode .sidebar,
+body.presenter-mode .main-header { display: none !important; }
+body.presenter-mode .main { overflow: hidden; }
+
+/* main-content: allow scroll for long pages; short pages centered via .page self */
+body.presenter-mode .main-content {
+  padding: 40px 60px;
+  display: block;
+  overflow-y: auto;
+  height: 100vh;
+}
+
+/* .page itself: fill viewport + center content vertically when short,
+   long content naturally extends below and becomes scrollable */
+body.presenter-mode .page.active {
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  font-size: 1.05em;
+  min-height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Slide transition wrapper */
+#slideWrap {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+#slideWrap .page {
+  transition: opacity .3s ease-out, transform .3s ease-out;
+}
+#slideWrap .page.slide-out {
+  opacity: 0;
+  transform: translateY(-12px);
+  pointer-events: none;
+  position: absolute;
+  top: 0; left: 0; right: 0;
+}
+#slideWrap .page.slide-in {
+  animation: presenterFadeUp .3s ease-out forwards;
+}
+@keyframes presenterFadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Fragment / data-step — hidden by default in presenter mode */
+body.presenter-mode [data-step] {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity .4s ease-out, transform .4s ease-out;
+}
+body.presenter-mode [data-step].revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* HUD — page counter, bottom-right */
+#presenterHUD {
+  position: fixed;
+  bottom: 20px;
+  right: 28px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--t2);
+  letter-spacing: .04em;
+  pointer-events: none;
+  user-select: none;
+  padding: 6px 12px;
+  background: rgba(10, 12, 16, 0.78);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  z-index: 9999;
+  transition: opacity .2s;
+}
+
+/* Help hint — bottom-left */
+#presenterHelp {
+  position: fixed;
+  bottom: 20px;
+  left: 28px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--t3);
+  letter-spacing: .03em;
+  pointer-events: none;
+  user-select: none;
+  padding: 6px 12px;
+  background: rgba(10, 12, 16, 0.78);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  z-index: 9999;
+}
+
+/* Enter hint — top-right corner when NOT in presenter mode */
+#presenterEnterHint {
+  position: fixed;
+  top: 14px;
+  right: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--t4);
+  letter-spacing: .06em;
+  user-select: none;
+  cursor: default;
+}
+
+body.presenter-mode #presenterHUD,
+body.presenter-mode #presenterHelp { display: block; }
+body:not(.presenter-mode) #presenterHUD,
+body:not(.presenter-mode) #presenterHelp { display: none; }
+body.presenter-mode #presenterEnterHint { display: none; }

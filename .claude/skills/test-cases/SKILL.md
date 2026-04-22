@@ -75,6 +75,13 @@ consumed_by: [cross-check]
 | P0 | ≥ 3 条 | 正常 + 至少 1 条边界 + 至少 1 条异常 |
 | P1 | ≥ 2 条 | 正常 + 至少 1 条异常 |
 | P2 | ≥ 1 条 | 正常路径即可 |
+| 后续迭代 / 占位 | 0 条 | 跳过，不生成用例 |
+
+## 体量控制（与 bspec / pspec 对齐）
+
+- **单份行数上限 800 行**：超出则按 View / 模块拆分，避免测试 AI / QA 一次读不完
+- **切分粒度默认**：场景数 ≥ 20 或 View ≥ 3 时，默认推按 View 拆分；< 20 且 View ≤ 2 时默认整体一份
+- **相似场景合并**：共享状态机的连续场景（如 B-3 / B-4 / B-4a / B-4b）可合并为一个用例段，用「前置条件」列区分分支，避免重复写环境准备和核心操作
 
 ## 链路位置
 
@@ -200,6 +207,11 @@ python3 .claude/skills/test-cases/scripts/pairwise_gen.py demo
 
 ```bash
 FILE="projects/{项目名}/deliverables/tc-{项目简称}-v{N}.md"
+echo "=== 行数体量检查 ==="
+LINES=$(wc -l < "$FILE")
+echo "行数: $LINES"
+[ "$LINES" -gt 800 ] && echo "❌ 超出 800 行上限，请按 View 拆分或合并相似场景（QA/测试 AI 上下文消费压力）" || echo "✅ 行数可控"
+
 echo "=== 禁止项检查 ==="
 grep -n 'xpath\|css.*selector\|getElement\|click.*[0-9]\{2,\}\|/api/\|Float\|INT\|VARCHAR\|Redis\|MySQL' "$FILE" && echo "❌ 发现禁止项" || echo "✅ 无禁止项"
 
