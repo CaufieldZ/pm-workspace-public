@@ -36,7 +36,7 @@
   <div style="height:100px;background:linear-gradient(135deg,#0a1a3a,#162040);display:flex;align-items:center;justify-content:center;position:relative;">
     <div style="font-size:32px;"><!-- [FILL] icon/图 --></div>
     <div style="position:absolute;top:8px;left:8px;font-size:8px;color:#0ECB81;background:rgba(14,203,129,.15);padding:2px 6px;border-radius:3px;font-weight:700;"><!-- [FILL] 状态 --></div>
-    <div style="position:absolute;top:8px;right:8px;font-size:9px;color:#F6465D;font-weight:800;font-family:'IBM Plex Mono',monospace;"><!-- [FILL] 倒计时 --></div>
+    <div style="position:absolute;top:8px;right:8px;font-size:9px;color:#F6465D;font-weight:800;font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace;"><!-- [FILL] 倒计时 --></div>
   </div>
   <!-- 信息区域 -->
   <div style="padding:10px 14px;">
@@ -59,7 +59,7 @@
     <div style="font-size:12px;color:#848E9C;margin-top:4px;"><!-- [FILL] 描述 --></div>
   </div>
   <div style="display:flex;align-items:center;gap:16px;flex-shrink:0;">
-    <div style="font-size:18px;font-weight:800;color:#F6465D;font-family:'IBM Plex Mono',monospace;"><!-- [FILL] 数据 --></div>
+    <div style="font-size:18px;font-weight:800;color:#F6465D;font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace;"><!-- [FILL] 数据 --></div>
     <button style="background:#2D81FF;color:#fff;padding:6px 18px;border-radius:5px;font-size:12px;font-weight:600;border:none;cursor:pointer;"><!-- [FILL] CTA --></button>
   </div>
 </div>
@@ -156,7 +156,7 @@
 ```html
 <div style="width:375px;background:#0B0E11;border-radius:28px;border:3px solid #2B2F36;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.3);">
   <!-- 状态栏 -->
-  <div style="display:flex;justify-content:space-between;padding:6px 20px 4px;font-size:11px;color:#848E9C;font-family:'IBM Plex Mono',monospace;"><span>9:41</span><span>5G ▁▂▃▅ 🔋</span></div>
+  <div style="display:flex;justify-content:space-between;padding:6px 20px 4px;font-size:11px;color:#848E9C;font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace;"><span>9:41</span><span>5G ▁▂▃▅ 🔋</span></div>
   <!-- 顶栏 -->
   <div style="background:#0D1117;padding:0 12px;height:36px;display:flex;align-items:center;gap:4px;border-bottom:1px solid #2B3139;">
     <span style="font-size:14px;color:#848E9C;">←</span>

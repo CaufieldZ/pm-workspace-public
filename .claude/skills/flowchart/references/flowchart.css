@@ -1,41 +1,69 @@
 /* PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 */
 /* ═══════════════════════════════════════════════════════════
    flowchart.css · 流程图产出物样式
-   深色画布 + 浅色白板卡片，承载 AntV X6 渲染的流程图
+   Claude Design 深色画布（#000）+ 浅色白板卡片（白板保留功能性）
+   Fonts（gen 脚本在 HTML head 引入）：
+     Noto Serif SC 900/400 · Source Serif 4 · JetBrains Mono 400/500
+   Token（gen 脚本在 <style> 前 @import）：
+     ../../_shared/claude-design/tokens.css · ../../_shared/claude-design/utilities.css
    ═══════════════════════════════════════════════════════════ */
+
+/* ── 本文件内联 token 兜底（@import 未加载时生效）── */
+:root {
+  --fc-bg:      #000000;
+  --fc-ink:     #FFFFFF;
+  --fc-ink-82:  rgba(255, 255, 255, 0.82);
+  --fc-ink-58:  rgba(255, 255, 255, 0.58);
+  --fc-ink-18:  rgba(255, 255, 255, 0.18);
+  --fc-hairline: rgba(255, 255, 255, 0.12);
+  --fc-accent:  #2F6CF2;
+  --fc-serif-cn: "Noto Serif SC", "Source Han Serif SC", serif;
+  --fc-mono:    "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  /* 流程节点功能色 */
+  --fc-approved: #0ECB81;
+  --fc-rejected: #F6465D;
+  --fc-warn:     #D29922;
+}
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: 'HarmonyOS Sans SC','Plus Jakarta Sans',system-ui,sans-serif;
-  background: #0B0E11;
-  color: #EAECEF;
+  font-family: var(--fc-serif-cn), 'Noto Sans SC',system-ui, sans-serif;
+  background: var(--fc-bg);
+  color: var(--fc-ink-82);
   padding: 60px 40px;
   min-height: 100vh;
 }
 
 .page-title {
-  font-size: 20px; font-weight: 900;
-  margin-bottom: 6px; color: #F0F2F5;
+  font-family: var(--fc-serif-cn);
+  font-size: 28px; font-weight: 900;
+  margin-bottom: 6px;
+  color: var(--fc-ink);
+  text-wrap: balance;
 }
 .page-sub {
-  font-size: 12px; color: #8B949E;
+  font-family: var(--fc-mono);
+  font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--fc-accent);
   margin-bottom: 32px;
 }
 
 .section-label {
-  font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
-  color: #5E6673; margin: 36px 0 12px 2px;
+  font-family: var(--fc-mono);
+  font-size: 11px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--fc-accent); margin: 36px 0 12px 2px;
 }
 
-/* 白板卡片：浅底嵌入深色画布，模拟设计师白板效果 */
+/* 白板卡片：浅底嵌入深色画布，模拟设计师白板效果（保留功能性）*/
 .whiteboard {
   background: #FAFBFC;
-  border-radius: 12px;
-  border: 1px solid #E5E6EB;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
-    0 1px 2px rgba(0,0,0,0.3),
-    0 8px 24px rgba(0,0,0,0.4);
+    0 40px 120px -30px rgba(47, 108, 242, 0.14),
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 2px 8px rgba(0, 0, 0, 0.5);
   padding: 32px 36px;
   position: relative;
 }
@@ -43,16 +71,18 @@ body {
   content: "";
   position: absolute; top: 14px; left: 18px;
   width: 8px; height: 8px; border-radius: 50%;
-  background: #F6465D; opacity: 0.4;
+  background: #F6465D; opacity: 0.5;
   box-shadow:
-    14px 0 0 rgba(246,195,14,0.4),
-    28px 0 0 rgba(14,203,129,0.4);
+    14px 0 0 rgba(246,195,14,0.5),
+    28px 0 0 rgba(14,203,129,0.5);
 }
 .wb-title {
+  font-family: var(--fc-serif-cn);
   font-size: 15px; font-weight: 700;
   color: #1F2329; margin: 6px 0 4px 38px;
 }
 .wb-sub {
+  font-family: var(--fc-mono);
   font-size: 11px; color: #86909C;
   margin: 0 0 24px 38px;
 }
@@ -89,12 +119,19 @@ body {
 .lane-header-col > div:last-child { border-bottom: none; }
 .g-lane { position: absolute; inset: 0; z-index: 2; }
 
+/* 流程节点状态（AntV X6 配色） */
+.node-approved { stroke: var(--fc-approved) !important; }
+.node-rejected  { stroke: var(--fc-rejected) !important; }
+.node-warn      { stroke: var(--fc-warn) !important; }
+.node-accent    { stroke: var(--fc-accent) !important; }
+
 /* 自检输出面板 */
 .check-out {
   margin-top: 16px; padding: 10px 14px;
-  background: #141821; border: 1px solid #1F2329; border-radius: 6px;
-  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
-  color: #8B949E; line-height: 1.7;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--fc-hairline); border-radius: 4px;
+  font-family: var(--fc-mono); font-size: 11px;
+  color: var(--fc-ink-58); line-height: 1.7;
 }
-.check-out .pass { color: #0ECB81; font-weight: 700; }
-.check-out .fail { color: #F6465D; font-weight: 700; }
+.check-out .pass { color: var(--fc-approved); font-weight: 700; }
+.check-out .fail { color: var(--fc-rejected); font-weight: 700; }

@@ -63,6 +63,8 @@ PPT 产出物一旦脚本化生成，HTML 就是**只读产物**：
 - `references/ppt-template.html` — 骨架模板（CSS + JS + 空壳结构，脚本运行时 `open().read()` 自动拼接，模型不需要读入 context）
 - `references/components-cheatsheet.md` — 组件速查表
 - `references/gold-snippets.md` — 满分产物片段库（叙事模式 + 结构骨架参考）
+- `references/deck-grammar.md` — 每页四层骨架 + 样式约定 + 视觉主角轮换规则（**产出前必读**）
+- `.claude/skills/_shared/claude-design/anti-ai-slop.md` — 反 AI slop 六禁 + 字号 / 颜色 / 留白规范（**产出前必读**，只 grep 决策速查表部分，不全量 Read）
 - 用户提供的内容大纲（文件或口述）
 
 ### Step 2：确认大纲
@@ -392,7 +394,7 @@ OUTPUT_PATH = '../deliverables/ppt-{主题}-notes-v1.docx'
 继承 pm-workflow 第三章暗色主题：
 - 侧边栏 240px，深色 `--bg2`
 - 主内容区 max-width 1200px
-- 字体：HarmonyOS Sans SC + Plus Jakarta Sans + JetBrains Mono
+- 字体：Noto Sans SC + Inter + JetBrains Mono
 - 配色变量：以 `--bg: #0a0c10` 系为准
 
 ### 组件规范

@@ -19,15 +19,16 @@ run_cat() { echo "$CATEGORIES" | tr ',' '\n' | grep -qx "$1"; }
 # ─── 从 pm-workflow §三 动态提取规范值 ───
 # 设备尺寸：从 "375×812px" 格式提取
 SPEC_SIZES=$(grep -oE '[0-9]+×[0-9]+px' "$WORKFLOW_FILE" 2>/dev/null | tr '×' '\n' | sed 's/px//' | sort -un)
-# 配色：从 §三 提取，Binance 行和 Arco 行各取一行
+# 配色：Binance / Arco / Claude Design 三系并存
 BINANCE_COLORS=$(grep 'Binance 深色系' "$WORKFLOW_FILE" 2>/dev/null | grep -oE '#[0-9A-Fa-f]{6}')
-ARCO_COLORS=$(grep 'Arco Design 浅色系' "$WORKFLOW_FILE" 2>/dev/null | grep -oE '#[0-9A-Fa-f]{6}')
-# 字体：从 §三 提取
-SPEC_BODY=$(grep "字体：" "$WORKFLOW_FILE" 2>/dev/null | grep -oE "'[^']+'" | head -1 | tr -d "'")
-SPEC_MONO=$(grep "字体：" "$WORKFLOW_FILE" 2>/dev/null | grep -oE "'[^']+'" | tail -1 | tr -d "'")
-# 兜底默认值
-[ -z "$SPEC_BODY" ] && SPEC_BODY="HarmonyOS Sans SC"
-[ -z "$SPEC_MONO" ] && SPEC_MONO="IBM Plex Mono"
+SEMANTIC_COLORS=$(grep '语义色' "$WORKFLOW_FILE" 2>/dev/null | grep -oE '#[0-9A-Fa-f]{6}')
+CD_COLORS=$(grep 'Claude Design 系' "$WORKFLOW_FILE" 2>/dev/null | grep -oE '#[0-9A-Fa-f]{3,6}|#[0-9A-Fa-f]{6}' | head -3)
+# 字体：全 skill 统一一套，取 sans body + mono（display serif 不必硬校验）
+SPEC_BODY=$(grep -E "^- 正文 sans[：:]" "$WORKFLOW_FILE" 2>/dev/null | grep -oE "'[^']+'" | head -1 | tr -d "'")
+SPEC_MONO=$(grep -E "^- 等宽[：:]" "$WORKFLOW_FILE" 2>/dev/null | grep -oE "'[^']+'" | head -1 | tr -d "'")
+# 兜底默认值（Claude Design 单套规范）
+[ -z "$SPEC_BODY" ] && SPEC_BODY="Noto Sans SC"
+[ -z "$SPEC_MONO" ] && SPEC_MONO="JetBrains Mono"
 
 # ─────────────────────────────────────────────
 # 类别 1：文件完整性
@@ -36,16 +37,18 @@ if run_cat 1; then
   echo "===== 1. 文件完整性 ====="
   echo ""
 
-  # 1.1 SKILL.md 存在性
+  # 1.1 SKILL.md 存在性（_shared 白名单：共享资产目录，用 README.md）
   FAIL=0
   for d in .claude/skills/*/; do
     skill=$(basename "$d")
+    [ "$skill" = "_shared" ] && continue
     if [ ! -f "$d/SKILL.md" ]; then
       echo "  ❌ $skill 缺少 SKILL.md"
       FAIL=1; GLOBAL_FAIL=1
     fi
   done
-  [ "$FAIL" -eq 0 ] && echo "  ✅ 所有 skill 有 SKILL.md"
+  [ -f .claude/skills/_shared/README.md ] || { echo "  ❌ _shared 缺少 README.md"; GLOBAL_FAIL=1; }
+  [ "$FAIL" -eq 0 ] && echo "  ✅ 所有 skill 有 SKILL.md（_shared 用 README.md）"
 
   # 1.2 frontmatter 完整性
   echo ""
@@ -59,7 +62,7 @@ if run_cat 1; then
   done
   $FM_OK && echo "  ✅ 所有 skill frontmatter 完整"
 
-  # 1.3 references 引用检查
+  # 1.3 references 引用检查（本地 references/ + _shared/claude-design/ 跨目录）
   echo ""
   echo "--- references 引用 ---"
   REF_FAIL_FILE=$(mktemp)
@@ -72,9 +75,16 @@ if run_cat 1; then
         echo "1" > "$REF_FAIL_FILE"
       fi
     done
+    grep -oE '_shared/claude-design/[A-Za-z0-9_./-]+\.[A-Za-z]+' "$f" 2>/dev/null | sort -u | while read -r ref; do
+      target=".claude/skills/$ref"
+      if [ ! -f "$target" ]; then
+        echo "  ❌ $target 不存在（被 $skill_dir/SKILL.md 引用）"
+        echo "1" > "$REF_FAIL_FILE"
+      fi
+    done
   done
   if [ "$(cat "$REF_FAIL_FILE")" = "0" ]; then
-    echo "  ✅ references 引用全部有效"
+    echo "  ✅ references 引用全部有效（含 _shared/claude-design/ 跨目录）"
   else
     GLOBAL_FAIL=1
   fi
@@ -100,13 +110,13 @@ if run_cat 1; then
     GLOBAL_FAIL=1
   fi
 
-  # 1.7 Skill 计数一致性（README 等文档中的硬编码数字 vs 实际）
-  ACTUAL_SKILL_COUNT=$(find .claude/skills/ -maxdepth 1 -type d | tail -n +2 | wc -l | tr -d ' ')
+  # 1.7 Skill 计数一致性（README 等文档中的硬编码数字 vs 实际，排除 _shared 共享资产目录）
+  ACTUAL_SKILL_COUNT=$(find .claude/skills/ -maxdepth 1 -type d | tail -n +2 | grep -v '/_shared$' | wc -l | tr -d ' ')
   ACTUAL_PIPELINE=$(grep -rl '^type: *pipeline' .claude/skills/*/SKILL.md 2>/dev/null | wc -l | tr -d ' ')
   ACTUAL_OTHER=$((ACTUAL_SKILL_COUNT - ACTUAL_PIPELINE))
   echo ""
   echo "--- Skill 计数 ---"
-  echo "  实际: $ACTUAL_SKILL_COUNT 个 skill（$ACTUAL_PIPELINE pipeline + $ACTUAL_OTHER 其他）"
+  echo "  实际: $ACTUAL_SKILL_COUNT 个 skill（$ACTUAL_PIPELINE pipeline + $ACTUAL_OTHER 其他，_shared 不计入）"
   # 检查 README 中的硬编码数字
   if [ -f README.md ]; then
     README_COUNT=$(grep -oE 'Skills-[0-9]+' README.md 2>/dev/null | grep -oE '[0-9]+' | head -1)
@@ -152,36 +162,31 @@ if run_cat 2; then
   else
     echo "    ⚠️  未从 pm-workflow 提取到 Binance 色值"
   fi
-  echo "  [Arco 浅色系 - 后台]"
-  if [ -n "$ARCO_COLORS" ]; then
-    echo "$ARCO_COLORS" | while read -r color; do
+  echo "  [语义色 - 成功/失败，跨主题通用]"
+  if [ -n "$SEMANTIC_COLORS" ]; then
+    echo "$SEMANTIC_COLORS" | while read -r color; do
       [ -z "$color" ] && continue
       count=$(grep -rl "$color" .claude/skills/*/references/ 2>/dev/null | wc -l | tr -d ' ')
       echo "    $color → $count 个 ref 文件"
     done
   else
-    echo "    ⚠️  未从 pm-workflow 提取到 Arco 色值"
+    echo "    ⚠️  未从 pm-workflow 提取到语义色值"
+  fi
+  echo "  [Claude Design 系 - ppt/flowchart/arch/Web 后台]"
+  if [ -n "$CD_COLORS" ]; then
+    echo "$CD_COLORS" | while read -r color; do
+      [ -z "$color" ] && continue
+      count=$(grep -rl "$color" .claude/skills/ 2>/dev/null | wc -l | tr -d ' ')
+      echo "    $color → $count 个文件"
+    done
+    # 额外扫 --cd-accent 变量使用（不算色值）
+    cd_accent_count=$(grep -rl 'var(--cd-accent)' .claude/skills/*/references/ 2>/dev/null | wc -l | tr -d ' ')
+    echo "    var(--cd-accent) → $cd_accent_count 个 ref 文件"
+  else
+    echo "    ⚠️  未从 pm-workflow 提取到 Claude Design 色值"
   fi
 
-  # 混用检查（prototype 白名单）
-  echo ""
-  echo "  [混用检查]"
-  MIXED=false
-  BINANCE_PATTERN=$(echo "$BINANCE_COLORS" | tr '\n' '|' | sed 's/|$//' | sed 's/#/\\#/g')
-  ARCO_PATTERN=$(echo "$ARCO_COLORS" | tr '\n' '|' | sed 's/|$//' | sed 's/#/\\#/g')
-  if [ -n "$BINANCE_PATTERN" ] && [ -n "$ARCO_PATTERN" ]; then
-    for f in .claude/skills/*/references/*.css .claude/skills/*/references/*.html; do
-      [ -f "$f" ] || continue
-      case "$f" in *prototype*) continue ;; esac
-      has_binance=$(grep -cE "$BINANCE_PATTERN" "$f" 2>/dev/null || true)
-      has_arco=$(grep -cE "$ARCO_PATTERN" "$f" 2>/dev/null || true)
-      if [ "$has_binance" -gt 0 ] && [ "$has_arco" -gt 0 ]; then
-        echo "    ⚠️  $(echo "$f" | sed 's|.claude/skills/||') 混用了 Binance + Arco 色值"
-        MIXED=true
-      fi
-    done
-  fi
-  $MIXED || echo "    ✅ 无混用（prototype 双色系已白名单）"
+  # 语义色（#00B42A 成功 / #F53F3F 失败）允许跨主题使用，不再做主题混用检查
 
   # 2.3 命名前缀（从 SKILL.md frontmatter 动态读取）
   echo ""
@@ -192,51 +197,51 @@ if run_cat 2; then
     [ -n "$prefix" ] && echo "  $name → $prefix"
   done
 
-  # 2.4 字体（从 pm-workflow §三 动态提取规范值）
+  # 2.4 字体（从 pm-workflow §三 动态提取规范值，单套 Claude Design 套装）
   echo ""
   echo "--- 字体 ---"
   echo "  规范值：正文 '$SPEC_BODY'  等宽 '$SPEC_MONO'（pm-workflow §三）"
   echo ""
   FONT_ISSUES=0
+  LEGACY_FONTS='HarmonyOS Sans SC\|Plus Jakarta Sans\|IBM Plex Mono\|DM Sans'
   for f in .claude/skills/*/references/*.css .claude/skills/*/references/*.html; do
     [ -f "$f" ] || continue
     short=$(echo "$f" | sed 's|.claude/skills/||')
-    body_fonts=$(grep -oE "font-family:[^;]+" "$f" 2>/dev/null | grep -v monospace | grep -v 'IBM Plex\|JetBrains' || true)
+    # 检查遗留字体名（已统一到 Claude Design 套装后应清零）
+    if grep -q "$LEGACY_FONTS" "$f" 2>/dev/null; then
+      echo "    ⚠️  $short 仍引用遗留字体（HarmonyOS/Plus Jakarta/IBM Plex/DM Sans）"
+      FONT_ISSUES=$((FONT_ISSUES + 1))
+    fi
+    body_fonts=$(grep -oE "font-family:[^;]+" "$f" 2>/dev/null | grep -v monospace | grep -v 'JetBrains' || true)
     if [ -n "$body_fonts" ]; then
-      if ! echo "$body_fonts" | grep -q "$SPEC_BODY"; then
-        echo "    ⚠️  $short 正文字体缺少 $SPEC_BODY"
+      # 正文至少带一个 CJK 字体（Noto Sans SC / Noto Serif SC 都算）
+      if ! echo "$body_fonts" | grep -qE "Noto (Sans|Serif) SC"; then
+        echo "    ⚠️  $short 正文字体缺少 Noto Sans SC / Noto Serif SC"
         echo "       实际: $(echo "$body_fonts" | head -1 | sed 's/font-family://')"
         FONT_ISSUES=$((FONT_ISSUES + 1))
       fi
     fi
-    mono_fonts=$(grep -oE "font-family:[^;]+" "$f" 2>/dev/null | grep -E 'monospace|Mono' || true)
-    if [ -n "$mono_fonts" ]; then
-      if echo "$mono_fonts" | grep -q 'JetBrains' && ! echo "$mono_fonts" | grep -q "$SPEC_MONO"; then
-        echo "    ℹ️  $short 等宽用 JetBrains Mono（规范为 $SPEC_MONO）"
-        FONT_ISSUES=$((FONT_ISSUES + 1))
-      fi
-    fi
   done
-  [ "$FONT_ISSUES" -eq 0 ] && echo "    ✅ 字体声明与规范一致"
+  [ "$FONT_ISSUES" -eq 0 ] && echo "    ✅ 字体声明与 Claude Design 规范一致"
 
   # 2.5 字体栈顺序（CJK 优先）
   echo ""
   echo "--- 字体栈顺序（CJK 优先）---"
   ORDER_FAIL=0
-  for f in .claude/skills/*/references/*.css; do
+  for f in .claude/skills/*/references/*.css .claude/skills/_shared/claude-design/*.css; do
     [ -f "$f" ] || continue
     short=$(echo "$f" | sed 's|.claude/skills/||')
-    # 检查 body font-family 中英文字体是否排在 CJK 前面
-    if grep -q "font-family:.*'Plus Jakarta Sans'.*'HarmonyOS Sans SC'" "$f" 2>/dev/null; then
-      echo "    ❌ $short: Plus Jakarta Sans 在 HarmonyOS Sans SC 前面（违反 CJK 优先）"
+    # 检查英文字体排在 CJK 前面
+    if grep -qE "font-family:.*'Inter'.*'Noto Sans SC'" "$f" 2>/dev/null; then
+      echo "    ❌ $short: Inter 在 Noto Sans SC 前面（违反 CJK 优先）"
       ORDER_FAIL=1; GLOBAL_FAIL=1
     fi
-    if grep -q "font-family:.*-apple-system.*'HarmonyOS Sans SC'" "$f" 2>/dev/null; then
-      echo "    ❌ $short: -apple-system 在 HarmonyOS Sans SC 前面（违反 CJK 优先）"
+    if grep -qE "font-family:.*'Source Serif 4'.*'Noto Serif SC'" "$f" 2>/dev/null; then
+      echo "    ❌ $short: Source Serif 4 在 Noto Serif SC 前面（违反 CJK 优先）"
       ORDER_FAIL=1; GLOBAL_FAIL=1
     fi
-    if grep -q "font-family:.*'Noto Sans SC'.*'HarmonyOS Sans SC'" "$f" 2>/dev/null; then
-      echo "    ❌ $short: Noto Sans SC 在 HarmonyOS Sans SC 前面（应使用新字体栈）"
+    if grep -qE "font-family:.*-apple-system.*'Noto Sans SC'" "$f" 2>/dev/null; then
+      echo "    ❌ $short: -apple-system 在 Noto Sans SC 前面（违反 CJK 优先）"
       ORDER_FAIL=1; GLOBAL_FAIL=1
     fi
   done

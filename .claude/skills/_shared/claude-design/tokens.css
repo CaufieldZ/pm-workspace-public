@@ -1,0 +1,61 @@
+/* PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 */
+/* Claude Design tokens — pm-workspace 共享 CSS 变量
+ * 深色主题 + HTX 蓝 accent（#2F6CF2）
+ *
+ * 字体引入（推荐）：
+ * - CSS 内：@import url('../../_shared/fonts/claude-design.css');
+ * - HTML head（脱离 skill 目录时用直接 CDN URL，与 _shared/fonts/claude-design.css 保持一致，改字体同步改两处）：
+ * <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@300;400;500;600;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Inter:wght@100;200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+ */
+
+:root {
+  /* ── 深色底色 ── */
+  --cd-bg:      #000000;
+  --cd-ink:     #FFFFFF;
+  --cd-ink-82:  rgba(255, 255, 255, 0.82);
+  --cd-ink-58:  rgba(255, 255, 255, 0.58);
+  --cd-ink-40:  rgba(255, 255, 255, 0.40);
+  --cd-ink-18:  rgba(255, 255, 255, 0.18);
+  --cd-hairline: rgba(255, 255, 255, 0.12);
+
+  /* ── HTX / fintech 通用蓝 accent ── */
+  --cd-accent:      #2F6CF2;
+  --cd-accent-deep: #1F54D6;
+  --cd-accent-glow: rgba(47, 108, 242, 0.18);
+
+  /* ── 浅色模式（cream 背景，用于后台 / PPT 等）── */
+  --cd-light-bg:   #F5F4F0;
+  --cd-light-ink:  #1A1918;
+  --cd-light-dim:  #8B867E;
+  --cd-light-hair: rgba(0, 0, 0, 0.08);
+
+  /* ── 字体 ── */
+  --cd-serif-cn: "Noto Serif SC", "Source Han Serif SC", serif;
+  --cd-serif-en: "Source Serif 4", Georgia, serif;
+  --cd-sans:     "Inter", -apple-system, "PingFang SC", system-ui, sans-serif;
+  --cd-mono:     "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+
+  /* ── 间距系统（8pt 网格）── */
+  --sp-1: 8px;
+  --sp-2: 16px;
+  --sp-3: 24px;
+  --sp-4: 32px;
+  --sp-6: 48px;
+  --sp-8: 64px;
+
+  /* ── 圆角 ── */
+  --radius-sm:  4px;
+  --radius-md:  8px;
+  --radius-lg: 16px;
+}
+
+/* 浅色模式作用域，套在 .theme-cd-light 或 body.light 上 */
+.theme-cd-light {
+  --cd-bg:      var(--cd-light-bg);
+  --cd-ink:     var(--cd-light-ink);
+  --cd-ink-82:  rgba(26, 25, 24, 0.82);
+  --cd-ink-58:  rgba(26, 25, 24, 0.58);
+  --cd-ink-40:  rgba(26, 25, 24, 0.40);
+  --cd-ink-18:  rgba(26, 25, 24, 0.18);
+  --cd-hairline: rgba(0, 0, 0, 0.10);
+}

@@ -26,6 +26,16 @@ consumed_by: []
 
 ## 执行步骤
 
+### Step 0：读取评审框架（每次执行前必读）
+
+```
+view .claude/skills/_shared/claude-design/review-rubric.md
+```
+
+> `review-rubric.md` 定义 PM 5 维度评审：**场景覆盖 / 信息层级 / 规则完备 / 端能力 / 风险**。
+> 每维度 1-10 分标准 + 产出物侧重表 + Keep / Fix / Quick Wins 输出模板。
+> cross-check 完成后，输出报告必须按此模板格式，5 维度各给分并说明。
+
 ### Step 1：动态盘点产出物
 
 #### 1.1 构建前缀映射

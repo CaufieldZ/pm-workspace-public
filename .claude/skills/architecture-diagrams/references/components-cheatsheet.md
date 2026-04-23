@@ -230,7 +230,7 @@
 <path d="M215,210 Q502,196 790,210" fill="none" stroke="#d97706" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#aa)"/>
 
 <!-- 文字标注（放在箭头旁） -->
-<text x="248" y="148" fill="#3b82f6" font-size="9" font-family="IBM Plex Mono" text-anchor="middle">标注</text>
+<text x="248" y="148" fill="#3b82f6" font-size="9" font-family="JetBrains Mono" text-anchor="middle">标注</text>
 ```
 
 ### 3.3 坐标计算技巧
@@ -254,7 +254,7 @@
 ```html
 <!-- 通用模板：cx/cy 按节点位置调整 -->
 <circle cx="CX" cy="CY" r="16" fill="BRAND_COLOR"/>
-<text x="CX" y="CY+3.5" text-anchor="middle" fill="#fff" font-size="10" font-weight="700" font-family="'Plus Jakarta Sans','HarmonyOS Sans SC',sans-serif">ABBR</text>
+<text x="CX" y="CY+3.5" text-anchor="middle" fill="#fff" font-size="10" font-weight="700" font-family="'Noto Sans SC','Inter',sans-serif">ABBR</text>
 ```
 
 ### 4.2 AI / LLM

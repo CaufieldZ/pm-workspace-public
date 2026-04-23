@@ -148,7 +148,7 @@
       <div style="font-size:10px;color:var(--text3);">次要信息</div>
     </div>
     <span style="font-size:11px;color:var(--text2);">内容</span>
-    <span style="font-size:11px;font-weight:700;color:var(--green);font-family:'IBM Plex Mono',monospace;">1,247</span>
+    <span style="font-size:11px;font-weight:700;color:var(--green);font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace;">1,247</span>
     <span style="font-size:10px;padding:2px 6px;border-radius:3px;background:#fef2f2;color:var(--red);font-weight:700;">🔴 状态</span>
     <div style="display:flex;gap:6px;">
       <span style="font-size:10px;color:var(--blue);font-weight:600;">操作A</span>
@@ -166,11 +166,11 @@
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
     <div>
       <div style="font-size:10px;color:var(--text3);">指标 A</div>
-      <div style="font-size:16px;font-weight:900;color:var(--text);font-family:'IBM Plex Mono',monospace;">1,247</div>
+      <div style="font-size:16px;font-weight:900;color:var(--text);font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace;">1,247</div>
     </div>
     <div>
       <div style="font-size:10px;color:var(--text3);">指标 B</div>
-      <div style="font-size:16px;font-weight:900;color:var(--green);font-family:'IBM Plex Mono',monospace;">+23%</div>
+      <div style="font-size:16px;font-weight:900;color:var(--green);font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace;">+23%</div>
     </div>
   </div>
 </div>
@@ -210,7 +210,7 @@
   <div style="margin-bottom:10px;">
     <div style="font-size:10px;color:var(--text3);margin-bottom:3px;font-weight:600;">推流地址</div>
     <div style="display:flex;align-items:center;gap:6px;">
-      <div style="flex:1;background:#fff;border:1.5px solid var(--border);border-radius:6px;padding:8px 10px;font-size:11px;color:var(--text);font-family:'IBM Plex Mono',monospace;word-break:break-all;">rtmp://example.com/stream/</div>
+      <div style="flex:1;background:#fff;border:1.5px solid var(--border);border-radius:6px;padding:8px 10px;font-size:11px;color:var(--text);font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace;word-break:break-all;">rtmp://example.com/stream/</div>
       <div style="padding:6px 10px;border-radius:6px;background:var(--blue);color:#fff;font-size:10px;font-weight:700;flex-shrink:0;">复制</div>
     </div>
   </div>

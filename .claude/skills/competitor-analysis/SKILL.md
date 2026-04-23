@@ -168,7 +168,13 @@ consumed_by: []
 
 ## 执行步骤
 
-### Step 1：收集信息
+### Step 1：收集信息 + 读取素材门槛
+
+**采集前必读素材质量规范**：
+```
+view .claude/skills/_shared/claude-design/asset-quality-rubric.md
+```
+> 遵循 5-10-2-8 规则（5 轮搜索 / 10 候选 / 选 2 个 / 评分 ≥ 8 分），低分素材进备选库不进报告。
 
 向用户确认（缺什么问什么，不编造）：
 

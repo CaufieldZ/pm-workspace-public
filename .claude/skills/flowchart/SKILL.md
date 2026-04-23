@@ -129,6 +129,7 @@ scripts:
 **按需读**:
 - `.claude/skills/flowchart/references/flowchart-core.js`(调试节点类型/路由逻辑时)
 - `.claude/skills/flowchart/references/flowchart.css`(调整白板样式时)
+- `.claude/skills/_shared/claude-design/anti-ai-slop.md`(产出前 grep「决策速查」段，确认无 slop 视觉陷阱)
 
 ### Step 2:梳理流程数据
 

@@ -4,96 +4,112 @@
  * ═══════════════════════════════════════════════════════════════════════════
  * 架构图集 CSS 模板 · Architecture Diagrams CSS Template
  * 用法：完整复制到 <style> 标签内，禁止重写
- * 版本：v2.0 · 基于 diagrams_custody_v4.html 提取
+ * 版本：v3.0 · Claude Design 深色主题 + HTX 蓝 accent
+ * Fonts（HTML head 引入）：Noto Serif SC · Source Serif 4 · JetBrains Mono
  * ═══════════════════════════════════════════════════════════════════════════
  */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap');
-@import url('https://cdn.jsdelivr.net/npm/harmonyos-sans-sc@1.0.0/css/harmonyos-sans-sc.min.css');
+@import url('../../_shared/fonts/claude-design.css');
+
+/* ── 内联 Claude Design token 兜底 ── */
+:root {
+  --arch-bg:       #000000;
+  --arch-surface:  rgba(255,255,255,0.04);
+  --arch-surface2: rgba(255,255,255,0.07);
+  --arch-ink:      #FFFFFF;
+  --arch-ink-82:   rgba(255,255,255,0.82);
+  --arch-ink-58:   rgba(255,255,255,0.58);
+  --arch-ink-40:   rgba(255,255,255,0.40);
+  --arch-hair:     rgba(255,255,255,0.12);
+  --arch-accent:   #2F6CF2;
+  --arch-mono:     "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  --arch-serif-cn: "Noto Serif SC", serif;
+}
+
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'HarmonyOS Sans SC','Plus Jakarta Sans',system-ui,sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh;}
+body{font-family:var(--arch-serif-cn),'Noto Sans SC',system-ui,sans-serif;background:var(--arch-bg);color:var(--arch-ink-82);min-height:100vh;}
 
 /* ════ TAB BAR ════ */
-.tb{background:#fff;border-bottom:1px solid #e2e8f0;padding:0 12px;display:flex;flex-wrap:wrap;gap:0;position:sticky;top:0;z-index:100;}
-.t{padding:13px 10px;font-size:10.5px;font-weight:600;color:#94a3b8;cursor:pointer;border-bottom:2.5px solid transparent;transition:all .2s;user-select:none;}
-.t:hover{color:#475569;}
-.t.a{color:#0f172a;border-bottom-color:#0f172a;}
-.t .i{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;font-size:9px;font-weight:700;margin-right:3px;background:#f1f5f9;color:#64748b;}
-.t.a .i{background:#0f172a;color:#fff;}
+.tb{background:rgba(255,255,255,0.03);border-bottom:1px solid var(--arch-hair);padding:0 12px;display:flex;flex-wrap:wrap;gap:0;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);}
+.t{padding:13px 10px;font-size:10.5px;font-weight:500;font-family:var(--arch-mono);letter-spacing:0.06em;color:var(--arch-ink-40);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;user-select:none;}
+.t:hover{color:var(--arch-ink-58);}
+.t.a{color:var(--arch-ink);border-bottom-color:var(--arch-accent);}
+.t .i{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;font-size:9px;font-weight:700;margin-right:3px;background:var(--arch-surface);color:var(--arch-ink-40);}
+.t.a .i{background:var(--arch-accent);color:#fff;}
 
 /* ════ PAGE WRAP ════ */
-.pw{display:none;background:#fff;padding:28px 32px;}
+.pw{display:none;background:var(--arch-bg);padding:28px 32px;}
 .pw.a{display:block;}
 .pg{max-width:1120px;margin:0 auto;}
 
 /* ════ 标题系统 ════ */
-h1{font-size:19px;font-weight:900;color:#0f172a;margin-bottom:2px;}
-.sub{font-size:11.5px;color:#94a3b8;margin-bottom:18px;}
-.rl{height:2px;background:linear-gradient(90deg,#0f172a 160px,#e2e8f0 160px);margin-bottom:22px;}
-.st{font-size:13px;font-weight:700;color:#1e293b;margin-bottom:10px;}
+h1{font-family:var(--arch-serif-cn);font-size:28px;font-weight:900;color:var(--arch-ink);margin-bottom:4px;text-wrap:balance;}
+.sub{font-family:var(--arch-mono);font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--arch-accent);margin-bottom:24px;}
+.rl{height:1px;background:var(--arch-hair);margin-bottom:22px;}
+.st{font-family:var(--arch-serif-cn);font-size:14px;font-weight:700;color:var(--arch-ink-82);margin-bottom:10px;}
 
 /* ════ 布局工具 ════ */
 .fx{display:flex;gap:12px;} .fx>*{flex:1;}
 .mt{margin-top:14px;} .mb{margin-bottom:14px;} .mb2{margin-bottom:20px;}
 
 /* ════ 卡片 ════ */
-.cd{padding:14px;border-radius:8px;}
+.cd{padding:14px;border-radius:4px;background:var(--arch-surface);border:1px solid var(--arch-hair);}
 
 /* ════ TAG 标签 ════ */
-.tg{display:inline-block;font-size:8.5px;font-weight:700;padding:1px 5px;border-radius:3px;vertical-align:middle;}
-.tg-k{background:#dcfce7;color:#15803d;}  /* 保留 */
-.tg-n{background:#cffafe;color:#0e7490;}  /* 新建 */
-.tg-w{background:#fef3c7;color:#b45309;}  /* 复用/Warning */
-.tg-c{background:#fee2e2;color:#b91c1c;}  /* 关键/Critical */
-.tg-p{background:#ede9fe;color:#6d28d9;}  /* Phase */
+.tg{display:inline-block;font-family:var(--arch-mono);font-size:8.5px;font-weight:500;letter-spacing:0.08em;padding:1px 5px;border-radius:2px;vertical-align:middle;}
+.tg-k{background:rgba(14,203,129,0.12);color:#0ECB81;}   /* 保留 */
+.tg-n{background:rgba(47,108,242,0.14);color:#5B8FF9;}   /* 新建 */
+.tg-w{background:rgba(210,153,34,0.14);color:#D29922;}   /* 复用/Warning */
+.tg-c{background:rgba(246,70,93,0.14);color:#F6465D;}    /* 关键/Critical */
+.tg-p{background:rgba(139,92,246,0.14);color:#a78bfa;}   /* Phase */
 
 /* ════ CALLOUT 提示框 ════ */
-.co{border-radius:6px;padding:11px 14px;font-size:11px;line-height:1.7;border-left:3px solid;}
-.co-b{border-color:#3b82f6;background:#eff6ff;color:#1e40af;}  /* 蓝·信息 */
-.co-a{border-color:#d97706;background:#fffbeb;color:#92400e;}  /* 琥珀·警告 */
-.co-r{border-color:#dc2626;background:#fef2f2;color:#991b1b;}  /* 红·风险 */
-.co-g{border-color:#16a34a;background:#f0fdf4;color:#166534;}  /* 绿·成功 */
-.co-v{border-color:#7c3aed;background:#f5f3ff;color:#5b21b6;}  /* 紫·总结 */
-.co strong{font-weight:600;}
+.co{border-radius:4px;padding:11px 14px;font-size:11px;line-height:1.7;border-left:2px solid;}
+.co-b{border-color:var(--arch-accent);background:rgba(47,108,242,0.08);color:rgba(255,255,255,0.75);}
+.co-a{border-color:#D29922;background:rgba(210,153,34,0.08);color:rgba(255,255,255,0.75);}
+.co-r{border-color:#F6465D;background:rgba(246,70,93,0.08);color:rgba(255,255,255,0.75);}
+.co-g{border-color:#0ECB81;background:rgba(14,203,129,0.08);color:rgba(255,255,255,0.75);}
+.co-v{border-color:#a78bfa;background:rgba(139,92,246,0.08);color:rgba(255,255,255,0.75);}
+.co strong{font-weight:700;color:var(--arch-ink);}
 
 /* ════ 步骤编号 ════ */
-.sn{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;font-size:9px;font-weight:700;flex-shrink:0;margin-right:3px;}
-.sn-b{background:#dbeafe;color:#2563eb;}   /* 蓝 */
-.sn-a{background:#fef3c7;color:#b45309;}   /* 琥珀 */
-.sn-p{background:#ede9fe;color:#7c3aed;}   /* 紫 */
-.sn-g{background:#dcfce7;color:#15803d;}   /* 绿 */
-.sn-r{background:#fee2e2;color:#b91c1c;}   /* 红 */
+.sn{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;font-family:var(--arch-mono);font-size:9px;font-weight:700;flex-shrink:0;margin-right:3px;}
+.sn-b{background:rgba(47,108,242,0.18);color:var(--arch-accent);}
+.sn-a{background:rgba(210,153,34,0.18);color:#D29922;}
+.sn-p{background:rgba(139,92,246,0.18);color:#a78bfa;}
+.sn-g{background:rgba(14,203,129,0.18);color:#0ECB81;}
+.sn-r{background:rgba(246,70,93,0.18);color:#F6465D;}
 
 /* ════ SECTION 分隔线样式 ════ */
-.sec-blue b{background:#eff6ff;color:#2563eb;}
-.sec-amber b{background:#fffbeb;color:#b45309;}
-.sec-purple b{background:#f5f3ff;color:#7c3aed;}
-.sec-green b{background:#f0fdf4;color:#15803d;}
-.sec-red b{background:#fef2f2;color:#b91c1c;}
+.sec-blue b{background:rgba(47,108,242,0.12);color:var(--arch-accent);}
+.sec-amber b{background:rgba(210,153,34,0.12);color:#D29922;}
+.sec-purple b{background:rgba(139,92,246,0.12);color:#a78bfa;}
+.sec-green b{background:rgba(14,203,129,0.12);color:#0ECB81;}
+.sec-red b{background:rgba(246,70,93,0.12);color:#F6465D;}
 
 /* ════ 表格 ════ */
 table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:14px;}
-table th{padding:7px 10px;text-align:left;border-bottom:2px solid #cbd5e1;background:#f1f5f9;}
-table td{padding:7px 10px;border-bottom:1px solid #e2e8f0;}
-table tr:nth-child(even){background:#fafafa;}
+table th{padding:7px 10px;text-align:left;border-bottom:1px solid var(--arch-hair);background:var(--arch-surface2);color:var(--arch-ink-58);font-family:var(--arch-mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;}
+table td{padding:7px 10px;border-bottom:1px solid var(--arch-hair);color:var(--arch-ink-58);}
+table tr:nth-child(even){background:var(--arch-surface);}
 
 /* ════ SECTION 分隔线 ════ */
 .sec{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
-.sec b{font-size:10px;font-weight:700;letter-spacing:1.5px;padding:3px 10px;border-radius:4px;white-space:nowrap;}
-.sec .sl{flex:1;height:1px;background:#e2e8f0;}
-.sec em{font-size:10px;color:#94a3b8;font-style:italic;}
+.sec b{font-family:var(--arch-mono);font-size:10px;font-weight:500;letter-spacing:0.14em;text-transform:uppercase;padding:3px 10px;border-radius:3px;white-space:nowrap;}
+.sec .sl{flex:1;height:1px;background:var(--arch-hair);}
+.sec em{font-size:10px;color:var(--arch-ink-40);font-style:italic;}
 
 /* ════ 代码 ════ */
-code{font-family:'IBM Plex Mono',monospace;font-size:10px;background:rgba(0,0,0,0.04);padding:1px 4px;border-radius:2px;}
+code{font-family:var(--arch-mono);font-size:10px;background:var(--arch-surface);padding:1px 4px;border-radius:2px;color:var(--arch-ink-82);}
 
-/* ════ 地址高亮 ════ */
-.addr{display:inline-block;padding:4px 10px;border-radius:5px;border:2px solid #dc2626;background:#fef2f2;font-size:11px;font-weight:700;color:#b91c1c;letter-spacing:0.3px;}
+/* ════ 地址高亮（核心系统）════ */
+.addr{display:inline-block;padding:4px 10px;border-radius:3px;border:1px solid var(--arch-accent);background:rgba(47,108,242,0.1);font-family:var(--arch-mono);font-size:11px;font-weight:700;color:var(--arch-accent);letter-spacing:0.3px;}
 
 /* ════ 图例 ════ */
-.leg{display:flex;gap:16px;margin-top:12px;padding-top:12px;border-top:1px solid #f1f5f9;flex-wrap:wrap;}
-.leg-i{display:flex;align-items:center;gap:4px;font-size:10px;color:#64748b;}
+.leg{display:flex;gap:16px;margin-top:12px;padding-top:12px;border-top:1px solid var(--arch-hair);flex-wrap:wrap;}
+.leg-i{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--arch-ink-40);}
 .leg-s{width:20px;height:10px;border-radius:2px;border:1.5px solid;}
 
-/* ════ 绝对定位节点（保留备用，低频使用） ════ */
-.n{position:absolute;border-radius:7px;border:1.5px solid;padding:9px 12px;font-size:11px;line-height:1.5;}
-.n b{font-size:12px;font-weight:700;display:flex;align-items:center;gap:4px;margin-bottom:2px;}
-.n small{color:#64748b;font-size:10.5px;}
+/* ════ 绝对定位节点（保留备用，低频使用）════ */
+.n{position:absolute;border-radius:4px;border:1px solid var(--arch-hair);background:var(--arch-surface);padding:9px 12px;font-size:11px;line-height:1.5;}
+.n b{font-family:var(--arch-serif-cn);font-size:12px;font-weight:700;display:flex;align-items:center;gap:4px;margin-bottom:2px;color:var(--arch-ink);}
+.n small{color:var(--arch-ink-40);font-size:10.5px;}

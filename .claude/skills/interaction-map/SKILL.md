@@ -291,6 +291,16 @@ view .claude/skills/interaction-map/references/components-core.md
 - Scene 含 Feed 极简卡/帖子列表/$币种胶囊/交易 CTA → `view .claude/skills/interaction-map/references/biz-social.md`
 - Scene 含直播间/OBS/连麦/策略卡/主播工作台 → `view .claude/skills/interaction-map/references/biz-livestream.md`
 
+**美学规范（产出前 grep 决策速查表段）：**
+```
+grep -A 20 "决策速查" .claude/skills/_shared/claude-design/anti-ai-slop.md
+```
+
+**Claude Design opt-in 主题（用户指定 `--theme cd` 时）：**
+- gen_imap_skeleton.py 加 `--theme cd` flag，生成的 HTML body 加 `class="theme-cd"`
+- CSS 中 `.theme-cd` 作用域已定义，自动覆盖 Binance 默认色板
+- 默认不加（保留 Binance 深色系），只在用户明确要求时使用
+
 ### gen_imap_skeleton.py API 速查
 
 骨架生成只需调用一个函数，**不需要读源码**：
@@ -419,7 +429,7 @@ generate_skeleton(project, legends, parts, output_path)
 - [ ] **触摸目标** — 主操作按钮 ≥ 44px，无纯文字链跳转
 - [ ] **对比度 + 涨跌色** — 关键数字 ≥ 4.5:1，次级 ≥ 3:1；涨跌用 ↑↓/+- 辅助，不仅靠颜色
 - [ ] **Safe Area + 弹窗** — 底部 ≥ 34px；弹窗有 ✕ + 遮罩关闭
-- [ ] **导航 + 数据状态** — Tab ≤ 5；异步区域标注 loading；数字列 IBM Plex Mono 右对齐
+- [ ] **导航 + 数据状态** — Tab ≤ 5；异步区域标注 loading；数字列 JetBrains Mono 右对齐
 
 **强制验证脚本**（自检最后一步，不可跳过）：
 ```bash

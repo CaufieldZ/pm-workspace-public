@@ -4,7 +4,7 @@
    GLOBAL RESET & GNAV（全局导航）
 ═══════════════════════════════════════ */
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:#f0f2f5;font-family:'HarmonyOS Sans SC','Plus Jakarta Sans',system-ui,sans-serif;font-size:13px;color:#1e293b;min-height:100vh;}
+body{background:#f0f2f5;font-family:'Noto Sans SC','Inter',system-ui,sans-serif;font-size:13px;color:#1e293b;min-height:100vh;}
 
 .gnav{position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,#0a0f1a,#111827);border-bottom:1px solid rgba(45,129,255,.15);display:flex;align-items:center;padding:0 32px;height:52px;gap:20px;box-shadow:0 2px 12px rgba(0,0,0,.3);}
 .gnav-logo{font-size:15px;font-weight:800;color:#e2e8f0;white-space:nowrap;display:flex;align-items:center;gap:8px;}
@@ -252,14 +252,25 @@ body{background:#f0f2f5;font-family:'HarmonyOS Sans SC','Plus Jakarta Sans',syst
 
 /* ═══════════════════════════════════════
    App Mockup 手机壳（device: "phone" 时启用）
+   升级至精细设备数值（iPhone 15 Pro 规格）：
+   · 圆角 48px · 状态栏高 54px · Dynamic Island 124×36
+   · Home Indicator 140×5 · 内容左右 padding 12px
 ═══════════════════════════════════════ */
-.app-mock{width:375px;height:812px;margin:24px auto;border-radius:44px;border:3px solid #2B3139;background:#0B0E11;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);display:flex;flex-direction:column;}
-.app-mock .ph-status{display:flex;justify-content:space-between;padding:12px 28px 6px;font-size:12px;color:#848E9C;flex-shrink:0;}
-.app-mock .p-nav{position:relative;top:auto;flex-shrink:0;padding:0 16px;height:40px;border-radius:0;}
+.app-mock{width:375px;height:812px;margin:24px auto;border-radius:48px;border:3px solid #2B3139;background:#0B0E11;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06);display:flex;flex-direction:column;}
+
+/* Dynamic Island 刘海岛 */
+.app-mock::before{content:'';position:absolute;top:10px;left:50%;transform:translateX(-50%);width:124px;height:36px;background:#000;border-radius:20px;z-index:10;pointer-events:none;}
+
+/* 状态栏：高度升级到 54px 以腾出 Dynamic Island 空间 */
+.app-mock .ph-status{display:flex;justify-content:space-between;padding:54px 28px 6px;font-size:12px;color:#848E9C;flex-shrink:0;}
+.app-mock .p-nav{position:relative;top:auto;flex-shrink:0;padding:0 12px;height:40px;border-radius:0;}
 .app-mock .p-nav-logo b{font-size:14px;}
 .app-mock .p-btn-out,.app-mock .p-btn-blue{font-size:11px;padding:4px 10px;}
 .app-mock .p-page{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
-.app-mock .home-ind{width:134px;height:5px;background:#EAECEF;border-radius:3px;margin:6px auto 8px;flex-shrink:0;}
+
+/* Home Indicator：升级至 140×5 */
+.app-mock .home-ind{width:140px;height:5px;background:rgba(255,255,255,0.3);border-radius:3px;margin:8px auto 10px;flex-shrink:0;}
+
 /* App 内抽屉——底部上推 */
 .app-mock .p-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:500;display:none;}
 .app-mock .p-overlay.show{display:block;}
@@ -267,8 +278,41 @@ body{background:#f0f2f5;font-family:'HarmonyOS Sans SC','Plus Jakarta Sans',syst
 .app-mock .p-drawer.show{transform:translateY(0);}
 .app-mock .p-drawer-bar{background:#1B1D22;border-bottom:1px solid #2B3139;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:16px 16px 0 0;}
 .app-mock .p-drawer-bar h3{font-size:14px;}
-/* App 内卡片/网格适配 */
+
+/* App 内卡片/网格适配，padding 统一 12px */
 .app-mock .p-grid{grid-template-columns:1fr;gap:8px;}
 .app-mock .p-card{padding:12px;}
-.app-mock .p-header{padding:16px 16px 12px;flex-direction:column;gap:8px;}
+.app-mock .p-header{padding:12px 12px 10px;flex-direction:column;gap:8px;}
 .app-mock .p-carousel{width:100%;}
+
+/* ═══════════════════════════════════════
+   Web 后台 Claude Design 深色主题（.theme-cd 作用域）
+   gen_proto_skeleton.py 检测后台类型时默认应用
+   保留浅色 Arco 主题（不挂 class 时默认走原有变量）
+═══════════════════════════════════════ */
+.theme-cd {
+  --bg:       #000000;
+  --white:    rgba(255,255,255,0.04);
+  --border:   rgba(255,255,255,0.12);
+  --border-l: rgba(255,255,255,0.08);
+  --blue:     #2F6CF2;
+  --blue-l:   rgba(47,108,242,0.12);
+  --blue-d:   #1F54D6;
+  --green:    #0ECB81;
+  --green-l:  rgba(14,203,129,0.10);
+  --red:      #F6465D;
+  --red-l:    rgba(246,70,93,0.10);
+  --orange:   #D29922;
+  --orange-l: rgba(210,153,34,0.10);
+  --text:     rgba(255,255,255,0.90);
+  --text2:    rgba(255,255,255,0.70);
+  --text3:    rgba(255,255,255,0.45);
+  --text4:    rgba(255,255,255,0.20);
+  --sidebar:  #0a0a0a;
+  --sidebar-a: #2F6CF2;
+}
+.theme-cd body { background: #000000; color: rgba(255,255,255,0.82); }
+.theme-cd .cd  { background: rgba(255,255,255,0.04); }
+.theme-cd .tb  { background: rgba(255,255,255,0.03); backdrop-filter: blur(12px); }
+.theme-cd .modal { background: #0a0a0a; }
+.theme-cd .info  { background: rgba(255,255,255,0.03); }

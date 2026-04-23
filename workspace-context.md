@@ -108,6 +108,8 @@ pm-workspace/
 | test-cases | pipeline | .md | tc- | [scene-list, prd] | [cross-check] |
 | meeting-autopilot | tool | 对话内 | — | [] | [] |
 
+> **`_shared/claude-design/`**：跨 skill 共享资产目录（token / 工具类 / 内容规范），不是 skill，不参与 pipeline，文件见 [`.claude/skills/_shared/README.md`](.claude/skills/_shared/README.md)。被上述 10 个 skill 引用。
+
 ### Skill 执行模式（通用）
 
 所有 HTML 产出物 > 200 行的 Skill 统一走三步流程（详见 `pm-workflow.md`「HTML 分步生成通用规则」）：

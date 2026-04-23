@@ -93,7 +93,7 @@ styles: {
 | 正文 | Arial | 22 | 11pt | #333333 | — |
 | 表头文字 | Arial | 18 | 9pt | #FFFFFF | ✓ |
 | 表格正文 | Arial | 18 | 9pt | #333333 | — |
-| 代码/字段名 | IBM Plex Mono | 18 | 9pt | #C7254E | — |
+| 代码/字段名 | JetBrains Mono | 18 | 9pt | #C7254E | — |
 | 斜体说明 | Arial | 22 | 11pt | #888888 | — |
 | 标注(变更) | Arial | 20 | 10pt | #D97706 | ✓ |
 
@@ -210,7 +210,7 @@ width: { size: 12960, type: WidthType.DXA },
 columnWidths: [3880, 3880, 5200],
 
 // 事件名用等宽字体
-new TextRun({ text: "ac_page_view", font: "IBM Plex Mono", size: 20, color: "C7254E" })
+new TextRun({ text: "ac_page_view", font: "JetBrains Mono", size: 20, color: "C7254E" })
 ```
 
 ### 组件复用矩阵
@@ -245,7 +245,7 @@ width: { size: 12960, type: WidthType.DXA },
 columnWidths: [1660, 4990, 6310],
 
 // 路由列用等宽字体
-new TextRun({ text: "/activity-center", font: "IBM Plex Mono", size: 20 })
+new TextRun({ text: "/activity-center", font: "JetBrains Mono", size: 20 })
 ```
 
 ## 列表样式

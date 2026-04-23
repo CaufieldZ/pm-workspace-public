@@ -235,9 +235,18 @@ python3 scripts/md_to_confluence.py <md路径> --update-id <页面id>
 - Write 工具连续失败 2 次 → 停下来，将当前函数拆为 2 个更小的函数，不要重试相同内容
 - 禁止在修复 SyntaxError 时凭记忆改代码，必须先 `python3 -c "import ast; ..."` 定位具体行号
 - **组件完整性**：交互大图 fill 函数必须包含全部 9 类组件（见 interaction-map SKILL.md「Fill 必需组件清单」），每 Scene 至少 1 个 `.aw` + 1 个 `.anno` + 1 个 `.ann-tag` + 1 个 `.flow-note`
-- **字体栈 CJK 优先**：所有 HTML 产出物 body font-family 必须 `'HarmonyOS Sans SC','Plus Jakarta Sans',system-ui,sans-serif`，禁止英文字体排在 CJK 前面
+- **字体栈 CJK 优先**：所有 HTML 产出物 body font-family 必须 `'Noto Sans SC','Inter',system-ui,sans-serif`（正文）或 `'Noto Serif SC','Source Serif 4',Georgia,serif`（display），禁止英文字体排在 CJK 前面
 - **排版三级层次**：font-weight 至少使用 3 级（900 标题/PART 头 → 700 卡片标题/按钮 → 400 正文说明），禁止全文只用 700
 - **填充后逐 Scene 自检**：每完成一个 Scene 后必须 grep 验证 `.aw` / `.anno` / `.ann-tag` / `.flow-note` 计数，任一为 0 则返工后再继续下一个 Scene
+
+**美学硬底线（HTML 产出物通用，详见 `_shared/claude-design/anti-ai-slop.md`）**：
+
+- 反 AI slop 六禁：① 全屏渐变背景（rainbow/mesh gradient）② Emoji 装饰标题/列表（🚀⚡️✨🎯💡✅）③ 圆角卡片 + 左 border accent（`border-radius + border-left: 4px solid`，AI 味签名）④ SVG 画人物/场景/插画（用 `.cd-placeholder` 代替）⑤ 烂大街字体（Inter/Roboto/Space Grotesk/Fraunces 作 CJK 主字体）⑥ 每个 card/feature 都带 icon
+- 字号：标题至少正文 2.5 倍（正文 16px → 标题 ≥ 48px）
+- 颜色：最多 1 主 + 1 辅 + 1 强调 + 灰阶，禁凭空调色；用 `--cd-accent: #2F6CF2`
+- 留白 ≥ 40% 总面积；间距只用 8pt 网格（8/16/24/32/48/64px）
+- 无真数据用 placeholder，禁编造 stats/quote/metric cards
+- Token + 工具类引用：HTML head 引 Google Fonts（Noto Serif SC + Source Serif 4 + JetBrains Mono）；CSS 引 `_shared/claude-design/tokens.css` + `utilities.css`
 
 ---
 
@@ -350,15 +359,21 @@ python3 scripts/md_to_confluence.py <md路径> --update-id <页面id>
 ## 三、设备规范
 
 设备尺寸、字体、配色以各 skill 的 ref CSS 为准。通用约定：
-- App 壳：375×812px，border-radius: 44px，深色底
-- 正文字体：`'HarmonyOS Sans SC','Plus Jakarta Sans',system-ui,sans-serif`
-- 等宽字体：`'IBM Plex Mono', monospace`（PPT skill 使用 `JetBrains Mono`，视觉风格需要）
+- App 壳：375×812px，border-radius: 44px，深色底（iPhone 15 Pro 精细数值详见 `prototype.css`：Dynamic Island 124×36、状态栏 54、Home Indicator 140×5、圆角 48）
 - 弹窗：全屏遮罩 + 居中卡片，遮罩点击 / ✕ 均可关闭
 
+**字体（全 skill 统一一套，视觉系别只在配色）**：
+- 正文 sans：`'Noto Sans SC','Inter',system-ui,sans-serif`
+- display serif：`'Noto Serif SC','Source Serif 4',Georgia,serif`（hero 标题 / 卡片大标题）
+- 等宽：`'JetBrains Mono','SF Mono',ui-monospace,monospace`
+- CJK 优先铁律：任何字体栈，中文字体必须排在英文字体前
+- Google Fonts 统一 @import：`Noto+Serif+SC:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500;700;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Inter:wght@100;200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500`
+
 **配色分类**（设计意图，非冲突）：
-- 前台产出物（交互大图、架构图、前台原型）：深色系（`--bg: #0B0E11`，绿 `#0ECB81`，红 `#F6465D`）
-- 后台产出物（后台原型、管理端）：Arco Design 浅色系（绿 `#00B42A`，红 `#F53F3F`）
-- 各 skill ref CSS 按此分类独立维护色值，不需要统一为同一套
+- 前台 App / 交易所视觉（交互大图、移动端原型）：深色系（`--bg: #0B0E11`，涨绿 `#0ECB81`，跌红 `#F6465D`，**金融语义**）
+- Claude Design 系（ppt / flowchart / architecture-diagrams / Web 后台 / 方案文档）：纯黑 `#000` + 4 级透明白 + `--cd-accent #2F6CF2`（HTX fintech 蓝），token 定义见 `_shared/claude-design/tokens.css`
+- 语义色（跨主题通用，单独使用不构成主题）：成功 `#00B42A` / 失败 `#F53F3F`（Arco Design，用于状态标「已上线/下线」、审批节点「通过/拒绝」、必填星号、删除按钮）
+- 各 skill ref CSS 按定位选主题，语义色作为附加层叠加，不需要整套色板统一
 
 ---
 

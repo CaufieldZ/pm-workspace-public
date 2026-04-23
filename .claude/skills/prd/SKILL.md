@@ -71,7 +71,9 @@ scripts:
 **必读（SKILL 层规则）：**
 ```
 view .claude/skills/prd/references/prd-template.md
+view .claude/skills/_shared/claude-design/content-slop-ban.md
 ```
+> `content-slop-ban.md` 决定「不写什么」：禁编造数据、禁 filler content、印刷 Scale 规范。每次写 PRD 前必过一遍禁止列表。
 
 **必读（项目层真相源）：**
 ```

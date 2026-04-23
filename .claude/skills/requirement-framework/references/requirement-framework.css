@@ -1,9 +1,8 @@
 /* PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 */
 /* pm-ws-canary-236a5364 */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap');
-@import url('https://cdn.jsdelivr.net/npm/harmonyos-sans-sc@1.0.0/css/harmonyos-sans-sc.min.css');
+@import url('../../_shared/fonts/claude-design.css');
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'HarmonyOS Sans SC','Plus Jakarta Sans',system-ui,sans-serif;background:#f8f9fb;color:#1e293b;min-height:100vh;}
+body{font-family:'Noto Sans SC','Inter',system-ui,sans-serif;background:#f8f9fb;color:#1e293b;min-height:100vh;}
 
 /* ── 顶部 Header ── */
 .hd{background:#fff;border-bottom:1px solid #e2e8f0;padding:20px 36px;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,.04);}
@@ -22,7 +21,7 @@ body{font-family:'HarmonyOS Sans SC','Plus Jakarta Sans',system-ui,sans-serif;ba
 .summary{display:flex;gap:14px;margin-bottom:24px;}
 .scard{flex:1;background:#fff;border-radius:10px;border:1px solid #e2e8f0;padding:16px 20px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
 .scard .label{font-size:10px;color:#94a3b8;font-weight:700;letter-spacing:.5px;margin-bottom:4px;}
-.scard .val{font-size:22px;font-weight:900;color:#0f172a;font-family:'IBM Plex Mono',monospace;}
+.scard .val{font-size:22px;font-weight:900;color:#0f172a;font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace;}
 .scard .desc{font-size:10px;color:#64748b;margin-top:4px;line-height:1.5;}
 
 /* ── 需求明细表 ── */

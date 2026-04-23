@@ -1,6 +1,8 @@
 /* PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 */
 /* pm-ws-canary-236a5364 */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=IBM+Plex+Mono:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;0,9..40,900;1,9..40,400&display=swap');
+/* ── Opt-in Claude Design 主题：gen 脚本加 --theme Claude Design 时在 body 上挂 class="theme-cd"
+   默认 Binance 深色系保持不变，不影响存量产出物 ── */
+@import url('../../_shared/fonts/claude-design.css');
 
 /* ════ DESIGN TOKENS ════ */
 :root {
@@ -41,7 +43,7 @@
 * { margin:0; padding:0; box-sizing:border-box; }
 html { scroll-behavior: smooth; }
 body {
-  font-family: 'HarmonyOS Sans SC', 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-family: 'Noto Sans SC','Inter',system-ui,sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
@@ -145,7 +147,7 @@ body {
 .gd .gd-num {
   font-size: 10px; font-weight: 800; padding: 4px 12px;
   border-radius: 6px; letter-spacing: 1px; flex-shrink: 0;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'JetBrains Mono','SF Mono',ui-monospace,monospace;
 }
 .gd.viewer .gd-num { background: rgba(255,255,255,.08); }
 .gd.host .gd-num   { background: rgba(37,99,235,.08); }
@@ -212,7 +214,7 @@ body {
   display: flex; justify-content: space-between;
   padding: 8px 24px 4px; font-size: 10px;
   color: var(--dark-text2);
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'JetBrains Mono','SF Mono',ui-monospace,monospace;
   font-weight: 500;
 }
 .ph-top {
@@ -384,7 +386,7 @@ body {
 .wf-url {
   flex: 1; background: #fff; border: 1px solid var(--border);
   border-radius: 6px; padding: 4px 12px; font-size: 11px;
-  color: var(--text3); font-family: 'IBM Plex Mono', monospace;
+  color: var(--text3); font-family: 'JetBrains Mono','SF Mono',ui-monospace,monospace;
   margin-left: 6px;
 }
 
@@ -407,7 +409,7 @@ body {
   font-size: 11px; font-weight: 900; color: #fff;
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 2px 6px rgba(0,0,0,.2);
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'JetBrains Mono','SF Mono',ui-monospace,monospace;
 }
 .anno-n.blue   { background: var(--blue); }
 .anno-n.green  { background: var(--green); color: #000; }
@@ -439,7 +441,7 @@ body {
   color: #fff; display: flex; align-items: center;
   justify-content: center; margin-top: 2px;
   box-shadow: 0 2px 4px rgba(0,0,0,.12);
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'JetBrains Mono','SF Mono',ui-monospace,monospace;
 }
 .ann-num.blue   { background: var(--blue); }
 .ann-num.green  { background: var(--green); color: #000; }
@@ -525,3 +527,61 @@ body {
 /* ════ K线图条（可选装饰） ════ */
 .ph-stage .kline { position: absolute; bottom: 20px; left: 20px; right: 20px; height: 80px; opacity: .12; }
 .ph-stage .kline-bar { position: absolute; bottom: 0; width: 6px; border-radius: 1px 1px 0 0; }
+
+/* ════ HUASHU OPT-IN THEME（--theme Claude Design 触发，覆盖 Binance 默认）════
+   用法：gen_imap_skeleton.py --theme Claude Design → body 加 class="theme-cd"
+   维护：只改此 block，Binance 默认不动
+   ════════════════════════════════════════════════════════════════════════ */
+.theme-cd {
+  /* ── 色板覆盖 ── */
+  --bg:    #000000;
+  --bg2:   #0a0a0a;
+  --surface: rgba(255,255,255,0.04);
+  --text:  #FFFFFF;
+  --text2: rgba(255,255,255,0.82);
+  --text3: rgba(255,255,255,0.58);
+  --border: rgba(255,255,255,0.12);
+  --blue:  #2F6CF2;
+  --dark:  #000000;
+  --dark2: rgba(255,255,255,0.04);
+  --dark3: rgba(255,255,255,0.08);
+  --dark-text:  rgba(255,255,255,0.82);
+  --dark-text2: rgba(255,255,255,0.58);
+  --dark-text3: rgba(255,255,255,0.28);
+}
+
+/* 背景 + 文字基础 */
+.theme-cd body,
+body.theme-cd {
+  background: #000000;
+  color: rgba(255,255,255,0.82);
+  font-family: "Noto Serif SC", "Noto Sans SC", system-ui, sans-serif;
+}
+
+/* 场景标题衬线化 */
+.theme-cd .st,
+.theme-cd .scene-title,
+.theme-cd .part-title {
+  font-family: "Noto Serif SC", serif;
+  font-weight: 900;
+}
+
+/* Eyebrow 标签（PART / 场景编号 mono uppercase）*/
+.theme-cd .part-label,
+.theme-cd .scene-label {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #2F6CF2;
+}
+
+/* 顶部进度条（Binance 彩虹渐变 → Claude Design 蓝）*/
+.theme-cd .progress-bar {
+  background: #2F6CF2;
+}
+
+/* 侧导航悬停 */
+.theme-cd .side-dot.active {
+  background: #2F6CF2;
+}
