@@ -216,6 +216,11 @@ pm-workspace/
 ├── requirements.txt           # Python 依赖（python-docx, playwright）
 ├── package.json               # Node.js 依赖（docx）
 ├── scripts/                   # 公共脚本
+│   ├── call_mcp.py            #   通用 MCP 调用（HTTP/stdio，0 token schema 开销）
+│   ├── fetch_confluence.py    #   Confluence REST API 拉取页面
+│   ├── fetch_figma.py         #   Figma REST API 拉取文件/节点/截图
+│   ├── pull_meeting_notes.py  #   钉钉闪记纪要拉取
+│   ├── md_to_confluence.py    #   Markdown → Confluence 页面同步
 │   ├── check_html.sh          #   HTML 产出物自检
 │   ├── fill_utils.py          #   fill 脚本公共模块
 │   ├── impact-check.sh        #   场景变更影响面扫描
