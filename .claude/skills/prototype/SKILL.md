@@ -62,9 +62,9 @@ sed -n '{起始行},{结束行}p' .claude/skills/prototype/references/prototype-
 grep -A 20 "决策速查" .claude/skills/_shared/claude-design/anti-ai-slop.md
 ```
 
-**Claude Design 后台深色主题：**
-- 检测到 Web 后台 / CMS 场景时，gen_proto_skeleton.py 默认在 body 上加 `class="theme-cd"`
+**Claude Design 后台深色主题（手动挂 class）：**
 - `.theme-cd` 作用域已在 prototype.css 末尾定义，覆盖 Arco 浅色变量为 Claude Design 深色
+- Web 后台 / CMS 场景：手动在生成后的 HTML body 加 `class="theme-cd"` 即可切换
 - App 移动端**不应用**此 theme（移动端保留「深色 nav + 浅色内容」功能性设计）
 - `.app-mock` 设备框已升级至 iPhone 15 Pro 精细数值（圆角 48px / 状态栏 54px / Dynamic Island 124×36 / Home Indicator 140×5）
 

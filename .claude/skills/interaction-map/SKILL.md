@@ -296,10 +296,9 @@ view .claude/skills/interaction-map/references/components-core.md
 grep -A 20 "决策速查" .claude/skills/_shared/claude-design/anti-ai-slop.md
 ```
 
-**Claude Design opt-in 主题（用户指定 `--theme cd` 时）：**
-- gen_imap_skeleton.py 加 `--theme cd` flag，生成的 HTML body 加 `class="theme-cd"`
-- CSS 中 `.theme-cd` 作用域已定义，自动覆盖 Binance 默认色板
-- 默认不加（保留 Binance 深色系），只在用户明确要求时使用
+**Claude Design opt-in 主题（手动挂 class）：**
+- CSS 中 `.theme-cd` 作用域已定义，覆盖 Binance 默认色板为 Claude Design 深色
+- 默认不加（保留 Binance 深色系，前台交易所视觉）；需切换时手动在生成后 HTML 的 body 加 `class="theme-cd"`
 
 ### gen_imap_skeleton.py API 速查
 

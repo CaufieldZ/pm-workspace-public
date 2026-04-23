@@ -8,7 +8,7 @@
  * Fonts（HTML head 引入）：Noto Serif SC · Source Serif 4 · JetBrains Mono
  * ═══════════════════════════════════════════════════════════════════════════
  */
-@import url('../../_shared/fonts/claude-design.css');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@300;400;500;600;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Inter:wght@100;200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 /* ── 内联 Claude Design token 兜底 ── */
 :root {

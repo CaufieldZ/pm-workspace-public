@@ -24,9 +24,35 @@ gen_flow_base.py · 流程图 HTML 生成器
 """
 
 import json
+import re
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent
+
+
+_CSS_IMPORT_RE = re.compile(r"@import\s+url\(['\"]([^'\"]+)['\"]\);?")
+_CSS_COMMENT_RE = re.compile(r"/\*.*?\*/", re.DOTALL)
+
+
+def _expand_css_imports(css_text, base_dir, _seen=None):
+    """展开 CSS 中的 @import url('...') 相对引用——inline 进 HTML <style> 后相对路径会失效，必须在读取时就替换成被引文件内容。"""
+    if _seen is None:
+        _seen = set()
+    stripped = _CSS_COMMENT_RE.sub("", css_text)
+
+    def resolve(m):
+        rel = m.group(1)
+        if rel.startswith(('http://', 'https://')):
+            return m.group(0)
+        target = (Path(base_dir) / rel).resolve()
+        key = str(target)
+        if key in _seen:
+            return ""
+        _seen.add(key)
+        inner = target.read_text(encoding='utf-8')
+        return _expand_css_imports(inner, target.parent, _seen)
+
+    return _CSS_IMPORT_RE.sub(resolve, stripped)
 
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="zh-CN">
@@ -103,7 +129,10 @@ def render_flowchart(output_path, title, subtitle, charts):
 
     charts: list of dict,每条 dict 必须含 type ∈ {'branch','swimlane'}
     """
-    css = (BASE_DIR / "flowchart.css").read_text(encoding="utf-8")
+    css = _expand_css_imports(
+        (BASE_DIR / "flowchart.css").read_text(encoding="utf-8"),
+        BASE_DIR,
+    )
     core_js = (BASE_DIR / "flowchart-core.js").read_text(encoding="utf-8")
 
     sections = []
