@@ -11,6 +11,12 @@ pipeline_position: 3
 depends_on: [scene-list]
 optional_inputs: [context.md, requirement-framework, architecture-diagrams]
 consumed_by: [prototype, prd]
+scripts:
+  gen_imap_skeleton.py: "Step A 骨架 — from gen_imap_skeleton import generate_skeleton"
+  fill-template.py: "Step B fill 模板 — 复制到项目 scripts/fill_imap_v{N}.py 改写"
+  interaction-map.js: "运行时 JS — 骨架脚本自动内联，不手动读"
+  scripts/fill_utils.py: "fill 公共函数 — from fill_utils import run_fill"
+  scripts/check_html.sh: "Step C 自检 — bash scripts/check_html.sh <html> <scene-list> imap"
 ---
 <!-- pm-ws-canary-236a5364 -->
 

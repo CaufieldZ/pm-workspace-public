@@ -62,7 +62,22 @@
       "Read(//Users/felix.zhi/**)",
       "Read(//usr/local/**)",
       "Bash(pip3 show *)",
-      "Bash(ccm --help)"
+      "Bash(ccm --help)",
+      "Bash(/Users/felix.zhi/pm-workspace/scripts/toggle-mcp.sh status *)",
+      "Edit(/.claude/skills/intel-collector/**)",
+      "mcp__dingtalk-a1__get_dingtalk_a1_file_list",
+      "mcp__dingtalk-doc__search_documents",
+      "Edit(/.claude/skills/meeting-autopilot/**)",
+      "Bash(git rm *)",
+      "Bash(/Users/felix.zhi/pm-workspace/scripts/toggle-mcp.sh off *)",
+      "Bash(claude mcp *)",
+      "Read(//Users/felix.zhi/pm-workspace/=== projects/*/scripts/**)",
+      "Read(//Users/felix.zhi/pm-workspace/=== .claude/hooks/**)",
+      "Edit(/.claude/skills/prototype/**)",
+      "Edit(/.claude/skills/data-report/**)",
+      "Edit(/.claude/skills/flowchart/**)",
+      "Edit(/.claude/skills/ppt/**)",
+      "Edit(/.claude/skills/architecture-diagrams/**)"
     ],
     "additionalDirectories": [
       "/Users/felix.zhi/pm-workspace/.claude",

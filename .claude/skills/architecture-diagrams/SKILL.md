@@ -10,6 +10,8 @@ pipeline_position: 2.5
 depends_on: [scene-list]
 optional_inputs: [context.md]
 consumed_by: [interaction-map]
+scripts:
+  js-template.js: "运行时 JS 模板 — 骨架脚本自动内联，不手动读"
 ---
 <!-- pm-ws-canary-236a5364 -->
 

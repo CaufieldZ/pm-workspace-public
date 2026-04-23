@@ -11,6 +11,12 @@
 
 【并行读取】收到产出物指令时，context.md + scene-list.md + SKILL.md 并行读取。references/ 按 SKILL.md Step 1 声明的文件清单按需加载，Step 声明的文件可并入首批并行读取，未声明的 CSS/JS 不预加载。
 
+【脚本优先（强制）】读取 SKILL.md 后，先看 frontmatter `scripts` 字段。该字段列出本 Skill 所有可用脚本及调用方式。规则：
+- `scripts` 字段里列出的脚本，对应步骤**必须调用**，不得跳过脚本自己手写等效逻辑
+- 无前缀的脚本在 `.claude/skills/{skill}/references/` 下，`scripts/` 前缀的在根目录 `scripts/` 下
+- 脚本调用失败时先读脚本源码排查参数错误，不得回退到手写
+- 项目级脚本在 `projects/{项目}/scripts/` 下，优先复用已有的 `gen_*` / `fill_*`，没有再从 Skill references 复制模板新建
+
 【计时】每个产出物步骤完成后，用 bash 执行 `date +%s` 获取时间戳。在 Step A 开始前记一次，每个 Step 完成后记一次，报告耗时。
 
 【compact 指引】每完成一个 Skill Step（A/B/C）或切换项目后，用 Write 工具覆盖 `.claude/session-state.md`，更新项目名/Skill/Step/已填 Scene/下一步。PreCompact hook 会在 compact 前自动注入该文件到摘要，防止进度丢失。手动切换项目（非通过 Skill 流程）必须立刻同步，否则残留旧状态会误导后续执行。
@@ -91,24 +97,39 @@ context.md 由 Chat Opus 输出，共九章。本地模型默认只读。
 
 【Web 工具选择】
 - **默认用 Claude Code 内建**：已知 URL → `WebFetch`；不知道 URL → `WebSearch`。内建工具 0 schema 开销，够用 90% 场景
-- **firecrawl 默认禁用**（省 6-8k tokens/session），需要时用 `./scripts/toggle-firecrawl.sh on` 开启并重启 Claude Code
-- firecrawl 适用场景：SPA 页面 JS 渲染（WebFetch 返空）、多页站点批量抓取、需要 `onlyMainContent` / `waitFor` 参数
+- **firecrawl**（默认禁用）适用场景：SPA 页面 JS 渲染（WebFetch 返空）、多页站点批量抓取、需要 `onlyMainContent` / `waitFor` 参数
 - 启用后：已知 URL → `firecrawl_scrape`；抓多页 → `firecrawl_map` 先找 URL 再逐个 scrape，不用 `crawl`（返回量不可控）
 
-【Skill 优先于裸 MCP】用户意图匹配已有 Skill 时，必须走 Skill 而非自行拼 MCP 调用：
-- 「拉会议纪要」「A1 录音」「闪记」→ 走 meeting-autopilot skill（内含 A1 设备查询 + 钉钉文档搜索完整流程），不要先试 Firecrawl 抓闪记 URL（需登录态，必然失败）
-- 「截竞品」→ 走 intel-collector skill，不要手动 firecrawl_scrape
-- 「出 PRD」→ 走 prd skill，不要手动 python-docx
-- 原则：Skill 封装了完整流程和最佳实践，裸 MCP 调用容易漏步骤或走错路径
+【MCP 调用策略——脚本优先，按需加载】
+
+MCP server 每个加载到 Claude Code 就吃几千到上万 token（figma ~15K、dingtalk-doc ~12K、sensors ~6K、confluence ~3K），默认全关，优先走脚本。
+
+**三层调用优先级**（从上到下，上层能解决就不走下层）：
+
+1. **专用脚本**（0 token，推荐）：
+   - 拉会议纪要 → `python3 scripts/pull_meeting_notes.py "关键词" -p 项目名`
+   - 神策数据 → `python3 .claude/skills/data-report/references/fetch_weekly_sensors.py`
+   - Confluence 拉页面 → `python3 scripts/fetch_confluence.py <url> [-p 项目名]`
+   - Confluence 同步 md → `python3 scripts/md_to_confluence.py`
+   - PRD 推 Confluence → `python3 .claude/skills/prd/references/push_to_confluence_base.py`
+
+2. **通用 MCP 脚本**（0 token，专用脚本不覆盖的场景）：
+   - `python3 scripts/call_mcp.py call <server> <tool> '{"key":"val"}'`
+   - `python3 scripts/call_mcp.py list <server>` 查可用工具
+   - HTTP 和 stdio server 都支持，server 关掉也能调
+
+3. **加载 MCP server**（吃 token，仅用于高频交互式操作）：
+   - Figma 设计稿反复读写 → `./scripts/toggle-mcp.sh on figma`
+   - 钉钉文档反复编辑 → `./scripts/toggle-mcp.sh on dingtalk-doc`
+   - `./scripts/toggle-mcp.sh status` 查看状态，`off/on/only` 切换，重启生效
+
+**MCP 调用克制**（无论走脚本还是加载 server）：
+- 神策：先确认事件名和属性名再 query，不要先 `list_events_all`（返回量大）
+- Confluence：`search_pages` 优先于 `execute_cql_search`
+- Figma：仅在用户给出链接或明确要求时调用
+- 调用前想"这次返回会吃多少 token"，能缩小 scope 就缩小
 
 【PRD 截图规范】从交互大图截图给 PRD 时，只截设备框（.phone / .webframe），不截虚线标注框和注解卡。迭代 docx 时先改内容再插图。
-
-【MCP 调用克制】
-- 神策查询：先确认事件名和属性名再 query，不要先 `list_events_all`（返回量大）。用 `get_event_properties` 精准取
-- Confluence：`search_pages` 优先于 `execute_cql_search`，后者返回量更大
-- Outlook Calendar：仅在用户明确要求查工作日历时调用，产出物流程中不主动触发
-- Figma：仅在用户给出 Figma 链接或明确要求读设计稿时调用，不主动探索 Figma 项目
-- 所有 MCP 工具：调用前想一想"这次返回会吃多少 token"，能缩小 scope 就缩小
 
 【子 Agent 调度】子 Agent 跑 Haiku（较笨），派不派看三条同时满足：中间输出 ≫ 最终结论 + 主线程不需要过程 + 任务有客观对错标准。
 

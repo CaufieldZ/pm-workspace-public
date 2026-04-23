@@ -8,6 +8,8 @@ output_format: .md
 depends_on: []
 optional_inputs: []
 consumed_by: []
+scripts:
+  audit.sh: "全局审计 — bash .claude/skills/workspace-audit/references/audit.sh [类别号]"
 ---
 <!-- pm-ws-canary-236a5364 -->
 

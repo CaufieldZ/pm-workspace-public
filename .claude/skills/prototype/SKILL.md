@@ -10,6 +10,10 @@ pipeline_position: 4
 depends_on: [scene-list]
 optional_inputs: [interaction-map]
 consumed_by: [prd]
+scripts:
+  gen_proto_skeleton.py: "Step A 骨架 — from gen_proto_skeleton import generate_skeleton"
+  prototype.js: "运行时 JS — 骨架脚本自动内联，不手动读"
+  scripts/check_html.sh: "Step C 自检 — bash scripts/check_html.sh <html> <scene-list> proto"
 ---
 <!-- pm-ws-canary-236a5364 -->
 

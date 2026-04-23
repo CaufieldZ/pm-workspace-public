@@ -1,0 +1,11 @@
+{
+  "htx-activity-center": {
+    "prd": { "page_id": "164473631", "title": "活动中心 PRD" }
+  },
+  "htx-community": {
+    "prd": { "page_id": "155652375", "title": "HTX 社区交易卡片 PRD" }
+  },
+  "htx-live-streaming-updateQ2": {
+    "prd": { "page_id": "160186915", "title": "HTX 直播间Q2升级 PRD" }
+  }
+}

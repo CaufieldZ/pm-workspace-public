@@ -10,6 +10,10 @@ output_prefix: —
 depends_on: []
 optional_inputs: []
 consumed_by: [competitor-analysis]
+scripts:
+  capture.py: "单次抓取 — python3 capture.py <url> --output <dir>"
+  scheduled-scrape.py: "定时批量抓取 — python3 scheduled-scrape.py <config>"
+  intel-cron.sh: "crontab 入口 — 调 scheduled-scrape.py"
 ---
 <!-- pm-ws-canary-236a5364 -->
 
@@ -115,7 +119,7 @@ python3 .claude/skills/intel-collector/references/capture.py \
      browser-use eval "[...document.querySelectorAll('article, .news-item, [data-item]')].slice(0, 20).map(el => ({title: el.querySelector('h1,h2,h3,.title')?.innerText?.trim(), date: el.querySelector('time,.date')?.innerText?.trim(), url: el.querySelector('a')?.href})).filter(x => x.title)"
      ```
      返回 JSON 数组，直接写入 markdown。
-   - **最后兜底** `firecrawl_scrape`：仅当 browser-use eval 也失败（页面结构未知/反爬）时，手动启用 firecrawl（`./scripts/toggle-firecrawl.sh on` → 重启 session）。日常流程中不默认触发。
+   - **最后兜底** `firecrawl_scrape`：仅当 browser-use eval 也失败（页面结构未知/反爬）时，手动启用 firecrawl（`./scripts/toggle-mcp.sh on firecrawl` → 重启 session）。日常流程中不默认触发。
    - 媒体源（CoinDesk / PANews / BlockBeats 等 SSR）通常首选即可；交易所 SPA 页面（OKX / Gate 活动列表）直接走 browser-use eval
 3. 解析标题、日期、链接
 4. 保存位置：

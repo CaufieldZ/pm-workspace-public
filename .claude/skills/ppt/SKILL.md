@@ -10,6 +10,10 @@ output_prefix: ppt-
 depends_on: []
 optional_inputs: [context.md]
 consumed_by: []
+scripts:
+  fill-template.js: "Step B fill 模板 — 复制到项目 scripts/ 改写"
+  gen-notes-docx.py: "导出演讲者备注 docx — python3 gen-notes-docx.py <html>"
+  presenter-mode.js: "运行时演讲模式 JS — 骨架脚本自动内联，不手动读"
 ---
 <!-- pm-ws-canary-236a5364 -->
 

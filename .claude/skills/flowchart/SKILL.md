@@ -10,6 +10,9 @@ output_prefix: flow-
 depends_on: []
 optional_inputs: [context.md]
 consumed_by: []
+scripts:
+  gen_flow_base.py: "骨架生成 — from gen_flow_base import generate_flowchart"
+  flowchart-core.js: "运行时 JS — 骨架脚本自动内联，不手动读"
 ---
 
 # Flowchart 流程图
