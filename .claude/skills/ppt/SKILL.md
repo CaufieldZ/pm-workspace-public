@@ -59,12 +59,17 @@ PPT 产出物一旦脚本化生成，HTML 就是**只读产物**：
 
 ### Step 1：读取参考文件
 
-并行读取：
-- `references/ppt-template.html` — 骨架模板（CSS + JS + 空壳结构，脚本运行时 `open().read()` 自动拼接，模型不需要读入 context）
+**必读**（产出前加载）：
+- `references/deck-grammar.md` — 每页四层骨架 + 样式约定 + 视觉主角轮换规则
 - `references/components-cheatsheet.md` — 组件速查表
 - `references/gold-snippets.md` — 满分产物片段库（叙事模式 + 结构骨架参考）
-- `references/deck-grammar.md` — 每页四层骨架 + 样式约定 + 视觉主角轮换规则（**产出前必读**）
-- `.claude/skills/_shared/claude-design/anti-ai-slop.md` — 反 AI slop 六禁 + 字号 / 颜色 / 留白规范（**产出前必读**，只 grep 决策速查表部分，不全量 Read）
+- `.claude/skills/_shared/claude-design/anti-ai-slop.md` — 反 AI slop 六禁 + 字号 / 颜色 / 留白规范（只 grep 决策速查表部分，不全量 Read）
+
+**执行类**（模型不读，脚本调用）：
+- `references/ppt-template.html` — 骨架 CSS + JS，由 fill-template.js `open().read()` 自动拼接
+- `references/fill-template.js` / `gen-notes-docx.py` / `presenter-mode.js` — 脚本，通过 node/python3 调用
+
+**用户输入**：
 - 用户提供的内容大纲（文件或口述）
 
 ### Step 2：确认大纲

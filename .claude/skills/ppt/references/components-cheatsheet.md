@@ -1,224 +1,169 @@
 <!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
-# PPT 组件速查表
+# PPT 组件速查表（Claude Design 编辑范式）
 
-从 SOP-final.html 提取的所有可复用组件模式。
+`ppt-template.html` 已内联全部组件类。本文档按「**Claude Design 推荐组件**」「通用结构组件」「工具类」「高级组合」「JS 工具函数」分区。
 
-## 布局组件
+**六禁提醒**（出自 `_shared/claude-design/anti-ai-slop.md`）：禁 emoji 装饰、禁圆角卡片 + 左/顶 border-accent、禁烂大街 icon-box + emoji、禁彩色圆角徽章做编号、禁全文 font-weight:900 sans 堆叠、禁同页 ≥ 3 种强调色。
+
+---
+
+## Claude Design 编辑组件（优先用这些）
+
+### `.eyebrow` — 章节 / 分类 / 编号小字
+
+```html
+<div class="eyebrow">§ 3 · 两轨工作流</div>
+<div class="eyebrow eyebrow-accent">CHAPTER 01 — AI 产品工作流</div>
+<span class="eyebrow">STEP 01</span>
+```
+
+- mono + uppercase + letter-spacing 0.22em + 11px
+- `.eyebrow-accent` → 切换为 `--blue`
+- **替代**：`.tag-blue`/`.tag-green` 彩色标签、`.hero-accent` 彩色 bg 徽章、Notion 风圆角数字圈
+
+### `.hairline` / `.hairline-sm` / `.hairline-accent` — 1px 分隔线
+
+```html
+<div class="hairline"></div>          <!-- 全宽 1px --border 横线 -->
+<div class="hairline-sm"></div>       <!-- 48px 短横线 -->
+<div class="hairline-accent"></div>   <!-- 80px × 2px --blue 收尾刻度 -->
+```
+
+- 页内分段、hero 底部收尾、内容块之间的隔断
+- **替代**：`.divider`（仍可用但只是 1px --border2，hairline 语义更强）、`.card` 的 `border-top:3px solid var(--color)` 顶部色条变体
+
+### `.display` / `.display-xl|lg|md` — serif 大标题
+
+```html
+<h1 class="display display-xl">心智的<br>可塑性</h1>   <!-- 72px hero -->
+<h2 class="display display-lg">一个文件长出全部产出物</h2> <!-- 48px 页标 -->
+<h3 class="display display-md">简单</h3>                <!-- 32px 组件标题 -->
+```
+
+- Noto Serif SC 500 weight + line-height 1.08 + letter-spacing -0.01em
+- **替代**：`.hero-headline`（900 sans 堆叠）、`style="font-weight:900;font-size:16px"` inline 粗体堆
+
+### `.lede` — hero 副标题
+
+```html
+<p class="lede">Agent 不是工具，它有自己的偏好。</p>
+```
+
+- serif 20px + weight 400 + --t2 色 + max-width 720px
+- **替代**：`.hero-sub`（颜色和 size 一样但字体用 sans，editorial 感弱）
+
+### `.section-label` — 章节分段（内联版转场）
+
+```html
+<div class="section-label">§ 6.2 — 防腐化机制</div>
+```
+
+- mono + uppercase + 大 tracking + bottom 1px border
+- 用于页内分 section，非跨页转场
+- 跨页转场用「整页 Hero + Part 转场」，见 gold-snippets §6
+
+### `.figure-num` / `.figure-lbl` — editorial 数字冲击
+
+```html
+<div class="grid3 gap-6">
+  <div>
+    <div class="figure-num">20</div>
+    <div class="figure-lbl">SKILLS COVERED</div>
+  </div>
+</div>
+```
+
+- figure-num = Noto Serif SC 64px 大数字（非 mono）
+- figure-lbl = mono uppercase 10px 小字
+- **替代**：`.stat-card` 居中卡片 + `.stat-val text-green` 彩色数字
+
+### `.pullquote` / `.pullquote-cite` — 核心判断引用块
+
+```html
+<div class="pullquote">
+  模型能替你做的事，写 SKILL.md 之前先判断是不是「你自己会做的事」。
+  <div class="pullquote-cite">— PM-WORKFLOW §1</div>
+</div>
+```
+
+- serif 28px + 左侧 1px --blue 竖线 + 下方 mono 小字 cite
+- **替代**：`.quote-block` 居中斜体 + 蓝加粗 `<em>` 范式
+
+### `.watermark-tl` — 低调水印
+
+```html
+<div class="page active film-grain">
+  <div class="watermark-tl">PART II</div>
+  <!-- ... -->
+</div>
+```
+
+- 左上角 mono 11px + uppercase + rgba(255,255,255,0.16)
+- 配合 `.film-grain` 用，给 Hero 页增加 editorial 质感
+
+### `.film-grain` — 2% 噪点质感
+
+```html
+<div class="page active film-grain">...</div>
+```
+
+- 给 page 容器加这个 class 即出现 SVG noise overlay
+- 只在 Hero / Part 转场页用，内容密集页不加
+
+---
+
+## 通用结构组件
 
 ### `.page` — 页面容器
+
 ```html
 <div class="page active">
   <div class="page-title">标题</div>
-  <div class="page-subtitle">副标题描述</div>
+  <div class="page-subtitle">副标题（可选，多数情况改用 .lede）</div>
   <!-- 内容 -->
 </div>
 ```
-- 每个 Tab 的顶层容器
-- `.active` 控制显示/隐藏
-- `max-width: 1200px; margin: 0 auto;`
+
+- 每个 Tab 顶层容器，`.active` 控显隐，`max-width: 1200px`
+- Claude Design 范式下优先用 `.eyebrow + .display + .lede` 起手，`.page-title/subtitle` 保留作为 legacy
 
 ### `.grid2` / `.grid3` / `.grid4` — 网格布局
-```html
-<div class="grid2">
-  <div class="card">左栏</div>
-  <div class="card">右栏</div>
-</div>
-```
-- 响应式：`max-width: 900px` 以下自动变为单列
-- `gap: 16px`
-
-### `.pipe` — 纵向流程链
-```html
-<div class="pipe">
-  <div class="pipe-node">
-    <div class="pipe-icon" style="background:var(--blue-bg);">📥</div>
-    <div>
-      <div style="font-weight:800;margin-bottom:4px;">步骤标题</div>
-      <div class="card-desc">步骤描述</div>
-    </div>
-  </div>
-  <div class="pipe-arrow"></div>
-  <div class="pipe-node">...</div>
-</div>
-```
-- 适合 ≥5 步流程
-- 与 `.flow-h` 交替使用，避免全文都是竖向 pipe
-
-### `.flow-h` — 横向时间线
 
 ```html
-<div class="flow-h">
-  <div class="flow-h-step">
-    <div class="fh-num" style="background:var(--blue-bg);color:var(--blue);">1</div>
-    <div class="fh-label">步骤标题</div>
-    <div class="fh-desc">简短描述</div>
-  </div>
-  <div class="flow-h-step active"><!-- 高亮当前步 -->...</div>
-  <div class="flow-h-step done"><!-- 已完成步 -->...</div>
-</div>
-```
-- 适合 ≤4 步流程、依赖链展示
-- 首尾自动圆角，中间步骤间有 `::after` 三角箭头
-- `.active` = 蓝色高亮，`.done` = 绿色高亮
-
-### `.page-hero` — 呼吸页
-
-```html
-<div class="page-hero">
-  <div class="hero-accent" style="background:var(--blue-bg);color:var(--blue);">标签文字</div>
-  <div class="hero-headline">大标题<br><span class="text-blue">高亮词</span></div>
-  <div class="hero-sub">副标题描述，一两句话。</div>
-</div>
-```
-- 垂直居中，大量留白，用于首页开场或章节金句
-- 每 4-6 个内容页之间应插入一个
-
-### `.page-split` — 分隔带
-```html
-<div class="page-split">
-  <div class="split-num text-blue">01</div>
-  <div class="split-body">
-    <div class="split-title">Part 标题</div>
-    <div class="split-desc">一句话描述这个 Part 讲什么。</div>
-  </div>
-</div>
-```
-- 编号超大半透明 + 右侧标题，打破内容页的节奏
-- 用在 Part/Track 之间的转场
-
-### `.stat-card` — 数字统计卡
-
-```html
-<div class="card stat-card">
-  <div class="stat-val text-green">2 min</div>
-  <div class="stat-lbl">场景清单</div>
-</div>
-```
-- 替代 `.hero-num` 的 inline style 写法
-- 搭配 `.grid3` 展示 3 个核心数字
-
-### `.quote-block` — 金句/引言块
-```html
-<div class="quote-block">
-  你的下游研发是<em>人在写代码</em>，还是 <em>AI 在写代码</em>？
-</div>
-```
-- 大字居中斜体，`<em>` 标签自动蓝色加粗高亮
-- 用于核心判断、分叉问题，替代塞进 `.note` 里的金句
-
-### `.icon-box` / `.flow-chip` — 通用 utility
-
-```html
-<div class="icon-box" style="background:var(--blue-bg);">📋</div>
-<span class="flow-chip">会议纪要</span>
-```
-- `.icon-box`: 44px 圆角图标容器，替代 inline 的 width+height+border-radius 组合
-- `.flow-chip`: 行内胶囊标签，替代 inline 的 padding+bg+border-radius 组合
-
-## 内容组件
-
-### `.card` — 通用卡片
-```html
-<div class="card">
-  <div class="card-title">标题</div>
-  <div class="card-desc">描述文字</div>
-</div>
-```
-- 变体：`style="border-top:3px solid var(--blue);"` 顶部色条
-- 变体：`style="border-left:3px solid var(--green);"` 左侧色条
-- 变体：`style="background:var(--bg);border-color:var(--border);"` 深底色
-
-### `.section-label` — 章节标签
-```html
-<div class="section-label">章节标题</div>
-<div class="section-label" style="margin-top:40px;">带间距的章节标题</div>
-```
-
-### `.hero-num` — 大数字展示
-```html
-<div class="card" style="text-align:center;padding:20px;">
-  <div class="hero-num">
-    <div class="val text-green">2 min</div>
-    <div class="lbl">场景清单</div>
-  </div>
+<div class="grid3 gap-6">
+  <div>...</div>
+  <div>...</div>
+  <div>...</div>
 </div>
 ```
 
-## 标签 & 徽章
+- 响应式：900px 以下自动变单列
+- 搭配 `.gap-{1..8}` 8pt 网格工具类控间距
 
-### `.tag-*` — 彩色标签
-```html
-<span class="tag tag-blue">蓝色标签</span>
-<span class="tag tag-green">绿色标签</span>
-<span class="tag tag-orange">橙色标签</span>
-<span class="tag tag-purple">紫色标签</span>
-<span class="tag tag-red">红色标签</span>
-```
+### `.cmp-table` — 对比表
 
-### `.score` — 分数徽章
-```html
-<span class="score score-mid">预期 60-80 分</span>
-<span class="score score-high">预期 85-90 分</span>
-```
-
-### `.text-*` — 文字颜色
-```html
-<span class="text-blue">蓝色</span>
-<span class="text-green">绿色</span>
-<span class="text-orange">橙色</span>
-<span class="text-purple">紫色</span>
-<span class="text-red">红色</span>
-```
-
-## 提示框
-
-### `.note` — 左边框提示框
-```html
-<div class="note">
-  <strong>标题：</strong>内容
-</div>
-<div class="note green"><strong>正面：</strong>内容</div>
-<div class="note orange"><strong>警告：</strong>内容</div>
-```
-- 默认蓝色左边框
-- `.green` 绿色、`.orange` 橙色变体
-
-## 表格
-
-### `.cmp-table` — 对比表格
 ```html
 <table class="cmp-table">
-  <thead><tr><th>列1</th><th>列2</th><th>列3</th></tr></thead>
+  <thead><tr>
+    <th>步骤</th>
+    <th>方案 A</th>
+    <th>方案 B</th>
+  </tr></thead>
   <tbody>
     <tr>
-      <td style="color:var(--t1);font-weight:700;">行标题</td>
-      <td>内容</td>
-      <td>内容</td>
+      <td style="color:var(--t1);font-weight:700;">步骤名</td>
+      <td>A 做法</td>
+      <td>B 做法</td>
     </tr>
   </tbody>
 </table>
 ```
 
-## 列表
-
-### `.ck-item` + `.ck-num` — 编号清单
-```html
-<div class="card">
-  <div class="ck-item">
-    <div class="ck-num">1</div>
-    <div>内容文字</div>
-  </div>
-  <div class="ck-item">
-    <div class="ck-num" style="background:var(--green-bg);color:var(--green);">2</div>
-    <div>带颜色编号的内容</div>
-  </div>
-</div>
-```
-- `.ck-num` 颜色变体：`style="background:var(--green-bg);color:var(--green);"` 等
-
-## 折叠
+- 表头**不用彩色区分**（Claude Design 禁同页多色），用 eyebrow 风格小标签或直接纯文字
+- 第一列加粗 + --t1 突出
 
 ### `.accordion` — 折叠展开
+
 ```html
 <div class="accordion">
   <div class="acc-header" onclick="toggleAcc(this)">
@@ -229,221 +174,97 @@
 </div>
 ```
 
-## 代码/文本展示
-
 ### `.prompt-block` — 代码块（含复制）
+
 ```html
 <div class="prompt-block">
   <div class="prompt-header">
     <span class="label">文件名.txt</span>
-    <button class="copy-btn" onclick="copyPrompt(this, 'key')">复制 Prompt</button>
+    <button class="copy-btn" onclick="copyPrompt(this, 'key')">复制</button>
   </div>
   <div class="prompt-body">展示内容</div>
 </div>
 ```
-- 需要 JS 配合：`PROMPTS = {};` + `copyPrompt()` 函数
 
-## 展示卡片
-
-### `.gallery-card` — 图文展示
-```html
-<div class="gallery-card">
-  <div class="gallery-preview">📐</div>
-  <div class="gallery-info">
-    <h4>标题</h4>
-    <p>描述文字</p>
-  </div>
-</div>
-```
-
-### `.skill-card` — 技能卡片
-```html
-<div class="skill-card">
-  <span class="model-tag sonnet">Sonnet</span>
-  <div style="font-size:14px;font-weight:800;margin-bottom:4px;">标题</div>
-  <div style="font-size:11px;color:var(--t3);">副标题</div>
-</div>
-```
-
-### `.track-card` — 路径选择卡片
-```html
-<div class="track-card track-a" onclick="goPage('tab-id')">
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-    <span class="tag tag-green">标签</span>
-    <span class="score score-mid">分数</span>
-  </div>
-  <h3 style="font-size:18px;font-weight:900;margin-bottom:8px;">标题</h3>
-  <div class="card-desc">描述内容</div>
-</div>
-```
-- `.track-a` 绿色边框、`.track-b` 蓝色边框
-
-## 嵌套图
-
-### `.nest-*` — 层级关系图
-```html
-<div class="nest-outer">
-  <div class="nest-label purple">外层标签</div>
-  <div style="font-size:12px;color:var(--t2);margin-bottom:12px;">描述</div>
-  <div class="nest-mid">
-    <div class="nest-label blue">中层标签</div>
-    <div class="nest-inner">
-      <div class="nest-label green">内层标签</div>
-      <div class="nest-chip">内容1</div>
-      <div class="nest-chip">内容2</div>
-    </div>
-  </div>
-</div>
-```
-
-## 弹窗
+- 需要自定义 `copyPrompt()` + `PROMPTS = {}` 对象
 
 ### `.modal-overlay` — 全屏弹窗
+
 ```html
-<!-- 触发 -->
 <span style="cursor:pointer;color:var(--blue);" onclick="openModal('标题', '内容')">点击打开</span>
-
-<!-- 弹窗结构（已在模板中预设） -->
-<!-- JS 函数：
-function openModal(title, content) {
-  document.getElementById('modalTitle').textContent = title;
-  document.getElementById('modalContent').textContent = content;
-  document.getElementById('promptModal').classList.add('show');
-}
--->
 ```
 
-## 杂项
+- 结构已在 ppt-template.html 预设，`openModal()` 模板已内置
 
-### `code` — 行内代码
-```html
-<code>context.md</code>
-```
+---
 
-### `.divider` — 分割线
-```html
-<div class="divider"></div>
-```
+## 工具类
 
-### `.fw9` / `.mono` — 工具类
-```html
-<span class="fw9">加粗</span>
-<span class="mono">等宽字体</span>
-```
+### 8pt 网格间距
 
-## 高级组合组件（从满分产物提炼）
+`.mt-{1,2,3,4,6,8}` / `.mb-*` / `.ml-*` / `.mr-*` / `.mx-*` / `.my-*`
+`.p-*` / `.px-*` / `.py-*`
+`.gap-*`
 
-### Growth Tree — 发散图
+对应 `--sp-1 = 8px` / `--sp-2 = 16px` / `--sp-3 = 24px` / `--sp-4 = 32px` / `--sp-6 = 48px` / `--sp-8 = 64px`。
 
-从一个核心节点向下发散出多层子节点。适用于：展示"一个源头生长出多个产出物"、组织架构、技术栈分层等。
+### 文字颜色（克制使用）
 
 ```html
-<div class="card" style="background:var(--bg);border-color:var(--border);">
-  <div style="text-align:center;padding:16px 0 8px;">
-    <!-- 根节点 -->
-    <div style="display:inline-flex;align-items:center;gap:10px;padding:14px 28px;background:linear-gradient(135deg,rgba(63,185,80,.15),rgba(56,139,253,.10));border:2px solid rgba(63,185,80,.4);border-radius:14px;font-weight:900;font-size:16px;">
-      <span style="font-size:22px;">📄</span> 核心节点
-    </div>
-    <div style="font-size:10px;color:var(--t3);margin-top:6px;">节点说明</div>
-
-    <!-- 竖线连接 -->
-    <div style="width:2px;height:24px;background:var(--border);margin:0 auto;"></div>
-
-    <!-- 中间节点（可选） -->
-    <div style="display:inline-flex;padding:8px 18px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;font-size:12px;font-weight:700;color:var(--t2);">中间节点</div>
-
-    <div style="width:2px;height:16px;background:var(--border);margin:0 auto;"></div>
-    <div style="font-size:10px;color:var(--t3);margin-bottom:12px;">↓ 说明文字</div>
-
-    <!-- 叶子节点横排 -->
-    <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
-      <div style="padding:10px 16px;background:var(--surface);border:1.5px solid rgba(56,139,253,.25);border-radius:10px;min-width:120px;">
-        <div style="font-weight:800;color:var(--blue);font-size:11px;">叶子 A</div>
-        <div style="font-size:10px;color:var(--t3);">描述</div>
-      </div>
-      <!-- 更多叶子... -->
-    </div>
-
-    <!-- 虚线分割 + 附属节点（可选） -->
-    <div style="width:100%;border-top:1px dashed var(--border);margin:12px 0;"></div>
-    <div style="font-size:10px;color:var(--t3);margin-bottom:10px;">附属说明</div>
-    <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
-      <div style="padding:8px 14px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;">
-        <div style="font-weight:700;color:var(--orange);font-size:11px;">附属节点</div>
-      </div>
-    </div>
-  </div>
-</div>
+<span class="text-blue">仅在 accent 高亮时用</span>
 ```
 
-- 颜色区分层级：根 = gradient border、主干 = blue、核心叶子 = purple、附属 = orange
-- 竖线用 `width:2px;height:24px;background:var(--border);margin:0 auto;`
+- Claude Design 同页 ≤ 1 种强调色（blue）
+- `.text-green/orange/purple/red/pink` 仅在数据图表等功能性区分场景用，文字排版禁用
 
-### Comparison Flow — 对比流程表
-
-左右两列对比同一个操作在不同条件下的体验。适用于：Chat vs Claude Code、旧方案 vs 新方案、人工 vs 自动化等对比场景。
+### 其他
 
 ```html
-<table class="cmp-table">
-  <thead><tr>
-    <th style="width:18%;">步骤</th>
-    <th style="width:41%;"><span style="color:var(--green);">方案 A</span></th>
-    <th style="width:41%;"><span style="color:var(--blue);">方案 B</span></th>
-  </tr></thead>
-  <tbody>
-    <tr>
-      <td style="color:var(--t1);font-weight:700;">步骤名</td>
-      <td>方案 A 的做法</td>
-      <td>方案 B 的做法</td>
-    </tr>
-    <!-- 更多行... -->
-  </tbody>
-</table>
+<code>context.md</code>      <!-- 行内代码 -->
+<span class="fw9">加粗</span>  <!-- font-weight:900（慎用，印刷范式优先用 display serif）-->
+<span class="mono">等宽</span>
 ```
 
-- 基于 `.cmp-table` 组件，表头用颜色区分阵营
-- 第一列是步骤/维度名，加粗 + `color:var(--t1)`
+---
 
-### Dependency Chain — 依赖链可视化
+## 遗留组件（legacy，不推荐但保留）
 
-从根节点向下展示依赖关系 + pipeline 顺序。适用于：变更波及范围、构建链路、数据流向等。
+以下组件出自 SOP V2.0 范式，与 Claude Design editorial 风格不符。**优先用上方 Claude Design 组件替代**，下方仅作已有文档维护参考。
 
-```html
-<div class="card" style="background:var(--bg);border-color:var(--border);">
-  <div style="text-align:center;padding:8px 0;">
-    <!-- 变更源 -->
-    <div style="display:inline-flex;padding:10px 20px;background:var(--surface);border:1.5px solid rgba(210,153,34,.3);border-radius:10px;font-weight:800;font-size:13px;color:var(--orange);">变更源头</div>
-    <div style="font-size:16px;color:var(--t3);margin:8px 0;">↓</div>
+| 遗留组件 | Claude Design 替代 | 原因 |
+|---|---|---|
+| `.hero-accent` / `.tag-*` 彩色 bg 标签 | `.eyebrow` / `.eyebrow-accent` | mono tracking 替代彩色徽章 |
+| `.hero-headline` / `.hero-num` | `.display-xl` + `.figure-num` | serif 替代 weight:900 sans |
+| `.hero-sub` | `.lede` | serif lede 比 sans 更 editorial |
+| `.stat-card` 居中卡片 | `.figure-num` + `.figure-lbl` | 去 card bg / border，editorial 横排 |
+| `.quote-block` 居中斜体 | `.pullquote` | 左竖线 + serif 28px |
+| `.page-split` 彩色分隔带 | `.film-grain` Hero + `.section-label` | Part 转场做整页 Hero |
+| `.page-hero` + `.hero-accent` | 见 gold-snippets §1 Hero 模式 | 用 eyebrow + display + lede + hairline-accent 四件套 |
+| `.flow-h` + `.fh-num` 彩色圆角数字 | eyebrow `STEP 01` + hairline 分段 | 见 gold-snippets §4 |
+| `.pipe` + `.pipe-icon` emoji | 同上 | 去 emoji，编号 eyebrow 化 |
+| `.card` + `border-top:3px solid var(--color)` | `.eyebrow` 区分 + 内部 hairline-sm | 六禁之二：禁「圆角卡片 + 左/顶 border-accent」 |
+| `.note green/orange/red` 彩色提示 | `.pullquote`（核心判断）或 `.hairline` + eyebrow 小节 | 禁同页多色 |
+| `.track-card track-a/track-b` 预设色板 | 两栏等权 `.grid2` + `.eyebrow` 分类 | 见 gold-snippets §3 |
+| `.ck-num` 彩色圆角编号 | `.eyebrow` 行首 `01`/`02`/`03` | 见 gold-snippets §5 |
+| `.nest-*` 多色嵌套层级 | 外层 `.eyebrow` 分层 + 内部缩进 + `.hairline-sm` | 避免三色嵌套堆叠 |
+| `.gallery-card` / `.skill-card` + model-tag | `.grid3` + `.eyebrow` 分类 + 内部 `.display-md` | 组件化程度更高 |
 
-    <!-- 中间节点 -->
-    <div style="display:inline-flex;padding:10px 20px;background:var(--surface);border:1.5px solid rgba(56,139,253,.3);border-radius:10px;font-weight:800;font-size:13px;color:var(--blue);">中间节点</div>
-    <div style="font-size:16px;color:var(--t3);margin:8px 0;">↓ depends_on</div>
+---
 
-    <!-- 受影响的叶子节点横排 -->
-    <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
-      <div style="padding:8px 16px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;font-size:12px;font-weight:700;">
-        节点 A <span style="color:var(--t3);font-weight:500;">pos:3</span>
-      </div>
-      <div style="padding:8px 16px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;font-size:12px;font-weight:700;">
-        节点 B <span style="color:var(--t3);font-weight:500;">pos:4</span>
-      </div>
-      <!-- 更多节点... -->
-    </div>
-    <div style="font-size:11px;color:var(--t3);margin-top:10px;">
-      按 pos 顺序处理：A → B → ...
-    </div>
-  </div>
-</div>
-```
+## 高级组合（需自定义，遵循 Claude Design）
 
-- 源头用 orange 边框，中间用 blue，叶子用默认
-- `pos:N` 标注执行顺序
-- 底部一行说明处理顺序
+高级组合（Growth Tree / Dependency Chain 等）**不提供样式模板**。如需展示：
 
-## JS 工具函数（模板已内置）
+- 树形结构：用 HTML 语义（`<ul>` 缩进 + `.eyebrow` 层级标识 + `.hairline-sm` 分段），避免「彩色 gradient border + emoji icon + 带阴影圆角卡」三件套
+- 依赖链：用 `.cmp-table` 或 `.grid2`（源/目标）+ eyebrow 标注顺序（`POS 01` / `POS 02`），避免 orange/blue/green 三色边框
+- 流程图：跳出 PPT，用 flowchart skill 单独产出一个 HTML 然后嵌入截图
+
+---
+
+## JS 工具函数（ppt-template.html 已内置）
 
 | 函数 | 用途 |
-|------|------|
+|---|---|
 | `renderNav()` | 渲染侧边栏导航 |
 | `goPage(id)` | 切换页面 |
 | `renderPage()` | 渲染当前页面 |
@@ -455,6 +276,6 @@ function openModal(title, content) {
 ## 需自定义的 JS 函数（填充时按需添加）
 
 | 函数 | 用途 | 模板 |
-|------|------|------|
-| `copyPrompt(btn, key)` | 复制 prompt-block 内容 | 见 SOP-final.js |
-| `copyTemplate(btn, key)` | 复制模板内容 | 见 SOP-final.js |
+|---|---|---|
+| `copyPrompt(btn, key)` | 复制 prompt-block 内容 | 在 fill 阶段补 |
+| `copyTemplate(btn, key)` | 复制模板内容 | 在 fill 阶段补 |

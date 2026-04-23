@@ -256,6 +256,35 @@ code{background:var(--surface2);padding:2px 7px;border-radius:4px;font-family:'J
 .fw9{font-weight:900;}
 .mono{font-family:'JetBrains Mono',monospace;}
 
+/* ===== CLAUDE DESIGN EDITORIAL ===== */
+/* eyebrow：mono 小字 + 大 tracking，替代彩色徽章做章节 / 分类 / 编号 */
+.eyebrow{font-family:var(--font-mono);font-size:11px;color:var(--t3);letter-spacing:.22em;text-transform:uppercase;font-weight:500;margin-bottom:12px;display:inline-block;}
+.eyebrow-accent{color:var(--blue);}
+/* hairline：1px 细线，替代 card border / border-accent 做分隔 */
+.hairline{height:1px;background:var(--border);margin:24px 0;border:0;}
+.hairline-sm{height:1px;background:var(--border);width:48px;margin:16px 0;border:0;}
+.hairline-accent{height:2px;background:var(--blue);width:80px;margin:24px 0;border:0;}
+/* display：Noto Serif SC hero 大标题，替代彩色 hero-num */
+.display{font-family:var(--font-serif-cn);font-weight:500;line-height:1.08;letter-spacing:-.01em;color:var(--t1);}
+.display-xl{font-size:72px;}
+.display-lg{font-size:48px;}
+.display-md{font-size:32px;}
+/* lede：hero 副标题，sans serif 大号但不加粗 */
+.lede{font-family:var(--font-serif-cn);font-size:20px;font-weight:400;line-height:1.6;color:var(--t2);max-width:720px;}
+/* section-label：章节分段的 eyebrow + hairline 组合（替代 .page-split） */
+.section-label{font-family:var(--font-mono);font-size:10px;color:var(--t3);letter-spacing:.2em;text-transform:uppercase;font-weight:600;margin:48px 0 16px;padding-bottom:12px;border-bottom:1px solid var(--border2);}
+/* figure-num：editorial 大数字（serif 非 mono），替代 stat-val 的 mono */
+.figure-num{font-family:var(--font-serif-cn);font-size:64px;font-weight:500;line-height:1;color:var(--t1);letter-spacing:-.02em;}
+.figure-lbl{font-family:var(--font-mono);font-size:10px;color:var(--t3);letter-spacing:.2em;text-transform:uppercase;margin-top:8px;}
+/* watermark-tl：低调水印（左上 mono 大 tracking） */
+.watermark-tl{position:absolute;top:32px;left:40px;font-family:var(--font-mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.16);pointer-events:none;z-index:180;}
+/* film-grain：2% opacity 噪点叠层（给 .page 加 class）*/
+.film-grain{position:relative;}
+.film-grain::after{content:'';position:absolute;inset:0;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .5 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");opacity:.025;pointer-events:none;mix-blend-mode:overlay;}
+/* pullquote：editorial 引用块，替代 .quote-block 的居中斜体 */
+.pullquote{font-family:var(--font-serif-cn);font-size:28px;font-weight:400;line-height:1.5;color:var(--t1);max-width:820px;margin:48px 0;padding-left:24px;border-left:1px solid var(--blue);}
+.pullquote-cite{font-family:var(--font-mono);font-size:11px;color:var(--t3);letter-spacing:.2em;text-transform:uppercase;margin-top:12px;}
+
 /* __PRESENTER_CSS__ */
 </style>
 </head>

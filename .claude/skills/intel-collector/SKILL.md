@@ -39,6 +39,21 @@ scripts:
 
 > **必须设置环境变量 `BROWSER_USE_DISABLE_EXTENSIONS=1`**：默认 browser-use 会从 `clients2.google.com` 下载 uBlock 等 Chrome 扩展，在国内网络下 daemon 会卡死在下载步骤，60s 超时后 client 报 `TimeoutError`。本 workspace 已在 `.claude/settings.json` 的 `env` 段设置该变量，外部 session 手工执行命令时务必加前缀：`BROWSER_USE_DISABLE_EXTENSIONS=1 browser-use ...`
 
+## References
+
+**必读**（产出前加载）：
+- `references/url-registry.json` — 竞品/媒体 URL 注册表，Step 1 查 URL 用
+- `.claude/skills/_shared/claude-design/asset-quality-rubric.md` — 素材质量 5-10-2-8 评分规则
+
+**按需**（满足条件才读）：
+- `references/competitors/{platform}/index.md` — 已有采集汇总，仅在追加某平台已有模块时查
+
+**执行类**（模型不读，脚本调用）：
+- `references/capture.py` — APP 模式采集（iPhone 镜像 + screencapture）
+- `references/scheduled-scrape.py` — Content 模式定时任务
+- `references/intel-cron.sh` — crontab 包装脚本
+- `references/auth/*.json` — 遗留登录态（已废弃，保留供老项目使用，不读）
+
 ## 执行步骤
 
 ### Step 1: 确认采集目标

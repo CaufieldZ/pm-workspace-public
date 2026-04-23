@@ -4,8 +4,12 @@
 
 用法:
   python3 scripts/pull_meeting_notes.py "关键词" --project 项目名
-  python3 scripts/pull_meeting_notes.py "关键词" --project 项目名 --list   # 只列出匹配的文档，不下载
-  python3 scripts/pull_meeting_notes.py --latest --project 项目名          # 拉最新一条
+  python3 scripts/pull_meeting_notes.py "关键词" --project 项目名 --list        # 只列出匹配的文档，不下载
+  python3 scripts/pull_meeting_notes.py --latest --project 项目名               # 拉最新一条
+  python3 scripts/pull_meeting_notes.py "关键词" -p 项目名 --with-transcript    # 保留转写原文（默认剥离）
+
+默认只保存「全文摘要 + 决策 + 行动项」部分，转写原文剥离（噪声大、吃 token）。
+如需转写（回查歧义、确认争论过程），加 --with-transcript。
 
 直接调 dingtalk-doc MCP HTTP 接口，不需要加载 MCP server 到 Claude Code。
 """
@@ -75,7 +79,7 @@ def mcp_init(url):
         json.load(resp)
 
 
-def search_docs(url, keyword, page_size=5):
+def search_docs(url, keyword, page_size=30):
     args = {"pageSize": page_size}
     if keyword:
         args["keyword"] = keyword
@@ -84,6 +88,11 @@ def search_docs(url, keyword, page_size=5):
 
 def get_content(url, node_id):
     return mcp_call(url, "get_document_content", {"nodeId": node_id})
+
+
+def strip_transcript(markdown):
+    parts = re.split(r"\n#+\s*转写原文\s*\n", markdown, maxsplit=1)
+    return parts[0].rstrip() + "\n"
 
 
 def save_note(markdown, title, project_dir):
@@ -113,6 +122,7 @@ def main():
     parser.add_argument("--project", "-p", required=True, help="项目名（projects/ 下的目录名）")
     parser.add_argument("--list", "-l", action="store_true", help="只列出匹配文档，不下载")
     parser.add_argument("--latest", action="store_true", help="拉最新一条（忽略 keyword）")
+    parser.add_argument("--with-transcript", action="store_true", help="保留转写原文（默认只存摘要）")
     args = parser.parse_args()
 
     project_dir = os.path.join(ROOT, "projects", args.project)
@@ -123,7 +133,7 @@ def main():
     mcp_init(url)
 
     keyword = "" if args.latest else args.keyword
-    result = search_docs(url, keyword, page_size=1 if args.latest else 10)
+    result = search_docs(url, keyword, page_size=1 if args.latest else 30)
     docs = result.get("documents", [])
 
     if not docs:
@@ -134,20 +144,33 @@ def main():
         for i, doc in enumerate(docs):
             ts = doc.get("createTime", 0)
             dt = datetime.fromtimestamp(ts / 1000).strftime("%Y-%m-%d %H:%M") if ts else "?"
-            print(f"  {i + 1}. [{dt}] {doc['name']}")
-            print(f"     nodeId: {doc['nodeId']}")
+            name = doc.get("name") or doc.get("title") or "(untitled)"
+            print(f"  {i + 1}. [{dt}] {name}")
+            print(f"     nodeId: {doc.get('nodeId', '?')}")
         return
 
+    docs = [d for d in docs if d.get("name") or d.get("title")]
+    if not docs:
+        print("未找到有效文档")
+        return
     doc = docs[0]
-    print(f"拉取: {doc['name']}")
+    doc_name = doc.get("name") or doc.get("title")
+    print(f"拉取: {doc_name}")
     content = get_content(url, doc["nodeId"])
     markdown = content.get("markdown", "")
     if not markdown:
         sys.exit("错误：文档内容为空")
 
-    path = save_note(markdown, doc["name"], project_dir)
+    raw_len = len(markdown)
+    if not args.with_transcript:
+        markdown = strip_transcript(markdown)
+
+    path = save_note(markdown, doc_name, project_dir)
     print(f"已保存: {path}")
-    print(f"字数: {len(markdown)}")
+    if args.with_transcript:
+        print(f"字数: {raw_len}（含转写）")
+    else:
+        print(f"字数: {len(markdown)}（已剥离转写，原文 {raw_len}；加 --with-transcript 保留）")
 
 
 if __name__ == "__main__":

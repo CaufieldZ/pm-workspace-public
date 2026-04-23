@@ -525,7 +525,7 @@ if run_cat 6; then
   VALID_PREFIXES=""
   for f in .claude/skills/*/SKILL.md; do
     prefix=$(sed -n 's/^output_prefix: *//p' "$f" | tr -d ' ')
-    [ -n "$prefix" ] && VALID_PREFIXES="$VALID_PREFIXES $prefix"
+    [ -n "$prefix" ] && [ "$prefix" != "—" ] && [ "$prefix" != "-" ] && VALID_PREFIXES="$VALID_PREFIXES $prefix"
   done
   # 加上 audit- 前缀（workspace-audit 产出）
   VALID_PREFIXES="$VALID_PREFIXES audit-"
@@ -578,11 +578,27 @@ if run_cat 6; then
     fi
 
     # 6.2 文件命名规范（从 frontmatter 动态构建合法前缀）
+    # 读取项目级豁免列表（.audit-ignore-naming，每行一个 glob）
+    ignore_file="${proj_dir}.audit-ignore-naming"
+    ignore_patterns=""
+    [ -f "$ignore_file" ] && ignore_patterns=$(grep -v '^#' "$ignore_file" 2>/dev/null | grep -v '^$')
+
     echo "[命名规范]："
     for f in "${proj_dir}deliverables/"*; do
       [ -f "$f" ] || continue
       fname=$(basename "$f")
       case "$fname" in .*) continue ;; esac
+
+      # 项目豁免匹配
+      skip=false
+      if [ -n "$ignore_patterns" ]; then
+        while IFS= read -r pat; do
+          [ -z "$pat" ] && continue
+          case "$fname" in $pat) skip=true; break ;; esac
+        done <<< "$ignore_patterns"
+      fi
+      $skip && continue
+
       matched=false
       for prefix in $VALID_PREFIXES; do
         case "$fname" in "${prefix}"*) matched=true; break ;; esac
@@ -590,7 +606,7 @@ if run_cat 6; then
       if $matched; then
         echo "  ✅ $fname"
       else
-        echo "  ⚠️  $fname 不符合 {prefix}-{project}-v{N} 规范（合法前缀: $VALID_PREFIXES）"
+        echo "  ⚠️  $fname 不符合 {prefix}-{project}-v{N} 规范（合法前缀: ${VALID_PREFIXES}）"
       fi
     done
     echo ""
@@ -665,6 +681,56 @@ if run_cat 7; then
 
     [ "$TABLE_FAIL" -eq 0 ] && echo "  ✅ SKILL_TABLE 与 frontmatter 一致"
   fi
+  echo ""
+fi
+
+# ─────────────────────────────────────────────
+# 类别 12：Scripts 字段存在性
+# frontmatter 的 scripts: 映射声明的每个脚本必须在 references/ 或 scripts/ 中存在
+# ─────────────────────────────────────────────
+if run_cat 12; then
+  echo "===== 12. Scripts 字段存在性 ====="
+  echo ""
+  SCRIPTS_FAIL=0
+  for f in .claude/skills/*/SKILL.md; do
+    skill_dir=$(dirname "$f")
+    skill_name=$(basename "$skill_dir")
+    # 提取 frontmatter 内 scripts: 映射块（scripts: 到下一个顶级字段或 ---）
+    scripts_block=$(awk '
+      /^---$/ { n++; next }
+      n==1 && /^scripts:/ { in_scripts=1; next }
+      n==1 && in_scripts && /^[a-zA-Z_]+:/ { in_scripts=0 }
+      n==1 && in_scripts && /^  [^ ]/ { print }
+      n>=2 { exit }
+    ' "$f")
+    [ -z "$scripts_block" ] && continue
+
+    while IFS= read -r line; do
+      # 匹配 "  name.ext: 描述" 提取 name.ext
+      script_name=$(echo "$line" | sed -n 's/^  *\([^:]*\):.*/\1/p' | tr -d ' ')
+      [ -z "$script_name" ] && continue
+
+      # 按优先级查找：
+      # 1) 按原样（处理形如 scripts/xxx.py 这种已带路径的）
+      # 2) skill references / skill scripts / 项目根 scripts
+      found=false
+      for path in "${script_name}" \
+                  "${skill_dir}/references/${script_name}" \
+                  "${skill_dir}/scripts/${script_name}" \
+                  "scripts/${script_name}"; do
+        [ -f "$path" ] && { found=true; break; }
+      done
+
+      if $found; then
+        echo "  ✅ $skill_name → $script_name"
+      else
+        echo "  ❌ $skill_name 声明了 $script_name 但文件不存在"
+        SCRIPTS_FAIL=1
+        GLOBAL_FAIL=1
+      fi
+    done <<< "$scripts_block"
+  done
+  [ "$SCRIPTS_FAIL" -eq 0 ] && echo ""
   echo ""
 fi
 

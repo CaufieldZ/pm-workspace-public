@@ -68,44 +68,27 @@ scripts:
 
 ### Step 1：读取 Reference
 
-**必读（SKILL 层规则）：**
-```
-view .claude/skills/prd/references/prd-template.md
-view .claude/skills/_shared/claude-design/content-slop-ban.md
-```
-> `content-slop-ban.md` 决定「不写什么」：禁编造数据、禁 filler content、印刷 Scale 规范。每次写 PRD 前必过一遍禁止列表。
+**必读**（产出前加载）：
 
-**必读（项目层真相源）：**
-```
-view projects/{项目名}/scene-list.md
-view projects/{项目名}/context.md
-```
+SKILL 层规则：
+- `.claude/skills/prd/references/prd-template.md` — PRD 章节结构 + 填充规范（唯一的结构定义来源）
+- `.claude/skills/_shared/claude-design/content-slop-ban.md` — 禁写清单：禁编造数据、禁 filler content、印刷 Scale 规范
 
-> 从 context.md 提取：第 4 章场景编号、第 5 章术语表、第 6 章业务规则。PRD 是这些决策的投影，不是重新发明。
+项目层真相源：
+- `projects/{项目名}/scene-list.md` — 场景编号锁定，PRD 必须复用
+- `projects/{项目名}/context.md` — 第 4/5/6 章提取场景/术语/业务规则
 
-按需（仅当用户说「参考例子」，或 prd-template.md 不足以支撑当前 PRD 结构时才读取）：
-```
-view .claude/skills/prd/references/prd-example.md
-```
+> PRD 是 context.md 决策的投影，不是重新发明。
 
-按需（需修改默认样式时）：
-```
-view .claude/skills/prd/references/prd-docx-styles.md
-```
+**按需**（满足条件才读）：
+- `references/prd-example.md` — 用户说「参考例子」或 template 不足以支撑当前结构时读
+- `references/prd-docx-styles.md` — 需修改默认样式时读（gen_prd_base.py 已内置默认）
 
-按需（需理解框架函数内部实现时）：
-```
-view .claude/skills/prd/references/gen_prd_base.py
-```
-
-- `prd-template.md` — PRD 章节结构 + 填充规范（**唯一的结构定义来源**）
-- `scene-list.md` — 场景编号锁定，PRD 必须复用此编号体系
-- `context.md` — 项目唯一真相源（第 4/5/6 章）
-- `prd-example.md` — 实际 PRD 范例，仅当 template 描述不足以支撑或用户主动要求参考时才读
-- `prd-docx-styles.md` — 样式定义，正常生成不需要读（gen_prd_base.py 已内置所有默认样式）
-- `gen_prd_base.py` — **新建** PRD 的框架函数库源码，正常生成不需要读（看下方 API 速查即可）
-- `update_prd_base.py` — **升版/更新**已有 PRD 的辅助函数（replace_para_text / set_cell_text / replace_cell_image / fix_dpi），正常不需要读源码
-- `push_to_confluence_base.py` — 推送到 Confluence Server 的脚本（mammoth 转换 + 附件上传）
+**执行类**（模型不读，脚本调用）：
+- `references/gen_prd_base.py` — 新建 PRD 框架函数库，项目脚本 `from gen_prd_base import *` 即可（API 速查见下方）
+- `references/update_prd_base.py` — 升版辅助函数（replace_para_text / set_cell_text / replace_cell_image / fix_dpi）
+- `references/push_to_confluence_base.py` — Confluence 推送脚本
+- `references/check_prd.sh` — PRD 自检脚本
 
 ### gen_prd_base.py API 速查（新建 PRD）
 
