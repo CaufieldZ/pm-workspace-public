@@ -47,7 +47,7 @@ PM-Workspace 是一套 **PM 产出物自动化工作台**，运行在 Claude Cod
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "awsclaude4.6",
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "awsclaude4.6-opus",
     "CLAUDE_CODE_SUBAGENT_MODEL": "awsclaude4.6-haiku",
-    "ANTHROPIC_BASE_URL": "https://INTERNAL_URL_REDACTED",
+    "ANTHROPIC_BASE_URL": "https://YOUR_AI_PROXY_DOMAIN/api",
     "MAX_MCP_OUTPUT_TOKENS": "10000",
     "MAX_THINKING_TOKENS": "20000",
     "DISABLE_TELEMETRY": "1",
@@ -60,7 +60,7 @@ PM-Workspace 是一套 **PM 产出物自动化工作台**，运行在 Claude Cod
 }
 ```
 
-**获取 Auth Token**：浏览器打开 `INTERNAL_DOMAIN_REDACTED JSON 里的 `ANTHROPIC_AUTH_TOKEN` 复制粘贴。
+**获取 Auth Token**：浏览器打开公司内部 AI Proxy 的 config 接口（需内网/VPN），返回 JSON 里的 `ANTHROPIC_AUTH_TOKEN` 复制粘贴。
 
 **验证**：VSCode 终端里输入「你好」，Claude 回复了就成功。报 401 说明 token 不对。
 
