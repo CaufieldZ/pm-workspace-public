@@ -9,7 +9,13 @@
 
 > 分界原则：本文件只放「跟 Claude Code 工具绑定」的操作规则（换 Cursor 就不适用的）。PM 方法论、业务规则、链路定义全部在 pm-workflow.md。唯一例外：context.md 只读规则放在本文件以确保模型启动时第一时间遵守。
 
-【并行读取】收到产出物指令时，context.md + scene-list.md + SKILL.md 并行读取。references/ 按 SKILL.md Step 1 声明的文件清单按需加载，Step 声明的文件可并入首批并行读取，未声明的 CSS/JS 不预加载。
+【并行读取】收到产出物指令时，先并行：① scene-list.md Read ② SKILL.md Read ③ `read_context_section.py {项目} --toc`。根据 SKILL.md Step 1 + toc 结果选读 context.md 所需章节。references/ 按 Step 1 声明按需加载，未声明的 CSS/JS 不预加载。
+
+【context.md 按需读取】context.md > 300 行时禁止全量 Read，用 `scripts/read_context_section.py`：
+1. 首次接触：`--toc` → 必读「方向章节」（标题含 场景/编号/待办/阻塞/已交付 之一）→ 按任务选读其余章节
+2. 追加信息：`--grep` 定位 → `--sections` 取内容
+3. 不确定是否相关 → 读。宁可多读不可漏读
+4. ≤ 300 行 → 直接全量 Read
 
 【脚本优先（强制）】读取 SKILL.md 后，先看 frontmatter `scripts` 字段。该字段列出本 Skill 所有可用脚本及调用方式。规则：
 - `scripts` 字段里列出的脚本，对应步骤**必须调用**，不得跳过脚本自己手写等效逻辑
