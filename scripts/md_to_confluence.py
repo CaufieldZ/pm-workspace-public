@@ -112,7 +112,7 @@ def main():
 
     page_id = res["id"]
     print(f"✓ {title}")
-    print(f"  https://INTERNAL_URL_REDACTED")
+    print(f"  {base}/pages/viewpage.action?pageId={page_id}")
 
 
 if __name__ == "__main__":

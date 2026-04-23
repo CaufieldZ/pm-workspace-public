@@ -58,7 +58,11 @@
       "Bash(set +e)",
       "Edit(/.claude/skills/interaction-map/**)",
       "Edit(/.claude/skills/requirement-framework/**)",
-      "Edit(/.claude/skills/cross-check/**)"
+      "Edit(/.claude/skills/cross-check/**)",
+      "Read(//Users/felix.zhi/**)",
+      "Read(//usr/local/**)",
+      "Bash(pip3 show *)",
+      "Bash(ccm --help)"
     ],
     "additionalDirectories": [
       "/Users/felix.zhi/pm-workspace/.claude",
