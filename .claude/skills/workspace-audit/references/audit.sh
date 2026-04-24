@@ -7,7 +7,7 @@
 set -o pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-CATEGORIES="${1:-1,2,3,4,7}"
+CATEGORIES="${1:-1,2,3,4,7,13}"
 GLOBAL_FAIL=0
 
 # ─── 常量 ───
@@ -750,6 +750,82 @@ if run_cat 12; then
     done <<< "$scripts_block"
   done
   [ "$SCRIPTS_FAIL" -eq 0 ] && echo ""
+  echo ""
+fi
+
+# ─────────────────────────────────────────────
+# 类别 13：scripts/lib/ import 链路冒烟测试
+# 共享模块能被 skill 脚本正确 import
+# ─────────────────────────────────────────────
+if run_cat 13; then
+  echo "===== 13. scripts/lib/ import 链路 ====="
+  echo ""
+  LIB_FAIL=0
+
+  # 13.1 __init__.py 存在
+  if [ ! -f scripts/lib/__init__.py ]; then
+    echo "  ❌ scripts/lib/__init__.py 缺失（Python 包标记）"
+    LIB_FAIL=1; GLOBAL_FAIL=1
+  else
+    echo "  ✅ scripts/lib/__init__.py 存在"
+  fi
+
+  # 13.2 各 lib 模块独立 import
+  for mod in confluence html_builder html_patcher; do
+    if [ ! -f "scripts/lib/${mod}.py" ]; then
+      continue
+    fi
+    if python3 -c "import sys; sys.path.insert(0,'scripts'); from lib.${mod} import *" 2>/dev/null; then
+      echo "  ✅ lib.${mod} import OK"
+    else
+      echo "  ❌ lib.${mod} import 失败"
+      LIB_FAIL=1; GLOBAL_FAIL=1
+    fi
+  done
+
+  # 13.3 skill update base → HtmlPatcher 继承链
+  for updater in \
+    ".claude/skills/interaction-map/references/update_imap_base.py:ImapUpdater" \
+    ".claude/skills/prototype/references/update_proto_base.py:ProtoUpdater" \
+    ".claude/skills/ppt/references/update_ppt_base.py:PptUpdater"; do
+    upath="${updater%%:*}"
+    uclass="${updater##*:}"
+    [ -f "$upath" ] || continue
+    udir=$(dirname "$upath")
+    if python3 -c "
+import sys; sys.path.insert(0,'scripts'); sys.path.insert(0,'$udir')
+mod = __import__('$(basename "${upath}" .py)')
+cls = getattr(mod, '$uclass')
+assert issubclass(cls, object), 'not a class'
+" 2>/dev/null; then
+      echo "  ✅ ${uclass} import + 继承链 OK"
+    else
+      echo "  ❌ ${uclass} import 或继承链断裂"
+      LIB_FAIL=1; GLOBAL_FAIL=1
+    fi
+  done
+
+  # 13.4 gen 脚本 import 链路（改了 import 后还能跑）
+  for gen in \
+    ".claude/skills/interaction-map/references/gen_imap_skeleton.py:generate_skeleton" \
+    ".claude/skills/prototype/references/gen_proto_skeleton.py:generate_skeleton" \
+    ".claude/skills/flowchart/references/gen_flow_base.py:render_flowchart"; do
+    gpath="${gen%%:*}"
+    gfunc="${gen##*:}"
+    [ -f "$gpath" ] || continue
+    gdir=$(dirname "$gpath")
+    if python3 -c "
+import sys; sys.path.insert(0,'$gdir')
+mod = __import__('$(basename "${gpath}" .py)')
+assert hasattr(mod, '$gfunc'), 'missing $gfunc'
+" 2>/dev/null; then
+      echo "  ✅ $(basename "$gpath"):${gfunc} import OK"
+    else
+      echo "  ❌ $(basename "$gpath"):${gfunc} import 失败"
+      LIB_FAIL=1; GLOBAL_FAIL=1
+    fi
+  done
+
   echo ""
 fi
 

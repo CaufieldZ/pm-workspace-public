@@ -30,7 +30,7 @@ fi
 echo "🔍 检测到 Skill/规则文件变更，运行防腐化审计..."
 echo ""
 
-bash .claude/skills/workspace-audit/references/audit.sh 1,2,3,4,7,12
+bash .claude/skills/workspace-audit/references/audit.sh 1,2,3,4,7,12,13
 
 if [ $? -ne 0 ]; then
   echo ""
