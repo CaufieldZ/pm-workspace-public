@@ -13,7 +13,7 @@
 # ⚠️ 反模式警告（必读）：
 # ❌ BAD: 只写 ann-card + ann-num，不写 card-title / ann-item / ann-text 子结构 → 产出扁平无层次
 # ❌ BAD: 不写 .anno 虚线标注框 → 读者不知道注释对应屏幕哪个区域
-# ❌ BAD: 不写 .ann-tag (new/chg/p0/p1) → 无法区分优先级和变更类型
+# ❌ BAD: 不写 .ann-tag (p0/p1/p2) → 无法区分优先级。注意 .ann-tag.new/chg/del 已退役，见 interaction-map SKILL.md L58
 # ❌ BAD: 不写 .info-box → 缺少补充说明和备注信息
 # ❌ BAD: 不写 .aw 箭头 → 屏幕间无流向关系
 # ❌ BAD: 不写 .flow-note → 屏幕缺少状态说明
@@ -101,9 +101,9 @@ def fill_a():
     <!-- ─── 注释卡（纵向容器） ─── -->
     <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
       <div class="ann-card">
-        <div class="card-title">📋 A · 首页 改动说明 <span class="ann-tag new">NEW</span> <span class="ann-tag p0">P0</span></div>
-        <div class="ann-item"><div class="ann-num amber">①</div><div class="ann-text"><b>核心操作按钮</b> <span class="ann-tag chg">改动</span><br>按钮文案和样式调整，增加副标题说明</div></div>
-        <div class="ann-item"><div class="ann-num green">②</div><div class="ann-text"><b>详情内容区</b> <span class="ann-tag new">NEW</span><br>新增详情展示模块，支持下拉刷新</div></div>
+        <div class="card-title">📋 A · 首页 说明 <span class="ann-tag p0">P0</span></div>
+        <div class="ann-item"><div class="ann-num amber">①</div><div class="ann-text"><b>核心操作按钮</b><br>按钮文案和样式调整，增加副标题说明</div></div>
+        <div class="ann-item"><div class="ann-num green">②</div><div class="ann-text"><b>详情内容区</b><br>新增详情展示模块，支持下拉刷新</div></div>
         <div class="info-box blue"><b>备注：</b>首页改动需同步更新缓存策略，详见后端接口文档</div>
       </div>
     </div>
@@ -166,9 +166,9 @@ def fill_m1():
     <!-- ─── 注释卡（纵向容器） ─── -->
     <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
       <div class="ann-card">
-        <div class="card-title">📋 M-1 · 配置管理 改动说明 <span class="ann-tag chg">改动</span> <span class="ann-tag p1">P1</span></div>
-        <div class="ann-item"><div class="ann-num blue">①</div><div class="ann-text"><b>配置列表</b> <span class="ann-tag chg">改动</span><br>列表增加排序和筛选功能</div></div>
-        <div class="ann-item"><div class="ann-num green">②</div><div class="ann-text"><b>编辑表单</b> <span class="ann-tag new">NEW</span><br>新增批量编辑模式，支持多行同时修改</div></div>
+        <div class="card-title">📋 M-1 · 配置管理 说明 <span class="ann-tag p1">P1</span></div>
+        <div class="ann-item"><div class="ann-num blue">①</div><div class="ann-text"><b>配置列表</b><br>列表增加排序和筛选功能</div></div>
+        <div class="ann-item"><div class="ann-num green">②</div><div class="ann-text"><b>编辑表单</b><br>新增批量编辑模式，支持多行同时修改</div></div>
         <div class="info-box amber"><b>注意：</b>批量编辑需后端支持事务性保存，失败时整体回滚</div>
       </div>
     </div>

@@ -30,18 +30,31 @@ background: radial-gradient(circle, purple, pink, blue); /* mesh feel */
 - 禁止：`✅` 做 Feature 列表
 - 没有图标需要时用 placeholder 文字标注，或用 Lucide/Phosphor 真 icon 库
 
-### 禁 3：圆角卡片 + 左 border accent（AI 签名卡片）
+**例外 · UI mock 内部图标**（prototype / interaction-map 专属）：
+
+交互大图和原型需要模拟被设计的产品本身，里面的 tab bar / 空态 / 功能按钮 icon **不是文档装饰**而是「装 UI」——真实产品会有图标，mock 只是示意「这里有个 icon」。按**尺寸和用途**分层：
+
+| 区域 | 尺寸 | 允许做法 |
+|---|---|---|
+| UI mock 内部小图标（tab bar / 按钮内 / 空态提示 / 状态徽章） | ≤ 20px | emoji ✅ 或 Unicode 几何符号（`▶ ● ◆ ○ □ ★`）✅ |
+| UI mock 内部大占位图（直播缩略图 / banner / 头像大图 / hero 插图） | ≥ 40px | 强制 `.cd-placeholder` 灰底 + mono 文字缩写（`IMG` / `AV` / `LIVE` / `HERO`），禁 emoji 放大当插图 |
+| 文档本身装饰（SKILL.md / references md 的章节标题、列表前缀、section label） | — | 一律禁 emoji（本条原规则） |
+
+**判定方法**：这个 emoji 是在**模拟真实产品的一部分**（prototype 的 tab 栏、空态），还是在**装饰文档结构**（「## 🎯 使用说明」）？前者允许，后者禁止。
+
+### 禁 3：圆角卡片 + 任意方向 border accent（AI 签名卡片）
+
+**任一方向**（左 / 右 / 上 / 下） ≥ 2px 的 accent color border 都是 AI 味签名，不是只禁左边。从 left 换 top / right 不算规避。
 
 ```css
-/* ❌ 这是 AI 味卡片的典型签名，禁止 */
-.card {
-  border-radius: 12px;
-  border-left: 4px solid #2F6CF2;
-  padding: 16px;
-}
+/* ❌ 全部禁，无论方向 */
+.card { border-radius: 12px; border-left:  4px solid #2F6CF2; }
+.card { border-radius: 12px; border-top:   2px solid var(--cd-err); }  /* 红绿顶条分区也禁 */
+.card { border-radius: 12px; border-right: 3px solid var(--cd-ok); }
+.card { border-radius: 12px; border-bottom:2px solid var(--cd-accent); }
 ```
 
-想做强调用：背景色对比、字重 / 字号对比、plain 分隔线。
+想做强调 / 分区用：背景色对比（两张卡一深一浅）、标题前加小圆点（`<span style="width:6px;height:6px;border-radius:50%;background:var(--cd-err)">`）、字重字号对比、plain hairline 分隔线（`border: 1px solid var(--cd-hairline)` 全边框均匀灰不算 accent）。
 
 ### 禁 4：SVG 画人物 / 场景 / 插画
 
@@ -135,7 +148,7 @@ padding: var(--sp-4) var(--sp-6); /* 32px 48px */
 | 想法 | 答案 |
 |------|------|
 | 加个渐变背景？ | 大概率不加 |
-| 加个 emoji 装饰？ | 不加 |
+| 加个 emoji 装饰？ | 文档结构装饰不加；UI mock 内部 ≤20px icon（tab/按钮/空态）可加，≥40px 占位图用 `.cd-placeholder` 不用 emoji |
 | 给卡片加圆角 + border-left accent？ | 不加，换其他方式 |
 | 用 SVG 画 hero 插画？ | 不画，用 placeholder |
 | 加一排 icon features？ | 先问要不要 |

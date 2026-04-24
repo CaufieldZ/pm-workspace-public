@@ -5,9 +5,11 @@ description: "Use this skill to read, edit, or manipulate existing Word document
 license: Proprietary. LICENSE.txt has complete terms
 type: tool
 output_format: .docx
+output_prefix: none
 depends_on: []
 optional_inputs: []
 consumed_by: []
+scripts: []
 ---
 <!-- pm-ws-canary-236a5364 -->
 

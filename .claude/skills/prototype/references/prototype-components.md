@@ -12,13 +12,13 @@
 ### A1. 标准卡片（三态）
 ```html
 <!-- 正常态 -->
-<div style="background:#161A1E;border:1px solid #2B3139;border-radius:10px;padding:14px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;min-height:120px;" onmouseover="this.style.borderColor='#2D81FF'" onmouseout="this.style.borderColor='#2B3139'">
+<div style="background:#161A1E;border:1px solid #2B3139;border-radius:10px;padding:14px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;min-height:120px;" onmouseover="this.style.borderColor='#2F6CF2'" onmouseout="this.style.borderColor='#2B3139'">
   <div style="font-size:9px;padding:2px 6px;border-radius:3px;display:inline-block;width:fit-content;font-weight:600;color:#0ECB81;background:rgba(14,203,129,.1);"><!-- [FILL] 状态文字 --></div>
   <div style="font-size:13px;font-weight:700;margin-top:6px;line-height:1.4;"><!-- [FILL] 标题 --></div>
   <div style="font-size:11px;color:#848E9C;margin-top:4px;"><!-- [FILL] 描述 --></div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:10px;">
     <span style="font-size:11px;color:#5E6673;"><!-- [FILL] 时间/标签 --></span>
-    <button style="background:#2D81FF;color:#fff;padding:4px 12px;border-radius:5px;font-size:11px;font-weight:600;border:none;cursor:pointer;"><!-- [FILL] CTA --></button>
+    <button style="background:#2F6CF2;color:#fff;padding:4px 12px;border-radius:5px;font-size:11px;font-weight:600;border:none;cursor:pointer;"><!-- [FILL] CTA --></button>
   </div>
 </div>
 
@@ -31,10 +31,10 @@
 
 ### A2. 封面图卡片
 ```html
-<div style="background:#161A1E;border:1px solid #2B3139;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .2s;" onmouseover="this.style.borderColor='#2D81FF'" onmouseout="this.style.borderColor='#2B3139'">
+<div style="background:#161A1E;border:1px solid #2B3139;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .2s;" onmouseover="this.style.borderColor='#2F6CF2'" onmouseout="this.style.borderColor='#2B3139'">
   <!-- 封面图区域 -->
-  <div style="height:100px;background:linear-gradient(135deg,#0a1a3a,#162040);display:flex;align-items:center;justify-content:center;position:relative;">
-    <div style="font-size:32px;"><!-- [FILL] icon/图 --></div>
+  <div style="height:100px;background:#0a1a3a;display:flex;align-items:center;justify-content:center;position:relative;">
+    <div style="font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.32);"><!-- [FILL] COVER / 或真实图 --></div>
     <div style="position:absolute;top:8px;left:8px;font-size:8px;color:#0ECB81;background:rgba(14,203,129,.15);padding:2px 6px;border-radius:3px;font-weight:700;"><!-- [FILL] 状态 --></div>
     <div style="position:absolute;top:8px;right:8px;font-size:9px;color:#F6465D;font-weight:800;font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace;"><!-- [FILL] 倒计时 --></div>
   </div>
@@ -44,7 +44,7 @@
     <div style="font-size:11px;color:#848E9C;margin-top:4px;"><!-- [FILL] --></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
       <span style="font-size:10px;color:#5E6673;"><!-- [FILL] --></span>
-      <button style="background:#2D81FF;color:#fff;padding:4px 12px;border-radius:5px;font-size:11px;font-weight:600;border:none;cursor:pointer;"><!-- [FILL] --></button>
+      <button style="background:#2F6CF2;color:#fff;padding:4px 12px;border-radius:5px;font-size:11px;font-weight:600;border:none;cursor:pointer;"><!-- [FILL] --></button>
     </div>
   </div>
 </div>
@@ -52,7 +52,7 @@
 
 ### A3. Wide Card（跨栏大卡）
 ```html
-<div style="grid-column:1/-1;background:linear-gradient(135deg,#091626,#0e1b2e);border:1px solid rgba(45,129,255,.3);border-radius:10px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:.15s;" onmouseover="this.style.borderColor='#2D81FF'" onmouseout="this.style.borderColor='rgba(45,129,255,.3)'">
+<div style="grid-column:1/-1;background:#091626;border:1px solid rgba(47,108,242,.3);border-radius:10px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:.15s;" onmouseover="this.style.borderColor='#2F6CF2'" onmouseout="this.style.borderColor='rgba(47,108,242,.3)'">
   <div>
     <div style="font-size:9px;color:#FFD740;background:rgba(255,215,64,.12);padding:2px 8px;border-radius:4px;font-weight:700;display:inline-block;margin-bottom:4px;"><!-- [FILL] 标签 --></div>
     <h3 style="font-size:16px;font-weight:800;color:#EAECEF;"><!-- [FILL] 标题 --></h3>
@@ -60,7 +60,7 @@
   </div>
   <div style="display:flex;align-items:center;gap:16px;flex-shrink:0;">
     <div style="font-size:18px;font-weight:800;color:#F6465D;font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace;"><!-- [FILL] 数据 --></div>
-    <button style="background:#2D81FF;color:#fff;padding:6px 18px;border-radius:5px;font-size:12px;font-weight:600;border:none;cursor:pointer;"><!-- [FILL] CTA --></button>
+    <button style="background:#2F6CF2;color:#fff;padding:6px 18px;border-radius:5px;font-size:12px;font-weight:600;border:none;cursor:pointer;"><!-- [FILL] CTA --></button>
   </div>
 </div>
 ```
@@ -89,7 +89,7 @@
 
 ### A5. 图文卡片（社区/资讯）
 ```html
-<div style="background:#161A1E;border:1px solid #2B3139;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .2s;" onmouseover="this.style.borderColor='#2D81FF'" onmouseout="this.style.borderColor='#2B3139'">
+<div style="background:#161A1E;border:1px solid #2B3139;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .2s;" onmouseover="this.style.borderColor='#2F6CF2'" onmouseout="this.style.borderColor='#2B3139'">
   <div style="display:flex;gap:12px;padding:14px;">
     <div style="flex:1;min-width:0;">
       <div style="font-size:13px;font-weight:700;color:#EAECEF;line-height:1.4;"><!-- [FILL] 标题 --></div>
@@ -108,11 +108,11 @@
 <div style="padding:0 24px;">
   <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 0 10px;">
     <div style="display:flex;align-items:center;gap:8px;">
-      <div style="width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;background:rgba(45,129,255,.1);"><!-- [FILL] icon --></div>
+      <div style="width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;background:rgba(47,108,242,.1);"><!-- [FILL] icon --></div>
       <h3 style="font-size:14px;font-weight:700;color:#EAECEF;"><!-- [FILL] 分组名 --></h3>
       <span style="font-size:11px;color:#5E6673;margin-left:4px;"><!-- [FILL] 计数 --></span>
     </div>
-    <div style="font-size:12px;color:#2D81FF;font-weight:600;cursor:pointer;">查看全部 ›</div><!-- 不需要则删除 -->
+    <div style="font-size:12px;color:#2F6CF2;font-weight:600;cursor:pointer;">查看全部 ›</div><!-- 不需要则删除 -->
   </div>
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding-bottom:8px;">
     <!-- [FILL] 内部放卡片组件 -->
@@ -122,12 +122,12 @@
 
 ### A7. Hero / Banner 区
 ```html
-<div style="background:linear-gradient(135deg,#060e1f,#0a1428);border-bottom:1px solid rgba(45,129,255,.18);padding:24px;">
+<div style="background:#060e1f;border-bottom:1px solid rgba(47,108,242,.18);padding:24px;">
   <div style="display:flex;justify-content:space-between;align-items:center;">
     <div>
       <div style="font-size:20px;font-weight:800;color:#EAECEF;display:flex;align-items:center;gap:8px;">
         <!-- [FILL] ⚡ 标题 -->
-        <span style="font-size:10px;background:#2D81FF;color:#fff;padding:2px 8px;border-radius:4px;font-weight:700;"><!-- [FILL] 标签 --></span>
+        <span style="font-size:10px;background:#2F6CF2;color:#fff;padding:2px 8px;border-radius:4px;font-weight:700;"><!-- [FILL] 标签 --></span>
       </div>
       <div style="font-size:12px;color:#848E9C;margin-top:4px;"><!-- [FILL] 副标题 --></div>
     </div>
@@ -140,12 +140,12 @@
 
 ### A8. 轮播卡片
 ```html
-<div style="width:280px;flex-shrink:0;background:#161A1E;border:1px solid #2B3139;border-radius:10px;padding:14px;cursor:pointer;transition:.15s;" onmouseover="this.style.borderColor='#2D81FF'" onmouseout="this.style.borderColor='#2B3139'">
-  <div style="font-size:9px;color:#2D81FF;background:rgba(45,129,255,.1);padding:2px 8px;border-radius:4px;display:inline-block;font-weight:700;margin-bottom:6px;"><!-- [FILL] 标签 --></div>
+<div style="width:280px;flex-shrink:0;background:#161A1E;border:1px solid #2B3139;border-radius:10px;padding:14px;cursor:pointer;transition:.15s;" onmouseover="this.style.borderColor='#2F6CF2'" onmouseout="this.style.borderColor='#2B3139'">
+  <div style="font-size:9px;color:#2F6CF2;background:rgba(47,108,242,.1);padding:2px 8px;border-radius:4px;display:inline-block;font-weight:700;margin-bottom:6px;"><!-- [FILL] 标签 --></div>
   <h3 style="font-size:14px;font-weight:700;color:#EAECEF;"><!-- [FILL] --></h3>
   <div style="font-size:11px;color:#848E9C;margin-top:4px;"><!-- [FILL] --></div>
   <div style="display:flex;gap:4px;margin-top:8px;">
-    <div style="width:14px;height:5px;border-radius:3px;background:#2D81FF;"></div>
+    <div style="width:14px;height:5px;border-radius:3px;background:#2F6CF2;"></div>
     <div style="width:5px;height:5px;border-radius:3px;background:#363C45;"></div>
     <div style="width:5px;height:5px;border-radius:3px;background:#363C45;"></div>
   </div>
@@ -169,7 +169,7 @@
   <!-- 底部 Tab -->
   <div style="display:flex;background:#0D1117;border-top:1px solid #2B3139;height:42px;">
     <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:7px;color:#5E6673;"><span style="font-size:14px;">🏠</span><!-- [FILL] --></div>
-    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:7px;color:#2D81FF;"><span style="font-size:14px;">🎯</span><!-- [FILL] 当前 --></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:7px;color:#2F6CF2;"><span style="font-size:14px;">🎯</span><!-- [FILL] 当前 --></div>
     <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:7px;color:#5E6673;"><span style="font-size:14px;">👤</span><!-- [FILL] --></div>
   </div>
 </div>
@@ -178,7 +178,7 @@
 ### A10. 设备切换器
 ```html
 <div style="display:flex;background:#1E2329;border-radius:6px;overflow:hidden;">
-  <div onclick="switchDevice('webView','appView',[this,this.nextElementSibling],0)" style="padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;color:#EAECEF;background:#2D81FF;border-radius:6px;">🖥 Web</div>
+  <div onclick="switchDevice('webView','appView',[this,this.nextElementSibling],0)" style="padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;color:#EAECEF;background:#2F6CF2;border-radius:6px;">🖥 Web</div>
   <div onclick="switchDevice('webView','appView',[this.previousElementSibling,this],1)" style="padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;color:#5E6673;">📱 App</div>
 </div>
 ```
@@ -188,7 +188,7 @@
 <div style="text-align:center;padding:60px 0;">
   <div style="font-size:48px;margin-bottom:12px;opacity:.3;">📭</div>
   <div style="font-size:14px;color:#5E6673;"><!-- [FILL] 空态文案 --></div>
-  <button style="margin-top:16px;background:#2D81FF;color:#fff;padding:8px 24px;border-radius:6px;font-size:13px;font-weight:600;border:none;cursor:pointer;"><!-- [FILL] CTA（可选） --></button>
+  <button style="margin-top:16px;background:#2F6CF2;color:#fff;padding:8px 24px;border-radius:6px;font-size:13px;font-weight:600;border:none;cursor:pointer;"><!-- [FILL] CTA（可选） --></button>
 </div>
 ```
 
@@ -204,7 +204,7 @@
       <span style="font-size:12px;color:#4E5969;white-space:nowrap;"><!-- [FILL] 字段名 -->：</span>
       <select style="padding:5px 28px 5px 8px;border:1px solid #E4E7ED;border-radius:4px;font-size:12px;"><option>全部</option><option><!-- [FILL] --></option></select>
     </div>
-    <button style="padding:6px 16px;border-radius:4px;font-size:12px;font-weight:500;background:#2D81FF;color:#fff;border:1px solid #2D81FF;cursor:pointer;">🔍 查询</button>
+    <button style="padding:6px 16px;border-radius:4px;font-size:12px;font-weight:500;background:#2F6CF2;color:#fff;border:1px solid #2F6CF2;cursor:pointer;">🔍 查询</button>
     <button style="padding:6px 16px;border-radius:4px;font-size:12px;font-weight:500;background:transparent;color:#4E5969;border:1px solid #E4E7ED;cursor:pointer;">重置</button>
   </div>
 </div>
@@ -226,7 +226,7 @@
         <td style="padding:10px 8px;">
           <div style="display:flex;gap:4px;">
             <span style="font-size:11px;cursor:pointer;padding:2px 8px;border-radius:3px;color:#FF7D00;background:#FFF3E0;">下线</span>
-            <span style="font-size:11px;cursor:pointer;padding:2px 8px;border-radius:3px;color:#2D81FF;background:#EEF2FF;">编辑</span>
+            <span style="font-size:11px;cursor:pointer;padding:2px 8px;border-radius:3px;color:#2F6CF2;background:#EEF2FF;">编辑</span>
             <span style="font-size:11px;cursor:pointer;padding:2px 8px;border-radius:3px;color:#F53F3F;background:#FFEBEE;">删除</span>
           </div>
         </td>
@@ -260,14 +260,14 @@
 
 ### B4. 配置卡片（拖拽排序 + 开关）
 ```html
-<div style="background:#FFF;border:1px solid #E4E7ED;border-radius:8px;padding:16px;display:flex;align-items:center;gap:16px;transition:.15s;margin-bottom:12px;" onmouseover="this.style.borderColor='#2D81FF'" onmouseout="this.style.borderColor='#E4E7ED'">
+<div style="background:#FFF;border:1px solid #E4E7ED;border-radius:8px;padding:16px;display:flex;align-items:center;gap:16px;transition:.15s;margin-bottom:12px;" onmouseover="this.style.borderColor='#2F6CF2'" onmouseout="this.style.borderColor='#E4E7ED'">
   <div style="cursor:grab;color:#C9CDD4;font-size:18px;">⠿</div>
-  <div style="width:28px;height:28px;background:#EEF2FF;color:#2D81FF;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;"><!-- [FILL] 序号 --></div>
+  <div style="width:28px;height:28px;background:#EEF2FF;color:#2F6CF2;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;"><!-- [FILL] 序号 --></div>
   <div style="flex:1;min-width:0;">
     <div style="font-size:15px;font-weight:700;color:#1D2129;"><!-- [FILL] 名称 --></div>
     <div style="font-size:12px;color:#86909C;margin-top:3px;"><!-- [FILL] 规则描述 --></div>
   </div>
-  <div style="width:40px;height:22px;border-radius:11px;background:#2D81FF;position:relative;cursor:pointer;flex-shrink:0;" onclick="this.classList.toggle('off');this.style.background=this.classList.contains('off')?'#C9CDD4':'#2D81FF';this.querySelector('i').style.left=this.classList.contains('off')?'2px':'20px';">
+  <div style="width:40px;height:22px;border-radius:11px;background:#2F6CF2;position:relative;cursor:pointer;flex-shrink:0;" onclick="this.classList.toggle('off');this.style.background=this.classList.contains('off')?'#C9CDD4':'#2F6CF2';this.querySelector('i').style.left=this.classList.contains('off')?'2px':'20px';">
     <i style="position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:2px;left:20px;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.15);"></i>
   </div>
   <div style="display:flex;gap:6px;">
@@ -294,7 +294,7 @@
     <!-- 底部 -->
     <div style="padding:12px 20px;border-top:1px solid #E4E7ED;display:flex;justify-content:flex-end;gap:8px;">
       <button style="padding:6px 16px;border-radius:4px;font-size:12px;background:transparent;color:#4E5969;border:1px solid #E4E7ED;cursor:pointer;" onclick="this.closest('[id]').style.display='none'">取消</button>
-      <button style="padding:6px 16px;border-radius:4px;font-size:12px;background:#2D81FF;color:#fff;border:1px solid #2D81FF;cursor:pointer;">保存</button>
+      <button style="padding:6px 16px;border-radius:4px;font-size:12px;background:#2F6CF2;color:#fff;border:1px solid #2F6CF2;cursor:pointer;">保存</button>
     </div>
   </div>
 </div>
@@ -304,10 +304,10 @@
 ### B6. Banner/媒体管理卡片
 ```html
 <div style="background:#FFF;border:1px solid #E4E7ED;border-radius:8px;overflow:hidden;">
-  <div style="height:140px;background:linear-gradient(135deg,#0a1a3a,#162040);display:flex;align-items:center;justify-content:center;position:relative;">
-    <div style="position:absolute;top:8px;left:8px;background:#2D81FF;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;"><!-- [FILL] 序号 --></div>
+  <div style="height:140px;background:#0a1a3a;display:flex;align-items:center;justify-content:center;position:relative;">
+    <div style="position:absolute;top:8px;left:8px;background:#2F6CF2;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;"><!-- [FILL] 序号 --></div>
     <div style="position:absolute;top:8px;right:8px;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#E8F5E9;color:#2E7D32;"><!-- [FILL] 状态 --></div>
-    <div style="font-size:32px;">🖼</div>
+    <div style="font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.32);">IMG</div>
   </div>
   <div style="padding:10px 12px;">
     <div style="font-size:13px;font-weight:600;margin-bottom:4px;"><!-- [FILL] 标题 --></div>
@@ -362,7 +362,7 @@
 ### C3. 语种/多标签 Tab
 ```html
 <div style="display:flex;gap:0;border-bottom:1px solid #E4E7ED;margin-bottom:16px;overflow-x:auto;">
-  <div style="padding:6px 14px;font-size:12px;color:#2D81FF;cursor:pointer;border-bottom:2px solid #2D81FF;white-space:nowrap;font-weight:600;"><!-- [FILL] 选中 --></div>
+  <div style="padding:6px 14px;font-size:12px;color:#2F6CF2;cursor:pointer;border-bottom:2px solid #2F6CF2;white-space:nowrap;font-weight:600;"><!-- [FILL] 选中 --></div>
   <div style="padding:6px 14px;font-size:12px;color:#86909C;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;"><!-- [FILL] --></div>
   <div style="padding:6px 14px;font-size:12px;color:#86909C;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;"><!-- [FILL] --></div>
 </div>
@@ -409,7 +409,7 @@
     </div>
     <div style="padding:12px 20px;border-top:1px solid #E4E7ED;display:flex;justify-content:flex-end;gap:8px;">
       <button onclick="document.getElementById('editModal').style.display='none'" style="padding:6px 16px;border-radius:4px;font-size:12px;background:transparent;color:#4E5969;border:1px solid #E4E7ED;cursor:pointer;">取消</button>
-      <button onclick="saveItem()" style="padding:6px 16px;border-radius:4px;font-size:12px;background:#2D81FF;color:#fff;border:1px solid #2D81FF;cursor:pointer;">保存</button>
+      <button onclick="saveItem()" style="padding:6px 16px;border-radius:4px;font-size:12px;background:#2F6CF2;color:#fff;border:1px solid #2F6CF2;cursor:pointer;">保存</button>
     </div>
   </div>
 </div>
@@ -430,7 +430,7 @@ function renderList() {
       + '<td style="padding:10px 8px;"><b>' + d.name + '</b></td>'
       + '<td style="padding:10px 8px;">' + d.status + '</td>'
       + '<td style="padding:10px 8px;">'
-      +   '<span onclick="openEdit(' + i + ')" style="cursor:pointer;padding:2px 8px;border-radius:3px;font-size:11px;color:#2D81FF;background:#EEF2FF;">编辑</span> '
+      +   '<span onclick="openEdit(' + i + ')" style="cursor:pointer;padding:2px 8px;border-radius:3px;font-size:11px;color:#2F6CF2;background:#EEF2FF;">编辑</span> '
       +   '<span onclick="deleteItem(' + i + ')" style="cursor:pointer;padding:2px 8px;border-radius:3px;font-size:11px;color:#F53F3F;background:#FFEBEE;">删除</span>'
       + '</td></tr>';
   });

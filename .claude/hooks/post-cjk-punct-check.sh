@@ -47,5 +47,5 @@ esac
 CHECKER="${CLAUDE_PROJECT_DIR:-$(pwd)}/scripts/check_cjk_punct.py"
 [ ! -f "$CHECKER" ] && exit 0
 
-python3 "$CHECKER" "$FILE_PATH" 1>/dev/null
+python3 "$CHECKER" "$FILE_PATH"
 exit 0

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 # pm-ws-canary-236a5364
 """
@@ -10,9 +11,10 @@ def fill_block(html, tag, content):
     """替换 <!-- FILL_START:tag -->...<!-- FILL_END:tag --> 整块。
     即使 content 为空也必须替换以清除标记。"""
     pattern = f'<!-- FILL_START:{tag} -->.*?<!-- FILL_END:{tag} -->'
+    matches = re.findall(pattern, html, flags=re.DOTALL)
+    if not matches:
+        raise RuntimeError(f'FILL 标记未找到: {tag}。骨架可能损坏或标记格式不匹配')
     result = re.sub(pattern, content, html, count=1, flags=re.DOTALL)
-    if result == html:
-        print(f'⚠️ 标记 {tag} 未找到，跳过')
     return result
 
 
@@ -25,14 +27,16 @@ def run_fill(target_path, fills):
         print(f'❌ 文件不存在: {target_path}')
         sys.exit(1)
 
-    html = open(target_path, 'r', encoding='utf-8').read()
+    with open(target_path, 'r', encoding='utf-8') as f:
+        html = f.read()
 
     for tag, content in fills:
         if callable(content):
             content = content()
         html = fill_block(html, tag, content)
 
-    open(target_path, 'w', encoding='utf-8').write(html)
+    with open(target_path, 'w', encoding='utf-8') as f:
+        f.write(html)
 
     remaining = len(re.findall(r'FILL_START:', html))
     filled = len(fills)

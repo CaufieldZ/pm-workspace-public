@@ -2,7 +2,9 @@
 # PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 """Push a Markdown file to Confluence as a child page, wrapped in the Markdown macro.
 
-Reads Confluence creds from .mcp.json so nothing sensitive lives in this script.
+Reads Confluence creds from .mcp.json or .mcp-disabled.json (toggle-mcp.sh
+parks the env block in the latter when the server is disabled — REST calls
+still work since no live MCP server is needed).
 
 Usage:
     python3 scripts/md_to_confluence.py <md_path> --parent-id <id> [--title <title>] [--space <key>] [--update-id <id>]
@@ -22,13 +24,16 @@ from pathlib import Path
 from urllib import request, error
 
 ROOT = Path(__file__).resolve().parent.parent
-MCP_CONFIG = ROOT / ".mcp.json"
 
 
 def load_creds():
-    cfg = json.loads(MCP_CONFIG.read_text())
-    env = cfg["mcpServers"]["confluence"]["env"]
-    return env["CONF_BASE_URL"].rstrip("/"), env["CONF_TOKEN"]
+    for src in [ROOT / ".mcp.json", ROOT / ".mcp-disabled.json"]:
+        if not src.exists():
+            continue
+        env = json.loads(src.read_text()).get("mcpServers", {}).get("confluence", {}).get("env")
+        if env and env.get("CONF_BASE_URL") and env.get("CONF_TOKEN"):
+            return env["CONF_BASE_URL"].rstrip("/"), env["CONF_TOKEN"]
+    sys.exit("找不到 confluence 凭据(.mcp.json 和 .mcp-disabled.json 都没有 env)")
 
 
 def wrap_markdown(md: str) -> str:

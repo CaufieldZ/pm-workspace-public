@@ -5,10 +5,12 @@ description: >
   当 PRD 完成后最终交付前验收,或用户说「拉通检查」「校验一下」「检查一致性」时触发。
 type: pipeline
 output_format: 对话内
+output_prefix: none
 pipeline_position: 8
 depends_on: [scene-list]
 optional_inputs: [interaction-map, prototype, prd, behavior-spec, page-structure, test-cases]
 consumed_by: []
+scripts: []
 ---
 <!-- pm-ws-canary-236a5364 -->
 

@@ -10,6 +10,7 @@ pipeline_position: 1
 depends_on: []
 optional_inputs: [context.md]
 consumed_by: [requirement-framework, architecture-diagrams, interaction-map, prototype, prd, behavior-spec, page-structure, test-cases, cross-check]
+scripts: []
 ---
 <!-- pm-ws-canary-236a5364 -->
 

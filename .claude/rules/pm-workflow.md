@@ -239,14 +239,26 @@ python3 scripts/md_to_confluence.py <md路径> --update-id <页面id>
 - **排版三级层次**：font-weight 至少使用 3 级（900 标题/PART 头 → 700 卡片标题/按钮 → 400 正文说明），禁止全文只用 700
 - **填充后逐 Scene 自检**：每完成一个 Scene 后必须 grep 验证 `.aw` / `.anno` / `.ann-tag` / `.flow-note` 计数，任一为 0 则返工后再继续下一个 Scene
 
-**美学硬底线（HTML 产出物通用，详见 `_shared/claude-design/anti-ai-slop.md`）**：
+**美学硬底线（HTML 产出物通用，本段即权威，与 skill references 冲突以本段为准）**：
 
-- 反 AI slop 六禁：① 全屏渐变背景（rainbow/mesh gradient）② Emoji 装饰标题/列表（🚀⚡️✨🎯💡✅）③ 圆角卡片 + 左 border accent（`border-radius + border-left: 4px solid`，AI 味签名）④ SVG 画人物/场景/插画（用 `.cd-placeholder` 代替）⑤ 烂大街字体（Inter/Roboto/Space Grotesk/Fraunces 作 CJK 主字体）⑥ 每个 card/feature 都带 icon
-- 字号：标题至少正文 2.5 倍（正文 16px → 标题 ≥ 48px）
-- 颜色：最多 1 主 + 1 辅 + 1 强调 + 灰阶，禁凭空调色；用 `--cd-accent: #2F6CF2`
-- 留白 ≥ 40% 总面积；间距只用 8pt 网格（8/16/24/32/48/64px）
-- 无真数据用 placeholder，禁编造 stats/quote/metric cards
-- Token + 工具类引用：HTML head 引 Google Fonts（Noto Serif SC + Source Serif 4 + JetBrains Mono）；CSS 引 `_shared/claude-design/tokens.css` + `utilities.css`
+- 反 AI slop 六禁：
+  1. 全屏渐变背景（rainbow / mesh gradient）
+  2. Emoji 装饰标题或列表（🚀⚡️✨🎯💡✅），例外见 anti-ai-slop.md「UI mock 内部图标」条款
+  3. 圆角卡片 + **任一方向 ≥ 2px 的 accent color border**（左 / 右 / 上 / 下都禁，从 left 换 top 不算规避。想分区用背景色对比、标题前小色点、字重对比、全边均匀 hairline）
+  4. SVG 画人物 / 场景 / 插画（用 `.cd-placeholder` 灰底 + mono 文字缩写代替）
+  5. 烂大街字体作 CJK 主字体（禁 Inter / Roboto / Space Grotesk / Fraunces 作正文）
+  6. 每个 card / feature 都带 icon
+- 字号：标题 ≥ 正文 2.5 倍（正文 16px → 标题 ≥ 48px）
+- line-height 按内容分档（CJK 字形填满 em box，英文下降部会粘下一行中文顶）：
+  - 纯英文 display heading：1.05 – 1.1
+  - 含 CJK 的 display heading（中文产出物 99% 情况）：1.25 – 1.35
+  - 正文 / 段落：1.6 – 1.8
+- 颜色：最多 1 主 + 1 辅 + 1 强调 + 灰阶，禁凭空调色；Claude Design 系用 `--cd-accent: #2F6CF2`
+- 留白 ≥ 40% 总面积；间距只用 8pt 网格（8 / 16 / 24 / 32 / 48 / 64px）
+- 字体栈 CJK 优先铁律：中文字体必须排英文字体前。正文 `'Noto Sans SC','Inter',system-ui,sans-serif`；display `'Noto Serif SC','Source Serif 4',Georgia,serif`
+- 字体最小集 = **Noto Sans SC + Noto Serif SC + JetBrains Mono（3 家）**，实际用到哪种才在 `<link>` 里引；不照抄 tokens.css 顶部注释里的完整 CDN URL（Source Serif 4 / Inter 引但没用 = 白下载 60KB+）
+- CSS 变量源头唯一：生成脚本里必须 `fs.readFileSync('.claude/skills/_shared/claude-design/tokens.css')` 拼进 CSS 模板；**禁止手抄 `:root { --cd-bg:... }` 整块定义**。项目级扩展 token（如 `--cd-surface2` / `--cd-ok`）在 tokens.css 后追加一个小 `:root {}` 块即可
+- 无真数据用 `.cd-placeholder`，禁编造 stats / quote / metric cards
 
 ---
 
@@ -268,6 +280,7 @@ python3 scripts/md_to_confluence.py <md路径> --update-id <页面id>
 - PM 说「跳过澄清」「快速模式」「按 context 执行」「直接做」
 - 已有完整 context.md 含明确目标指标
 - 已有功能改动，规模 ≤ 1 场景
+- 方案型项目（无 UI 改动、跨系统对接、纯后端/架构方案）
 </PM-GATE>
 
 ### 复杂度判定（满足任一即为「复杂」）
@@ -371,7 +384,7 @@ python3 scripts/md_to_confluence.py <md路径> --update-id <页面id>
 
 **配色分类**（设计意图，非冲突）：
 - 前台 App / 交易所视觉（交互大图、移动端原型）：深色系（`--bg: #0B0E11`，涨绿 `#0ECB81`，跌红 `#F6465D`，**金融语义**）
-- Claude Design 系（ppt / flowchart / architecture-diagrams / Web 后台 / 方案文档）：纯黑 `#000` + 4 级透明白 + `--cd-accent #2F6CF2`（HTX fintech 蓝），token 定义见 `_shared/claude-design/tokens.css`
+- Claude Design 系（ppt / flowchart / architecture-diagrams / Web 后台 / 方案文档）：纯黑 `#000` + 4 级透明白 + `--cd-accent #2F6CF2`（HTX fintech 蓝），token 定义见 `.claude/skills/_shared/claude-design/tokens.css`
 - 语义色（跨主题通用，单独使用不构成主题）：成功 `#00B42A` / 失败 `#F53F3F`（Arco Design，用于状态标「已上线/下线」、审批节点「通过/拒绝」、必填星号、删除按钮）
 - 各 skill ref CSS 按定位选主题，语义色作为附加层叠加，不需要整套色板统一
 

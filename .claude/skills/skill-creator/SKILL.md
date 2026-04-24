@@ -6,9 +6,11 @@ description: >
 argument-hint: [skill 名 或 改造目标]
 type: tool
 output_format: 新目录
+output_prefix: none
 depends_on: []
 optional_inputs: []
 consumed_by: []
+scripts: []
 ---
 <!-- pm-ws-canary-236a5364 -->
 

@@ -10,6 +10,7 @@ output_prefix: comp-
 depends_on: []
 optional_inputs: [context.md]
 consumed_by: []
+scripts: []
 ---
 <!-- pm-ws-canary-236a5364 -->
 

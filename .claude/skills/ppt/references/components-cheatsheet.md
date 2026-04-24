@@ -40,7 +40,12 @@
 <h3 class="display display-md">简单</h3>                <!-- 32px 组件标题 -->
 ```
 
-- Noto Serif SC 500 weight + line-height 1.08 + letter-spacing -0.01em
+- Noto Serif SC 500 weight + letter-spacing -0.01em
+- **line-height 按内容分档**（CJK 字形填满 em box，和纯英文标题不同，默认值抄错会导致两行粘连）：
+  - 纯英文 display heading（如 `.display-xl` 全英 hero）：1.05 – 1.1
+  - **含 CJK 的 display heading（中文 PPT 99% 情况）：1.25 – 1.35**，CJK + Latin 混排（如「在一个 Workspace 里\n连接现实世界」）下降部会和下一行中文顶端粘连，必须 ≥ 1.25
+  - 组件标题（`.display-md` 32px 级）：1.2 – 1.3
+  - 正文 / 段落：1.6 – 1.8（与 `content-slop-ban.md` 的「正文 1.5」对齐，偏叙事用 1.75，偏紧凑用 1.5）
 - **替代**：`.hero-headline`（900 sans 堆叠）、`style="font-weight:900;font-size:16px"` inline 粗体堆
 
 ### `.lede` — hero 副标题

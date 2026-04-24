@@ -11,6 +11,7 @@ pipeline_position: 2
 depends_on: [scene-list]
 optional_inputs: [context.md]
 consumed_by: [interaction-map]
+scripts: []
 ---
 <!-- pm-ws-canary-236a5364 -->
 

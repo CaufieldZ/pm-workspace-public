@@ -6,8 +6,10 @@ description: >
 argument-hint: ["<输入文件路径> [子命令/参数]"]
 type: tool
 output_format: 原文件同目录
+output_prefix: none
 depends_on: []
 consumed_by: []
+scripts: []
 ---
 
 # PDF Tools

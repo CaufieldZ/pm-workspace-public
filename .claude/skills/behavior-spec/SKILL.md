@@ -10,6 +10,7 @@ pipeline_position: 6
 depends_on: [scene-list, prd]
 optional_inputs: [interaction-map, prototype]
 consumed_by: [test-cases, cross-check]
+scripts: []
 ---
 <!-- pm-ws-canary-236a5364 -->
 

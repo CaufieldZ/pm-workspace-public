@@ -6,7 +6,7 @@ description: >
 argument-hint: "平台/媒体 + 功能模块，如 binance 活动中心、coindesk 最新报道；可选 --web / --content"
 type: tool
 output_format: 目录
-output_prefix: —
+output_prefix: none
 depends_on: []
 optional_inputs: []
 consumed_by: [competitor-analysis]

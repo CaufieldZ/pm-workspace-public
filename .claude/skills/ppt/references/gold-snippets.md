@@ -1,6 +1,29 @@
 <!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # PPT 满分产物片段库（叙事模式 × Claude Design 视觉）
 
+> ⚠️ **CSS 变量纪律**（所有生成脚本必读）
+>
+> **禁止**在生成脚本里手抄 `:root { --cd-bg: #000; --cd-ink: #fff; ... }` 整块定义。
+> **必须**通过文件读取引入，源头唯一是 `.claude/skills/_shared/claude-design/tokens.css`。
+>
+> Node.js 脚本正确写法：
+> ```js
+> const SHARED_CD = path.join(__dirname, '..', '..', '..', '.claude', 'skills', '_shared', 'claude-design');
+> const TOKENS_CSS = fs.readFileSync(path.join(SHARED_CD, 'tokens.css'), 'utf8');
+> const CSS = `
+> ${TOKENS_CSS}
+>
+> /* 项目级扩展 token，只写 tokens.css 没有的（如 --cd-surface2 / --cd-ok/err/warn） */
+> :root { --cd-surface: #080808; --cd-ok: #00B42A; --cd-err: #F53F3F; --cd-warn: #D29922; }
+> `;
+> ```
+>
+> Python 脚本同理用 `open(tokens_css_path).read()` 拼接。手抄的后果：tokens.css 改字体 / 改色，产物不跟着变，两处不一致。
+>
+> **字体 `<link>` 纪律**：tokens.css 顶部注释里的 CDN URL 是**完整字体清单**，不是模板。实际用到哪几种就只引哪几种。中文 PPT 最小集 = Noto Sans SC + Noto Serif SC + JetBrains Mono 三家，多引一个 Inter / Source Serif 4 白白多下载 ~60KB。
+
+---
+
 从 SOP-final.html 提炼 6 种 **通用叙事骨架**（和视觉系统正交，放 Anthropic/Apple/Notion keynote 都成立），外加 Claude Design **editorial 视觉填充**（`_shared/claude-design/demos/ppt-sample.html` 对标）。
 
 **叙事选型**：先判断页面类型 → 选一种叙事骨架 → 用 Claude Design 组件填每一步。
@@ -14,7 +37,7 @@
 | Reference / 选型 | §5 结论前置 + 折叠 | 速查表前置 → 详情 → 原理折叠 |
 | 索引 / 目录 | §6 总览 + 按需展开 | 速查表 → 手风琴逐个展开 |
 
-所有示例用 `ppt-template.html` 已内联的 editorial 工具类：`.eyebrow` / `.hairline` / `.display` / `.lede` / `.section-label` / `.figure-num` / `.pullquote` / `.watermark-tl` / `.film-grain`。**禁用**反 AI slop 六禁：彩色圆角徽章、icon-box + emoji、border-top accent 色条、同页多色堆叠。
+所有示例用 `ppt-template.html` 已内联的 editorial 工具类：`.eyebrow` / `.hairline` / `.display` / `.lede` / `.section-label` / `.figure-num` / `.pullquote` / `.watermark-tl` / `.film-grain`。**禁用**反 AI slop 六禁：彩色圆角徽章、icon-box + emoji、**任意方向 ≥ 2px 的 accent border**（左 / 右 / 上 / 下都不行，换方向不算规避）、同页多色堆叠。
 
 ---
 

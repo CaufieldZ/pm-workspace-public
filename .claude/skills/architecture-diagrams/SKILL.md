@@ -100,6 +100,7 @@ view .claude/skills/architecture-diagrams/references/js-template.js
 ```
 
 - `.claude/skills/_shared/claude-design/anti-ai-slop.md`（按需 grep「决策速查」段，确认无渐变背景、AI 签名卡片等陷阱）
+- **配色硬约束**：同页最多 2 种强调色（accent 蓝 + 1 辅助语义色），其余账户/模块用中性灰。`.co-b/-a/-r/-g/-v` 五色 callout 是**跨页色板**，不是同页可并用的色库——同一页若出现 ≥ 3 色 callout，改为 accent + 灰中性范式（见 `components-cheatsheet.md` §1.1）
 
 ### Step 2：收集方案信息
 

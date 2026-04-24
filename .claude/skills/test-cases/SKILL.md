@@ -10,6 +10,8 @@ pipeline_position: 7
 depends_on: [scene-list, prd]
 optional_inputs: [behavior-spec]
 consumed_by: [cross-check]
+scripts:
+  pairwise_gen.py: "配对组合生成 — python3 pairwise_gen.py <参数>"
 ---
 <!-- pm-ws-canary-236a5364 -->
 

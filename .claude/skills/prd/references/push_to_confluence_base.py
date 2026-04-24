@@ -10,7 +10,7 @@ push_to_confluence_base.py — 推送 PRD docx 到 Confluence Server
         python3 push_to_confluence_base.py <docx> --page-id <id> [--title <新标题>]
 
 说明:
-    - 凭证自动从 pm-workspace/.mcp.json 读取,不需要手动配置
+    - 凭证自动从 .mcp.json / .mcp-disabled.json 读取(MCP 关闭也能跑,脚本走 REST)
     - 图片提取后作为附件上传,再用 ac:image 宏引用
     - push 前 pre-flight 检查 docx 的 Heading 1/2 计数,为 0 时 warning
       (memory #1/#3 踩坑:gen 脚本 BASE 路径错 → h1/h2 函数失效 → docx 全 Normal
@@ -37,15 +37,21 @@ try:
 except ImportError:
     sys.exit("缺依赖: pip install mammoth requests")
 
-# ── 从 .mcp.json 读取 Confluence 配置 ──────────────────────────────────────
+# ── 从 .mcp.json / .mcp-disabled.json 读取 Confluence 配置 ──────────────────
+# toggle-mcp.sh off 会把 server 搬到 .mcp-disabled.json,env 字段保留;
+# 脚本走 REST API 不需要 MCP server 在线,凭据在哪都能用。
 _ROOT = Path(__file__).resolve().parents[4]  # pm-workspace 根目录
-_MCP_PATH = _ROOT / ".mcp.json"
-if not _MCP_PATH.exists():
-    sys.exit(f"找不到 .mcp.json: {_MCP_PATH}")
 
-_CONF = json.loads(_MCP_PATH.read_text())["mcpServers"]["confluence"]["env"]
-BASE_URL = _CONF["CONF_BASE_URL"].rstrip("/")
-TOKEN    = _CONF["CONF_TOKEN"]
+def _load_conf_creds():
+    for src in [_ROOT / ".mcp.json", _ROOT / ".mcp-disabled.json"]:
+        if not src.exists():
+            continue
+        env = json.loads(src.read_text()).get("mcpServers", {}).get("confluence", {}).get("env")
+        if env and env.get("CONF_BASE_URL") and env.get("CONF_TOKEN"):
+            return env["CONF_BASE_URL"].rstrip("/"), env["CONF_TOKEN"]
+    sys.exit("找不到 confluence 凭据(.mcp.json 和 .mcp-disabled.json 都没有 env)")
+
+BASE_URL, TOKEN = _load_conf_creds()
 _HEADERS = {"Authorization": f"Bearer {TOKEN}"}
 
 

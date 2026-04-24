@@ -61,7 +61,7 @@
   <div style="font-size:13px;color:var(--dark-text2);margin-bottom:20px;">描述文字</div>
   <!-- 信息面板 -->
   <div style="background:var(--dark2);border-radius:10px;padding:14px;margin-bottom:12px;text-align:left;">
-    <div style="font-size:12px;color:var(--dark-text2);margin-bottom:6px;">🎯 详情</div>
+    <div style="font-size:10px;color:var(--dark-text2);margin-bottom:6px;font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;">DETAILS</div>
     <div style="font-size:12px;color:var(--dark-text);line-height:2;">
       <div>✓ 项目 A</div>
       <div>✓ 项目 B</div>
@@ -91,7 +91,7 @@
 ```html
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
   <div style="background:var(--dark2);border-radius:10px;overflow:hidden;">
-    <div style="height:90px;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;position:relative;">
+    <div style="height:90px;background:var(--dark2);display:flex;align-items:center;justify-content:center;position:relative;">
       <span style="font-size:24px;">📺</span>
       <span style="position:absolute;top:4px;left:4px;background:var(--red);color:#fff;font-size:7px;font-weight:700;padding:2px 4px;border-radius:2px;">🔴 直播</span>
       <span style="position:absolute;bottom:4px;right:4px;font-size:8px;color:var(--dark-text2);background:rgba(0,0,0,.6);padding:1px 4px;border-radius:2px;">👤 1,247</span>
@@ -162,7 +162,7 @@
 ### 2.2 数据统计面板
 ```html
 <div style="background:#f8f9fb;border:1.5px solid var(--border);border-radius:8px;padding:10px;">
-  <div style="font-size:10px;font-weight:700;color:var(--text);margin-bottom:6px;">📊 数据标题</div>
+  <div style="font-size:10px;font-weight:700;color:var(--text);margin-bottom:6px;font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace;letter-spacing:.06em;">数据标题</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
     <div>
       <div style="font-size:10px;color:var(--text3);">指标 A</div>

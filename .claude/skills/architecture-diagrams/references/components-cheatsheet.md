@@ -4,42 +4,53 @@
 > 本文档是 CSS Grid 卡片布局的组件模板速查。
 > 如需 SVG 拓扑图（绝对定位节点 + 箭头连线），参考 svg-topology-extension.md。
 
+**配色硬约束**（出自 `_shared/claude-design/anti-ai-slop.md`）：
+
+- 同一页最多 2 种强调色（accent + 1 辅助语义色），其余账户/节点用中性灰
+- 禁 emoji 装饰账户标题（🔒💰💎），账户类型用文字 eyebrow（`TRUST / TRADING / LOCKED`）
+- 禁圆角卡片 + 左/顶 border-accent 色条（六禁之二），边框用 1px hairline
+
 ## 1. 步骤式资金/账户流转卡片
 
-### 1.1 初始状态行（多账户并排）
+### 1.1 初始状态行（editorial 范式：主强调 + 中性）
+
+**范式**：当前讨论/变动的账户用 `--arch-accent`（蓝）高亮，其余用中性灰。账户类型名用 mono uppercase eyebrow，数字用 serif。
+
 ```html
 <div style="display:flex;gap:6px;">
-  <!-- 托管资金 -->
-  <div style="flex:0.8;padding:10px 12px;border-radius:6px;background:#f0fdfa;border:1px solid #99f6e4;font-size:11px;">
-    <strong style="color:#0d9488;display:block;margin-bottom:4px;">托管资金账户</strong>
-    <span style="font-size:20px;font-weight:700;color:#0d9488;">500万</span>
+  <!-- 中性账户（非当前焦点）-->
+  <div style="flex:0.8;padding:10px 12px;border:1px solid var(--arch-hair);font-size:11px;background:var(--arch-surface);">
+    <div style="font-family:var(--arch-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--arch-ink-40);margin-bottom:4px;">TRUST · 托管资金</div>
+    <span style="font-family:var(--arch-serif-cn);font-size:20px;font-weight:700;color:var(--arch-ink-82);">500万</span>
   </div>
-  <!-- 交易账户（含可用+冻结两栏） -->
-  <div style="flex:2;padding:10px 12px;border-radius:6px;background:#fffbeb;border:1px solid #fde68a;font-size:11px;">
-    <strong style="color:#b45309;display:block;margin-bottom:4px;">交易账户</strong>
+  <!-- 焦点账户（accent 高亮，含可用+冻结两栏）-->
+  <div style="flex:2;padding:10px 12px;border:1px solid var(--arch-accent);font-size:11px;background:rgba(47,108,242,0.04);">
+    <div style="font-family:var(--arch-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--arch-accent);margin-bottom:4px;">TRADING · 交易账户</div>
     <div style="display:flex;gap:8px;margin-top:2px;">
-      <div style="flex:1;padding:4px 8px;background:rgba(255,255,255,0.7);border-radius:4px;border:1px solid rgba(217,119,6,0.15);">
-        <span style="font-size:10px;color:#b45309;font-weight:600;">可用</span><br>
-        <span style="font-size:18px;font-weight:700;color:#b45309;">300万</span>
+      <div style="flex:1;padding:4px 8px;border:1px solid var(--arch-hair);">
+        <span style="font-family:var(--arch-mono);font-size:9px;color:var(--arch-ink-58);">可用</span><br>
+        <span style="font-family:var(--arch-serif-cn);font-size:18px;font-weight:700;color:var(--arch-ink);">300万</span>
       </div>
-      <div style="flex:1;padding:4px 8px;background:rgba(255,255,255,0.7);border-radius:4px;border:1px dashed rgba(217,119,6,0.2);">
-        <span style="font-size:10px;color:#a16207;font-weight:600;">冻结</span><br>
-        <span style="font-size:18px;font-weight:700;color:#a16207;">0</span>
+      <div style="flex:1;padding:4px 8px;border:1px dashed var(--arch-hair);">
+        <span style="font-family:var(--arch-mono);font-size:9px;color:var(--arch-ink-40);">冻结</span><br>
+        <span style="font-family:var(--arch-serif-cn);font-size:18px;font-weight:700;color:var(--arch-ink-40);">0</span>
       </div>
     </div>
   </div>
-  <!-- 锁仓 -->
-  <div style="flex:1;padding:10px 12px;border-radius:6px;background:#fef2f2;border:1px solid #fecaca;font-size:11px;">
-    <strong style="color:#dc2626;display:block;margin-bottom:4px;">🔒 锁仓</strong>
-    <span style="font-size:20px;font-weight:700;color:#dc2626;">200万</span>
+  <!-- 中性账户 -->
+  <div style="flex:1;padding:10px 12px;border:1px solid var(--arch-hair);font-size:11px;background:var(--arch-surface);">
+    <div style="font-family:var(--arch-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--arch-ink-40);margin-bottom:4px;">LOCKED · 锁仓</div>
+    <span style="font-family:var(--arch-serif-cn);font-size:20px;font-weight:700;color:var(--arch-ink-82);">200万</span>
   </div>
-  <!-- 应还 -->
-  <div style="flex:1;padding:10px 12px;border-radius:6px;background:#eef2ff;border:1px solid #c7d2fe;font-size:11px;">
-    <strong style="color:#4338ca;display:block;margin-bottom:4px;">应还</strong>
-    <span style="font-size:20px;font-weight:700;color:#4338ca;">−500万</span>
+  <!-- 中性账户 -->
+  <div style="flex:1;padding:10px 12px;border:1px solid var(--arch-hair);font-size:11px;background:var(--arch-surface);">
+    <div style="font-family:var(--arch-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--arch-ink-40);margin-bottom:4px;">PAYABLE · 应还</div>
+    <span style="font-family:var(--arch-serif-cn);font-size:20px;font-weight:700;color:var(--arch-ink-82);">−500万</span>
   </div>
 </div>
 ```
+
+**何时可多色**：仅当一页确需同时对比 ≥ 3 个**独立主体**（如 3 个系统架构并排对比），可用 `.co-b/-a/-g` 多色 callout；若是同一流程里的不同账户，坚持 accent + 中性灰范式。
 
 ### 1.2 变动行（高亮变化的账户，其余灰色）
 ```html
@@ -167,23 +178,19 @@
 </div>
 ```
 
-### 2.5 双栏横条（对比说明）
+### 2.5 双栏横条（对比说明，editorial 范式：mono eyebrow + hairline 竖线，不用 emoji icon）
 ```html
-<div style="display:flex;border-radius:6px;overflow:hidden;border:1.5px solid #e2e8f0;">
-  <div style="flex:1;padding:8px 16px;background:#eff6ff;display:flex;align-items:center;gap:8px;">
-    <span style="font-size:16px;">🔒</span>
-    <div>
-      <div style="font-size:11px;font-weight:700;color:#1e40af;">标题</div>
-      <div style="font-size:10px;color:#3b82f6;">说明</div>
-    </div>
+<div style="display:flex;border:1px solid var(--arch-hair);">
+  <div style="flex:1;padding:10px 16px;background:var(--arch-surface);">
+    <div style="font-family:var(--arch-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--arch-accent);margin-bottom:2px;">A · 左侧</div>
+    <div style="font-family:var(--arch-serif-cn);font-size:12px;font-weight:700;color:var(--arch-ink);">标题</div>
+    <div style="font-size:10px;color:var(--arch-ink-58);margin-top:2px;">说明</div>
   </div>
-  <div style="width:1.5px;background:#e2e8f0;"></div>
-  <div style="flex:1;padding:8px 16px;background:#fff7ed;display:flex;align-items:center;gap:8px;">
-    <span style="font-size:16px;">📒</span>
-    <div>
-      <div style="font-size:11px;font-weight:700;color:#c2410c;">标题</div>
-      <div style="font-size:10px;color:#9a3412;">说明</div>
-    </div>
+  <div style="width:1px;background:var(--arch-hair);"></div>
+  <div style="flex:1;padding:10px 16px;background:var(--arch-surface);">
+    <div style="font-family:var(--arch-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--arch-ink-40);margin-bottom:2px;">B · 右侧</div>
+    <div style="font-family:var(--arch-serif-cn);font-size:12px;font-weight:700;color:var(--arch-ink);">标题</div>
+    <div style="font-size:10px;color:var(--arch-ink-58);margin-top:2px;">说明</div>
   </div>
 </div>
 ```
