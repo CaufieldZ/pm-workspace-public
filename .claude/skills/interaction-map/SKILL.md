@@ -17,6 +17,7 @@ scripts:
   interaction-map.js: "运行时 JS — 骨架脚本自动内联，不手动读"
   scripts/fill_utils.py: "fill 公共函数 — from fill_utils import run_fill"
   scripts/check_html.sh: "Step C 自检 — bash scripts/check_html.sh <html> <scene-list> imap"
+# Step D 升版：patch_imap_v{N}.py 由项目本地新建（非 Skill 脚本），详见「Step D · 增量升版」章节
 ---
 <!-- pm-ws-canary-236a5364 -->
 
@@ -220,18 +221,78 @@ Step C：收尾（跨端表 + Callout + 自检）
 3. **执行自检**（见下方自检清单）
 4. **告知用户交付**
 
-### 增量升版（已有 Vn → Vn+1）
+### Step D · 增量升版（已有 vN → vN+1）
 
-当已有完整交互大图需要升级（而非从零生成）时，走增量 patch 而非重新骨架→填充：
+当已有完整交互大图需要升级（方案变更 / 评审后对齐 / 批量决策回写）时，走增量 patch 脚本而非重新骨架→填充，也**禁止直接 Edit/Write 生成出的 HTML**。
 
-1. **归档旧版**：`cp Vn.html archive/` + `cp Vn.html V{n+1}.html`
-2. **版本号替换**：HTML 内 title + h1 的版本号
-3. **按 Scene 写 patch 脚本**：每个受影响 Scene 一个 `patch_imap_v{n+1}_{scene}.py`，用 `re.sub` 锚定 `<div class="fade-section" id="{scene}">` 到下一个 `<!-- ═══` 边界，整块替换
-4. **逐个执行 + 验证**：每个 patch 跑完验证 div 平衡 + grep 关键术语
-5. **自检同完整生成**（Step C 自检清单）
-6. **不要用 Edit 工具逐行改大块 HTML**——正则替换更安全，且可回滚（`git checkout -- deliverables/xxx.html`）
+**触发规则**：
+
+| 改动规模 | 路径 |
+|---------|------|
+| 升版（vN → vN+1）· 结构性改动（mock 重写 / 新增场景 / 注解成组增减） | **必须** Step D 脚本 |
+| 跨 Scene 术语统一 / 版本号 bump / flow-note 批量改写 | **必须** Step D 脚本 |
+| ≤5 行文案 / 数值微调 / 颜色调色 / 单一 ann-item 补字 | 允许 Edit 直改 HTML |
+
+**命名与位置**：
+
+- `projects/{proj}/scripts/patch_imap_v{N}.py`（每个 v{N} 一个独立脚本，**不归档**，保留在 `scripts/` 便于回溯与对照）
+- 脚本头注释列出本次所有 delta 条目（对应 context.md 决策编号）
+- 底本规则：`SRC = 上一个正式版 HTML`（如 v4.7），不是过渡版（如 v4.8）—— 否则 delta 会叠加不清晰
+- **SRC 路径必须指向 `deliverables/archive/`**：因为升版完成后旧版 HTML 会归档，`deliverables/` 根下只留最新版。若脚本 SRC 写成 `deliverables/xxx_v{N-1}.html` 归档后就跑不动，未来无法回归验证
+
+**脚本结构**（内联模板，复制到项目改写即可）：
+
+```python
+#!/usr/bin/env python3
+"""vN 交互大图 → v{N+1} patch（触发原因 + 决策编号）"""
+import os
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+SRC = os.path.join(ROOT, 'deliverables/archive/{type}_交互大图_vN.html')  # ← archive/ 路径
+DST = os.path.join(ROOT, 'deliverables/{type}_交互大图_v{N+1}.html')
+
+with open(SRC, 'r', encoding='utf-8') as f:
+    html = f.read()
+
+
+def patch(old, new, desc, n=1):
+    global html
+    cnt = html.count(old)
+    if cnt != n:
+        raise SystemExit(f'[FAIL] {desc}: expected {n} match, got {cnt}')
+    html = html.replace(old, new)
+    print(f'[OK] {desc}' + (f' (×{n})' if n != 1 else ''))
+
+
+# ═══ 1. Title ═══
+patch('<title>... vN</title>', '<title>... v{N+1}</title>', '1. title')
+
+# ═══ 2+. 按 delta 逐条 patch ═══
+# 每条对应 context.md 一个决策，desc 里写「决策 NN」便于追溯
+# 大块 HTML 用三引号原文锚定，Python 层面 find-replace，不用正则
+
+with open(DST, 'w', encoding='utf-8') as f:
+    f.write(html)
+
+print(f'\n✓ Generated: {DST}')
+```
+
+**执行 & 验证**：
+
+1. 跑脚本：`python3 projects/{proj}/scripts/patch_imap_v{N}.py`，每个 patch 输出 `[OK] {desc}`；若 `[FAIL]` 说明底本已被污染或 delta 锚文错了
+2. 无损复现校验（可选但推荐）：
+   ```bash
+   cp deliverables/xxx_v{N}.html /tmp/manual.html
+   python3 scripts/patch_imap_v{N}.py
+   diff -q /tmp/manual.html deliverables/xxx_v{N}.html && echo MATCH
+   ```
+   MATCH 才能说明脚本是 HTML 的 source of truth，未来可反复回归
+3. `check_html.sh` 跑 Step C 自检清单（div 平衡 / 场景编号对齐）
+4. 旧版 `cp deliverables/xxx_v{N-1}.html deliverables/archive/`（脚本保留）
 
 **端能力校验**：patch 前检查每个 Screen 画的交互是否能在目标端实际执行（H5 不能跑 TRTC 推流、OBS 主播看不到 Web 工作台等），不要画目标端做不到的按钮/功能。
+
+**真实样本参考**：[projects/htx-activity-center/scripts/patch_imap_v49.py](../../projects/htx-activity-center/scripts/patch_imap_v49.py) — 7-delta 案例（04-23 八项决策 + 04-24 外显标签），`MATCH` 已验证。
 
 ### 分步生成的占位模板
 

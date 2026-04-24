@@ -14,6 +14,7 @@ scripts:
   gen_proto_skeleton.py: "Step A 骨架 — from gen_proto_skeleton import generate_skeleton"
   prototype.js: "运行时 JS — 骨架脚本自动内联，不手动读"
   scripts/check_html.sh: "Step C 自检 — bash scripts/check_html.sh <html> <scene-list> proto"
+# Step D 升版：patch_proto_v{N}.py / fill_proto_v{N}.py 由项目本地新建（非 Skill 脚本），详见「Step D · 升版」章节
 ---
 <!-- pm-ws-canary-236a5364 -->
 
@@ -191,6 +192,79 @@ generate_skeleton(project, views, output_path)
 2. **补全弹窗/抽屉内容**（通过 `FILL_START:modal-xxx` / `FILL_END:modal-xxx` 等成对占位块注入）
 3. **执行自检**（见下方自检清单）
 4. **告知用户交付**
+
+### Step D · 升版（已有 vN → vN+1）
+
+已有完整原型需要升级时，**禁止直接 Edit/Write 生成出的 HTML**。按改动性质分两条路径：
+
+**判断口诀（开工前先判）**：
+
+| 改动对象 | 路径 | 原因 |
+|---------|------|------|
+| JS 里 `var xxxData = [...]` / CRUD 初始数据 | 改 `fill_proto_v{N}.py` 源，重跑 fill | render 生成，patch HTML 等于改产物不改源 |
+| mock 设备壳内写死文案 / `<div class="f-row">` 字段 block / 模态框 HTML | 写 `patch_proto_v{N}.py` | HTML 里就是 source of truth |
+| 单一 CSS 调优 / ≤5 行文案微调 / 颜色调色 | 允许 Edit 直改 HTML | 收益大于规范代价 |
+| 结构性改动（字段增删 / 区块重写 / 版本号 bump） | **必须** patch 脚本 | Edit 会被下次 gen/fill 覆盖 |
+
+**命名与位置**：
+
+- `projects/{proj}/scripts/patch_proto_v{N}.py`（每个 v{N} 一个独立脚本，**不归档**，保留在 `scripts/` 便于回溯）
+- 底本规则：`SRC = 上一个正式版 HTML`（如 v4.7），不是过渡版（如 v4.8）
+- **SRC 路径必须指向 `deliverables/archive/`**：升版完成后旧版 HTML 会归档，若脚本 SRC 写成 `deliverables/xxx_v{N-1}.html` 归档后就跑不动，未来无法回归验证
+- 脚本头注释列出本次所有 delta 条目（对应 context.md 决策编号）
+
+**脚本结构**（内联模板，复制到项目改写即可）：
+
+```python
+#!/usr/bin/env python3
+"""v{N-1} 原型 → v{N} patch（触发原因 + 决策编号）"""
+import os
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+SRC = os.path.join(ROOT, 'deliverables/archive/{type}_可交互原型_v{N-1}.html')  # ← archive/ 路径
+DST = os.path.join(ROOT, 'deliverables/{type}_可交互原型_v{N}.html')
+
+with open(SRC, 'r', encoding='utf-8') as f:
+    html = f.read()
+
+
+def patch(old, new, desc, n=1):
+    global html
+    cnt = html.count(old)
+    if cnt != n:
+        raise SystemExit(f'[FAIL] {desc}: expected {n} match, got {cnt}')
+    html = html.replace(old, new)
+    print(f'[OK] {desc}' + (f' (×{n})' if n != 1 else ''))
+
+
+# ═══ 1. Title ═══
+patch('<title>... v{N-1}</title>', '<title>... v{N}</title>', '1. title')
+
+# ═══ 2+. 按 delta 逐条 patch（对应 context.md 决策编号）═══
+# 大块 HTML 用三引号原文锚定做 find-replace
+
+with open(DST, 'w', encoding='utf-8') as f:
+    f.write(html)
+
+print(f'\n✓ Generated: {DST}')
+```
+
+**执行 & 验证**：
+
+1. 跑脚本：`python3 projects/{proj}/scripts/patch_proto_v{N}.py`
+2. 无损复现校验（推荐）：
+   ```bash
+   cp deliverables/xxx_v{N}.html /tmp/manual.html
+   python3 scripts/patch_proto_v{N}.py
+   diff -q /tmp/manual.html deliverables/xxx_v{N}.html && echo MATCH
+   ```
+3. `check_html.sh` 跑 Step C 自检清单
+4. 旧版归档到 `deliverables/archive/`（脚本保留）
+
+**真实样本参考**：
+
+- [projects/htx-activity-center/scripts/patch_proto_v48.py](../../projects/htx-activity-center/scripts/patch_proto_v48.py) — 19-delta 大规模案例
+- [projects/htx-activity-center/scripts/patch_proto_v49.py](../../projects/htx-activity-center/scripts/patch_proto_v49.py) — 4-delta 精简案例，`MATCH` 已验证
 
 ### 骨架占位模板
 
