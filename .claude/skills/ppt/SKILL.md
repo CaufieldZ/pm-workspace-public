@@ -12,8 +12,10 @@ optional_inputs: [context.md]
 consumed_by: []
 scripts:
   fill-template.js: "Step B fill 模板 — 复制到项目 scripts/ 改写"
+  update_ppt_base.py: "增量升版 — from update_ppt_base import PptUpdater"
   gen-notes-docx.py: "导出演讲者备注 docx — python3 gen-notes-docx.py <html>"
   presenter-mode.js: "运行时演讲模式 JS — 骨架脚本自动内联，不手动读"
+  scripts/lib/html_patcher.py: "HtmlPatcher 基类 — update_ppt_base.py 的底层依赖"
 ---
 <!-- pm-ws-canary-236a5364 -->
 
@@ -356,6 +358,46 @@ wc -l {产出物}
 ```
 
 全部通过后交付 HTML 产出物，然后进入 Step 6。
+
+### Step 5b：增量升版（已有 vN → vN+1）
+
+已有完整 PPT 需要升级时，用 `update_ppt_base.py` 提供的 `PptUpdater`，不要直接 Edit HTML。
+
+```python
+#!/usr/bin/env python3
+"""ppt-xxx v1 → v2 patch"""
+import os, sys
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+_WS = os.path.abspath(os.path.join(ROOT, '..', '..'))
+sys.path.insert(0, os.path.join(_WS, 'scripts'))
+sys.path.insert(0, os.path.join(_WS, '.claude/skills/ppt/references'))
+
+from update_ppt_base import PptUpdater
+
+u = PptUpdater(
+    os.path.join(ROOT, 'deliverables/ppt-xxx-v1.html'),
+    os.path.join(ROOT, 'deliverables/ppt-xxx-v2.html'),
+)
+u.bump_version('v1', 'v2')
+u.insert_nav_item('risk-core', {'id': 'new-page', 'icon': '📊', 'label': '新页面'}, '加 nav')
+u.add_page_renderer('new-page', '<div class="page active">...</div>', before='risk-core', desc='加页面')
+u.replace_page_content('overview', '<new overview html>', '更新概览')
+u.save()
+```
+
+**PptUpdater API 速查**（继承 HtmlPatcher）：
+
+| 方法 | 用途 |
+|------|------|
+| `bump_version(old, new)` | 替换全文版本号 |
+| `patch(old, new, desc, n=1)` | 精确字符串替换（通用） |
+| `insert_nav_item(before_id, item_dict, desc)` | 在 NAV JSON 数组中插入新 Tab |
+| `remove_nav_item(item_id, desc)` | 移除 NAV 项 |
+| `replace_page_content(page_id, new_html, desc)` | 替换 PAGE_RENDERERS 中指定页的 innerHTML |
+| `add_page_renderer(page_id, html, before, desc)` | 添加新 PAGE_RENDERER |
+| `remove_page_renderer(page_id, desc)` | 移除 PAGE_RENDERER |
+| `save()` | 写出 + 打印统计 |
 
 ### Step 6：生成口播稿 docx（可选）
 

@@ -483,15 +483,30 @@ if run_cat 5; then
   # 5.3 全链路预算估算（从实际项目文件测量）
   echo ""
   echo "--- 全链路 session 预算估算 ---"
-  # 尝试从实际项目测量 context.md 和 scene-list.md 大小
+  # 检测 read_context_section.py 路由是否生效
+  HAS_CTX_ROUTER=false
+  if [ -f "scripts/read_context_section.py" ] && grep -q 'read_context_section' CLAUDE.md 2>/dev/null; then
+    HAS_CTX_ROUTER=true
+  fi
   CTX_TOKENS=0
+  CTX_FULL=0
   SL_TOKENS=0
   for proj_dir in projects/*/; do
     [ -d "$proj_dir" ] || continue
     if [ -f "${proj_dir}context.md" ]; then
       b=$(wc -c < "${proj_dir}context.md" | tr -d ' ')
       t=$((b / 2))
-      [ "$t" -gt "$CTX_TOKENS" ] && CTX_TOKENS=$t
+      [ "$t" -gt "$CTX_FULL" ] && CTX_FULL=$t
+      if $HAS_CTX_ROUTER && [ "$t" -gt 600 ]; then
+        # 按需读取：章节平均 token × 3 次选读
+        chapters=$(grep -c '^## ' "${proj_dir}context.md" 2>/dev/null || echo 1)
+        [ "$chapters" -eq 0 ] && chapters=1
+        avg_chapter=$((t / chapters))
+        routed=$((avg_chapter * 3))
+        [ "$routed" -gt "$CTX_TOKENS" ] && CTX_TOKENS=$routed
+      else
+        [ "$t" -gt "$CTX_TOKENS" ] && CTX_TOKENS=$t
+      fi
     fi
     if [ -f "${proj_dir}scene-list.md" ]; then
       b=$(wc -c < "${proj_dir}scene-list.md" | tr -d ' ')
@@ -499,13 +514,17 @@ if run_cat 5; then
       [ "$t" -gt "$SL_TOKENS" ] && SL_TOKENS=$t
     fi
   done
-  # 无项目时给兜底估值
   [ "$CTX_TOKENS" -eq 0 ] && CTX_TOKENS=2000
   [ "$SL_TOKENS" -eq 0 ] && SL_TOKENS=500
   BASELINE=$((RULE_TOTAL + CTX_TOKENS + SL_TOKENS))
-  echo "  基础开销 ≈ 规则层(${RULE_TOTAL}) + context(~${CTX_TOKENS}) + scene-list(~${SL_TOKENS}) = ~${BASELINE}t"
-  if [ "$CTX_TOKENS" -gt 2000 ] || [ "$SL_TOKENS" -gt 500 ]; then
-    echo "  （以上 context/scene-list 数值为当前项目实测最大值）"
+  if $HAS_CTX_ROUTER && [ "$CTX_FULL" -gt 600 ]; then
+    echo "  基础开销 ≈ 规则层(${RULE_TOTAL}) + context(~${CTX_TOKENS}，按需读取) + scene-list(~${SL_TOKENS}) = ~${BASELINE}t"
+    echo "  （路由生效：read_context_section.py + CLAUDE.md 规则；全文上限 ${CTX_FULL}t）"
+  else
+    echo "  基础开销 ≈ 规则层(${RULE_TOTAL}) + context(~${CTX_TOKENS}) + scene-list(~${SL_TOKENS}) = ~${BASELINE}t"
+    if [ "$CTX_TOKENS" -gt 2000 ] || [ "$SL_TOKENS" -gt 500 ]; then
+      echo "  （以上 context/scene-list 数值为当前项目实测最大值）"
+    fi
   fi
   echo "  单步 = 基础开销 + skill 实际加载（见上表）"
   echo "  Opus/Sonnet (1M) → 全链路无压力"

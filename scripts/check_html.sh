@@ -132,7 +132,7 @@ if [ "$TYPE" = "imap" ]; then
       PER_SCENE_FAIL=0
       for sid in $SCENE_IDS_HTML; do
         # 提取 scene 块（从 id="scene-X" 到下一个 id="scene-" 或文件末尾）
-        BLOCK=$(sed -n "/id=\"scene-${sid}\"/,/id=\"scene-[^\"]*\"/p" "$FILE" | head -n -1)
+        BLOCK=$(sed -n "/id=\"scene-${sid}\"/,/id=\"scene-[^\"]*\"/p" "$FILE" | sed '$d')
         [ -z "$BLOCK" ] && BLOCK=$(sed -n "/id=\"scene-${sid}\"/,\$p" "$FILE")
 
         s_aw=$(echo "$BLOCK" | grep -c 'class="aw"' || true)

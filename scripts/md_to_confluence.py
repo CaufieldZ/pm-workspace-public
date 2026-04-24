@@ -17,23 +17,11 @@ Examples:
     python3 scripts/md_to_confluence.py projects/foo/deliverables/pspec.md --update-id 164481003
 """
 import argparse
-import json
 import re
 import sys
 from pathlib import Path
-from urllib import request, error
 
-ROOT = Path(__file__).resolve().parent.parent
-
-
-def load_creds():
-    for src in [ROOT / ".mcp.json", ROOT / ".mcp-disabled.json"]:
-        if not src.exists():
-            continue
-        env = json.loads(src.read_text()).get("mcpServers", {}).get("confluence", {}).get("env")
-        if env and env.get("CONF_BASE_URL") and env.get("CONF_TOKEN"):
-            return env["CONF_BASE_URL"].rstrip("/"), env["CONF_TOKEN"]
-    sys.exit("找不到 confluence 凭据(.mcp.json 和 .mcp-disabled.json 都没有 env)")
+from lib.confluence import base_url, create_page, update_page
 
 
 def wrap_markdown(md: str) -> str:
@@ -55,44 +43,6 @@ def extract_title(md: str) -> str:
     raise ValueError("No H1 title found in markdown; pass --title explicitly")
 
 
-def api(base: str, token: str, method: str, path: str, body: dict | None = None):
-    url = f"{base}{path}"
-    data = json.dumps(body).encode() if body else None
-    req = request.Request(url, data=data, method=method)
-    req.add_header("Authorization", f"Bearer {token}")
-    req.add_header("Content-Type", "application/json")
-    try:
-        with request.urlopen(req) as resp:
-            return json.loads(resp.read())
-    except error.HTTPError as e:
-        sys.stderr.write(f"HTTP {e.code}: {e.read().decode()}\n")
-        raise
-
-
-def create_page(base, token, space, title, body, parent_id):
-    payload = {
-        "type": "page",
-        "title": title,
-        "space": {"key": space},
-        "body": {"storage": {"value": body, "representation": "storage"}},
-    }
-    if parent_id:
-        payload["ancestors"] = [{"id": str(parent_id)}]
-    return api(base, token, "POST", "/rest/api/content", payload)
-
-
-def update_page(base, token, page_id, title, body):
-    current = api(base, token, "GET", f"/rest/api/content/{page_id}?expand=version,space")
-    payload = {
-        "type": "page",
-        "title": title or current["title"],
-        "space": {"key": current["space"]["key"]},
-        "version": {"number": current["version"]["number"] + 1},
-        "body": {"storage": {"value": body, "representation": "storage"}},
-    }
-    return api(base, token, "PUT", f"/rest/api/content/{page_id}", payload)
-
-
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("md_path")
@@ -106,18 +56,16 @@ def main():
     title = args.title or extract_title(md)
     body = wrap_markdown(md)
 
-    base, token = load_creds()
-
     if args.update_id:
-        res = update_page(base, token, args.update_id, title, body)
+        res = update_page(args.update_id, title, body)
     else:
         if not args.parent_id:
             sys.exit("need --parent-id for create, or --update-id to overwrite")
-        res = create_page(base, token, args.space, title, body, args.parent_id)
+        res = create_page(args.space, title, body, args.parent_id)
 
     page_id = res["id"]
     print(f"✓ {title}")
-    print(f"  {base}/pages/viewpage.action?pageId={page_id}")
+    print(f"  {base_url()}/pages/viewpage.action?pageId={page_id}")
 
 
 if __name__ == "__main__":

@@ -14,10 +14,11 @@ consumed_by: [prototype, prd]
 scripts:
   gen_imap_skeleton.py: "Step A 骨架 — from gen_imap_skeleton import generate_skeleton"
   fill-template.py: "Step B fill 模板 — 复制到项目 scripts/fill_imap_v{N}.py 改写"
+  update_imap_base.py: "Step D 升版 — from update_imap_base import ImapUpdater"
   interaction-map.js: "运行时 JS — 骨架脚本自动内联，不手动读"
   scripts/fill_utils.py: "fill 公共函数 — from fill_utils import run_fill"
   scripts/check_html.sh: "Step C 自检 — bash scripts/check_html.sh <html> <scene-list> imap"
-# Step D 升版：patch_imap_v{N}.py 由项目本地新建（非 Skill 脚本），详见「Step D · 增量升版」章节
+  scripts/lib/html_patcher.py: "HtmlPatcher 基类 — update_imap_base.py 的底层依赖"
 ---
 <!-- pm-ws-canary-236a5364 -->
 
@@ -245,37 +246,50 @@ Step C：收尾（跨端表 + Callout + 自检）
 ```python
 #!/usr/bin/env python3
 """vN 交互大图 → v{N+1} patch（触发原因 + 决策编号）"""
-import os
+import os, sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+_WS = os.path.abspath(os.path.join(ROOT, '..', '..'))
+sys.path.insert(0, os.path.join(_WS, 'scripts'))
+sys.path.insert(0, os.path.join(_WS, '.claude/skills/interaction-map/references'))
+
+from update_imap_base import ImapUpdater
+
 SRC = os.path.join(ROOT, 'deliverables/archive/{type}_交互大图_vN.html')  # ← archive/ 路径
 DST = os.path.join(ROOT, 'deliverables/{type}_交互大图_v{N+1}.html')
 
-with open(SRC, 'r', encoding='utf-8') as f:
-    html = f.read()
+u = ImapUpdater(SRC, DST)
 
-
-def patch(old, new, desc, n=1):
-    global html
-    cnt = html.count(old)
-    if cnt != n:
-        raise SystemExit(f'[FAIL] {desc}: expected {n} match, got {cnt}')
-    html = html.replace(old, new)
-    print(f'[OK] {desc}' + (f' (×{n})' if n != 1 else ''))
-
-
-# ═══ 1. Title ═══
-patch('<title>... vN</title>', '<title>... v{N+1}</title>', '1. title')
+# ═══ 1. 版本号 ═══
+u.bump_version('vN', 'v{N+1}')
 
 # ═══ 2+. 按 delta 逐条 patch ═══
 # 每条对应 context.md 一个决策，desc 里写「决策 NN」便于追溯
-# 大块 HTML 用三引号原文锚定，Python 层面 find-replace，不用正则
 
-with open(DST, 'w', encoding='utf-8') as f:
-    f.write(html)
+# 结构感知方法（推荐）：
+# u.replace_annotation('M-A', '3b', '<new text>', '决策 20：业务线改多选')
+# u.replace_flow_note('M-2', '<new note>', '决策 25：配置区重排')
+# u.replace_ann_card('M-A', '<old card>', '<new card>', '决策 28：标注重写')
 
-print(f'\n✓ Generated: {DST}')
+# 通用方法（大块替换）：
+# u.patch('<old html>', '<new html>', '决策 XX：描述')
+
+u.save()
 ```
+
+**ImapUpdater API 速查**（继承 HtmlPatcher）：
+
+| 方法 | 用途 |
+|------|------|
+| `bump_version(old, new)` | 替换全文版本号（title/注释/flow-note） |
+| `patch(old, new, desc, n=1)` | 精确字符串替换（通用，大块 HTML 用这个） |
+| `patch_re(pattern, repl, desc)` | 正则替换 |
+| `replace_annotation(scene_id, ann_num, new_text, desc)` | 替换指定 Scene 内编号标注的 ann-text |
+| `replace_flow_note(scene_id, new_note, desc)` | 替换 Scene 内 flow-note |
+| `replace_ann_card(scene_id, old_card, new_card, desc)` | 替换 Scene 内完整 ann-card 块 |
+| `replace_overview_row(old_row, new_row, desc)` | 替换场景总览表格行 |
+| `grey_out_element(old_html, desc)` | 灰化元素（加 opacity + 删除线） |
+| `save()` | 写出 + 打印统计 |
 
 **执行 & 验证**：
 

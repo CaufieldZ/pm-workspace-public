@@ -95,6 +95,15 @@
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-cjk-punct-check.sh"
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-audit-fast.sh"
+          }
+        ]
       }
     ]
   }

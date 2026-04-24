@@ -29,37 +29,26 @@ push_to_confluence_base.py — 推送 PRD docx 到 Confluence Server
         --page-id 155652375
 """
 
+import os
 import sys, re, json, argparse, requests
 from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parents[4]
+sys.path.insert(0, os.path.join(_ROOT, 'scripts'))
 
 try:
     import mammoth
 except ImportError:
     sys.exit("缺依赖: pip install mammoth requests")
 
-# ── 从 .mcp.json / .mcp-disabled.json 读取 Confluence 配置 ──────────────────
-# toggle-mcp.sh off 会把 server 搬到 .mcp-disabled.json,env 字段保留;
-# 脚本走 REST API 不需要 MCP server 在线,凭据在哪都能用。
-_ROOT = Path(__file__).resolve().parents[4]  # pm-workspace 根目录
+from lib.confluence import api_request, base_url, load_creds
 
-def _load_conf_creds():
-    for src in [_ROOT / ".mcp.json", _ROOT / ".mcp-disabled.json"]:
-        if not src.exists():
-            continue
-        env = json.loads(src.read_text()).get("mcpServers", {}).get("confluence", {}).get("env")
-        if env and env.get("CONF_BASE_URL") and env.get("CONF_TOKEN"):
-            return env["CONF_BASE_URL"].rstrip("/"), env["CONF_TOKEN"]
-    sys.exit("找不到 confluence 凭据(.mcp.json 和 .mcp-disabled.json 都没有 env)")
-
-BASE_URL, TOKEN = _load_conf_creds()
-_HEADERS = {"Authorization": f"Bearer {TOKEN}"}
-
-
-# ── REST API 封装 ────────────────────────────────────────────────────────────
 
 def _rest(method: str, path: str, **kwargs):
-    url = f"{BASE_URL}/rest/api/{path.lstrip('/')}"
-    headers = {**_HEADERS, **kwargs.pop("extra_headers", {})}
+    """requests 版 REST 封装——仅用于 multipart upload（urllib 不支持 multipart）。"""
+    _base, _token = load_creds()
+    url = f"{_base}/rest/api/{path.lstrip('/')}"
+    headers = {"Authorization": f"Bearer {_token}", **kwargs.pop("extra_headers", {})}
     r = requests.request(method, url, headers=headers, **kwargs)
     try:
         r.raise_for_status()
@@ -94,18 +83,19 @@ def get_or_create_page(space_key: str, title: str, parent_id: str = None) -> tup
 
 
 def upload_attachment(page_id: str, filename: str, data: bytes, mime: str = "image/png"):
-    """上传图片附件，已存在则更新（upsert）。"""
-    base = f"{BASE_URL}/rest/api/content/{page_id}/child/attachment"
-    headers = {**_HEADERS, "X-Atlassian-Token": "no-check"}
+    """上传图片附件，已存在则更新（upsert）。需要 requests 做 multipart。"""
+    _base, _token = load_creds()
+    _headers = {"Authorization": f"Bearer {_token}"}
+    att_base = f"{_base}/rest/api/content/{page_id}/child/attachment"
+    headers = {**_headers, "X-Atlassian-Token": "no-check"}
 
-    # 查是否已有同名附件
-    existing = requests.get(base, headers=_HEADERS,
+    existing = requests.get(att_base, headers=_headers,
                             params={"filename": filename}).json().get("results", [])
     if existing:
         att_id = existing[0]["id"]
-        url = f"{base}/{att_id}/data"
+        url = f"{att_base}/{att_id}/data"
     else:
-        url = base
+        url = att_base
 
     requests.post(url, headers=headers,
                   files={"file": (filename, data, mime)}).raise_for_status()
@@ -298,7 +288,7 @@ def main(argv=None):
     print("📤 更新页面内容...")
     update_page(page_id, title, body, version)
 
-    page_url = f"{BASE_URL}/pages/viewpage.action?pageId={page_id}"
+    page_url = f"{base_url()}/pages/viewpage.action?pageId={page_id}"
     print(f"✅ 完成: {page_url}")
 
 

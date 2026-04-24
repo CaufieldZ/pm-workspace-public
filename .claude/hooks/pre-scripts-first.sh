@@ -25,16 +25,7 @@ print_html_regen_warning() {
   local file="$1"
   local project_dir="$2"
   local gen_scripts="$3"
-  echo "" >&2
-  echo "⚠️  检测到直接修改脚本产出的产出物: $file" >&2
-  echo "   已脚本化产出物是只读产物,改动应进源脚本后重跑:" >&2
-  echo "     - gen_*:    从零生成场景 (imap/proto/arch/flowchart/ppt/SOP)" >&2
-  echo "     - patch_*:  以上版本为底应用 delta 升版 (结构性改动)" >&2
-  echo "     - update_*: docx 走 update_prd_base.py helper 修改字段/章节" >&2
-  echo "   本项目可用脚本 ($project_dir/scripts/):" >&2
-  echo "     $gen_scripts" >&2
-  echo "   例外: <5 行文案微调可直接 Edit,但大改必须走源文件,否则下次迭代会被覆盖" >&2
-  echo "" >&2
+  echo "❌ 已脚本化产出物禁止直接 Write/Edit: $file — 改动应进源脚本后重跑 ($gen_scripts)" >&2
 }
 
 # 白名单: 在维护 helper 本身 / 已经在用 helper
@@ -73,6 +64,16 @@ case "$TOOL_NAME" in
       if [ -n "$GEN_FILES" ]; then
         GEN_LIST=$(echo "$GEN_FILES" | xargs -n1 basename | tr '\n' ' ')
         print_html_regen_warning "$FILE_PATH" "$PROJECT_DIR" "$GEN_LIST"
+        exit 2
+      fi
+      # 首次生成大 HTML 拦截：deliverables/ 下无 gen 脚本，但 Write 内容 > 200 行
+      if [ "$TOOL_NAME" = "Write" ] && echo "$FILE_PATH" | grep -qE '\.html$'; then
+        LINE_COUNT=$(echo "$CONTENT" | wc -l | tr -d ' ')
+        if [ "$LINE_COUNT" -gt 200 ]; then
+          echo "❌ 首次生成 >200 行 HTML 禁止直接 Write（${LINE_COUNT} 行）" >&2
+          echo "   应先写 gen 脚本到 projects/${PROJECT}/scripts/gen_*.py，再 python3 执行生成" >&2
+          exit 2
+        fi
       fi
     fi
     ;;

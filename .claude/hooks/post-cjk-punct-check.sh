@@ -47,5 +47,28 @@ esac
 CHECKER="${CLAUDE_PROJECT_DIR:-$(pwd)}/scripts/check_cjk_punct.py"
 [ ! -f "$CHECKER" ] && exit 0
 
-python3 "$CHECKER" "$FILE_PATH"
+# deliverables（非 archive）用 --strict：checker exit 2 → hook exit 2 阻断
+IS_DELIVERABLE=0
+case "$FILE_PATH" in
+  */projects/*/deliverables/*)
+    case "$FILE_PATH" in
+      */archive/*) ;;
+      *) IS_DELIVERABLE=1 ;;
+    esac
+    ;;
+esac
+
+if [ "$IS_DELIVERABLE" -eq 1 ]; then
+  TMPOUT=$(mktemp)
+  python3 "$CHECKER" "$FILE_PATH" --strict > "$TMPOUT" 2>&1
+  RC=$?
+  if [ "$RC" -ne 0 ]; then
+    head -3 "$TMPOUT" >&2
+    rm -f "$TMPOUT"
+    exit 2
+  fi
+  rm -f "$TMPOUT"
+else
+  python3 "$CHECKER" "$FILE_PATH"
+fi
 exit 0

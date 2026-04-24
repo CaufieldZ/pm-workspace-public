@@ -18,34 +18,14 @@
     from gen_proto_skeleton import generate_skeleton
 """
 import os
-import re
+import sys
+
+_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
+sys.path.insert(0, os.path.join(_ROOT, 'scripts'))
+
+from lib.html_builder import expand_css_imports, write_html
 
 _REFS_DIR = os.path.dirname(os.path.abspath(__file__))
-
-
-_CSS_IMPORT_RE = re.compile(r"@import\s+url\(['\"]([^'\"]+)['\"]\);?")
-_CSS_COMMENT_RE = re.compile(r"/\*.*?\*/", re.DOTALL)
-
-
-def _expand_css_imports(css_text, base_dir, _seen=None):
-    """展开 CSS 中的 @import url('...') 相对引用——inline 进 HTML <style> 后相对路径会失效，必须在读取时就替换成被引文件内容。"""
-    if _seen is None:
-        _seen = set()
-    stripped = _CSS_COMMENT_RE.sub("", css_text)
-
-    def resolve(m):
-        rel = m.group(1)
-        if rel.startswith(('http://', 'https://')):
-            return m.group(0)
-        target = os.path.normpath(os.path.join(base_dir, rel))
-        if target in _seen:
-            return ""
-        _seen.add(target)
-        with open(target, 'r', encoding='utf-8') as f:
-            inner = f.read()
-        return _expand_css_imports(inner, os.path.dirname(target), _seen)
-
-    return _CSS_IMPORT_RE.sub(resolve, stripped)
 
 
 def generate_skeleton(project: dict, views: list, output_path: str):
@@ -80,9 +60,7 @@ def generate_skeleton(project: dict, views: list, output_path: str):
     parts.append(_script(js))
     parts.append('</body>\n</html>\n')
 
-    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
-    with open(output_path, 'w', encoding='utf-8') as f:
-        f.write('\n'.join(parts))
+    write_html(output_path, '\n'.join(parts))
 
     print(f'✅ 原型骨架已生成: {output_path}')
     _print_summary(views)
@@ -93,7 +71,7 @@ def _read_file(filename):
     with open(path, 'r', encoding='utf-8') as f:
         content = f.read()
     if filename.endswith('.css'):
-        content = _expand_css_imports(content, _REFS_DIR)
+        content = expand_css_imports(content, _REFS_DIR)
     return content
 
 

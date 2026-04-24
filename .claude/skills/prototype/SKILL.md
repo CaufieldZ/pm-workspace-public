@@ -12,9 +12,10 @@ optional_inputs: [interaction-map]
 consumed_by: [prd]
 scripts:
   gen_proto_skeleton.py: "Step A 骨架 — from gen_proto_skeleton import generate_skeleton"
+  update_proto_base.py: "Step D 升版 — from update_proto_base import ProtoUpdater"
   prototype.js: "运行时 JS — 骨架脚本自动内联，不手动读"
   scripts/check_html.sh: "Step C 自检 — bash scripts/check_html.sh <html> <scene-list> proto"
-# Step D 升版：patch_proto_v{N}.py / fill_proto_v{N}.py 由项目本地新建（非 Skill 脚本），详见「Step D · 升版」章节
+  scripts/lib/html_patcher.py: "HtmlPatcher 基类 — update_proto_base.py 的底层依赖"
 ---
 <!-- pm-ws-canary-236a5364 -->
 
@@ -218,36 +219,42 @@ generate_skeleton(project, views, output_path)
 ```python
 #!/usr/bin/env python3
 """v{N-1} 原型 → v{N} patch（触发原因 + 决策编号）"""
-import os
+import os, sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+_WS = os.path.abspath(os.path.join(ROOT, '..', '..'))
+sys.path.insert(0, os.path.join(_WS, 'scripts'))
+sys.path.insert(0, os.path.join(_WS, '.claude/skills/prototype/references'))
+
+from update_proto_base import ProtoUpdater
+
 SRC = os.path.join(ROOT, 'deliverables/archive/{type}_可交互原型_v{N-1}.html')  # ← archive/ 路径
 DST = os.path.join(ROOT, 'deliverables/{type}_可交互原型_v{N}.html')
 
-with open(SRC, 'r', encoding='utf-8') as f:
-    html = f.read()
+u = ProtoUpdater(SRC, DST)
 
-
-def patch(old, new, desc, n=1):
-    global html
-    cnt = html.count(old)
-    if cnt != n:
-        raise SystemExit(f'[FAIL] {desc}: expected {n} match, got {cnt}')
-    html = html.replace(old, new)
-    print(f'[OK] {desc}' + (f' (×{n})' if n != 1 else ''))
-
-
-# ═══ 1. Title ═══
-patch('<title>... v{N-1}</title>', '<title>... v{N}</title>', '1. title')
+# ═══ 1. 版本号 ═══
+u.bump_version('v{N-1}', 'v{N}')
 
 # ═══ 2+. 按 delta 逐条 patch（对应 context.md 决策编号）═══
-# 大块 HTML 用三引号原文锚定做 find-replace
+# u.replace_element_by_id('acDev0', '<new html>', '决策 XX')
+# u.replace_form_field('其他标签', '<new field>', '决策 XX')
+# u.patch('<old>', '<new>', '决策 XX')  # 通用方法
 
-with open(DST, 'w', encoding='utf-8') as f:
-    f.write(html)
-
-print(f'\n✓ Generated: {DST}')
+u.save()
 ```
+
+**ProtoUpdater API 速查**（继承 HtmlPatcher）：
+
+| 方法 | 用途 |
+|------|------|
+| `bump_version(old, new)` | 替换全文版本号 |
+| `patch(old, new, desc, n=1)` | 精确字符串替换（通用） |
+| `replace_element_by_id(id, new_inner, desc)` | 替换指定 id 元素内容 |
+| `replace_form_field(label, new_html, desc)` | 替换包含指定 label 的表单行 |
+| `replace_gnav_tab(old_label, new_label, desc)` | 替换全局导航 Tab |
+| `replace_sidebar_item(old_text, new_html, desc)` | 替换侧栏导航项 |
+| `save()` | 写出 + 打印统计 |
 
 **执行 & 验证**：
 
