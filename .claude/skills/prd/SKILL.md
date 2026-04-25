@@ -15,6 +15,7 @@ scripts:
   update_prd_base.py: "升版/更新已有 PRD — from update_prd_base import *"
   check_prd.sh: "自检 — bash .claude/skills/prd/references/check_prd.sh <docx>"
   push_to_confluence_base.py: "推 Confluence — python3 push_to_confluence_base.py <docx> --page-id <id>"
+  prd_screenshots.py: "截图回填 — python3 .claude/skills/prd/references/prd_screenshots.py --project {项目名} [--shot-only|--insert-only] [--scenes A-1,B-1]"
 ---
 <!-- pm-ws-canary-236a5364 -->
 
