@@ -1,6 +1,34 @@
 <!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # PRD · docx 样式定义
 
+## 字体策略（与 gen_prd_base.py FONT 字典对齐）
+
+字体三分工原则：
+
+| role | ascii（英文/数字）| eastAsia（中文）| 用途 |
+|------|------------------|----------------|------|
+| **title** | Source Serif 4 | Noto Serif SC | 封面 Title / Subtitle、H1 / H2 / H3、Scene 模块标题（触发方式 / 关键交互 / 校验逻辑等） |
+| **body** | Plus Jakarta Sans | HarmonyOS Sans SC | 默认正文、表格内容、bullet、cell_text |
+| **mono** | JetBrains Mono | JetBrains Mono | 代码、路由、事件名、状态标签（NEW / 变更 / P0）、Header / Footer |
+
+Word 渲染时按字符自动选（中文走 eastAsia，英文 / 数字走 ascii）。用户系统没装相应字体时 Word 自动 fallback：
+
+- HarmonyOS Sans SC 没装 → PingFang SC（Mac）/ 微软雅黑（Windows）
+- Noto Serif SC 没装 → 系统默认中文衬线
+- 不需要强制用户装字体
+
+**调用方式**（在 gen_prd_base.py 内）：
+
+```python
+para_run(p, text, font='title', size_pt=24, bold=True)  # 标题 / 章节
+para_run(p, text, size_pt=11)                            # 正文（默认 body 可省略）
+para_run(p, text, font='mono', size_pt=9)                # 代码 / meta / 状态标签
+```
+
+旧脚本兼容：`font="Arial"` 自动映射到 body 配置（不需重写）。
+
+---
+
 ## 页面设置
 
 ```javascript
@@ -23,13 +51,26 @@ page: {
 
 ## 字体 & 段落样式
 
+gen_prd_base.py 的 FONT 字典（实际生效配置）：
+
+```python
+FONT = {
+  'title': {'ascii': 'Source Serif 4',    'eastAsia': 'Noto Serif SC'},
+  'body':  {'ascii': 'Plus Jakarta Sans', 'eastAsia': 'HarmonyOS Sans SC'},
+  'mono':  {'ascii': 'JetBrains Mono',    'eastAsia': 'JetBrains Mono'},
+  # 兼容旧脚本：font="Arial" 自动映射到 body
+  'Arial': {'ascii': 'Plus Jakarta Sans', 'eastAsia': 'HarmonyOS Sans SC'},
+}
+```
+
 ```javascript
+// docx-js 风格的样式定义（参考；实际由 gen_prd_base.py para_run 注入字体）
 styles: {
   default: {
     document: {
       run: {
-        font: "Arial",
-        size: 22,                   // 11pt 正文（参照实际产出物）
+        // 默认走 body role：Plus Jakarta Sans (英文) + HarmonyOS Sans SC (中文)
+        size: 22,                   // 11pt 正文
         color: "333333"
       },
       paragraph: {
@@ -38,64 +79,66 @@ styles: {
     }
   },
   paragraphStyles: [
-    // ── 标题（封面用） ──
+    // ── 标题（封面用，title role 衬线）──
     {
       id: "Title", name: "Title",
       basedOn: "Normal", next: "Normal", quickFormat: true,
-      run: { size: 48, bold: true, font: "Arial", color: "1A1A2E" },
+      run: { size: 48, bold: true, font: "title", color: "1A1A2E" },
       paragraph: { spacing: { before: 480, after: 120 }, alignment: AlignmentType.CENTER }
     },
-    // ── 副标题 ──
+    // ── 副标题（title role）──
     {
       id: "Subtitle", name: "Subtitle",
       basedOn: "Normal", next: "Normal", quickFormat: true,
-      run: { size: 28, font: "Arial", color: "666666" },
+      run: { size: 28, font: "title", color: "666666" },
       paragraph: { spacing: { before: 0, after: 360 }, alignment: AlignmentType.CENTER }
     },
-    // ── H1 · 章标题 ──
+    // ── H1 · 章标题（title role）──
     {
       id: "Heading1", name: "Heading 1",
       basedOn: "Normal", next: "Normal", quickFormat: true,
-      run: { size: 32, bold: true, font: "Arial", color: "1A1A2E" },
+      run: { size: 32, bold: true, font: "title", color: "1A1A2E" },
       paragraph: {
         spacing: { before: 480, after: 240 },
         outlineLevel: 0,
         border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: "2E75B6", space: 1 } }
       }
     },
-    // ── H2 · 节标题 ──
+    // ── H2 · 节标题（title role）──
     {
       id: "Heading2", name: "Heading 2",
       basedOn: "Normal", next: "Normal", quickFormat: true,
-      run: { size: 26, bold: true, font: "Arial", color: "2E75B6" },
+      run: { size: 26, bold: true, font: "title", color: "2E75B6" },
       paragraph: { spacing: { before: 360, after: 180 }, outlineLevel: 1 }
     },
-    // ── H3 · 子节标题 ──
+    // ── H3 · 子节标题（title role）──
     {
       id: "Heading3", name: "Heading 3",
       basedOn: "Normal", next: "Normal", quickFormat: true,
-      run: { size: 22, bold: true, font: "Arial", color: "333333" },
+      run: { size: 22, bold: true, font: "title", color: "333333" },
       paragraph: { spacing: { before: 240, after: 120 }, outlineLevel: 2 }
     }
   ]
 }
 ```
 
-## 文本样式速查
+## 文本样式速查（含 font role）
 
-| 用途 | 字体 | 字号(half-pt) | 实际pt | 颜色 | 粗体 |
-|------|------|--------------|--------|------|------|
-| 封面标题 | Arial | 48 | 24pt | #1A1A2E | ✓ |
-| 封面副标题 | Arial | 28 | 14pt | #666666 | — |
-| H1 章标题 | Arial | 32 | 16pt | #1A1A2E | ✓ |
-| H2 节标题 | Arial | 26 | 13pt | #2E75B6 | ✓ |
-| H3 子节 | Arial | 22 | 11pt | #333333 | ✓ |
-| 正文 | Arial | 22 | 11pt | #333333 | — |
-| 表头文字 | Arial | 18 | 9pt | #FFFFFF | ✓ |
-| 表格正文 | Arial | 18 | 9pt | #333333 | — |
-| 代码/字段名 | JetBrains Mono | 18 | 9pt | #C7254E | — |
-| 斜体说明 | Arial | 22 | 11pt | #888888 | — |
-| 标注(变更) | Arial | 20 | 10pt | #D97706 | ✓ |
+| 用途 | font role | 字号(half-pt) | 实际pt | 颜色 | 粗体 |
+|------|-----------|--------------|--------|------|------|
+| 封面标题 | **title** | 48 | 24pt | #1A1A2E | ✓ |
+| 封面副标题 | **title** | 28 | 14pt | #666666 | — |
+| H1 章标题 | **title** | 32 | 16pt | #1A1A2E | ✓ |
+| H2 节标题 | **title** | 26 | 13pt | #2E75B6 | ✓ |
+| H3 子节 | **title** | 22 | 11pt | #333333 | ✓ |
+| Scene 模块标题（触发方式 / 关键交互）| **title** | 20 | 10pt | #1A1A2E | ✓ |
+| 正文 | **body** | 22 | 11pt | #333333 | — |
+| 表头文字 | **body** | 18 | 9pt | #FFFFFF | ✓ |
+| 表格正文 | **body** | 18 | 9pt | #333333 | — |
+| 代码 / 路由 / 事件名 | **mono** | 18 | 9pt | #C7254E | — |
+| 斜体说明 | **body** italic | 22 | 11pt | #888888 | — |
+| 标注（变更）/ NEW / P0 tag | **mono** | 20 | 10pt | #D97706 | ✓ |
+| Header / Footer | **mono** | 16 | 8pt | #AAAAAA | — |
 
 ## 颜色定义
 
@@ -154,8 +197,8 @@ columnWidths: [3320, 9640],
 
 // 表头行
 shading: { fill: "2D81FF", type: ShadingType.CLEAR },  // 蓝底
-// 表头文字 color: "FFFFFF"（白字）
-// 正文行无底色
+// 表头文字 color: "FFFFFF"（白字），font: body
+// 正文行无底色，font: body
 ```
 
 ### 场景地图表
@@ -167,6 +210,7 @@ columnWidths: [1100, 6240, 2770, 2850],
 
 // 表头行
 shading: { fill: "2D81FF", type: ShadingType.CLEAR },  // 蓝底白字
+// 编号列内容走 mono（A / B-1 / M-1 等编号有节奏感），其他列 body
 ```
 
 ### Scene 详细需求表（核心两列表格）
@@ -179,11 +223,15 @@ columnWidths: [4536, 8424],
 // 左列
 shading: { fill: "F8FAFB", type: ShadingType.CLEAR },  // 极浅灰底
 verticalAlign: VerticalAlign.CENTER,
-// 左列文字：居中，斜体，color: "888888"
+// 左列文字：居中，斜体，color: "888888"，font: body italic
 
 // 右列
 shading: null,  // 白底
-// 右列文字：正常正文样式
+// 右列内容：
+//   - 模块标题（**触发方式** / **关键交互** 等）走 title role 粗体
+//   - numbered list 条目走 body
+//   - 内嵌代码 / 路由走 mono
+//   - 状态标签（变更）/ P0 走 mono
 ```
 
 ### 业务规则表
@@ -192,6 +240,7 @@ shading: null,  // 白底
 // 2 列：规则 / 详情
 width: { size: 12960, type: WidthType.DXA },
 columnWidths: [3880, 9080],
+// 规则列短文本（body），详情列含路由 / 接口路径走 mono inline
 ```
 
 ### 非功能性需求表
@@ -209,15 +258,16 @@ columnWidths: [4990, 7970],
 width: { size: 12960, type: WidthType.DXA },
 columnWidths: [3880, 3880, 5200],
 
-// 事件名用等宽字体
-new TextRun({ text: "ac_page_view", font: "JetBrains Mono", size: 20, color: "C7254E" })
+// 事件名走 mono role
+new TextRun({ text: "ac_page_view", font: "mono", size: 20, color: "C7254E" })
+// 参数列同样走 mono
 ```
 
 ### 组件复用矩阵
 
 ```javascript
 // N+1 列：组件名 + 各 View
-// 用 ✓ 和 — 标记
+// ✓ 和 — 走 mono（让矩阵 ✓/— 视觉对齐有节奏）
 // ✓ 用 color: "15803D"（绿）, — 用 color: "CCCCCC"（灰）
 ```
 
@@ -244,8 +294,8 @@ columnWidths: [2220, 2220, 3880, 4640],
 width: { size: 12960, type: WidthType.DXA },
 columnWidths: [1660, 4990, 6310],
 
-// 路由列用等宽字体
-new TextRun({ text: "/activity-center", font: "JetBrains Mono", size: 20 })
+// 路由列走 mono role
+new TextRun({ text: "/activity-center", font: "mono", size: 20 })
 ```
 
 ## 列表样式
@@ -256,7 +306,7 @@ numbering: {
     {
       reference: "bullets",
       levels: [{
-        level: 0, format: LevelFormat.BULLET, text: "\u2022",
+        level: 0, format: LevelFormat.BULLET, text: "•",
         alignment: AlignmentType.LEFT,
         style: {
           paragraph: { indent: { left: 720, hanging: 360 } },
@@ -278,22 +328,24 @@ numbering: {
 }
 ```
 
+注：当前 Scene 右列的「numbered list」由 `fill_cell_blocks(numbered=True)` 用字符前缀（`1./2./3.`）实现，视觉等同 numbered list 但 docx 层无 `<w:numId>`（设计选择，避免编号配置复杂度，prd-template L186-191 强制规范由字符前缀满足）。
+
 ## Header / Footer
 
 ```javascript
-// Header：左侧产品名 + 右侧文档版本
+// Header：左侧产品名 + 右侧文档版本（走 mono role 做 meta 节奏感）
 headers: {
   default: new Header({
     children: [
       new Paragraph({
         children: [
-          new TextRun({ text: "[产品名称] PRD", font: "Arial", size: 16, color: "AAAAAA" }),
+          new TextRun({ text: "[产品名称] PRD", font: "mono", size: 16, color: "AAAAAA" }),
           new PositionalTab({
             alignment: PositionalTabAlignment.RIGHT,
             relativeTo: PositionalTabRelativeTo.MARGIN,
             leader: PositionalTabLeader.NONE
           }),
-          new TextRun({ text: "V1.0", font: "Arial", size: 16, color: "AAAAAA" })
+          new TextRun({ text: "V1.0", font: "mono", size: 16, color: "AAAAAA" })
         ],
         border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: "DDDDDD", space: 1 } }
       })
@@ -301,21 +353,21 @@ headers: {
   })
 }
 
-// Footer：左侧「机密」+ 右侧页码
+// Footer：左侧「机密」+ 右侧页码（走 mono role）
 footers: {
   default: new Footer({
     children: [
       new Paragraph({
         children: [
-          new TextRun({ text: "机密 · 仅限内部使用", font: "Arial", size: 16, color: "AAAAAA" }),
+          new TextRun({ text: "机密 · 仅限内部使用", font: "mono", size: 16, color: "AAAAAA" }),
           new PositionalTab({
             alignment: PositionalTabAlignment.RIGHT,
             relativeTo: PositionalTabRelativeTo.MARGIN,
             leader: PositionalTabLeader.NONE
           }),
-          new TextRun({ children: [PageNumber.CURRENT], font: "Arial", size: 16, color: "AAAAAA" }),
-          new TextRun({ text: " / ", font: "Arial", size: 16, color: "AAAAAA" }),
-          new TextRun({ children: [PageNumber.TOTAL_PAGES], font: "Arial", size: 16, color: "AAAAAA" })
+          new TextRun({ children: [PageNumber.CURRENT], font: "mono", size: 16, color: "AAAAAA" }),
+          new TextRun({ text: " / ", font: "mono", size: 16, color: "AAAAAA" }),
+          new TextRun({ children: [PageNumber.TOTAL_PAGES], font: "mono", size: 16, color: "AAAAAA" })
         ]
       })
     ]
@@ -335,11 +387,11 @@ footers: {
   children: [
     // 上方留白
     ...Array(6).fill(new Paragraph({ spacing: { after: 200 } })),
-    // 产品名称（Title 样式）
+    // 产品名称（Title 样式 = title role 衬线）
     new Paragraph({ style: "Title", children: [new TextRun("[产品名称]")] }),
-    // 副标题
+    // 副标题（title role）
     new Paragraph({ style: "Subtitle", children: [new TextRun("产品需求文档（PRD）")] }),
-    // 模块说明
+    // 模块说明（body italic）
     new Paragraph({
       alignment: AlignmentType.CENTER,
       children: [new TextRun({ text: "[模块概要]", size: 22, color: "888888" })]

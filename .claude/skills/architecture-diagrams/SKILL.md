@@ -95,8 +95,8 @@ scripts:
 ### Step 1：读取模板
 
 ```
-view .claude/skills/architecture-diagrams/references/css-template.css
-view .claude/skills/architecture-diagrams/references/js-template.js
+view .claude/skills/architecture-diagrams/assets/css-template.css
+view .claude/skills/architecture-diagrams/assets/js-template.js
 ```
 
 - `.claude/skills/_shared/claude-design/anti-ai-slop.md`（按需 grep「决策速查」段，确认无渐变背景、AI 签名卡片等陷阱）

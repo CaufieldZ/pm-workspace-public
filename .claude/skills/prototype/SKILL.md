@@ -47,7 +47,7 @@ scripts:
 
 **Step B 填充开始前读取组件模板**：
 ```
-view .claude/skills/prototype/references/prototype-templates.html
+view .claude/skills/prototype/assets/prototype-templates.html
 ```
 
 **按需读取（Step B 填充时遇到不确定的组件结构再读对应章节，禁止全量加载）：**
@@ -55,8 +55,8 @@ view .claude/skills/prototype/references/prototype-templates.html
 - 后台管理页面 → 只读 `## B. 管理台浅色组件` + `## D. 数据驱动 CRUD 模式`
 - 弹窗/Toast/底部弹出 → 只读 `## C. 通用交互组件`
 ```
-grep -n "^## " .claude/skills/prototype/references/prototype-components.md  # 定位章节行号
-sed -n '{起始行},{结束行}p' .claude/skills/prototype/references/prototype-components.md  # 只读需要的章节
+grep -n "^## " .claude/skills/prototype/scripts/prototype-components.md  # 定位章节行号
+sed -n '{起始行},{结束行}p' .claude/skills/prototype/scripts/prototype-components.md  # 只读需要的章节
 ```
 
 **美学规范（产出前 grep 决策速查表段）：**
@@ -131,7 +131,7 @@ Step C：收尾（数据驱动 CRUD 补全 + 自检）
 # 导入方式（从 projects/{项目}/scripts/ 执行，向上 3 层到工作区根目录）
 import sys, os
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..'))
-sys.path.insert(0, os.path.join(_ROOT, '.claude/skills/prototype/references'))
+sys.path.insert(0, os.path.join(_ROOT, '.claude/skills/prototype/scripts'))
 from gen_proto_skeleton import generate_skeleton
 ```
 
@@ -224,7 +224,7 @@ import os, sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 _WS = os.path.abspath(os.path.join(ROOT, '..', '..'))
 sys.path.insert(0, os.path.join(_WS, 'scripts'))
-sys.path.insert(0, os.path.join(_WS, '.claude/skills/prototype/references'))
+sys.path.insert(0, os.path.join(_WS, '.claude/skills/prototype/scripts'))
 
 from update_proto_base import ProtoUpdater
 

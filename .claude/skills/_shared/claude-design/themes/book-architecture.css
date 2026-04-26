@@ -1,0 +1,21 @@
+/* PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 */
+/* book-architecture — 花叔 Irma Boom / 荷兰书籍建筑
+ * 象牙纸 + 深棕 + 朱红衬线，书籍设计 / 字体排印主导
+ * 适合：出版 / 内容品牌 / 深度内容场合
+ * 字体覆盖：--cd-sans 改用衬线栈，全站正文也偏向书版感
+ */
+:root {
+  --cd-bg:          #F5F0E6;
+  --cd-ink:         #2D1810;
+  --cd-ink-82:      rgba(45, 24, 16, 0.82);
+  --cd-ink-58:      rgba(45, 24, 16, 0.58);
+  --cd-ink-40:      rgba(45, 24, 16, 0.40);
+  --cd-ink-18:      rgba(45, 24, 16, 0.18);
+  --cd-hairline:    rgba(45, 24, 16, 0.10);
+  --cd-accent:      #B91C1C;
+  --cd-accent-deep: #991B1B;
+  --cd-accent-glow: rgba(185, 28, 28, 0.15);
+
+  /* 衬线主导：正文也走衬线栈，强化书版感 */
+  --cd-sans: "Noto Serif SC", "Source Serif 4", Georgia, serif;
+}

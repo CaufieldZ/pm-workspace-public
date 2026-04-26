@@ -10,13 +10,13 @@
 
 :root {
   /* ── 深色底色 ── */
-  --cd-bg:      #000000;
+  --cd-bg:      #0f0f11;
   --cd-ink:     #FFFFFF;
   --cd-ink-82:  rgba(255, 255, 255, 0.82);
   --cd-ink-58:  rgba(255, 255, 255, 0.58);
   --cd-ink-40:  rgba(255, 255, 255, 0.40);
   --cd-ink-18:  rgba(255, 255, 255, 0.18);
-  --cd-hairline: rgba(255, 255, 255, 0.12);
+  --cd-hairline: rgba(255, 255, 255, 0.08);
 
   /* ── HTX / fintech 通用蓝 accent ── */
   --cd-accent:      #2F6CF2;
@@ -30,9 +30,11 @@
   --cd-light-hair: rgba(0, 0, 0, 0.08);
 
   /* ── 字体 ── */
+  /* 字体三分工：标题 serif（衬线主角）/ 正文 sans（CJK 优先）/ 代码 mono（信息节奏层）
+   * CJK 优先铁律：中文字体必须排在英文字体前 */
   --cd-serif-cn: "Noto Serif SC", "Source Han Serif SC", serif;
   --cd-serif-en: "Source Serif 4", Georgia, serif;
-  --cd-sans:     "Inter", -apple-system, "PingFang SC", system-ui, sans-serif;
+  --cd-sans:     "HarmonyOS Sans SC", "PingFang SC", "Plus Jakarta Sans", -apple-system, system-ui, sans-serif;
   --cd-mono:     "JetBrains Mono", "SF Mono", ui-monospace, monospace;
 
   /* ── 间距系统（8pt 网格）── */

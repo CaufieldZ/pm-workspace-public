@@ -1,0 +1,21 @@
+/* PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 */
+/* muji-minimal — 花叔 Kenya Hara / 无印良品美学
+ * 暖白 + 暖近黑 + 极淡灰 accent，留白 ≥ 60%
+ * 适合：生活方式、人文内容、审美优先的私享会
+ * 字体覆盖：--cd-serif-cn 改为细黑（sans），全站标题也不用衬线
+ */
+:root {
+  --cd-bg:          #FAFAF8;
+  --cd-ink:         #3C3C3A;
+  --cd-ink-82:      rgba(60, 60, 58, 0.82);
+  --cd-ink-58:      rgba(60, 60, 58, 0.58);
+  --cd-ink-40:      rgba(60, 60, 58, 0.40);
+  --cd-ink-18:      rgba(60, 60, 58, 0.18);
+  --cd-hairline:    rgba(60, 60, 58, 0.06);
+  --cd-accent:      #8A8A86;
+  --cd-accent-deep: #6B6B67;
+  --cd-accent-glow: rgba(138, 138, 134, 0.12);
+
+  /* 细黑：标题也用 sans，呈现无印 / Kenya Hara 极简质感 */
+  --cd-serif-cn: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", sans-serif;
+}

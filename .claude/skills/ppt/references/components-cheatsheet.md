@@ -262,7 +262,7 @@
 
 - 树形结构：用 HTML 语义（`<ul>` 缩进 + `.eyebrow` 层级标识 + `.hairline-sm` 分段），避免「彩色 gradient border + emoji icon + 带阴影圆角卡」三件套
 - 依赖链：用 `.cmp-table` 或 `.grid2`（源/目标）+ eyebrow 标注顺序（`POS 01` / `POS 02`），避免 orange/blue/green 三色边框
-- 流程图：跳出 PPT，用 flowchart skill 单独产出一个 HTML 然后嵌入截图
+- 分支流程图 / 泳道图：用 flowchart skill 独立产出 HTML，截图嵌入 PPT（PPT 内嵌 X6 在暗色主题下视觉不对齐，已 rolled back）
 
 ---
 

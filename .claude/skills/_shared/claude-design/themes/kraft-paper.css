@@ -1,0 +1,17 @@
+/* PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 */
+/* kraft-paper — 歸藏牛皮纸
+ * 深棕 + 暖米，老笔记本 / 牛皮信封感
+ * 适合：怀旧/人文/阅读/历史/文学分享，独立杂志风格
+ */
+:root {
+  --cd-bg:          #eedfc7;
+  --cd-ink:         #2a1e13;
+  --cd-ink-82:      rgba(42, 30, 19, 0.82);
+  --cd-ink-58:      rgba(42, 30, 19, 0.58);
+  --cd-ink-40:      rgba(42, 30, 19, 0.40);
+  --cd-ink-18:      rgba(42, 30, 19, 0.18);
+  --cd-hairline:    rgba(42, 30, 19, 0.10);
+  --cd-accent:      #8B4513;
+  --cd-accent-deep: #6B3410;
+  --cd-accent-glow: rgba(139, 69, 19, 0.15);
+}

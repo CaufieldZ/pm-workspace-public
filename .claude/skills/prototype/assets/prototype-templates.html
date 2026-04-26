@@ -1,0 +1,251 @@
+<!-- PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
+<!-- pm-ws-canary-236a5364 -->
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- [TEMPLATE] 全局导航 gnav                                              -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="gnav">
+  <div class="gnav-logo"><span>🔥</span> <!-- [FILL] 产品名 --></div>
+  <div class="gnav-sep"></div>
+  <div class="gnav-tabs">
+    <div class="gnav-tab on" onclick="switchGlobalView(0)"><span class="gnav-ic">📱</span> <!-- [FILL] View 1 名 --></div>
+    <div class="gnav-tab" onclick="switchGlobalView(1)"><span class="gnav-ic">⚙️</span> <!-- [FILL] View 2 名 --></div>
+    <!-- 按需增减 Tab -->
+  </div>
+  <div class="gnav-right">
+    <span class="gnav-ver"><!-- [FILL] 版本说明 --></span>
+  </div>
+</div>
+
+<div class="gnav-view-wrap">
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- [TEMPLATE] 前台 View（深色）                                           -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="gnav-view-section gnav-active" id="proto-view" style="background:#0B0E11;color:#EAECEF;min-height:calc(100vh - 52px);">
+
+  <!-- ── 产品导航 ── -->
+  <div class="p-nav">
+    <div class="p-nav-logo" onclick="goPage('main')"><span>🔥</span><b><!-- [FILL] 产品名 --></b></div>
+    <div class="p-nav-item"><!-- [FILL] 导航项 --> ▾</div>
+    <div class="p-nav-item act" id="navAC" onclick="toggleDropdown(event)">
+      <!-- [FILL] 当前项 --> ▾
+      <span class="red-dot"></span>
+      <!-- 下拉菜单 -->
+      <div class="p-dropdown" id="acDropdown">
+        <div class="p-drop-col">
+          <div class="p-drop-item"><div class="di">🎯</div><div><div class="entry"><!-- [FILL] --></div><div class="ds"><!-- [FILL] --></div></div></div>
+        </div>
+        <div class="p-drop-col">
+          <h4><!-- [FILL] 分类标题 --></h4>
+          <div class="p-drop-item"><div class="di">🚀</div><div><!-- [FILL] --><div class="ds"><!-- [FILL] --></div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="p-nav-right">
+      <button class="p-btn-out">💰 资产</button>
+      <button class="p-btn-blue">登录 / 注册</button>
+    </div>
+  </div>
+
+  <!-- ── 页面：主页 ── -->
+  <div class="p-page show" id="page-main">
+
+    <!-- Header -->
+    <div class="p-header">
+      <div class="p-hdr-left">
+        <h1><!-- [FILL] 🏆 页面标题 --></h1>
+        <div class="p-hdr-sub"><!-- [FILL] 副标题 --></div>
+        <div class="p-my-act" onclick="openDrawer()">我的活动 <span class="red-dot" style="width:6px;height:6px;background:#F6465D;border-radius:50%;display:inline-block;"></span> →</div>
+      </div>
+      <div class="p-carousel">
+        <div style="font-size:9px;color:#2F6CF2;background:rgba(47,108,242,.1);padding:2px 8px;border-radius:4px;display:inline-block;font-weight:700;margin-bottom:6px;"><!-- [FILL] 标签 --></div>
+        <h3 style="font-size:14px;font-weight:700;"><!-- [FILL] 轮播标题 --></h3>
+        <div style="font-size:11px;color:#848E9C;margin-top:4px;"><!-- [FILL] 描述 --></div>
+        <div class="p-cr-dots"><div class="p-cr-dot on"></div><div class="p-cr-dot"></div><div class="p-cr-dot"></div></div>
+      </div>
+    </div>
+
+    <!-- Tab 状态筛选 -->
+    <div class="p-tabs" id="mainTabs">
+      <div class="p-tab act" onclick="switchTab(this,'main','ongoing')">进行中 <span class="p-tc"><!-- [FILL] --></span></div>
+      <div class="p-tab" onclick="switchTab(this,'main','upcoming')">即将开始 <span class="p-tc"><!-- [FILL] --></span></div>
+      <div class="p-tab" onclick="switchTab(this,'main','ended')">已结束 <span class="p-tc"><!-- [FILL] --></span></div>
+    </div>
+
+    <!-- [TEMPLATE] 专题分组 + 卡片 -->
+    <div class="p-tab-content" id="main-ongoing">
+      <div class="p-topic">
+        <div class="p-topic-hd">
+          <div class="p-topic-left">
+            <div class="p-topic-icon" style="background:rgba(47,108,242,.1)"><!-- [FILL] icon --></div>
+            <h3><!-- [FILL] 专题名 --></h3>
+            <span class="p-topic-n"><!-- [FILL] N 个进行中 --></span>
+          </div>
+          <div class="p-topic-more">查看全部 ›</div><!-- 不需要则删除此行 -->
+        </div>
+        <div class="p-grid">
+          <!-- [TEMPLATE] 普通卡片 -->
+          <div class="p-card">
+            <div class="p-cb p-cb-on">● 进行中</div>
+            <div class="p-ct"><!-- [FILL] 活动名 --></div>
+            <div class="p-cd"><!-- [FILL] 描述 --></div>
+            <div class="p-cf"><span class="p-tm"><!-- [FILL] 07D 10H --></span><button class="p-btn">查 看</button></div>
+          </div>
+          <!-- [TEMPLATE] Wide Card -->
+          <div class="p-wide">
+            <div>
+              <div style="font-size:9px;color:#FFD740;background:rgba(255,215,64,.12);padding:2px 8px;border-radius:4px;font-weight:700;display:inline-block;margin-bottom:4px;"><!-- [FILL] --></div>
+              <h3 style="font-size:16px;font-weight:800;"><!-- [FILL] --></h3>
+              <div style="font-size:12px;color:#848E9C;margin-top:4px;"><!-- [FILL] --></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;">
+              <div style="font-size:18px;font-weight:800;color:#F6465D;font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace;"><!-- [FILL] 倒计时 --></div>
+              <button class="p-btn" style="padding:6px 18px;font-size:12px;"><!-- [FILL] CTA --></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- main-ongoing -->
+
+    <div class="p-tab-content" id="main-upcoming" style="display:none;">
+      <!-- [FILL] 即将开始内容 -->
+    </div>
+    <div class="p-tab-content" id="main-ended" style="display:none;">
+      <!-- [FILL] 已结束内容 -->
+    </div>
+
+    <div class="p-footer"></div>
+  </div><!-- page-main -->
+
+  <!-- ── 抽屉 ── -->
+  <div class="p-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+  <div class="p-drawer" id="drawerPanel">
+    <div class="p-drawer-bar"><h3><!-- [FILL] 抽屉标题 --></h3><span class="dx" onclick="closeDrawer()">✕</span></div>
+    <div class="p-drawer-body" style="padding:16px 20px;">
+      <!-- [FILL] 抽屉内容 -->
+    </div>
+  </div>
+
+</div><!-- proto-view -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- [TEMPLATE] 管理台 View（浅色）                                         -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="gnav-view-section" id="mgt-view" style="background:#F5F6FA;color:#1D2129;">
+<div class="layout">
+
+  <!-- 侧边栏 -->
+  <div class="sb">
+    <div class="sb-logo"><span style="font-size:18px">🔥</span> <!-- [FILL] 后台名 --></div>
+    <div class="sb-grp"><!-- [FILL] 分组名 --></div>
+    <div class="sb-item on" onclick="swPage(this,0)">📋 <!-- [FILL] 菜单项 --></div>
+    <div class="sb-item" onclick="swPage(this,1)">📑 <!-- [FILL] --></div>
+    <div class="sb-item" onclick="swPage(this,2)">🖼 <!-- [FILL] --></div>
+  </div>
+
+  <div class="mn">
+    <!-- 顶栏 -->
+    <div class="tb">
+      <div class="bc">🏠 <!-- [FILL] 面包屑路径 --> / <b id="bcText"><!-- [FILL] --></b></div>
+      <div style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:10px;">
+        <span style="background:var(--green-l);color:#2E7D32;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;"><!-- [FILL] 环境 --></span>
+        <span>👤 <!-- [FILL] 用户名 --></span>
+      </div>
+    </div>
+
+    <!-- ── [TEMPLATE] 页面0：列表页 ── -->
+    <div class="ct page" id="page0">
+      <div class="pt"><!-- [FILL] 页面标题 --> <span class="proto">原型</span></div>
+
+      <!-- 筛选栏 -->
+      <div class="cd">
+        <div class="fb">
+          <div class="fg"><span class="fl"><!-- [FILL] 字段名 -->：</span>
+            <select class="fs"><option>全部</option><option><!-- [FILL] --></option></select>
+          </div>
+          <button class="b b-blue">🔍 查询</button>
+          <button class="b b-ghost">重置</button>
+        </div>
+      </div>
+
+      <!-- 数据表格 -->
+      <div class="cd" style="padding:0;overflow:hidden">
+        <div class="tw">
+          <table class="mgt-table">
+            <thead><tr>
+              <th><!-- [FILL] 列名 --></th>
+              <th><!-- [FILL] --></th>
+              <th>操作</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td><b><!-- [FILL] --></b></td>
+                <td><span class="s-on">● 已上线</span></td>
+                <td><div class="ops"><span class="op op-off">下线</span><span class="op op-e">编辑</span><span class="op op-d">删除</span></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── [TEMPLATE] 页面1：配置管理 ── -->
+    <div class="ct page hide" id="page1">
+      <div class="pt"><!-- [FILL] --></div>
+      <div class="tc-list">
+        <!-- [TEMPLATE] 配置卡片 -->
+        <div class="tc-card">
+          <div class="tc-drag">⠿</div>
+          <div class="tc-order">1</div>
+          <div class="tc-info">
+            <div class="tc-name"><!-- [FILL] --></div>
+            <div class="tc-rule"><!-- [FILL] 规则说明 --></div>
+          </div>
+          <div class="tc-switch on" onclick="this.classList.toggle('on')"></div>
+          <div style="display:flex;gap:6px;">
+            <button class="b b-sm b-ghost">编辑</button>
+            <button class="b b-sm b-red">删除</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- .mn -->
+</div><!-- .layout -->
+
+<!-- [TEMPLATE] 弹窗 -->
+<div class="modal-bg" id="editModal">
+  <div class="modal">
+    <div class="modal-hd"><span><!-- [FILL] 弹窗标题 --></span><span class="close" onclick="this.closest('.modal-bg').classList.remove('show')">✕</span></div>
+    <div class="modal-bd">
+      <!-- [TEMPLATE] 表单行 -->
+      <div class="f-row">
+        <div class="f-lbl"><span class="req">*</span> <!-- [FILL] 字段名 --></div>
+        <div class="f-ctl"><input class="f-inp" value="<!-- [FILL] -->"></div>
+      </div>
+      <div class="f-row">
+        <div class="f-lbl"><!-- [FILL] --></div>
+        <div class="f-ctl"><select class="f-sel"><option><!-- [FILL] --></option></select></div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="b b-ghost" onclick="this.closest('.modal-bg').classList.remove('show')">取消</button>
+      <button class="b b-blue">保存</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- mgt-view -->
+
+</div><!-- gnav-view-wrap -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- JS 已抽离至 prototype.js，骨架脚本通过 open().read() 自动拼接           -->
+<!-- 模型无需读取此处，完整 JS 见 assets/prototype.js                       -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+
+</body>
+</html>

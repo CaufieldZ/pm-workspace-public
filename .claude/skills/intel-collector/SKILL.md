@@ -2,7 +2,7 @@
 ---
 name: intel-collector
 description: >
-  当用户提到「截竞品」「抓情报」「采集 XX」时触发。指明平台 / 媒体名 + 「截一下 / 抓一下」亦触发。
+  当用户提到「截竞品」「抓情报」「采集 XX」时触发。指明平台 / 媒体名 + 「采集 / 抓一下 + 竞品 / 公告 / 资讯」组合时亦触发。「截图」「截一下」单独不触发。
 argument-hint: "平台/媒体 + 功能模块，如 binance 活动中心、coindesk 最新报道；可选 --web / --content"
 type: tool
 output_format: 目录
@@ -42,17 +42,17 @@ scripts:
 ## References
 
 **必读**（产出前加载）：
-- `references/url-registry.json` — 竞品/媒体 URL 注册表，Step 1 查 URL 用
+- `assets/url-registry.json` — 竞品/媒体 URL 注册表，Step 1 查 URL 用
 - `.claude/skills/_shared/claude-design/asset-quality-rubric.md` — 素材质量 5-10-2-8 评分规则
 
 **按需**（满足条件才读）：
 - `references/competitors/{platform}/index.md` — 已有采集汇总，仅在追加某平台已有模块时查
 
 **执行类**（模型不读，脚本调用）：
-- `references/capture.py` — APP 模式采集（iPhone 镜像 + screencapture）
-- `references/scheduled-scrape.py` — Content 模式定时任务
-- `references/intel-cron.sh` — crontab 包装脚本
-- `references/auth/*.json` — 遗留登录态（已废弃，保留供老项目使用，不读）
+- `scripts/capture.py` — APP 模式采集（iPhone 镜像 + screencapture）
+- `scripts/scheduled-scrape.py` — Content 模式定时任务
+- `scripts/intel-cron.sh` — crontab 包装脚本
+- `assets/auth/*.json` — 遗留登录态（已废弃，保留供老项目使用，不读）
 
 ## 执行步骤
 
@@ -82,7 +82,7 @@ mkdir -p references/competitors/{platform}/{module}/
 #### APP 模式
 
 ```bash
-python3 .claude/skills/intel-collector/references/capture.py \
+python3 .claude/skills/intel-collector/scripts/capture.py \
   --output-dir /tmp/captures-{timestamp}/
 ```
 
@@ -103,7 +103,7 @@ python3 .claude/skills/intel-collector/references/capture.py \
 
 #### Web 模式
 
-1. 读取 `references/url-registry.json` 查找 URL，没有匹配 → 问用户要 URL，获取后追加 registry
+1. 读取 `assets/url-registry.json` 查找 URL，没有匹配 → 问用户要 URL，获取后追加 registry
 2. 选择浏览器模式：
    - **无需登录页**（公告/活动列表/媒体） → 默认 headless Chromium，无需 profile
    - **需要登录态**（后台/付费内容） → 先 `browser-use profile list` 看可用 profile，确认后加 `--profile "{Name}"` 用真实 Chrome
@@ -121,11 +121,11 @@ python3 .claude/skills/intel-collector/references/capture.py \
    ```
 4. 所有 URL 采集完后执行 `browser-use close` 释放 daemon
 
-> **迁移说明**：旧方案 `npx playwright + references/auth/{platform}.json` 已废弃。Chrome profile 原生管登录态，不再需要 `references/auth/` 目录；老项目遗留的 auth JSON 可保留但不再使用。
+> **迁移说明**：旧方案 `npx playwright + assets/auth/{platform}.json` 已废弃。Chrome profile 原生管登录态，不再需要 `assets/auth/` 目录；老项目遗留的 auth JSON 可保留但不再使用。
 
 #### Content 模式
 
-1. 读取 `references/url-registry.json` 查找 URL
+1. 读取 `assets/url-registry.json` 查找 URL
    - 交易所公告/活动 → 从对应平台分区查找
    - Crypto 媒体 → 从 `_media` 分区查找（key 格式 `{媒体名}-{栏目}`）
 2. 抓取策略（降级链）：
@@ -232,16 +232,16 @@ python3 .claude/skills/intel-collector/references/capture.py \
 
 独立于 Claude Code session 运行的 Playwright 脚本，零 AI Token 消耗。
 
-**脚本位置**：`.claude/skills/intel-collector/references/scheduled-scrape.py`
+**脚本位置**：`.claude/skills/intel-collector/scripts/scheduled-scrape.py`
 
 ```bash
 # 手动运行
-python3 .claude/skills/intel-collector/references/scheduled-scrape.py --all          # 全部
-python3 .claude/skills/intel-collector/references/scheduled-scrape.py --platforms okx # 指定平台
-python3 .claude/skills/intel-collector/references/scheduled-scrape.py --media        # 仅媒体
+python3 .claude/skills/intel-collector/scripts/scheduled-scrape.py --all          # 全部
+python3 .claude/skills/intel-collector/scripts/scheduled-scrape.py --platforms okx # 指定平台
+python3 .claude/skills/intel-collector/scripts/scheduled-scrape.py --media        # 仅媒体
 ```
 
-**crontab**：每月 1 号和 15 号 10:03 自动运行（`references/intel-cron.sh`）
+**crontab**：每月 1 号和 15 号 10:03 自动运行（`scripts/intel-cron.sh`）
 
 **产出位置**：
 - 交易所 → `references/competitors/{platform}/announcements/YYYY-MM-DD.md`

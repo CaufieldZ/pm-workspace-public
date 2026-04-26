@@ -68,12 +68,74 @@ SVG 只允许用于：真正的 icon（≤32×32px）、几何装饰元素、Dat
 
 ### 禁 5：烂大街字体
 
-- 禁止作为主字体：Inter、Roboto、Arial、Helvetica、Fraunces、Space Grotesk
-- 统一用：`Noto Serif SC`（中文标题）+ `Source Serif 4`（英文副标题）+ `JetBrains Mono`（数字/代码/eyebrow）+ `Inter`（仅 sans-serif 正文降级）
+- 禁止作为主字体：Inter、Roboto、Arial、Helvetica、Fraunces、Space Grotesk、DM Sans
+- 统一字体栈（三分工，CJK 优先排序）：
+  - **标题 / 章节 / 重点金句**：`Noto Serif SC`（中文衬线主角）+ `Source Serif 4`（英文衬线副标题）
+  - **正文 / 表格 / 长段阅读**：`HarmonyOS Sans SC` + `PingFang SC` fallback（CJK 渲染主力，比 Noto Sans SC 更顺眼）+ `Plus Jakarta Sans`（英文有性格的 sans，替代 Inter）
+  - **数字 / 代码 / kicker / 状态标签 / 编号 marker / meta**：`JetBrains Mono`（等宽，做信息节奏层）
+- 备注：HarmonyOS Sans SC 是华为开源字体，Mac 通常没装走 PingFang SC fallback 效果同样好，Windows 没装走「微软雅黑」可接受；Noto Sans SC 可用但不推荐为首选（中文渲染端正不潮）；Inter 仅供旧产物兼容，新产物不再用
 
 ### 禁 6：每个 card / feature 都带 icon
 
 滥用 icon 让界面像 toy。Less is more。
+
+---
+
+## 进阶规则（字体三分工 · 图片裁切 · chrome 禁同义重复）
+
+### 补 1：字体三分工（必须）
+
+| 字体类型 | 用于 | 变量 |
+|---------|------|------|
+| 衬线（serif-cn / serif-en） | 标题、重点金句、数字大字 | `--cd-serif-cn` / `--cd-serif-en` |
+| 非衬线（sans） | 正文描述、大段阅读内容 | `--cd-sans` |
+| 等宽（mono） | kicker、meta 标签、foot 装饰、代码 | `--cd-mono` |
+
+**禁止**：
+
+- 标题用非衬线（Noto Sans SC 做 hero 标题 = 瞬间降级成 AI 通稿）
+- 正文用衬线（长段落用 Noto Serif SC = 阅读疲劳）
+- 元数据（kicker / chrome / foot）用 sans（应该是等宽 mono，缺了节奏感）
+
+判断：如果三种字体的视觉分工在页面上看不出来，说明用错了。
+
+### 补 2：图片只裁底部 + 网格内禁 aspect-ratio
+
+```css
+/* ✓ 正确：固定 height + overflow hidden + object-position:top */
+figure.frame-img { height: 26vh; overflow: hidden; }
+figure.frame-img img { object-fit: cover; object-position: top center; }
+
+/* ❌ 禁止：网格内用 aspect-ratio（会撑破父容器，图片堆叠或切顶） */
+figure.frame-img { aspect-ratio: 16/9; }
+
+/* ❌ 禁止：align-self:end 贴底（低分屏被工具栏遮挡） */
+figure.frame-img { align-self: end; }
+```
+
+**例外**：单张主视觉（非网格内）可用 `aspect-ratio + max-height`，父容器会兜底。
+
+### 补 3：chrome / kicker 禁同义重复（杂志感关键）
+
+- `chrome` = 杂志页眉 / 栏目标签，跨多页可相同（如「Act II · Workflow」「lukew.com · 2026.04」）
+- `kicker` = 本页独一份的引导句，每页必须不同（如「BUT」「Phase 01 · 设计阶段」「The Question」）
+
+**反例**（AI 味浓）：
+
+```
+chrome: 「设计先行 · Design First」
+kicker: 「Phase 01 · 设计阶段」
+→ 同义翻译，两个都在说设计，信息重复
+```
+
+**正例**：
+
+```
+chrome: 「Act II · Workflow」（描述栏目/幕次）
+kicker: 「BUT」（给大标题做钩子）
+```
+
+判断：chrome 回答「我在哪一章」，kicker 回答「这页要传达什么情绪/钩子」。两个问题不同，就不会重复。
 
 ---
 

@@ -1,0 +1,17 @@
+/* PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 */
+/* ink-classic — 歸藏墨水经典
+ * 纯墨黑 + 暖米白，Monocle / A Book Apart 杂志感
+ * 适合：通用分享、商业发布、科技产品，最安全的默认浅色选择
+ */
+:root {
+  --cd-bg:          #f1efea;
+  --cd-ink:         #0a0a0b;
+  --cd-ink-82:      rgba(10, 10, 11, 0.82);
+  --cd-ink-58:      rgba(10, 10, 11, 0.58);
+  --cd-ink-40:      rgba(10, 10, 11, 0.40);
+  --cd-ink-18:      rgba(10, 10, 11, 0.18);
+  --cd-hairline:    rgba(10, 10, 11, 0.08);
+  --cd-accent:      #B22222;
+  --cd-accent-deep: #8B0000;
+  --cd-accent-glow: rgba(178, 34, 34, 0.14);
+}

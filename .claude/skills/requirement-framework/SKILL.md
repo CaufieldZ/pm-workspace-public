@@ -24,12 +24,12 @@ scripts: []
 
 **Step 0：必读**
 ```
-view .claude/skills/requirement-framework/references/requirement-framework-templates.html
+view .claude/skills/requirement-framework/assets/requirement-framework-templates.html
 ```
 
 **按需读取（需理解 CSS 细节或修改样式时）：**
 ```
-view .claude/skills/requirement-framework/references/requirement-framework.css
+view .claude/skills/requirement-framework/assets/requirement-framework.css
 ```
 
 CSS 通过 `open().read()` 拼接到骨架 `<style>` 标签，不需要模型逐行阅读或手写。SKILL.md 下方的标签对照表已包含所有需要的 class 名。

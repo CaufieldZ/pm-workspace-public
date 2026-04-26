@@ -43,8 +43,8 @@ consumed_by: [{下一步 1}, {下一步 2}]
 - `references/{业务组件}.md` — 仅当 Scene 含对应业务类型时读
 
 **执行类**（模型不读，脚本调用）：
-- `references/gen_{产物}_skeleton.py` — 骨架脚本
-- `references/fill-template.py` — 填充模板
+- `scripts/gen_{产物}_skeleton.py` — 骨架脚本
+- `scripts/fill-template.py` — 填充模板
 
 ## 执行步骤
 ### Step 1：回读上下文
@@ -115,7 +115,7 @@ consumed_by: []
 - `references/{可选参考}.md` — 仅当 {条件} 时读
 
 **执行类**（模型不读，脚本调用）：
-- `references/{生成脚本}.py` — 调用方式
+- `scripts/{生成脚本}.py` — 调用方式
 
 ## 两种档位（如有）
 ### 快速版
@@ -177,7 +177,7 @@ consumed_by: []
 - `references/{规则定义}.md` — 校验规则清单
 
 **执行类**（模型不读，脚本调用）：
-- `references/{审计脚本}.sh` — 调用方式
+- `scripts/{审计脚本}.sh` — 调用方式
 
 ## 检查维度
 ### 维度 1：{名称}

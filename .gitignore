@@ -20,7 +20,7 @@ package-lock.json
 .claude/session-state.md
 
 # 登录态 cookies（含敏感凭证，不跟踪）
-.claude/skills/intel-collector/references/auth/
+.claude/skills/intel-collector/assets/auth/
 
 # 个人设备绑定 Skill（DingTalk A1 录音笔，不通用）
 .claude/skills/meeting-autopilot/

@@ -14,8 +14,8 @@
 | 会议纪要/拉纪要 | `python3 scripts/pull_meeting_notes.py "关键词" -p 项目名` |
 | 拉 Confluence/wiki 页面 | `python3 scripts/fetch_confluence.py <url> [-p 项目名]` |
 | 推 Confluence/同步 wiki | `python3 scripts/md_to_confluence.py <md路径> --parent-id <id>` |
-| 神策数据/跑数据 | `python3 .claude/skills/data-report/references/fetch_weekly_sensors.py` |
-| PRD 推 wiki | `python3 .claude/skills/prd/references/push_to_confluence_base.py` |
+| 神策数据/跑数据 | `python3 .claude/skills/data-report/scripts/fetch_weekly_sensors.py` |
+| PRD 推 wiki | `python3 .claude/skills/prd/scripts/push_to_confluence_base.py` |
 | CJK 标点检查 | `python3 scripts/check_cjk_punct.py <file>` |
 | HTML 自检 | `bash scripts/check_html.sh <html> <scene-list> [imap\|proto]` |
 | 影响检测 | `bash scripts/impact-check.sh {项目名}` |
@@ -37,10 +37,10 @@
 
 【脚本优先（强制）】读取 SKILL.md 后，先看 frontmatter `scripts` 字段。该字段列出本 Skill 所有可用脚本及调用方式。规则：
 - `scripts` 字段里列出的脚本，对应步骤**必须调用**，不得跳过脚本自己手写等效逻辑
-- 无前缀的脚本在 `.claude/skills/{skill}/references/` 下，`scripts/` 前缀的在根目录 `scripts/` 下
+- 无前缀的脚本在 `.claude/skills/{skill}/scripts/` 下，`scripts/` 前缀的在根目录 `scripts/` 下
 - `scripts/lib/` 前缀的是共享 Python 模块（被 skill 脚本 import，不直接调用）：`confluence.py`（认证 + REST）、`html_builder.py`（CSS 展开 + 资源读取）、`html_patcher.py`（HTML patch 基类）
 - 脚本调用失败时先读脚本源码排查参数错误，不得回退到手写
-- 项目级脚本在 `projects/{项目}/scripts/` 下，优先复用已有的 `gen_*` / `fill_*`，没有再从 Skill references 复制模板新建
+- 项目级脚本在 `projects/{项目}/scripts/` 下，优先复用已有的 `gen_*` / `fill_*`，没有再从 Skill scripts 复制模板新建
 
 【计时】每个产出物步骤完成后，用 bash 执行 `date +%s` 获取时间戳。在 Step A 开始前记一次，每个 Step 完成后记一次，报告耗时。
 
@@ -116,7 +116,7 @@ context.md 由 Chat Opus 输出，共九章。本地模型默认只读。
 【大文件防御】Read 前先评估文件体积：
 - > 500 行文件：先 `wc -l` 确认行数，用 Grep 定位后 Read offset/limit
 - HTML 产出物（通常 > 1000 行）：只用 Grep 取目标片段，绝不 Read 全文
-- references/ 下 CSS/JS 文件：不主动读取，SKILL.md 的 API 速查表已够用
+- assets/ 下 CSS/JS 文件：不主动读取，SKILL.md 的 API 速查表已够用
 
 【Web 工具选择】
 - **默认用 Claude Code 内建**：已知 URL → `WebFetch`；不知道 URL → `WebSearch`。内建工具 0 schema 开销，够用 90% 场景

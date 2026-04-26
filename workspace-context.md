@@ -1,7 +1,7 @@
 <!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # PM-WORKSPACE 仓库全貌（给 Claude Opus 的系统背景）
 
-> 导出时间：2026-04-23 | 目的：供 Opus 了解仓库结构、Skill 体系、工作流规则，用于诊断或协作
+> 导出时间：2026-04-26 | 目的：供 Opus 了解仓库结构、Skill 体系、工作流规则，用于诊断或协作
 
 ---
 
@@ -29,7 +29,7 @@ pm-workspace/
 │   ├── rules/
 │   │   ├── pm-workflow.md     ← 全局工作流规范
 │   │   └── soul.md            ← 个人偏好
-│   ├── skills/                ← 20 个标准化 Skill
+│   ├── skills/                ← 19 个标准化 Skill（每个 = SKILL.md + scripts/ + references/ + assets/ 三件套）
 │   ├── hooks/
 │   │   ├── pre-compact.sh     ← Claude Code runtime hook（compact 前注入 session-state）
 │   │   └── post-cjk-punct-check.sh ← PostToolUse hook（Write/Edit 后扫 CJK 旁半角标点）
@@ -83,7 +83,12 @@ pm-workspace/
 
 ---
 
-## 四、Skill 体系（20 个）
+## 四、Skill 体系（19 个）
+
+每个 Skill 按 Anthropic Progressive Disclosure 规范的三件套组织：
+- `scripts/` — 可执行代码（.py / .sh / .js library），Claude 不读源码，调用执行
+- `references/` — .md 文档，Claude 按 SKILL.md Step 1 声明按需 Read 到 context
+- `assets/` — 模板（HTML/CSS/JS）/ 字体 / 运行时配置 JSON，被脚本读出来写进产物，不进 context
 
 | Skill | 类型 | 输出格式 | 前缀 | 必须依赖 | 被谁消费 |
 |-------|------|---------|------|---------|---------|
@@ -91,7 +96,6 @@ pm-workspace/
 | behavior-spec | pipeline | .md | bspec- | [scene-list, prd] | [test-cases, cross-check] |
 | competitor-analysis | standalone | .md | comp- | [] | [] |
 | cross-check | pipeline | 对话内 | — | [scene-list] | [] |
-| docx | tool | .docx | — | [] | [] |
 | flowchart | standalone | .html | flow- | [] | [] |
 | interaction-map | pipeline | .html | imap- | [scene-list] | [prototype, prd] |
 | page-structure | pipeline | .md | pspec- | [scene-list, prd] | [cross-check] |
@@ -113,8 +117,8 @@ pm-workspace/
 ### Skill 执行模式（通用）
 
 所有 HTML 产出物 > 200 行的 Skill 统一走三步流程（详见 `pm-workflow.md`「HTML 分步生成通用规则」）：
-- **Step A**：生成 Python 骨架脚本（从 references/ 读取模板 + 拼接）——**不读组件模板**
-- **Step B**：填充脚本替换占位符——此时才读 templates.html + 按需读 components
+- **Step A**：生成 Python 骨架脚本（从 assets/ 读取模板 + 拼接）——**不读组件模板**
+- **Step B**：填充脚本替换占位符——此时才读 assets/templates.html + 按需读 components
 - **Step C**：自检清单验证（通用条目在 pm-workflow.md，专项条目在各 SKILL.md）
 
 ---
@@ -161,3 +165,4 @@ pm-workspace/
 > v23: 2026-04-23 三项升级：(1) PRD 1.3「核心变更」→「变更范围」改名 + 语义修正（基线 = 当前线上版本，非 PRD 版本间 diff；PM 从讨论流水收敛成线上→终稿 delta，不直搬），pm-workflow/chat-templates/prd/imap/req-framework/cross-check 全链路同步；cross-check 新增 §2.8 变更范围一致性校验；(2) PRD 无截图 Scene 降级模式：新增 `insert_scene_blocks` + `remove_table` helpers，CMS / 纯后台 / 本期不改 UI 的 Scene 走 body 级 H3 + numbered list，取代空占位的 2 列 scene_table（SKILL.md 硬规则 #9）；(3) 中文标点护栏：新增 PostToolUse hook `post-cjk-punct-check.sh` + `scripts/check_cjk_punct.py`，Write/Edit 后自动扫 md/html/含中文 py/js 的半角标点（`:,;()`）并 stderr 报行号，防产出物漏全角转换被嘲讽像 AI 写的
 > v24: 2026-04-23 Token 降本：删除 8 个冗余 command（仅保留 probe-quick），新增 fetch_figma.py 脚本直调 Figma REST API 替代 MCP server（省 ~15K token/session），README 补全 scripts/ 目录说明
 > v25: 2026-04-26 data-report 端到端改造：新增 gen_weekly_all.py（一条命令跑全流程）+ fetch_market_context.py（CoinGecko/FRED 行情采集）；chart_template.py 换白底商务风（参照 Google Sheets/飞书）+ 隔周灰底色带；parse_weekly_csvs.py 新增 --daily 日粒度输出；confluence_sync.py 升级 sync_full() API（说明列自动填充/洞察XHTML提取/week_periods自动计算/附件multipart上传）；修复 4 个脚本 bug（CSV%后缀/千分位逗号/全角括号normalize/附件同名400）；Confluence 表格加 4 周日期列+涨绿跌红色+单箭头趋势列
+> v26: 2026-04-26 Skill 目录按 Anthropic Progressive Disclosure 规范化：21 个 skill 全部拆为 SKILL.md + scripts/（可执行 .py/.sh）+ references/（.md 文档）+ assets/（HTML/CSS/JS 模板 / 字体 / 运行时 JSON）三件套；删除 docx skill（从未使用，Skill 计数 20→19）；intel-collector auth/url-registry.json 移入 assets/；meeting-autopilot mcp-config.json 移入 assets/；CLAUDE.md / pm-workflow / hooks / settings 路径约定全量同步；tag pre-skill-restructure 是 rollback 锚点

@@ -1,0 +1,18 @@
+/* PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 */
+/* swiss-grid — 花叔 Pentagram / Michael Bierut 风格
+ * 纯白 + 纯黑 + 品牌红，瑞士网格现代演绎
+ * 适合：品牌发布、设计年报、视觉重度演讲
+ * 字体三分工：衬线标题 / 非衬线正文 / 等宽 meta；负空间 ≥ 60%
+ */
+:root {
+  --cd-bg:          #FFFFFF;
+  --cd-ink:         #000000;
+  --cd-ink-82:      rgba(0, 0, 0, 0.82);
+  --cd-ink-58:      rgba(0, 0, 0, 0.58);
+  --cd-ink-40:      rgba(0, 0, 0, 0.40);
+  --cd-ink-18:      rgba(0, 0, 0, 0.18);
+  --cd-hairline:    rgba(0, 0, 0, 0.08);
+  --cd-accent:      #E8341E;
+  --cd-accent-deep: #C42A16;
+  --cd-accent-glow: rgba(232, 52, 30, 0.15);
+}

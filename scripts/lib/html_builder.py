@@ -5,6 +5,7 @@
 提供 CSS @import 展开、skill 资源文件读取、HTML 文件写出等通用函数，
 消除 gen_imap_skeleton / gen_proto_skeleton / gen_flow_base 之间的重复代码。
 """
+import json
 import os
 import re
 from pathlib import Path
@@ -38,6 +39,15 @@ def expand_css_imports(css_text: str, base_dir: str | Path, _seen: set | None = 
         return expand_css_imports(inner, target.parent, _seen)
 
     return CSS_IMPORT_RE.sub(resolve, stripped)
+
+
+def get_author() -> str:
+    """从 .claude/skills/_shared/workspace.json 读取 author 字段。"""
+    cfg = _WORKSPACE_ROOT / ".claude" / "skills" / "_shared" / "workspace.json"
+    try:
+        return json.loads(cfg.read_text(encoding='utf-8')).get("author", "")
+    except Exception:
+        return ""
 
 
 def read_skill_file(skill_name: str, filename: str) -> str:

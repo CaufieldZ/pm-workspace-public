@@ -1,0 +1,17 @@
+/* PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 */
+/* fintech-dark — 默认主题（提取自 tokens.css）
+ * 深黑 + HTX 蓝 accent，适合金融/产品/内部发布会
+ * 注意：tokens.css 已包含此配色，import 本文件覆盖时请放在 tokens.css 之后
+ */
+:root {
+  --cd-bg:          #0f0f11;
+  --cd-ink:         #FFFFFF;
+  --cd-ink-82:      rgba(255, 255, 255, 0.82);
+  --cd-ink-58:      rgba(255, 255, 255, 0.58);
+  --cd-ink-40:      rgba(255, 255, 255, 0.40);
+  --cd-ink-18:      rgba(255, 255, 255, 0.18);
+  --cd-hairline:    rgba(255, 255, 255, 0.08);
+  --cd-accent:      #2F6CF2;
+  --cd-accent-deep: #1F54D6;
+  --cd-accent-glow: rgba(47, 108, 242, 0.18);
+}

@@ -1,0 +1,18 @@
+/* PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 */
+/* cyber-noir — 花叔 Locomotive / 电影深空 × 霓虹
+ * 深空黑 + 霓虹紫 accent，有电影质感的暗色方案
+ * 适合：技术大会主题演讲、赛博美学产品发布
+ * 次 accent 可选 #06B6D4（青色）搭配，不要同时用两个霓虹色
+ */
+:root {
+  --cd-bg:          #050814;
+  --cd-ink:         #F0F2FF;
+  --cd-ink-82:      rgba(240, 242, 255, 0.82);
+  --cd-ink-58:      rgba(240, 242, 255, 0.58);
+  --cd-ink-40:      rgba(240, 242, 255, 0.40);
+  --cd-ink-18:      rgba(240, 242, 255, 0.18);
+  --cd-hairline:    rgba(240, 242, 255, 0.08);
+  --cd-accent:      #A855F7;
+  --cd-accent-deep: #9333EA;
+  --cd-accent-glow: rgba(168, 85, 247, 0.25);
+}

@@ -1,0 +1,217 @@
+/* PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 */
+/* ============================================================
+   PRESENTER MODE — Doc / Deck 双模式
+   Doc 模式：sidebar + main，按需切页（PAGE_RENDERERS 单页 innerHTML）
+   Deck 模式：横排 transform 翻页，Keynote 同款
+   ============================================================ */
+
+/* ---- Doc 模式：page 容器（保留原有动画） ---- */
+.page { position: relative; }
+
+/* ============================================================
+   DECK MODE
+   ============================================================ */
+
+body.deck-mode { overflow: hidden; }
+body.deck-mode .sidebar,
+body.deck-mode .main-header { display: none !important; }
+body.deck-mode .main { padding: 0; overflow: hidden; }
+body.deck-mode .main-content { display: none; }
+
+/* deck-track：横排所有 page，transform 横移 */
+#deck-track {
+  display: none;
+  width: max-content;
+  height: 100vh;
+}
+body.deck-mode #deck-track {
+  display: flex;
+  position: fixed;
+  top: 0;
+  left: 0;
+  transform: translateX(var(--deck-offset, 0));
+  transition: transform .9s cubic-bezier(.77, 0, .175, 1);
+  will-change: transform;
+  z-index: 50;
+  background: var(--bg);
+}
+
+.deck-page {
+  flex: 0 0 100vw;
+  height: 100vh;
+  overflow-y: auto;
+  position: relative;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.deck-page::-webkit-scrollbar { width: 5px; }
+.deck-page::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.deck-page-body {
+  flex: 1;
+  padding: 6vh 8vw 8vh;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* 页面内 .page：在 deck 内去掉 doc 模式的 max-width / fadeUp */
+.deck-page .page {
+  display: block;
+  max-width: none;
+  margin: 0;
+  font-size: 1.05em;
+  animation: none;
+}
+.deck-page .page-hero,
+.deck-page .page-split { min-height: auto; padding: 0; }
+
+/* deck-chrome：顶栏（左：栏目；右：kicker · 页号 / 总页数） */
+.deck-chrome {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 48px 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--t3);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.deck-chrome .chrome-l { color: var(--t2); font-weight: 600; }
+.deck-chrome .chrome-r { color: var(--t2); font-weight: 700; }
+
+/* deck-foot：底栏（左：页面说明；右：英文章节标） */
+.deck-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 48px 24px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--t3);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.deck-foot .foot-l { color: var(--t2); }
+.deck-foot .foot-r { letter-spacing: .2em; }
+
+/* ============================================================
+   DECK NAV：底部圆点
+   ============================================================ */
+
+#deck-nav {
+  display: none;
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  gap: 8px;
+  z-index: 9998;
+  padding: 8px 14px;
+  background: rgba(10, 12, 16, .72);
+  backdrop-filter: blur(10px);
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  max-width: 70vw;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+#deck-nav::-webkit-scrollbar { display: none; }
+body.deck-mode #deck-nav { display: flex; }
+
+.deck-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, .22);
+  cursor: pointer;
+  transition: all .2s ease-out;
+  flex-shrink: 0;
+}
+.deck-dot:hover { background: rgba(255, 255, 255, .55); }
+.deck-dot.active {
+  background: #fff;
+  width: 22px;
+}
+
+/* ============================================================
+   FRAGMENT / data-step（仅 deck 模式生效）
+   ============================================================ */
+
+body.deck-mode [data-step] {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity .4s ease-out, transform .4s ease-out;
+}
+body.deck-mode [data-step].revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================================================
+   HUD / HELP / ENTER HINT
+   ============================================================ */
+
+#presenterHUD {
+  position: fixed;
+  bottom: 18px;
+  right: 24px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--t2);
+  letter-spacing: .04em;
+  pointer-events: none;
+  user-select: none;
+  padding: 6px 12px;
+  background: rgba(10, 12, 16, .78);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  z-index: 9999;
+  display: none;
+}
+body.deck-mode #presenterHUD { display: block; }
+
+#presenterHelp {
+  position: fixed;
+  bottom: 18px;
+  left: 24px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--t3);
+  letter-spacing: .04em;
+  pointer-events: none;
+  user-select: none;
+  padding: 6px 12px;
+  background: rgba(10, 12, 16, .78);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  z-index: 9999;
+  display: none;
+}
+body.deck-mode #presenterHelp { display: block; }
+
+#presenterEnterHint {
+  position: fixed;
+  top: 14px;
+  right: 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--t4);
+  letter-spacing: .06em;
+  user-select: none;
+  cursor: default;
+  z-index: 100;
+}
+body.deck-mode #presenterEnterHint { display: none; }

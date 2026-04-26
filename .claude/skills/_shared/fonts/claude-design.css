@@ -2,16 +2,23 @@
 /* Claude Design 字体套装 · 统一 Google Fonts 导入
  * 消费方：所有引入 Claude Design 美学的 skill（CSS @import 或 HTML <link>）
  *
- * 字重选择原则：覆盖所有 skill 的最大超集（以 ppt 为准）
- * - Noto Sans SC:     300;400;500;700;900（正文 body）
- * - Noto Serif SC:    300;400;500;600;900（display hero）
- * - Source Serif 4:   variable 300-700 + italic（PPT 级 editorial）
- * - Inter:            100-800（正文 sans，英文优先）
- * - JetBrains Mono:   400;500;600;700（等宽 / eyebrow）
+ * 字体三分工（与 anti-ai-slop.md 字体规范对齐）：
+ * - 标题 / 章节 / 重点金句 → 衬线层
+ *     Noto Serif SC:    300;400;500;600;900（中文衬线主角）
+ *     Source Serif 4:   variable 300-700 + italic（英文衬线副标题 / PPT editorial）
+ * - 正文 / 表格 / 长段阅读 → sans 层（CJK 优先）
+ *     HarmonyOS Sans SC: 走系统字体，无 CDN（华为机自带；其他设备 fallback PingFang SC / 雅黑 / system-ui，效果可接受）
+ *     Plus Jakarta Sans: 400;500;600;700（英文 sans，替代 Inter，有性格）
+ * - 数字 / 代码 / kicker / 状态标签 / meta → mono 层
+ *     JetBrains Mono:   400;500;600;700（等宽，做信息节奏）
+ *
+ * 已废弃（CDN 保留兼容旧产物，新产物不再用）：
+ * - Inter:           anti-ai-slop 禁单
+ * - Noto Sans SC:    可用但不推荐为正文首选（中文渲染端正不潮）
  *
  * CSS 内引入：@import url('../../_shared/fonts/claude-design.css');
  * HTML head 引入（脱离 skill 目录时用直接 CDN URL）：
- * <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@300;400;500;600;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Inter:wght@100;200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+ * <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@300;400;500;600;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@100;200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
  * 改字体/字重时两处同步改。
  */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@300;400;500;600;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Inter:wght@100;200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@300;400;500;600;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@100;200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');

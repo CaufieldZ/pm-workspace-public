@@ -4,7 +4,7 @@
 
 `AI-NATIVE · PRODUCT MANAGEMENT · PM-WS`
 
-会议纪要 / MRD / 竞品截图 → 场景清单、交互大图、PRD、行为规格。20 个 Skill 覆盖产品经理全链路。
+会议纪要 / MRD / 竞品截图 → 场景清单、交互大图、PRD、行为规格。19 个 Skill 覆盖产品经理全链路。
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-1f54d6?style=flat-square)](LICENSE)
 [![Skills](https://img.shields.io/badge/skills-20-2F6CF2?style=flat-square)](.claude/skills)
@@ -114,7 +114,7 @@ Layer 1 · 全局规则（公司制度手册）
   CLAUDE.md · pm-workflow.md · soul.md
          ↓
 Layer 2 · Skill 技能包（岗位操作手册）
-  每种产出物一本：SKILL.md + references/（模板·组件·脚本）
+  每种产出物一本：SKILL.md + scripts/（可执行）+ references/（.md 文档）+ assets/（模板/配置）
          ↓
 Layer 3 · 项目文件（具体项目资料）
   context.md · scene-list.md · deliverables/
@@ -165,7 +165,6 @@ Layer 3 · 项目文件（具体项目资料）
 | flowchart | 流程图 / 泳道图 / 审批流，独立产出可嵌入其他文档 |
 | ppt | 方案 / SOP → HTML 多 Tab 文档 + 口播稿 |
 | meeting-autopilot | 会议纪要拉取 → 项目归档 → 行动项派发 |
-| docx | 读取 / 编辑 / 接受修订已有 Word 文档 |
 | pdf-tools | PDF 合并 / 拆分 / 加密 / 水印 / 页码 / 转换 |
 | workspace-audit | 11 类全局诊断（文件 / 数值 / 依赖 / 规则 / Token 等） |
 | skill-creator | 创建新 Skill，自动生成 frontmatter + 注册 |
@@ -238,7 +237,10 @@ pm-workspace/
 │   ├── rules/
 │   │   ├── pm-workflow.md       #   全局工作流规范
 │   │   └── soul.md              #   个人偏好（gitignored）
-│   ├── skills/                  # 20 个 Skill（各含 SKILL.md + references/）
+│   ├── skills/                  # 19 个 Skill（每个 = SKILL.md + scripts/ + references/ + assets/ 三件套）
+│   │   ├── {skill}/scripts/     #   可执行代码（Claude 不读源码，调用执行）
+│   │   ├── {skill}/references/  #   .md 文档（按需 Read 加载到 context）
+│   │   ├── {skill}/assets/      #   模板 / 字体 / 配置（被脚本读出来写进产物，不进 context）
 │   │   └── _shared/             #   跨 skill 共享资产
 │   │       └── claude-design/          #     美学 token · 工具类 · 内容规范 · 对标 demo
 │   └── chat-templates/          # Chat 轨模板 + context.md 九章模板
