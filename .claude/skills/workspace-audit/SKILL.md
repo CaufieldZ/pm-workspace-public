@@ -2,7 +2,7 @@
 ---
 name: workspace-audit
 description: >
-  当用户说「审计」「诊断」「跑一遍审计」时触发。覆盖全局诊断 12 类(文件 / 数值 / 依赖 / 规则 / Token / 工程健壮性 / scripts 声明完整性等)。支持按类别选择执行。
+  当用户说「审计」「诊断」「跑一遍审计」时触发。覆盖全局诊断 13 类(文件 / 数值 / 依赖 / 规则 / Token / 工程健壮性 / scripts 声明完整性 / scripts/lib import / 三件套纯洁性等)。支持按类别选择执行。
 type: tool
 output_format: .md
 depends_on: []
@@ -35,6 +35,8 @@ scripts:
 6. 产出物一致性 — 场景编号、术语、文件命名、context.md 九章验证（需有活跃项目）
 7. SKILL_TABLE 一致性 — workspace-context.md 表格 ↔ frontmatter 比对
 12. Scripts 字段存在性 — 各 SKILL.md frontmatter `scripts:` 声明的脚本必须真实存在
+13. scripts/lib import 链路 — 共享模块能被 skill 脚本正确 import
+14. 三件套纯洁性 — scripts/ 仅可执行代码 · references/ 仅 .md · assets/ 不含 .md（按 Anthropic Progressive Disclosure 规范）
 
 **Phase 2 — 模型推理检查**
 
@@ -52,8 +54,8 @@ bash .claude/skills/workspace-audit/scripts/audit.sh <类别编号逗号分隔>
 ```
 
 示例：
-- 全部执行：`bash .claude/skills/workspace-audit/scripts/audit.sh 1,2,3,4,5,6,7,12`
-- 只跑 pre-commit 覆盖的：`bash .claude/skills/workspace-audit/scripts/audit.sh 1,2,3,4,7,12`
+- 全部执行：`bash .claude/skills/workspace-audit/scripts/audit.sh 1,2,3,4,5,6,7,12,13,14`
+- 只跑 pre-commit 覆盖的：`bash .claude/skills/workspace-audit/scripts/audit.sh 1,2,3,4,7,12,13,14`
 
 ## Phase 2 执行方式
 
@@ -142,7 +144,7 @@ git ls-files | xargs ls -la 2>/dev/null | sort -k5 -n -r | head -20
 cat .githooks/pre-commit
 ```
 
-- hook 是否调用 audit.sh 且覆盖范围正确（当前应为 1,2,3,4,7,12）
+- hook 是否调用 audit.sh 且覆盖范围正确（当前应为 1,2,3,4,7,12,13,14）
 - 退出码机制是否正确
 
 **10.2 依赖声明**

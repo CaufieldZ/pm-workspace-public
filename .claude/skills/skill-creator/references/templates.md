@@ -4,6 +4,25 @@
 > skill-creator 的详细参考：三种内置模板骨架 + 改造模式 diff 格式。
 > SKILL.md 主体只讲规范，此文件讲「具体怎么写」。
 
+## 三件套语义边界（所有模板共用，强制）
+
+每个 skill 目录按 Anthropic Progressive Disclosure 规范的三件套组织。新建 skill 时三件套全部预创建（哪怕暂时为空）：
+
+| 子目录 | 内容 | 模型如何使用 |
+|---|---|---|
+| `scripts/` | 可执行代码：.py / .sh / .js library | 不读源码，按 frontmatter `scripts:` 字段调用执行 |
+| `references/` | .md 文档：模板规范、组件清单、cheat sheet | 按 SKILL.md Step 1 声明按需 Read 加载到 context |
+| `assets/` | HTML/CSS/JS 模板、字体、运行时 JSON 配置、图标 | 被脚本 `open().read()` 拼进产物，模型不读 |
+
+**禁止跨界**（audit.sh 第 14 类自动校验，pre-commit hook 拦截）：
+- assets/ 不放 .md → 应去 references/
+- references/ 不放 .py/.sh/.css/.js/.html/.json → 按可执行 vs 资源去 scripts/ 或 assets/
+- scripts/ 不放 .md → 应去 references/
+
+下方三种模板的 References 章节按此边界写。
+
+---
+
 ## 三种内置模板
 
 ### 模板 A：链路型（pipeline）

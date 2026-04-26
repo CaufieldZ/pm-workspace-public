@@ -7,7 +7,7 @@
 set -o pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-CATEGORIES="${1:-1,2,3,4,7,13}"
+CATEGORIES="${1:-1,2,3,4,7,13,14}"
 GLOBAL_FAIL=0
 
 # ─── 常量 ───
@@ -826,6 +826,48 @@ assert hasattr(mod, '$gfunc'), 'missing $gfunc'
       LIB_FAIL=1; GLOBAL_FAIL=1
     fi
   done
+
+  echo ""
+fi
+
+# ─────────────────────────────────────────────
+# 类别 14：三件套纯洁性（Anthropic Progressive Disclosure 规范）
+# scripts/ 仅 .py/.sh/.js · references/ 仅 .md · assets/ 不含 .md
+# ─────────────────────────────────────────────
+if run_cat 14; then
+  echo "===== 14. 三件套纯洁性 ====="
+  echo ""
+  TIER_FAIL=0
+
+  # references/ 不允许非 .md（_shared/ 排除：跨 skill 共享资产，不是 skill）
+  bad_refs=$(find .claude/skills -path '*/references/*' -type f -not -name '*.md' -not -path '*/_shared/*' 2>/dev/null)
+  if [ -n "$bad_refs" ]; then
+    echo "  ❌ references/ 混入非 .md 文件（应去 scripts/ 或 assets/）："
+    echo "$bad_refs" | sed 's/^/     /'
+    TIER_FAIL=1; GLOBAL_FAIL=1
+  else
+    echo "  ✅ references/ 纯净（仅 .md）"
+  fi
+
+  # assets/ 不允许 .md
+  bad_assets=$(find .claude/skills -path '*/assets/*.md' -not -path '*/_shared/*' 2>/dev/null)
+  if [ -n "$bad_assets" ]; then
+    echo "  ❌ assets/ 混入 .md 文件（应去 references/）："
+    echo "$bad_assets" | sed 's/^/     /'
+    TIER_FAIL=1; GLOBAL_FAIL=1
+  else
+    echo "  ✅ assets/ 纯净（无 .md）"
+  fi
+
+  # scripts/ 不允许 .md（lib/ 子目录排除：__init__.py 等基础设施）
+  bad_scripts=$(find .claude/skills -path '*/scripts/*.md' -not -path '*/_shared/*' 2>/dev/null)
+  if [ -n "$bad_scripts" ]; then
+    echo "  ❌ scripts/ 混入 .md 文件（应去 references/）："
+    echo "$bad_scripts" | sed 's/^/     /'
+    TIER_FAIL=1; GLOBAL_FAIL=1
+  else
+    echo "  ✅ scripts/ 纯净（无 .md）"
+  fi
 
   echo ""
 fi

@@ -13,8 +13,10 @@ PM-WORKSPACE/
 │   │   └── pm-workflow.md          ← 全局规范，优先级最高
 │   ├── skills/
 │   │   ├── {skill-name}/
-│   │   │   ├── SKILL.md            ← 必须有
-│   │   │   └── references/         ← 可选，放参考文件
+│   │   │   ├── SKILL.md            ← 必须有，frontmatter: name + description
+│   │   │   ├── scripts/            ← 可执行代码（.py/.sh/.js library）。Claude 不读源码，按 frontmatter scripts: 调用执行
+│   │   │   ├── references/         ← .md 文档。Claude 按 SKILL.md Step 1 声明按需 Read 加载 context
+│   │   │   └── assets/             ← HTML/CSS/JS 模板、字体、运行时配置 JSON。被脚本读出来写产物，不进 context
 │   │   └── ...
 │   └── settings.json
 ├── projects/{项目名}/              ← 每个项目独立目录
@@ -24,11 +26,22 @@ PM-WORKSPACE/
 │   ├── inputs/
 │   └── deliverables/
 │       └── archive/
-├── references/competitors/{平台}/  ← 跨项目竞品素材
-├── profile.md                      ← 全局团队约束
+├── references/competitors/{平台}/  ← 跨项目竞品素材（项目根，与 skill 内 references/ 同名但不同语义）
 ├── README.md
 └── CLAUDE.md
 ```
+
+### 三件套语义边界（强制，audit.sh 第 14 类拦截）
+
+按文件类型决定放哪个子目录，**禁止跨界**：
+
+| 子目录 | 允许内容 | 禁止内容 |
+|---|---|---|
+| `scripts/` | .py / .sh / .js library | .md（应去 references/） |
+| `references/` | .md 文档（模板规范、组件清单、cheat sheet） | .py/.sh/.css/.js/.html/.json（按可执行 vs 资源去 scripts/ 或 assets/） |
+| `assets/` | .html/.css/.js 模板、字体、运行时 .json 配置、图标 | .md（应去 references/） |
+
+新建 skill 时三件套**全部预创建**（哪怕暂时为空），不要等到有内容才建目录。
 
 ## 2. 配色 Token（新 skill 必须继承）
 
