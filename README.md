@@ -256,10 +256,11 @@ pm-workspace/
 ├── package.json                 # Node 依赖
 ├── references/                  # 本地素材（gitignored）
 │   └── competitors/
-└── projects/                    # 工作项目（gitignored）
+└── projects/                    # 工作项目
     └── {项目名}/
         ├── context.md           # 项目唯一真相源
         ├── scene-list.md        # 锁定的场景编号
+        ├── .confluence.json     # Confluence 推送缓存（page_id/space/parent_id，首次推送脚本自动写入）
         ├── inputs/              # 原始素材
         ├── scripts/             # 项目生成脚本
         └── deliverables/        # 最终产出物

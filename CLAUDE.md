@@ -65,7 +65,7 @@ python3 scripts/with_server.py --server "npm run dev" --port 5173 -- python3 you
 
 【Playwright 验证纪律】默认 assertion 验证功能（`is_visible` / `get_attribute` / `text_content` / `evaluate`），不截图。截图 + Read 仅用于：① 视觉 bug 确认（溢出/遮挡/样式错位）② 最终交付给用户看效果。一次验证截图 ≤ 2 张，`full_page` 仅在需要看超出视口内容时才用。
 
-【省钱提醒】当本 session 完成方案讨论并更新 context.md 后，如果接下来要进入产出物链路（交互大图/原型/PRD 等），主动提醒用户：「context.md 已更新并 commit。建议新开 session 切 Sonnet 执行产出物，可省约 46% 成本。命令：/交互大图 {项目名}」。用户说"不用换"则继续。
+【切 Sonnet 提醒】Opus 完成方案讨论并 commit context.md 后，提醒用户新开 Sonnet session 跑产出物链路省约 46%（如 `/交互大图 {项目名}`）。用户说"不用换"则继续。
 
 ### MCP 配置
 
@@ -111,7 +111,7 @@ context.md 由 Chat Opus 输出，共九章。本地模型默认只读。
 - Confluence 内部 wiki 链接用 Confluence MCP 抓取，不走 Firecrawl（认证墙）
 - 图片分析统一用 Claude Read 工具（多模态），不走第三方 MCP
 
-【禁止重复读取】同一 session 内已读过的文件不再整体重读（soul.md 规则）。HTML 产出物允许 grep 局部回读，禁止 Read 全文。需要局部信息时用 Grep 或 Read offset/limit。
+【禁止重复读取】同一 session 内已读过的文件不再整体重读。HTML 产出物允许 grep 局部回读，禁止 Read 全文。需要局部信息时用 Grep 或 Read offset/limit。
 
 【大文件防御】Read 前先评估文件体积：
 - > 500 行文件：先 `wc -l` 确认行数，用 Grep 定位后 Read offset/limit

@@ -253,17 +253,19 @@ def fill_cell_blocks(cell, blocks, numbered=True):
     first = True
     for (title, lines) in blocks:
         p = cell.paragraphs[0] if first else cell.add_paragraph()
+        is_first_block = first
         first = False
-        p.paragraph_format.space_before = Pt(3)
-        p.paragraph_format.space_after = Pt(1)
+        # \u7b2c\u4e00\u4e2a block \u9876\u8d34 cell \u9876\u90e8\uff0c\u540e\u7eed block \u524d\u7559 6pt \u62c9\u5f00\u5c42\u7ea7
+        p.paragraph_format.space_before = Pt(0) if is_first_block else Pt(6)
+        p.paragraph_format.space_after = Pt(2)
         if "\uff08\u53d8\u66f4\uff09" in title or "\uff08\u65b0\u589e\uff09" in title:
             tag = "\uff08\u53d8\u66f4\uff09" if "\uff08\u53d8\u66f4\uff09" in title else "\uff08\u65b0\u589e\uff09"
             base = title.replace(tag, "")
-            # \u6a21\u5757\u6807\u9898\u8d70\u886c\u7ebf\uff08\u8ba9\u5c0f\u6807\u9898\u4ece\u6b63\u6587\u51f8\u51fa\uff09\uff0c(\u53d8\u66f4)/(\u65b0\u589e) tag \u8d70 mono\uff08\u4fe1\u606f\u8282\u594f\uff09
-            para_run(p, base, font='title', size_pt=10, bold=True, color=C["textHeading"])
-            para_run(p, tag, font='mono', size_pt=10, bold=True, color=C["tagChange"])
+            # title 11pt + bold + textHeading\uff1btag \u8d70 mono \u67d3\u8272
+            para_run(p, base, font='title', size_pt=11, bold=True, color=C["textHeading"])
+            para_run(p, tag, font='mono', size_pt=11, bold=True, color=C["tagChange"])
         else:
-            para_run(p, title, font='title', size_pt=10, bold=True, color=C["textHeading"])
+            para_run(p, title, font='title', size_pt=11, bold=True, color=C["textHeading"])
         counter = 0
         for line in lines:
             pl = cell.add_paragraph()
@@ -272,10 +274,10 @@ def fill_cell_blocks(cell, blocks, numbered=True):
             stripped = line.lstrip()
             is_sublevel = stripped.startswith("- ") and line != stripped
             if is_sublevel:
-                pl.paragraph_format.left_indent = Cm(0.9)
+                pl.paragraph_format.left_indent = Cm(1.2)
                 body = stripped
             else:
-                pl.paragraph_format.left_indent = Cm(0.3)
+                pl.paragraph_format.left_indent = Cm(0.6)
                 if numbered and not _NUMBERED_PREFIX_RE.match(line):
                     counter += 1
                     body = f"{counter}. {line}"

@@ -320,6 +320,48 @@ def replace_cell_image(cell, img_path: str, width_cm: float = 7.0):
     run.add_picture(img_path, width=Cm(width_cm))
 
 
+def replace_cell_image_keep_title(cell, scene_title: str, img_path: str, width_cm: float = 5.0):
+    """清空 cell 占位 → 保留场景标题（首段）→ 插入截图（次段）。
+
+    替代 replace_cell_image 用于 scene_table 左列：后者会把 scene_table 写在 cell 内的
+    场景标题段（"📱 B-1 · ..."）也清掉，导致 Confluence 页面看不出图属于哪个场景。
+
+    Felix 反馈（memory `feedback_prd_iter_screenshot_pitfalls.md` 坑 2）：
+        「你这些怎么都没写具体是哪个页面？」
+
+    用法：
+        from update_prd_base import replace_cell_image_keep_title
+        # 从 cell 首段提取场景标题
+        title = cell.paragraphs[0].text.split('\\n')[0].strip()
+        replace_cell_image_keep_title(cell, title, png_path, width_cm=5.0)
+
+    prd_screenshots.py 的 insert_into_docx 已自动在 cell 首段含 `📱 X-N · ...` 时调用本函数。
+    """
+    import sys, os
+    _DIR = os.path.dirname(os.path.abspath(__file__))
+    sys.path.insert(0, _DIR)
+    from gen_prd_base import C, para_run
+    from docx.shared import Cm, Pt
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+    fix_dpi(str(img_path))
+    for para in cell.paragraphs:
+        para.clear()
+    while len(cell.paragraphs) > 1:
+        p = cell.paragraphs[-1]
+        p._element.getparent().remove(p._element)
+
+    p1 = cell.paragraphs[0]
+    p1.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p1.paragraph_format.space_before = Pt(4)
+    p1.paragraph_format.space_after = Pt(4)
+    para_run(p1, scene_title, size_pt=9, color=C["textMuted"], italic=True)
+
+    p2 = cell.add_paragraph()
+    p2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p2.add_run().add_picture(str(img_path), width=Cm(width_cm))
+
+
 # ── 标题样式归一化 ─────────────────────────────────────────────────────────────
 
 def normalize_headings(doc):
@@ -397,6 +439,152 @@ def _apply_heading_style(p, hex_color, size_pt, add_border=None):
             pPr.append(pBdr)
 
 
+def normalize_fonts(doc):
+    """老 docx 升版：把硬编码 Arial / Microsoft YaHei 替换为 prd-docx-styles 设计字体。
+
+    覆盖：
+    1. styles.xml docDefaults rFonts 写死 → 改为 themed (minorHAnsi/minorEastAsia)。
+       让 Word 找不到 run 级字体时 fallback 到主题字体（Mac 走 PingFang+Calibri，
+       Win 走 Microsoft YaHei+Calibri），而不是 substitute 成 Arial。
+    2. 所有 run rFonts：老 ascii (Arial/Calibri/Times) → Plus Jakarta Sans；
+       老 eastAsia (Arial/Microsoft YaHei/SimSun/宋体/SimHei) → HarmonyOS Sans SC。
+       已是设计字体的 run 不动。
+
+    背景：commit 5192b83（4-26）后 PRD 字体规范升级到 Source Serif 4 / Plus Jakarta
+    Sans / Noto Serif SC / HarmonyOS Sans SC / JetBrains Mono，但旧 docx 升版时
+    继承了写死的 Arial。运行本函数把老字体一次刷成新规范。
+
+    幂等。返回 (run_changed, defaults_changed)。
+    """
+    LEGACY_ASCII = {'Arial', 'Calibri', 'Times New Roman', 'Times',
+                    'Helvetica', 'Roboto', 'Open Sans'}
+    LEGACY_EAST = {'Arial', 'Microsoft YaHei', '微软雅黑', 'SimSun', '宋体',
+                   'SimHei', '黑体', 'STSong', 'STHeiti'}
+    DESIGN = {'Source Serif 4', 'Plus Jakarta Sans', 'Noto Serif SC',
+              'HarmonyOS Sans SC', 'JetBrains Mono', 'PingFang SC'}
+
+    # 1. docDefaults → themed
+    defaults_changed = False
+    styles_el = doc.styles.element
+    docDefaults = styles_el.find(qn('w:docDefaults'))
+    if docDefaults is not None:
+        rPrDefault = docDefaults.find(qn('w:rPrDefault'))
+        if rPrDefault is not None:
+            rPr = rPrDefault.find(qn('w:rPr'))
+            if rPr is not None:
+                rFonts = rPr.find(qn('w:rFonts'))
+                if rFonts is not None:
+                    has_legacy = any(
+                        rFonts.get(qn(f'w:{k}')) in (LEGACY_ASCII | LEGACY_EAST)
+                        for k in ('ascii', 'hAnsi', 'eastAsia', 'cs')
+                    )
+                    if has_legacy:
+                        for k in ('ascii', 'hAnsi', 'eastAsia', 'cs'):
+                            attr = qn(f'w:{k}')
+                            if attr in rFonts.attrib:
+                                del rFonts.attrib[attr]
+                        rFonts.set(qn('w:asciiTheme'), 'minorHAnsi')
+                        rFonts.set(qn('w:hAnsiTheme'), 'minorHAnsi')
+                        rFonts.set(qn('w:eastAsiaTheme'), 'minorEastAsia')
+                        rFonts.set(qn('w:cstheme'), 'minorBidi')
+                        defaults_changed = True
+
+    # 2. 所有 run rFonts：老字体 / 缺失 → 强制设 body 设计字体
+    #    rFonts 缺失的 run 不能让它走 docDefaults themed（Cambria + 宋体），
+    #    必须显式写 design 字体让 Word for Mac 走系统 substitute（SF Pro / PingFang），
+    #    跟 SOP 手册渲染一致。
+    run_changed = 0
+    W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+    for r in doc.element.body.iter(f'{{{W}}}r'):
+        rPr = r.find(qn('w:rPr'))
+        if rPr is None:
+            rPr = OxmlElement('w:rPr')
+            r.insert(0, rPr)
+        rFonts = rPr.find(qn('w:rFonts'))
+        if rFonts is None:
+            rFonts = OxmlElement('w:rFonts')
+            rFonts.set(qn('w:ascii'), 'Plus Jakarta Sans')
+            rFonts.set(qn('w:hAnsi'), 'Plus Jakarta Sans')
+            rFonts.set(qn('w:eastAsia'), 'HarmonyOS Sans SC')
+            rPr.insert(0, rFonts)
+            run_changed += 1
+            continue
+        changed = False
+        for slot, default_font, legacy_set in (
+            ('ascii',    'Plus Jakarta Sans',  LEGACY_ASCII),
+            ('hAnsi',    'Plus Jakarta Sans',  LEGACY_ASCII),
+            ('eastAsia', 'HarmonyOS Sans SC',  LEGACY_EAST),
+        ):
+            v = rFonts.get(qn(f'w:{slot}'))
+            if v is None or (v in legacy_set and v not in DESIGN):
+                rFonts.set(qn(f'w:{slot}'), default_font)
+                changed = True
+        if changed:
+            run_changed += 1
+
+    return run_changed, defaults_changed
+
+
+def ensure_theme(docx_path):
+    """python-docx 生成的 docx 缺 word/theme/theme1.xml；docDefaults 的 themed 引用
+    （minorHAnsi/minorEastAsia）会悬空，Word 只能 fallback 到 Arial。
+
+    本函数把 .claude/skills/prd/scripts/assets/theme1.xml 标准 Office 主题注入 docx zip：
+      - 写 word/theme/theme1.xml
+      - [Content_Types].xml 加 theme override
+      - word/_rels/document.xml.rels 加 theme relationship
+
+    幂等：已有 theme1.xml 直接返回 False。
+
+    用法：doc.save() **之后**调用，传入 docx 文件路径（不能传 Document 对象）。
+    """
+    import zipfile
+    import shutil
+    import os
+    _DIR = os.path.dirname(os.path.abspath(__file__))
+    THEME_XML = os.path.join(_DIR, 'assets', 'theme1.xml')
+    if not os.path.exists(THEME_XML):
+        return False
+
+    docx_path = str(docx_path)
+    with zipfile.ZipFile(docx_path) as z:
+        if 'word/theme/theme1.xml' in z.namelist():
+            return False
+
+    with open(THEME_XML, 'rb') as f:
+        theme_bytes = f.read()
+
+    THEME_OVERRIDE = (
+        '<Override PartName="/word/theme/theme1.xml" '
+        'ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>'
+    )
+    THEME_REL = (
+        '<Relationship Id="rIdTheme1" '
+        'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" '
+        'Target="theme/theme1.xml"/>'
+    )
+
+    temp_path = docx_path + '.temp'
+    with zipfile.ZipFile(docx_path) as zin:
+        with zipfile.ZipFile(temp_path, 'w', zipfile.ZIP_DEFLATED) as zout:
+            for item in zin.infolist():
+                data = zin.read(item.filename)
+                if item.filename == '[Content_Types].xml':
+                    s = data.decode('utf-8')
+                    if 'theme/theme1.xml' not in s:
+                        s = s.replace('</Types>', THEME_OVERRIDE + '</Types>')
+                    data = s.encode('utf-8')
+                elif item.filename == 'word/_rels/document.xml.rels':
+                    s = data.decode('utf-8')
+                    if 'theme1.xml' not in s:
+                        s = s.replace('</Relationships>', THEME_REL + '</Relationships>')
+                    data = s.encode('utf-8')
+                zout.writestr(item, data)
+            zout.writestr('word/theme/theme1.xml', theme_bytes)
+    shutil.move(temp_path, docx_path)
+    return True
+
+
 def normalize_punctuation(doc):
     """
     中文标点规范化:中文相邻的半角 , : ( ) 改为全角 ，：（）。
@@ -459,3 +647,169 @@ def normalize_punctuation(doc):
                 for p in cell.paragraphs:
                     total += process_paragraph(p)
     return total
+
+
+# ── humanize / scene-cell helpers（讲人话规则 + cell 拆分）────────────────
+
+CIRCLE_NUMS = {'①': '1.', '②': '2.', '③': '3.', '④': '4.', '⑤': '5.',
+               '⑥': '6.', '⑦': '7.', '⑧': '8.', '⑨': '9.', '⑩': '10.'}
+
+
+def _humanize_text(text: str, scene_to_human: list = None) -> str:
+    """正文文本去 PM 内部场景编号 + 圈数字归一。
+
+    步骤：
+      1. 多编号串括号整体删（「（A-1 ~ A-4）」「（D-0 / D-1 / D-3）」）
+      2. 单编号括号删（「(D-2)」「（A-3b）」）
+      3a. 编号紧跟中文 → 仅删编号（保留中文实词，避免「编号→白话」与原文重复）
+      3b. 剩余孤立编号 → 查 scene_to_human 表替换为白话
+      4. 圈数字 ①②③ → 1./2./3.
+      5. cleanup（连续空格 / 残留空括号）
+
+    Args:
+        text: 原始段落文本
+        scene_to_human: list of (code, human) tuples, 长前缀优先排序
+                        如 [('A-3b', '红包弹窗'), ('A-1', '直播间主页'), ...]
+                        None 时跳过孤立编号替换（仅做删括号 + 圈数字）
+    """
+    import re
+    if not text:
+        return text
+    text = re.sub(
+        r'(?:（|\()\s*[A-GM]-\d+[a-z]?(?:\s*[~～\-/／、，,]\s*[A-GM]-\d+[a-z]?)+\s*(?:）|\))',
+        '', text)
+    text = re.sub(r'(?:（|\()\s*[A-GM]-\d+[a-z]?\s*(?:）|\))', '', text)
+    text = re.sub(
+        r'(?<![A-Za-z0-9-])[A-GM]-\d+[a-z]?\s+(?=[一-鿿])',
+        '', text)
+    if scene_to_human:
+        for code, human in scene_to_human:
+            text = re.sub(
+                rf'(?<![A-Za-z0-9-]){re.escape(code)}(?![A-Za-z0-9-])',
+                human, text)
+    for old, new in CIRCLE_NUMS.items():
+        text = text.replace(old, new)
+    text = re.sub(r' {2,}', ' ', text)
+    text = re.sub(r'（\s*）|\(\s*\)', '', text)
+    text = re.sub(r'\s+([，。；：、])', r'\1', text)
+    return text
+
+
+def humanize_doc(doc, scene_to_human: list = None):
+    """全文 humanize：去 PM 内部场景编号、归一圈数字。
+
+    保留位置：
+      - H1/H2/H3 章节标题（章节 anchor 保留场景编号合规）
+      - scene_table cell[0] anchor 标题（📱/🖥/🔧 开头）
+      - 场景地图表 cell[0] 编号列（纯编号格式）
+
+    SKILL.md 硬规则 #11：正文禁用 PM 内部场景编号（A-N/B-N/C-N/D-N/E-N/F-N/M-N），
+    本 helper 是该规则的执行入口。
+
+    Args:
+        doc: python-docx Document
+        scene_to_human: 见 _humanize_text；None 时不做白话替换
+    """
+    import re
+    for p in doc.paragraphs:
+        style_name = p.style.name if (p.style and p.style.name) else ''
+        if style_name.startswith('Heading'):
+            continue
+        new_text = _humanize_text(p.text, scene_to_human)
+        if new_text != p.text:
+            replace_para_text(p, new_text)
+    for t in doc.tables:
+        for ri, row in enumerate(t.rows):
+            for ci, cell in enumerate(row.cells):
+                cell_text = cell.text
+                if ci == 0 and (
+                    cell_text.startswith('📱') or
+                    cell_text.startswith('🖥') or
+                    cell_text.startswith('🔧')
+                ):
+                    continue
+                if ci == 0 and ri >= 1 and re.match(
+                        r'^[A-GM]-\d+[a-z]?$', cell_text.strip()):
+                    continue
+                for p in cell.paragraphs:
+                    style_name = p.style.name if (p.style and p.style.name) else ''
+                    if style_name.startswith('Heading'):
+                        continue
+                    new_text = _humanize_text(p.text, scene_to_human)
+                    if new_text != p.text:
+                        replace_para_text(p, new_text)
+
+
+def cell_paragraphs_to_blocks(cell):
+    """识别 scene_table 右列 cell 内的 (title, lines) 块结构。
+
+    兼容两种 V2.7-era docx 的 cell 模式：
+
+    模式 A（title=bold + 无空段 + line 自带 1./2./3.）— T9/E-2 风格：
+        title (bold) → 1. line → 2. line → next title (bold) → ...
+    模式 B（title=普通 + 空段分隔 + line 平铺无编号）— T20/C-3 风格：
+        title → line → line → 空段 → next title → ...
+
+    通用规则：空段 OR bold 段 = block 强分隔符；
+            分隔符之间第一段是 title，其余是 lines。
+
+    返回 list[tuple[str, list[str]]] 格式，可直接喂 set_cell_blocks(cell, blocks)。
+    """
+    blocks = []
+    cur_title = None
+    cur_lines = []
+
+    def flush():
+        nonlocal cur_title, cur_lines
+        if cur_title is not None:
+            blocks.append((cur_title, cur_lines))
+        cur_title = None
+        cur_lines = []
+
+    for p in cell.paragraphs:
+        t = p.text.strip()
+        if not t:
+            flush()
+            continue
+        is_bold = bool(p.runs) and bool(p.runs[0].bold)
+        if is_bold and (cur_title is not None or cur_lines):
+            flush()
+        if cur_title is None:
+            cur_title = t
+        else:
+            cur_lines.append(t)
+    flush()
+    return blocks
+
+
+def fix_scene_cell_numbering(doc):
+    """扫所有 scene_table 右列，≥4 段时用 cell_paragraphs_to_blocks 拆分后
+    用 set_cell_blocks 重写，统一为「title 11pt bold + lines 9pt 0.6cm 缩进 + 自动编号」。
+
+    跳过条件：
+      - 表第一列非 scene_table anchor（不以 📱/🖥/🔧 开头）
+      - cell 段 < 4（描述太短，加 numbered 反而冗余）
+      - 单 block 且 lines < 2（无意义层次）
+
+    背景：V2.7-era docx 的 scene_table 右列内容 mixed 风格不一致（有 numbered
+    有平铺）。本 helper 统一为 set_cell_blocks 风格，配合 fill_cell_blocks 的
+    11pt title + 9pt 缩进编号渲染。
+    """
+    import re
+    for t in doc.tables:
+        if not t.rows:
+            continue
+        if len(t.rows[0].cells) < 2:
+            continue
+        cell0_text = t.rows[0].cells[0].text.strip()
+        if not (cell0_text.startswith('📱') or cell0_text.startswith('🖥') or cell0_text.startswith('🔧')):
+            continue
+        cell = t.rows[0].cells[1]
+        if len(cell.paragraphs) < 4:
+            continue
+        blocks = cell_paragraphs_to_blocks(cell)
+        if not blocks:
+            continue
+        if len(blocks) == 1 and len(blocks[0][1]) < 2:
+            continue
+        set_cell_blocks(cell, blocks, numbered=True)

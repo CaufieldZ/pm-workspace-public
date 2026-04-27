@@ -57,6 +57,22 @@ PPT 产出物一旦脚本化生成，HTML 就是**只读产物**：
 
 违反此规则 = 下次迭代必定改错。
 
+### 讲人话（强制）
+
+PPT / SOP 手册的读者是运营 / 员工 / leader，没有 PM 内部上下文。pm-workflow.md「人读产出物讲人话」适用：
+
+- 禁正文出现：决策 N（决策 1 / 决策 12）、context.md 内部条目编号、bug / CR 单号
+- 禁正文出现：场景编号 A-N / B-N / M-N（PM 内部编号，运营看不懂）
+- 反例 → 正例参见 pm-workflow.md 同名规则
+
+**自检 grep**（生成后必跑，命中即返工）：
+
+```bash
+grep -nE '决策\s*[0-9]+|[A-G]-[0-9]+\s*(/\s*[A-G]-[0-9]+)*' deliverables/ppt-*.html | grep -v "scene-[a-g]" | grep -v "id=\""
+```
+
+应为 0（`scene-x` anchor id / DOM id 不算违规，正文含「决策 N / A-N」即违规）。
+
 ## 执行步骤
 
 ### Step 0：需求澄清门（动手前必做）

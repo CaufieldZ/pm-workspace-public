@@ -146,6 +146,11 @@ from update_prd_base import *
 | `insert_description_after` | `(doc, anchor_keyword, text, size_pt=10) → Paragraph` | 按 `text.startswith(anchor_keyword)` 定位 anchor,在其后插入描述段。**锚点未命中抛异常**,不静默失败(patch 脚本最忌锚点错位) |
 | `insert_scene_blocks` | `(anchor, blocks: list[tuple[str, list[str]]], heading_level=3)` | 在 anchor 前批量插入「H3 小节 + numbered list」,body 级 Scene 展开(纯后台/CMS/无截图降级模式,替代 scene_table)。视觉与 `fill_cell_blocks` 对齐:lines 自动编号、支持内联 `**bold**` 标签、两空格加 dash 前缀作二级缩进 |
 | `remove_table` | `(table)` | 从 body 删除整张 table。配合 `insert_scene_blocks` 做「去 scene_table、改 H3 + numbered list」重构,典型场景:CMS 管理端本次无 UI 改动,去掉空截图占位的 2 列表格 |
+| `normalize_fonts` | `(doc) → (run_changed, defaults_changed)` | 老 docx 升版字体迁移:Arial/Calibri/Microsoft YaHei → Plus Jakarta Sans/HarmonyOS Sans SC;rFonts 缺失也补 design 字体;docDefaults → themed。配合 ensure_theme 是「字体三件套」的核心 |
+| `ensure_theme` | `(docx_path) → bool` | 注入标准 word/theme/theme1.xml(python-docx 老模板漏)。`doc.save()` **后**调用,传文件路径不传 Document 对象。docDefaults themed 引用必须有此文件才能解析 |
+| `humanize_doc` | `(doc, scene_to_human=None)` | 去 PM 内部场景编号 + 圈数字归一。scene_to_human 是 `[(code, human), ...]` 长前缀优先排序的映射表(每个项目自定义)。三步处理:① 多编号括号整删 ② 编号紧跟中文只删编号(避免重复词) ③ 孤立编号查表换白话。跳过 Heading 段 + scene_table cell[0] anchor + 场景地图编号列 |
+| `fix_scene_cell_numbering` | `(doc)` | 扫所有 scene_table 右列(以 📱/🖥/🔧 开头),≥4 段时用 `cell_paragraphs_to_blocks` 拆分后 `set_cell_blocks` 重写,统一 11pt title + 9pt 缩进编号。兼容 V2.7-era 两种 cell 模式(bold-no-blank / blank-separated) |
+| `cell_paragraphs_to_blocks` | `(cell) → list[tuple[str, list[str]]]` | 识别 cell 内 (title, lines) 块。规则:空段或 bold 段 = 强分隔符,分隔符之间首段是 title 其余是 lines。直接喂 set_cell_blocks |
 
 **⚠️ set_cell_text vs set_cell_blocks 选择**：升版 Scene 表格右列、后台 table 这种"多段落+层次"的单元格，**必须**用 `set_cell_blocks` 结构化填充。用 `set_cell_text` 塞多行含 `\n` 的字符串会被渲染成**单段落无层次纯文本**（历史项目已有此类问题，如 htx-activity-center v4.7）。
 
@@ -162,6 +167,16 @@ from update_prd_base import *
 反过来（先截图再改内容）会导致截图与内容不匹配，或插入的截图被内容变更覆盖。
 
 **python-docx `table.add_row()` 格式陷阱**：新增行只继承表级属性（边框/列宽），**不继承** cell 级格式（bold / font.size / font.color / shading）。新增行后必须手动对齐格式——参照同表已有数据行的 bold、size、color 逐 cell 设置，否则新行会和旧行视觉不一致。
+
+**改 PRD 后五步口诀**（任何文字修改后必跑，缺一不可）：
+
+1. 改源码 `gen_prd_v{N}.py`
+2. 跑 `python3 gen_prd_v{N}.py` 重新生成 docx（**会清空截图**）
+3. 跑 `python3 screenshot_for_prd.py` 重新插图（步骤 2 必须配步骤 3）
+4. 跑 `bash check_prd.sh xxx.docx scene-list.md` 验证占位符 0 处
+5. 推 Confluence
+
+⚠️ 跳过步骤 3 → docx 0 截图，推上去页面空白。Felix 实测踩坑（memory `feedback_prd_iter_screenshot_pitfalls.md`）。
 
 ### ⛔ 升版硬规则（违反即重来，check_prd.sh 会自动拦截）
 
@@ -201,6 +216,29 @@ from update_prd_base import *
    sys.path.insert(0, str(BASE / '.claude/skills/prd/scripts'))
    ```
    硬编码的坑(memory #1):① 换用户名/换机器立即炸 ② `sys.path.insert` 到不存在目录导致 `from gen_prd_base import *` 无声失败 → h1/h2 函数全失效 → docx 全 Normal style → Confluence 推上去大纲树失效。
+
+11. **正文禁用一切 PM 内部编号**(memory `feedback_prd_no_scene_id_in_body.md`):场景编号(A-1/B-2/C-1)/ 决策编号(决策 1/决策 12)/ context.md 内部条目编号,全部禁出现在 scene_table 右列、第 5/6 章业务规则、bullet 等正文位置。
+   - 仅允许出现在:第 2 章场景地图映射表、scene_table 第二参数(标题 anchor,如 `📱 B-1 · 我看自己的个人主页`)
+   - 反例:`决策 1:订阅未来付费`、`TAB 切换 → C-1 / C-2 / C-4` — 研发/运营都看不懂"决策 1"是什么、"C-1"对应哪个页面
+   - 正例:`订阅功能未来可能付费(本期免费)`、`切换"内容/交易战绩/带单战绩"TAB`
+   - check_prd.sh 已加扫描:扫 docx 正文(排除第 0 列场景标题 anchor)中的「决策 N」、「A-N/B-N/...」编号,命中即 fail
+   - 批量修复:`from update_prd_base import humanize_doc; humanize_doc(doc, scene_to_human=[('A-3b','红包弹窗'),('A-1','直播间主页'),...])`。三步处理:删多编号括号 → 编号紧跟中文只删编号(避免重复词)→ 孤立编号查表换白话
+   - **重复词陷阱**:映射表写 `('F-1','CMS 主播认证')` 时,原文「F-1 主播认证管理」会变「CMS 主播认证 主播认证管理」 — humanize_doc 内置「编号紧跟中文 → 仅删编号」步骤已处理,孤立编号才查表
+
+12. **老 docx 升版必跑字体三件套**(commit 5192b83 后字体规范升级,4-26 之前 build 的 docx 升版漏跑会渲染成 Arial 风):
+   ```python
+   from update_prd_base import normalize_punctuation, normalize_headings, normalize_fonts, ensure_theme
+   normalize_punctuation(doc)
+   normalize_headings(doc)
+   normalize_fonts(doc)         # 老 ascii=Arial → Plus Jakarta Sans;rFonts 缺失也补 design 字体
+   doc.save(path)
+   ensure_theme(path)            # 注入 word/theme/theme1.xml(python-docx 老模板漏)
+   ```
+   - 三个层级缺一不可:**docDefaults themed**(走主题 fallback 链)+ **run 级写 design 字体名**(Word for Mac 走系统 substitute → SF Pro/PingFang)+ **theme1.xml 文件**(themed 引用解析依赖它)
+   - 缺 theme1.xml 的症状:docDefaults `<rFonts asciiTheme="minorHAnsi"/>` 引用悬空 → Word 无 fallback → 强制 Arial
+   - run 级 rFonts 缺失的症状:走 docDefaults themed → 解析 theme1.xml minorFont(Cambria + 宋体)→ Mac 渲染 Cambria/STSong(衬线 Arial-classic 风)
+   - check_prd.sh 已自动扫:缺 theme1.xml / 残留老字体 run → fail
+   - **错觉警告**:commit message 里写过「HarmonyOS Sans SC 没装会自动 fallback PingFang」是错的,docx 没 CSS fallback chain,只有 Word/Mac 系统级 substitute
 
 ### Step 2：收集产品信息
 
@@ -425,6 +463,36 @@ npx playwright install chromium
 
 PRD 自检通过后，主动询问：「PRD 已生成，是否推送到 Confluence？」
 
+### 路径 0:已推送过的项目（最常用，零参数）
+
+`projects/{项目}/.confluence.json` 缓存项目级 Confluence 配置（首次推送后脚本自动写入）：
+
+```bash
+python3 .claude/skills/prd/scripts/push_to_confluence_base.py \
+    "projects/{项目}/deliverables/{PRD}.docx"
+```
+
+**配置 schema**:
+
+```json
+// 单 PRD 项目(最常见)
+{ "prd_page_id": "155652375", "title": "...", "space": "jituankejizhongxin" }
+
+// 多 PRD 项目(同项目拆多份):pages 按 docx 文件名匹配
+{
+  "space": "jituankejizhongxin",
+  "pages": {
+    "HTX_直播间Q2升级_PRD_V2.8-Phase1.docx": {"page_id": "164486320", "title": "..."},
+    "HTX_直播间Q2升级_PRD_V3.0-Phase2-连麦.docx": {"page_id": "164486335", "title": "..."}
+  }
+}
+
+// 仅有父页面(还没推过任何 PRD):首次推时只需传 --title
+{ "parent_id": "155660585", "space": "jituankejizhongxin" }
+```
+
+不要再问用户 pageId,有配置直接跑。配置不存在或 docx 没匹配到才走路径 A/B 询问。
+
 ### 路径 A:新建页面 / 按标题 upsert
 
 ```bash
@@ -437,7 +505,10 @@ python3 .claude/skills/prd/scripts/push_to_confluence_base.py \
 
 - **页面标题格式**:`HTX · {项目名} · {版本号}`(例:HTX · 活动中心 · v4.7)
 - spaceKey / 父页面 pageId 由用户提供,或用 Confluence MCP `confluence_get_page` 查父页面
-- 重复推送自动 upsert;图片默认宽 600px,App 截图传 `--img-width 300`
+- 重复推送自动 upsert
+- **图片宽度按宽高比自动选**:phone 截图(高 > 宽 × 1.3)走 300px,web/横屏走 600px。无需传参
+- 强制覆盖时:`--img-width 600` 所有图统一,`--img-width-phone 240 --img-width-web 720` 分别覆盖
+- 注:Confluence storage format 会 strip 段落 inline style(`padding-left` 失效),push 脚本会把连续 `<p>N. xxx</p>` 段合成 `<ol><li>` 让 Confluence 用原生 list 缩进 + 自动编号。fill_cell_blocks 产出的 numbered cell 在 Confluence 上才能正确显示层次
 
 ### 路径 B:已知 pageId 直接覆盖
 

@@ -33,18 +33,20 @@ for f in "$DELIV_DIR"/*; do
     *) continue ;;
   esac
 
-  # Extract version: V{major}.{minor} or V{number}
-  if echo "$filename" | grep -qoE '_V[0-9]+\.[0-9]+\.'; then
-    CUR_VER=$(echo "$filename" | grep -oE 'V[0-9]+\.[0-9]+' | tail -1)
-    MAJOR=$(echo "$CUR_VER" | sed 's/V\([0-9]*\)\.\([0-9]*\)/\1/')
-    MINOR=$(echo "$CUR_VER" | sed 's/V\([0-9]*\)\.\([0-9]*\)/\2/')
+  # Extract version: [Vv]{major}.{minor} or [Vv]{number} (preserve case)
+  if echo "$filename" | grep -qoE '_[Vv][0-9]+\.[0-9]+\.'; then
+    CUR_VER=$(echo "$filename" | grep -oE '[Vv][0-9]+\.[0-9]+' | tail -1)
+    V_PREFIX="${CUR_VER:0:1}"
+    MAJOR=$(echo "$CUR_VER" | sed -E 's/[Vv]([0-9]+)\.([0-9]+)/\1/')
+    MINOR=$(echo "$CUR_VER" | sed -E 's/[Vv]([0-9]+)\.([0-9]+)/\2/')
     NEW_MINOR=$((MINOR + 1))
-    NEW_VER="V${MAJOR}.${NEW_MINOR}"
-  elif echo "$filename" | grep -qoE '_V[0-9]+\.'; then
-    CUR_VER=$(echo "$filename" | grep -oE 'V[0-9]+' | tail -1)
-    CUR_NUM=$(echo "$CUR_VER" | sed 's/V//')
+    NEW_VER="${V_PREFIX}${MAJOR}.${NEW_MINOR}"
+  elif echo "$filename" | grep -qoE '_[Vv][0-9]+\.'; then
+    CUR_VER=$(echo "$filename" | grep -oE '[Vv][0-9]+' | tail -1)
+    V_PREFIX="${CUR_VER:0:1}"
+    CUR_NUM=$(echo "$CUR_VER" | sed -E 's/[Vv]//')
     NEW_NUM=$((CUR_NUM + 1))
-    NEW_VER="V${NEW_NUM}"
+    NEW_VER="${V_PREFIX}${NEW_NUM}"
   else
     echo "  SKIP  $filename  (no version in filename)"
     continue

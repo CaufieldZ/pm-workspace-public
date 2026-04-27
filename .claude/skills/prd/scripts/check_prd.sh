@@ -85,6 +85,40 @@ if CIRCLE.search(full_text):
     print(f'❌ 圈数字残留(CLAUDE.md 禁止产出物用 ①②③, 统一 1./2./3.): {"".join(uniq)}')
     fail = 1
 
+# PM 内部编号扫描(memory feedback_prd_no_scene_id_in_body.md)
+# scene_table 第 0 列是场景标题 anchor,允许「📱 X-N · 名称」编号;其他位置出现即违规
+DECISION_RE = re.compile(r'决策\s*\d+')
+SCENE_ID_BODY_RE = re.compile(r'[A-G]-\d+(?:\s*/\s*[A-G]-\d+){0,5}')
+banned_decisions = []
+banned_scene_ids = []
+for ti, t in enumerate(doc.tables):
+    for ri, row in enumerate(t.rows):
+        for ci, cell in enumerate(row.cells):
+            if ci == 0:
+                continue  # 第 0 列是场景标题 anchor
+            txt = cell.text
+            if DECISION_RE.search(txt):
+                banned_decisions.append(f'T{ti}R{ri}C{ci}: {txt[:40]!r}')
+            # T0=封面属性表, T1=1.x 元信息, T2=第 2 章场景地图(允许 A-N/B-N 罗列), T3+=scene_table
+            if ti >= 3 and SCENE_ID_BODY_RE.search(txt):
+                banned_scene_ids.append(f'T{ti}R{ri}C{ci}: {txt[:40]!r}')
+# 段落扫决策编号(排除 Heading 标题,允许章节编号 2.1 / 6.3)
+for p in doc.paragraphs:
+    style = p.style.name if p.style else ''
+    if style.startswith('Heading'):
+        continue
+    if DECISION_RE.search(p.text):
+        banned_decisions.append(f'P[{style}]: {p.text[:40]!r}')
+
+if banned_decisions:
+    samples = banned_decisions[:5]
+    print(f'❌ 正文残留决策编号 {len(banned_decisions)} 处(SKILL.md 硬规则 #11): 样例 {samples}')
+    fail = 1
+if banned_scene_ids:
+    samples = banned_scene_ids[:5]
+    print(f'❌ 正文残留场景编号 {len(banned_scene_ids)} 处(SKILL.md 硬规则 #11, 仅第 2 章场景地图允许): 样例 {samples}')
+    fail = 1
+
 # 中文相邻半角标点(soul.md 禁止)
 CJK = r'[\u4e00-\u9fff]'
 half_punct = re.findall(rf'{CJK}[,:()]|[,:()]{CJK}', full_text)
@@ -131,6 +165,33 @@ for rel in doc.part.rels.values():
         pass
 if bad_dpi:
     print(f'❌ 截图 DPI<130 有 {bad_dpi} 张(Playwright 默认 72, 需 fix_dpi 到 144)')
+    fail = 1
+
+# ── 字体三件套自检（commit 5192b83 后所有 PRD 必须通过）──
+import zipfile
+from docx.oxml.ns import qn
+with zipfile.ZipFile(sys.argv[1]) as z:
+    if 'word/theme/theme1.xml' not in z.namelist():
+        print('❌ 缺 word/theme/theme1.xml(老 python-docx 模板漏注入,导致 docDefaults themed 失效→ Word fallback Arial)。')
+        print('   修复: from update_prd_base import ensure_theme; ensure_theme(docx_path)')
+        fail = 1
+
+LEGACY_FONTS = {'Arial', 'Calibri', 'Times New Roman', 'Times', 'Helvetica',
+                'Microsoft YaHei', '微软雅黑', 'SimSun', '宋体', 'SimHei', '黑体'}
+W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+legacy_count = 0
+for r in doc.element.body.iter(f'{{{W}}}r'):
+    rPr = r.find(qn('w:rPr'))
+    if rPr is None: continue
+    rFonts = rPr.find(qn('w:rFonts'))
+    if rFonts is None: continue
+    for slot in ('ascii', 'hAnsi', 'eastAsia'):
+        if rFonts.get(qn(f'w:{slot}')) in LEGACY_FONTS:
+            legacy_count += 1
+            break
+if legacy_count:
+    print(f'❌ 正文残留老字体 run {legacy_count} 个(Arial/Calibri/Microsoft YaHei 等,会渲染成 Arial 风)。')
+    print('   修复: from update_prd_base import normalize_fonts; normalize_fonts(doc)')
     fail = 1
 
 if fail:

@@ -5,12 +5,16 @@ push_to_confluence_base.py — 推送 PRD docx 到 Confluence Server
 
 两种模式:
     A. 按 space + title upsert(找不到则建新页):
-        python3 push_to_confluence_base.py <docx> --title <标题> --space <key> [--parent-id <id>]
+        python3 push_to_confluence_base.py <docx> --title <标题> [--space <key>] [--parent-id <id>]
     B. 按 pageId 直接覆盖(已知页面,跳过 title 查找):
         python3 push_to_confluence_base.py <docx> --page-id <id> [--title <新标题>]
 
 说明:
     - 凭证自动从 .mcp.json / .mcp-disabled.json 读取(MCP 关闭也能跑,脚本走 REST)
+    - --space 不传时默认 `jituankejizhongxin`(集团科技中心),与 md_to_confluence.py 一致
+    - 项目级配置 projects/{项目}/.confluence.json 自动读写:
+        首次推送传 --page-id 或 --title/--parent-id,成功后字段写回 .confluence.json;
+        后续直接 `push <docx>` 即可,脚本从配置取 page_id/space/title/parent_id。
     - 图片提取后作为附件上传,再用 ac:image 宏引用
     - push 前 pre-flight 检查 docx 的 Heading 1/2 计数,为 0 时 warning
       (memory #1/#3 踩坑:gen 脚本 BASE 路径错 → h1/h2 函数失效 → docx 全 Normal
@@ -42,6 +46,41 @@ except ImportError:
     sys.exit("缺依赖: pip install mammoth requests")
 
 from lib.confluence import api_request, base_url, load_creds
+
+
+DEFAULT_SPACE = "jituankejizhongxin"
+
+
+def _find_project_config(docx_path: str) -> Path | None:
+    """从 docx 路径回溯找 projects/{项目}/.confluence.json。
+    路径形如 projects/htx-community/deliverables/xxx.docx → projects/htx-community/.confluence.json。
+    找不到返回 None(脚本不强求配置存在)。"""
+    p = Path(docx_path).resolve()
+    for parent in p.parents:
+        if parent.parent.name == "projects":
+            return parent / ".confluence.json"
+    return None
+
+
+def _load_project_config(cfg_path: Path | None) -> dict:
+    if not cfg_path or not cfg_path.exists():
+        return {}
+    try:
+        return json.loads(cfg_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        print(f"  ⚠ {cfg_path} 解析失败,忽略: {e}", file=sys.stderr)
+        return {}
+
+
+def _save_project_config(cfg_path: Path | None, data: dict):
+    """成功推送后回写,只写有值的字段,缩进 2 便于人读。"""
+    if not cfg_path:
+        return
+    clean = {k: v for k, v in data.items() if v}
+    cfg_path.write_text(
+        json.dumps(clean, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
 
 def _rest(method: str, path: str, **kwargs):
@@ -103,11 +142,14 @@ def upload_attachment(page_id: str, filename: str, data: bytes, mime: str = "ima
 
 # ── docx → Confluence storage format ────────────────────────────────────────
 
-def convert_docx(docx_path: str, page_id: str, img_width: int = 600) -> str:
+def convert_docx(docx_path: str, page_id: str,
+                 img_width_web: int = 600, img_width_phone: int = 300) -> str:
     """
     1. mammoth 把 docx 转 HTML，图片提取到内存
     2. 图片上传为页面附件
-    3. <img src="..."> 替换为 <ac:image> 宏
+    3. <img src="..."> 替换为 <ac:image>，按图片宽高比智能选 width：
+       - phone 截图（高 > 宽 × 1.3）→ img_width_phone（默认 300）
+       - web 截图（横屏或方形）→ img_width_web（默认 600）
     返回 Confluence storage format HTML 字符串
     """
     _images = {}   # filename → (bytes, mime)
@@ -135,36 +177,162 @@ def convert_docx(docx_path: str, page_id: str, img_width: int = 600) -> str:
 
     html = result.value
 
+    # 算每张图的目标宽度（按宽高比）
+    _widths = {}
+    try:
+        from PIL import Image
+        from io import BytesIO
+        for name, (data, _mime) in _images.items():
+            try:
+                w, h = Image.open(BytesIO(data)).size
+                _widths[name] = img_width_phone if h > w * 1.3 else img_width_web
+            except Exception:
+                _widths[name] = img_width_web
+    except ImportError:
+        for name in _images:
+            _widths[name] = img_width_web
+
     # 上传附件
     for name, (data, mime) in _images.items():
         upload_attachment(page_id, name, data, mime)
-        print(f"  ↑ 附件: {name} ({len(data)//1024}KB)")
+        print(f"  ↑ 附件: {name} ({len(data)//1024}KB, w={_widths.get(name, img_width_web)})")
 
     # <img src="__ATTACH__xxx"> → <ac:image> 宏
     def to_ac(m):
         src = m.group(1)
         if src.startswith("__ATTACH__"):
             fname = src[len("__ATTACH__"):]
-            return f'<ac:image ac:width="{img_width}"><ri:attachment ri:filename="{fname}"/></ac:image>'
+            w = _widths.get(fname, img_width_web)
+            return f'<ac:image ac:width="{w}"><ri:attachment ri:filename="{fname}"/></ac:image>'
         return m.group(0)   # 外链图片保留原样
 
     html = re.sub(r'<img[^>]+src="([^"]+)"[^>]*/?>', to_ac, html)
 
-    # 恢复段落缩进(mammoth 默认丢失)。
-    # fill_cell_blocks 产出两级缩进:一级 "N. xxx"(Cm 0.3),二级 "  - xxx"(Cm 0.9)。
-    # 映射到 HTML 的 padding-left,让 Confluence 渲染保留层次。
-    def indent_p(m):
-        inner = m.group(1)
-        # 去掉段落内前置 <strong>/<em>/<br/> 标签,看真实文本首字符
-        txt = re.sub(r'<[^>]+>', '', inner).lstrip()
-        if re.match(r'^\s*-\s', txt) or inner.startswith(('  -', '\t-')):
-            return f'<p style="padding-left:40px;">{inner}</p>'
-        if re.match(r'^\d+\.\s', txt):
-            return f'<p style="padding-left:20px;">{inner}</p>'
-        return m.group(0)
-    html = re.sub(r'<p>(.*?)</p>', indent_p, html, flags=re.DOTALL)
+    # 缩进重建：Confluence storage format strip 段落 inline style，padding-left 失效。
+    # 唯一可靠方案是把字符前缀的伪 list 段合并成原生 <ol> / <ul>，
+    # 让 Confluence 用 list 自带缩进 + 自动编号 + 紧凑行距。
+    html = _merge_numbered_into_ol(html)
+    html = _merge_bullet_into_ul(html)
 
     return html
+
+
+def _merge_bullet_into_ul(html: str) -> str:
+    """把 mkp() 产出的 <p>• xxx</p> / <p>· xxx</p> 字符前缀伪 list 合并成 <ul><li>。
+    去掉「• 」/「· 」前缀（HTML ul 自带 marker）。
+
+    跟 _merge_numbered_into_ol 互补：那个处理「1./2./3.」编号 → ol，本函数处理无序 → ul。
+    必须在 ol 合并之后跑，避免误吞 ol 内嵌套的 ul。
+    """
+    parts = re.split(r'(<p[^>]*>.*?</p>)', html, flags=re.DOTALL)
+    p_re = re.compile(r'^<p[^>]*>(.*?)</p>$', re.DOTALL)
+    bullet_re = re.compile(r'^\s*[•·‧]\s+', re.DOTALL)
+    bullet_strip = re.compile(r'^((?:\s*<[^>]+>\s*)*)\s*[•·‧]\s+')
+
+    out: list[str] = []
+    buf: list[str] = []
+
+    def flush():
+        if buf:
+            out.append('<ul>' + ''.join(f'<li>{x}</li>' for x in buf) + '</ul>')
+            buf.clear()
+
+    for part in parts:
+        m = p_re.match(part)
+        if not m:
+            if part.strip() == '':
+                if not buf:
+                    out.append(part)
+                continue
+            flush()
+            out.append(part)
+            continue
+        inner = m.group(1)
+        plain = re.sub(r'<[^>]+>', '', inner).lstrip()
+        if bullet_re.match(plain):
+            content = bullet_strip.sub(r'\1', inner, count=1)
+            buf.append(content)
+        else:
+            flush()
+            out.append(part)
+    flush()
+    return ''.join(out)
+
+
+def _merge_numbered_into_ol(html: str) -> str:
+    """把 fill_cell_blocks 产出的 <p>N. xxx</p> 段合并成 <ol><li>...</li></ol>，
+    并把紧随的 <p>- yyy</p> 二级缩进段嵌套为父 <li> 内的 <ul><li>。
+
+    背景：Confluence storage format 会 strip 段落 inline style，padding-left 失效；
+    旧实现对二级条目 fallback 写 padding-left 兜底，结果是缩进丢失 + 关掉 <ol>
+    导致后续 N. 编号从 1 重新开始。重建为原生嵌套列表，让 Confluence 自带缩进 +
+    自动编号同时生效。
+
+    输入示例（mammoth 转出的形态）：
+        <p>title</p>
+        <p>1. main A</p>
+        <p>- sub A1</p>
+        <p>- sub A2</p>
+        <p>2. main B</p>
+
+    输出：
+        <p>title</p>
+        <ol>
+          <li>main A<ul><li>sub A1</li><li>sub A2</li></ul></li>
+          <li>main B</li>
+        </ol>
+    """
+    parts = re.split(r'(<p[^>]*>.*?</p>)', html, flags=re.DOTALL)
+    p_re = re.compile(r'^<p[^>]*>(.*?)</p>$', re.DOTALL)
+    num_re = re.compile(r'^\s*\d+\.\s+', re.DOTALL)
+    sub_re = re.compile(r'^\s*-\s+')
+    num_strip = re.compile(r'^((?:\s*<[^>]+>\s*)*)\s*\d+\.\s+')
+    sub_strip = re.compile(r'^((?:\s*<[^>]+>\s*)*)\s*-\s+')
+
+    out: list[str] = []
+    items: list[dict] = []  # [{'main': str, 'subs': [str, ...]}, ...]
+
+    def flush():
+        if not items:
+            return
+        lis = []
+        for it in items:
+            if it['subs']:
+                ul = '<ul>' + ''.join(f'<li>{s}</li>' for s in it['subs']) + '</ul>'
+                lis.append(f"<li>{it['main']}{ul}</li>")
+            else:
+                lis.append(f"<li>{it['main']}</li>")
+        out.append('<ol>' + ''.join(lis) + '</ol>')
+        items.clear()
+
+    for part in parts:
+        m = p_re.match(part)
+        if not m:
+            # 纯空白：active <ol> 内吞掉（避免空白挤进列表破坏结构），否则原样保留
+            if part.strip() == '':
+                if not items:
+                    out.append(part)
+                continue
+            flush()
+            out.append(part)
+            continue
+        inner = m.group(1)
+        plain = re.sub(r'<[^>]+>', '', inner).lstrip()
+        if num_re.match(plain):
+            content = num_strip.sub(r'\1', inner, count=1)
+            items.append({'main': content, 'subs': []})
+        elif sub_re.match(plain):
+            sub_content = sub_strip.sub(r'\1', inner, count=1)
+            if items:
+                items[-1]['subs'].append(sub_content)
+            else:
+                # 孤儿子条目：没有前置主条目时单独包成 <ul>
+                out.append(f'<ul><li>{sub_content}</li></ul>')
+        else:
+            flush()
+            out.append(part)
+    flush()
+    return ''.join(out)
 
 
 def update_page(page_id: str, title: str, body: str, current_version: int):
@@ -238,24 +406,50 @@ def _build_parser():
                    help="Confluence spaceKey(模式 A 必填)")
     p.add_argument("--parent-id", dest="parent_id", default=None,
                    help="父页面 pageId(模式 A 可选)")
-    p.add_argument("--img-width", type=int, default=600,
-                   help="图片附件展示宽度(像素),默认 600")
+    p.add_argument("--img-width", type=int, default=None,
+                   help="所有图片统一宽度(像素)。不传时按宽高比智能选:phone 截图 300 / web 截图 600")
+    p.add_argument("--img-width-web", type=int, default=600,
+                   help="web 截图宽度(横屏或方形),默认 600")
+    p.add_argument("--img-width-phone", type=int, default=300,
+                   help="phone 截图宽度(高瘦比例 h>w*1.3),默认 300")
     p.add_argument("--skip-preflight", action="store_true",
                    help="跳过 Heading 体检(不推荐,除非明知 docx 故意无 H1/H2)")
     return p
 
 
-def _resolve_mode(args):
-    """返回 (page_id, title, version, space_key) —— 无论模式 A/B 都归一化为这 4 个字段。"""
-    if args.page_id:
-        info = get_page_info(args.page_id)
-        title = args.title or info["title"]
-        return info["id"], title, info["version"], info["space_key"]
+def _resolve_from_pages_map(docx_path: str, cfg: dict) -> dict:
+    """多 PRD 项目:cfg.pages 按 docx basename 精确匹配,返回 {'page_id', 'title'} 或空 dict。
+    没命中时返回空,让上层走 prd_page_id 单 PRD 兜底。"""
+    pages = cfg.get("pages") or {}
+    if not pages:
+        return {}
+    basename = Path(docx_path).name
+    if basename in pages:
+        return pages[basename]
+    # 模糊匹配:文件名含 key 子串(如 key="V2.8" 命中 "...V2.8-Phase1.docx")
+    for key, val in pages.items():
+        if key in basename:
+            return val
+    return {}
+
+
+def _resolve_mode(args, cfg: dict, docx_path: str):
+    """返回 (page_id, title, version, space_key) —— 无论模式 A/B 都归一化为这 4 个字段。
+    CLI 参数优先于 cfg.pages[docx 匹配项],再 fallback 到 cfg 顶层 prd_page_id/title。"""
+    matched = _resolve_from_pages_map(docx_path, cfg)
+    page_id = args.page_id or matched.get("page_id") or cfg.get("prd_page_id")
+    title = args.title or matched.get("title") or cfg.get("title")
+    space_key = args.space_key or cfg.get("space") or DEFAULT_SPACE
+    parent_id = args.parent_id or cfg.get("parent_id")
+
+    if page_id:
+        info = get_page_info(page_id)
+        return info["id"], title or info["title"], info["version"], info["space_key"]
     # 模式 A:按 title upsert
-    if not args.title or not args.space_key:
-        sys.exit("❌ 模式 A 必须传 --title 和 --space(或用 --page-id 走模式 B)")
-    page_id, version = get_or_create_page(args.space_key, args.title, args.parent_id)
-    return page_id, args.title, version, args.space_key
+    if not title:
+        sys.exit("❌ 模式 A 必须传 --title (或 .confluence.json 含 title);也可用 --page-id 走模式 B")
+    pid, version = get_or_create_page(space_key, title, parent_id)
+    return pid, title, version, space_key
 
 
 def main(argv=None):
@@ -279,14 +473,48 @@ def main(argv=None):
     if not args.skip_preflight:
         preflight_check_headings(args.docx)
 
+    cfg_path = _find_project_config(args.docx)
+    cfg = _load_project_config(cfg_path)
+    if cfg:
+        print(f"📦 读取项目配置: {cfg_path}")
+
     print(f"📄 转换: {args.docx}")
-    page_id, title, version, space_key = _resolve_mode(args)
+    page_id, title, version, space_key = _resolve_mode(args, cfg, args.docx)
     print(f"📑 页面 ID: {page_id}  标题: {title}  space: {space_key}  当前版本: {version}")
 
-    body = convert_docx(args.docx, page_id, img_width=args.img_width)
+    # --img-width 兼容：传单值 → 所有图统一；不传 → phone/web 各自走 default
+    if args.img_width is not None:
+        web_w = phone_w = args.img_width
+    else:
+        web_w = args.img_width_web
+        phone_w = args.img_width_phone
+    body = convert_docx(args.docx, page_id,
+                        img_width_web=web_w, img_width_phone=phone_w)
 
     print("📤 更新页面内容...")
     update_page(page_id, title, body, version)
+
+    # 推送成功后写回项目配置,下次 session 不用再问 pageId
+    new_cfg = {**cfg, "space": space_key}
+    if args.parent_id or cfg.get("parent_id"):
+        new_cfg["parent_id"] = args.parent_id or cfg.get("parent_id")
+    # 多 PRD 项目(已有 pages 字段)写到 pages[basename];单 PRD 项目写顶层 prd_page_id
+    if cfg.get("pages"):
+        basename = Path(args.docx).name
+        pages = dict(new_cfg.get("pages") or {})
+        # 找已有 key (可能是模糊匹配命中);找不到就用 basename 新增一项
+        match_key = basename if basename in pages else next(
+            (k for k in pages if k in basename), basename
+        )
+        pages[match_key] = {"page_id": page_id, "title": title}
+        new_cfg["pages"] = pages
+    else:
+        new_cfg["prd_page_id"] = page_id
+        new_cfg["title"] = title
+    if new_cfg != cfg:
+        _save_project_config(cfg_path, new_cfg)
+        if cfg_path:
+            print(f"💾 已写回 {cfg_path}")
 
     page_url = f"{base_url()}/pages/viewpage.action?pageId={page_id}"
     print(f"✅ 完成: {page_url}")

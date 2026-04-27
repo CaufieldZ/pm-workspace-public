@@ -37,9 +37,15 @@ extract_file_ids() {
     html|md)
       # Multi-char IDs: B-1, F-0a, M-2, etc.
       grep -oE '\b[A-Z]-[0-9]+[a-z]?\b' "$file" 2>/dev/null || true
-      # Single-letter in context: "scene-A", "PART A", phone-label">A ·
-      grep -oE '(scene[- ]|PART[- ]|phone-label">[[:space:]]*)([A-Z])\b' "$file" 2>/dev/null \
+      # Single-letter in context: "Scene A", "scene-A", "PART A", phone-label">A ·
+      # 「Scene」keyword case-insensitive, single-letter scene ID 仍要求大写以避免误匹配 (e.g. "an A...")
+      grep -oiE '(scene[- ]|PART[- ]|phone-label">[[:space:]]*)([A-Z])\b' "$file" 2>/dev/null \
         | grep -oE '[A-Z]$' || true
+      # md 表格首列单字符 anchor：`| E |` `| A |` 等（场景清单第一列惯例）
+      if [ "$ext" = "md" ]; then
+        grep -oE '^\|[[:space:]]*[A-Z][[:space:]]*\|' "$file" 2>/dev/null \
+          | grep -oE '[A-Z]' || true
+      fi
       ;;
     docx)
       python3 -c "
@@ -48,13 +54,25 @@ try:
     from docx import Document
     doc = Document('$file')
     text = '\n'.join(p.text for p in doc.paragraphs)
+    cell_texts = []
     for t in doc.tables:
         for row in t.rows:
             for cell in row.cells:
-                text += '\n' + cell.text
-    for m in sorted(set(re.findall(r'\b([A-Z]-[0-9]+[a-z]?)\b', text))):
-        print(m)
-    for m in sorted(set(re.findall(r'(?:scene|PART)[^A-Za-z]*([A-Z])\b', text))):
+                ct = cell.text
+                text += '\n' + ct
+                cell_texts.append(ct.strip())
+    found = set()
+    for m in re.findall(r'\b([A-Z]-[0-9]+[a-z]?)\b', text):
+        found.add(m)
+    # Scene/PART keyword case-insensitive；single-letter scene ID 仍要求大写
+    for m in re.findall(r'(?:scene|PART)[^A-Za-z]*([A-Z])\b', text, re.IGNORECASE):
+        found.add(m)
+    # 表格首列是惯例 anchor 列（如场景地图 T2 第 0 列）：单字符大写或 X-N 格式直接当 scene ID
+    for ct in cell_texts:
+        if len(ct) <= 12 and re.fullmatch(r'[A-Z](?:-[0-9]+[a-z]?)?(?:\s*[~～]\s*[A-Z](?:-[0-9]+[a-z]?)?)?', ct):
+            for m in re.findall(r'[A-Z](?:-[0-9]+[a-z]?)?', ct):
+                found.add(m)
+    for m in sorted(found):
         print(m)
 except Exception as e:
     print('ERR: ' + str(e), file=sys.stderr)

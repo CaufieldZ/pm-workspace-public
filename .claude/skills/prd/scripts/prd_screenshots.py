@@ -148,6 +148,7 @@ def take_screenshots(html_path: Path, out_dir: Path,
 # ── 插入 docx ─────────────────────────────────────────────────────────────────
 
 _SCENE_ID_RE = re.compile(r'\b([A-Z])-(\d+[a-z]?)\b')
+_SCENE_TITLE_RE = re.compile(r'(📱\s*[A-Z]-\d+[a-z]?\s*·\s*[^\n]+)')
 
 
 def _normalize_scene_id(raw: str) -> str:
@@ -166,10 +167,15 @@ def _cell_scene_ids(cell) -> set[str]:
 
 def insert_into_docx(docx_path: Path, shots: dict[str, Path],
                      width_phone_cm: float = 5.0, width_web_cm: float = 7.0):
-    """把截图插入 PRD docx，按场景编号匹配表格首行首列。"""
+    """把截图插入 PRD docx，按场景编号匹配表格首行首列。
+
+    自动检测 cell 首段是否含 scene_table 标识（📱 + 编号），有则保留场景标题段
+    （memory feedback_prd_iter_screenshot_pitfalls.md 坑 2：默认 replace_cell_image
+    会清掉 scene_table 写在 cell 首段的「📱 X-N · 名称」标识，重推后看不出图属于哪个场景）。
+    """
     import sys as _sys
     _sys.path.insert(0, str(ROOT / ".claude/skills/prd/scripts"))
-    from update_prd_base import replace_cell_image
+    from update_prd_base import replace_cell_image, replace_cell_image_keep_title
 
     from docx import Document
     doc = Document(str(docx_path))
@@ -189,7 +195,13 @@ def insert_into_docx(docx_path: Path, shots: dict[str, Path],
                 # 判断宽度：phone 截图文件名不含 web，且文件尺寸比较窄
                 is_phone = "phone" in str(img_path) or _is_portrait(img_path)
                 width = width_phone_cm if is_phone else width_web_cm
-                replace_cell_image(cell, str(img_path), width_cm=width)
+                # scene_table 写在 cell 首段的「📱 X-N · ...」标题必须保留
+                first_para_text = cell.paragraphs[0].text.strip() if cell.paragraphs else ""
+                title_match = _SCENE_TITLE_RE.match(first_para_text)
+                if title_match:
+                    replace_cell_image_keep_title(cell, title_match.group(1), str(img_path), width_cm=width)
+                else:
+                    replace_cell_image(cell, str(img_path), width_cm=width)
                 print(f"  插入 {sid} → Table ({table.rows[0].cells[0].text[:20].strip()!r})")
                 inserted.add(sid)
                 break

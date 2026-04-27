@@ -28,7 +28,7 @@ scripts:
 > - Step B 每填充 1-3 个 Scene 后停下报告进度（非快速模式）
 > - Step C 自检时逐个对照 scene-list.md 编号，列出「已覆盖 / 缺失」清单
 
-## IMAP 三大规则（2026-04 起新规范）
+## IMAP 五大规则（2026-04 起新规范）
 
 > 本章节是新规范，覆盖以下所有「标注」「Tag 系统」相关条目。老 references/ 里的 `.anno` overlay 和 `ann-tag.new/chg/del` 示例按本章节为准，不要复制。
 
@@ -62,6 +62,56 @@ IMAP 是静态数据，只画新态全景。禁止出现差量叙事：
 - 禁止出现 `V\d+\.\d+`（V2.6、V3.1 等版本号）、`NEW`、`变更`、`新增`、`改动` 等差量文案
 
 变更叙事归 PRD 1.3「变更范围」章节。迭代项目也画新态全景，老 IMAP 归档，不增量叠。
+
+### 4. anno-n 与 ann-num 字符样式必须一致
+
+屏幕上的 `.anno-n` 编号徽章和 ann-card 里的 `.ann-num` 编号圆**必须用相同字符样式**：要么都阿拉伯数字 `1 2 3`，要么都圆圈数字 `① ② ③`，**不能混用**。
+
+**Why**：读者在屏幕上看到 ①，要在 ann-card 里能找到 ① 对应说明；如果 ann-card 写 `1` 就找不到对应。Felix 在 imap-htx-community-leaderboard v1 实测踩坑——anno-n 用 ①，ann-num 用 1，编号无法对应。
+
+**默认建议**：用阿拉伯数字 `1 2 3`（更通用，跟跨端表 / 漏斗序号一致）。
+
+**自检 grep**（fill 完后必跑，两组输出必须完全一致）：
+
+```bash
+grep -onE 'anno-n [a-z]+">[^<]+</div>' deliverables/imap-*.html | grep -oE '">[^<]+</' | sort -u
+grep -onE 'ann-num [a-z]+">[^<]+</div>' deliverables/imap-*.html | grep -oE '">[^<]+</' | sort -u
+```
+
+### 5. 跨场景引用必须超链接 + 缩略预览，禁止「详见 X」纯文字
+
+某 phone 引用其他 scene 内容（如「内容 TAB 详见 C-1」「嵌牛人榜战绩组件 → 见 C-3」），不能写纯文字占位。两条合法路径：
+
+1. **可点击锚点**：`<a href="#scene-c" style="text-decoration:none;...">查看完整 → C ↗</a>`，骨架的 `fade-section` 已带 `id="scene-{x}"`
+2. **画全（迷你缩略）**：占位区画 2-3 行结构化预览（帖子标题 / 收益数字 / 战绩曲线），不是灰底 + 一行字
+
+**Why**：Felix 反馈：「这种详见 C-1，要么就搞个超链接一键点过去，要么就画全，不要偷懒。」纯文字占位让评审反复翻页，破坏故事流。
+
+**反例 vs 正例**：
+
+```html
+<!-- ❌ 死链 -->
+<div style="background:var(--dark2);padding:14px;color:var(--dark-text3);">
+  TAB 内容详见 C-1 / C-3
+</div>
+
+<!-- ✅ 缩略 + 锚点 -->
+<div style="background:var(--dark2);padding:8px;display:flex;flex-direction:column;gap:6px;">
+  <div style="background:var(--dark);padding:6px 8px;">缩略条目 1</div>
+  <div style="background:var(--dark);padding:6px 8px;">缩略条目 2</div>
+  <a href="#scene-c" style="font-size:9px;color:var(--blue);text-align:center;text-decoration:none;font-weight:700;">
+    查看完整 → C ↗
+  </a>
+</div>
+```
+
+**自检 grep**（出现以下纯文字模式即违规）：
+
+```bash
+grep -nE '详见 [A-Z]-[0-9]|→ 见 [A-Z]-[0-9]|详细交互 → 见' deliverables/imap-*.html
+```
+
+应为 0。所有跨 scene 引用必须是 `<a href="#scene-x">` 锚点。
 
 ---
 
@@ -486,10 +536,12 @@ generate_skeleton(project, legends, parts, output_path)
 
 > 通用条目（编号一致、脚本保存、FILL 残留、术语一致）见 pm-workflow.md，以下为本 Skill 专项：
 
-**新规范三条硬断言**（必须全过）：
+**新规范五条硬断言**（必须全过）：
 - [ ] **主场景粒度**：IMAP scene id 只是主场景（A/B/C 等），子场景（A-1/A-2）作为手机节点放在主场景内部；`grep -c 'phone-label'` ≥ 手机节点数
 - [ ] **anno overlay 合法性**：若使用，每个 `.anno-n` 编号必须在对应 ann-card 的 `.ann-num` 里有条目（1↔1, 2↔2）；孤立 anno 或配差量标签/文案的一律不合法
 - [ ] **零差量叙事**：`grep -cE 'ann-tag (new|chg|del)|V[0-9]+\.[0-9]+|>NEW<|>改动<|>变更<'` = 0（「新增」作为数据表字段值不计，仅禁标签和主体差量文案）
+- [ ] **anno-n 与 ann-num 字符样式一致**：两组 `grep` 输出字符集必须相同（详见规则 4）
+- [ ] **跨场景引用零死链**：`grep -nE '详见 [A-Z]-[0-9]\|→ 见 [A-Z]-[0-9]'` = 0；所有跨 scene 引用必须 `<a href="#scene-x">` 锚点（详见规则 5）
 
 **传统条目**：
 - [ ] 异常场景已覆盖
