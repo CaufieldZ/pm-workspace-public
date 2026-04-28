@@ -42,6 +42,9 @@ def generate_skeleton(project: dict, legends: list, parts: list, output_path: st
             "desc": str,        # 模块描述
             "theme": str,       # "frontend" | "admin" | "cross-end" | "custom"
             "dot_color": str,   # 侧导航圆点颜色变量名
+            "story": str,       # 必填 — 一句话用户故事陈述（≤ 30 字）
+                                # 例: "用户从 Feed 看见好友战绩，被吸引点进个人主页"
+                                # 技术骨架/数据流类 PART 可填 "—" 跳过
             "scenes": [{"id": str, "name": str, "trigger": str, "device": str}, ...],
             # scene.device: "phone" | "web"（默认 "phone"）— 决定 fill 生成的设备壳类型
             # custom theme only:
@@ -53,6 +56,8 @@ def generate_skeleton(project: dict, legends: list, parts: list, output_path: st
         }, ...]
         output_path: 输出文件路径
     """
+    _validate_part_stories(parts)
+
     css = _read_file('interaction-map.css')
     js = _read_file('interaction-map.js')
 
@@ -148,8 +153,27 @@ THEME_MAP = {
     'cross-end': 'gd cross',
 }
 
+def _validate_part_stories(parts):
+    """每个 PART 必须填 story 字段（pm-workflow.md「PART/章节用户故事陈述」强制）。
+    技术骨架/数据流类 PART 可填 '—' 显式跳过；缺字段直接报错，不静默放空。"""
+    missing = [p.get('id', '?') for p in parts if not p.get('story')]
+    if missing:
+        raise ValueError(
+            f'❌ 以下 PART 缺 story 字段（用户故事一句话，≤30 字）：{missing}\n'
+            '   pm-workflow.md「演讲叙事顺序」要求每个 PART 起头一句用户故事陈述。\n'
+            '   技术骨架/数据流 PART 可填 "—" 显式跳过。'
+        )
+
+
+def _story_html(story):
+    if not story or story == '—':
+        return ''
+    return f'<div class="part-story" style="font-size:14px;opacity:.7;margin-bottom:6px;font-weight:400;line-height:1.5;">{story}</div>\n    '
+
+
 def _part_divider(part):
     theme = part.get('theme', 'viewer')
+    story = _story_html(part.get('story', ''))
 
     if theme == 'custom':
         bg = part.get('bg', 'linear-gradient(135deg,#0B0E11,#161b22)')
@@ -160,7 +184,7 @@ def _part_divider(part):
 <div class="gd fade-section" id="{part["id"]}" style="background:{bg};color:{color};">
   <span class="gd-num" style="background:{num_bg};">{part["num"]}</span>
   <div>
-    <h2>{part["name"]}</h2>
+    {story}<h2>{part["name"]}</h2>
     <div class="gd-desc">{part.get("desc", "")}</div>
   </div>
 </div>
@@ -172,7 +196,7 @@ def _part_divider(part):
 <div class="{cls} fade-section" id="{part["id"]}">
   <span class="gd-num">{part["num"]}</span>
   <div>
-    <h2>{part["name"]}</h2>
+    {story}<h2>{part["name"]}</h2>
     <div class="gd-desc">{part.get("desc", "")}</div>
   </div>
 </div>

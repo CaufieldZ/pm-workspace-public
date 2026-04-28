@@ -85,7 +85,7 @@ grep -nE '决策\s*[0-9]+|[A-G]-[0-9]+\s*(/\s*[A-G]-[0-9]+)*' deliverables/ppt-*
 | 1 | 受众场景？（内部汇报 / 对外发布 / 分享会 / SOP 手册） | 语言风格 + 视觉浓度 |
 | 2 | 形态？（Doc 文档型 / Deck 演讲型 / 双形态） | 是否启用 Deck 模式 + chrome/foot 元数据 |
 | 3 | 时长 + 页数？（15 分钟 ≈ 10 页 / 30 分钟 ≈ 20 页 / SOP 不限） | 节奏密度 + Tab 数量 |
-| 4 | 主题色？（fintech-dark / ink-classic / 8 套选 1） | 见 `_shared/claude-design/themes/README.md` |
+| 4 | 主题色？（fintech-dark / ink-classic / paper-zen / 9 套选 1） | 见 `_shared/claude-design/themes/README.md` |
 | 5 | 硬约束？（必须含 X / 不能出现 Y / 给谁看） | 避免返工 |
 
 跳过条件（满足任一即跳过）：
@@ -96,12 +96,20 @@ grep -nE '决策\s*[0-9]+|[A-G]-[0-9]+\s*(/\s*[A-G]-[0-9]+)*' deliverables/ppt-*
 
 ### Step 1：读取参考文件
 
-**必读**（产出前加载）：
+> **核心原则**：Step 1 只加载 deck-grammar.md（语法骨架）；其余 references 在 Step 2 大纲确认后，按页面 layout / 组件类型 / 叙事模式按需 grep 局部段，**禁止全量 Read**。
+
+**必读**（产出前加载，~133 行）：
 - `references/deck-grammar.md` — 每页四层骨架 + 样式约定 + 视觉主角轮换规则
-- `references/components-cheatsheet.md` — 组件速查表
-- `references/page-layouts.md` — 10 种整页骨架（Hero Cover / Act Divider / Big Numbers / Pipeline 等）
-- `references/gold-snippets.md` — 满分产物片段库（叙事模式 + 结构骨架参考）
 - `.claude/skills/_shared/claude-design/anti-ai-slop.md` — 反 AI slop 六禁 + 字号 / 颜色 / 留白规范（只 grep 决策速查表部分，不全量 Read）
+
+**按需 grep**（Step 2 大纲确认后，按页面/组件类型针对性查，禁止全量 Read）：
+
+| 触发条件 | 查阅指令 |
+|---|---|
+| 排版骨架确定后（每页归属哪个 layout） | `grep -n "^## Layout" references/page-layouts.md` 先看清单，再 `grep -A 30 "Layout N — " references/page-layouts.md`（N 取 1-10，按 outline 决定的 layout 拉对应段） |
+| Step B 写填充函数前确定要用的组件 class | `grep -n "^### " references/components-cheatsheet.md` 先看清单，再 `grep -A 15 "^### \`\.cmp-table\`" references/components-cheatsheet.md`（按 class 拉局部）|
+| 想要叙事模板参考 | `grep -n "^## " references/gold-snippets.md` 看 8 种叙事模式清单，按页面定位选 1-2 种再 `grep -A 50 "^## N\."` |
+| 含架构图/流程图形状（云/数据库/服务/设备框等） | `grep -n "^## " references/shapes-toolkit.md` 看 10 种 shape 清单，按需 `grep -A 30 "^## N\."` |
 
 **执行类**（模型不读，脚本调用）：
 - `assets/ppt-template.html` — 骨架 CSS + JS，由 fill-template.js `open().read()` 自动拼接
@@ -189,8 +197,8 @@ used.forEach(c => console.log(c.padEnd(24), f.includes('.'+c+'{') || f.includes(
 **CSS 变量与字体引入纪律（弱模型易踩坑）**：
 
 1. **禁止手抄 `:root` 整块 token 定义**。所有 `--cd-*` 变量源头唯一：`.claude/skills/_shared/claude-design/tokens.css`。脚本里必须 `fs.readFileSync(tokens.css)` 拼进 CSS 模板，项目级扩展 token（如 `--cd-surface2` / `--cd-ok`）在 tokens.css 后再加一个小 `:root { ... }` 追加即可。手抄的代价：tokens.css 改字体 / 改色，产物不跟着变。
-2. **字体 `<link>` = 实际用到的字体**，不照搬 tokens.css 注释里那段完整 CDN URL。CJK PPT 最小集 = Noto Sans SC + Noto Serif SC + JetBrains Mono 三家。引 Source Serif 4 / Inter 但 CSS 里没用 = 白下载 ~60KB。
-3. **CJK 混排字体栈铁律**：`--cd-sans` / `--cd-serif` 中文字体必须排在英文字体前。tokens.css 默认值是英文优先的（历史原因），用的时候在追加的 `:root` 里覆盖成 `'Noto Sans SC','Inter',system-ui` 和 `'Noto Serif SC','Source Serif 4',Georgia,serif`。
+2. **字体 `<link>` = 实际用到的字体**，不照搬 tokens.css 注释里那段完整 CDN URL。CJK PPT 最小集 = Noto Sans SC + Noto Serif SC + JetBrains Mono 三家。引 Lora / Poppins 但 CSS 里没用 = 白下载 ~50KB。
+3. **CJK 混排字体栈铁律**：`--cd-sans` / `--cd-serif` 中文字体必须排在英文字体前。tokens.css 默认值已经是 CJK 优先（`'Noto Sans SC','Poppins',system-ui` 和 `'Noto Serif SC','Lora',Georgia,serif`）。Lora + Poppins 是 Anthropic 官方 brand-guidelines 钦定的免费字体，对标 claude.ai 实际用的 Tiempos + Styrene B。
 
 **使用 Skill 内置填充脚本**：
 

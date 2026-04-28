@@ -20,7 +20,7 @@
 >
 > Python 脚本同理用 `open(tokens_css_path).read()` 拼接。手抄的后果：tokens.css 改字体 / 改色，产物不跟着变，两处不一致。
 >
-> **字体 `<link>` 纪律**：tokens.css 顶部注释里的 CDN URL 是**完整字体清单**，不是模板。实际用到哪几种就只引哪几种。中文 PPT 最小集 = Noto Sans SC + Noto Serif SC + JetBrains Mono 三家，多引一个 Inter / Source Serif 4 白白多下载 ~60KB。
+> **字体 `<link>` 纪律**：tokens.css 顶部注释里的 CDN URL 是**完整字体清单**，不是模板。实际用到哪几种就只引哪几种。中文 PPT 最小集 = Noto Sans SC + Noto Serif SC + JetBrains Mono 三家，多引一个 Lora / Poppins 白白多下载 ~50KB。
 
 ---
 

@@ -57,7 +57,7 @@ function switchChip(el, prefix, tab) {
 // ── 设备切换（Web/App） ──
 function switchDevice(webId, appId, devBtns, idx) {
   devBtns.forEach((b, i) => {
-    b.style.background = i === idx ? '#2F6CF2' : 'transparent';
+    b.style.background = i === idx ? '#007FFF' : 'transparent';
     b.style.color = i === idx ? '#EAECEF' : '#5E6673';
   });
   document.getElementById(webId).style.display = idx === 0 ? 'block' : 'none';
@@ -101,7 +101,7 @@ function renderList() {
       + '<td>' + item.status + '</td>'
       + '<td>' + item.type + '</td>'
       + '<td>'
-      +   '<span onclick="openEdit(' + i + ')" style="cursor:pointer;color:#2F6CF2;">编辑</span> '
+      +   '<span onclick="openEdit(' + i + ')" style="cursor:pointer;color:#007FFF;">编辑</span> '
       +   '<span onclick="deleteItem(' + i + ')" style="cursor:pointer;color:#F53F3F;">删除</span>'
       + '</td>'
       + '</tr>';

@@ -60,7 +60,7 @@ PM-Workspace 是一套 **PM 产出物自动化工作台**，运行在 Claude Cod
 }
 ```
 
-**获取 Auth Token**：浏览器打开公司内部 AI Proxy 的 config 接口（需内网/VPN），返回 JSON 里的 `ANTHROPIC_AUTH_TOKEN` 复制粘贴。
+**获取 Auth Token + base_url**：找 AI Hub 管理员要 `ANTHROPIC_AUTH_TOKEN` 和内网 proxy 域名（替换上面的 `YOUR_AI_PROXY_DOMAIN`）。也可以浏览器打开公司内部 AI Proxy 的 config 接口（需内网/VPN），返回 JSON 里直接复制 token。
 
 **验证**：VSCode 终端里输入「你好」，Claude 回复了就成功。报 401 说明 token 不对。
 
@@ -91,8 +91,7 @@ cp .mcp.json.example .mcp.json
 | 服务 | 配置项 | 去哪拿 | 不配的后果 | 使用它的 Skill |
 |------|--------|--------|-----------|---------------|
 | **Confluence** | `CONF_TOKEN` | Wiki → 个人设置 → 个人访问令牌 → 创建 | 不能搜内部文档、PRD 无法推送 Wiki | prd, data-report, competitor-analysis |
-| **神策 Sensors** | `SA_API_KEY` + `SA_API_SECRET` | 找数据团队申请 | 不能查埋点数据、不能跑数据报告 | data-report |
-| | 还需改 `sensors.args` 路径 | 本地安装 SensorsMCPServer 后改成实际路径 | sensors MCP 启动失败 | data-report |
+| **神策 Sensors**（选装）| `SA_API_KEY` + `SA_API_SECRET` + `sensors.args` 路径 | 找数据团队要 key/secret 和 SensorsMCPServer 安装包，部署后把 `dist/index.js` 绝对路径填进 args | 不能查埋点、跑不了 data-report | data-report |
 | **Figma** | `FIGMA_API_KEY` | figma.com → Settings → Personal Access Tokens | 不能读设计稿 | 被动触发（用户给 Figma 链接时） |
 | **Firecrawl** | `FIRECRAWL_API_KEY` | [firecrawl.dev](https://firecrawl.dev) 注册 | 不能抓网页、竞品页面 | intel-collector, competitor-analysis |
 
@@ -208,7 +207,8 @@ mkdir -p projects/your-project/{screenshots,inputs,deliverables/archive}
 | `/出架构图 {项目名}` | 生成系统架构图（HTML） | 有 scene-list.md |
 | `/自检` | 跑全局一致性检查 | 无 |
 | `/出测试用例 {项目名}` | 生成 QA 测试用例 | 有 PRD |
-| `/截竞品 {平台}` | 抓竞品页面截图 | Firecrawl 已配 |
+
+> 触发 skill 不一定要打斜杠命令，自然语言也行。比如「截一下币安活动中心」会触发 intel-collector，「整理下昨天会议纪要」会触发 meeting-autopilot。
 
 ---
 
@@ -241,25 +241,25 @@ pm-workspace/
 │   │   ├── pm-workflow.md     ← PM 方法论（链路/编号/质量约束）
 │   │   └── soul.md            ← 你的个人偏好（需自建）
 │   ├── skills/                ← 19 个 Skill 定义
-│   │   ├── interaction-map/   ← 交互大图
-│   │   ├── prototype/         ← 原型
-│   │   ├── prd/               ← PRD
-│   │   ├── architecture-diagrams/ ← 架构图
-│   │   ├── scene-list/        ← 场景清单
-│   │   ├── requirement-framework/ ← 需求框架
-│   │   ├── competitor-analysis/   ← 竞品分析
-│   │   ├── intel-collector/       ← 竞品截图采集
-│   │   ├── data-report/           ← 数据报告
-│   │   ├── meeting-autopilot/     ← 会议录音/纪要
-│   │   ├── test-cases/            ← 测试用例
-│   │   ├── behavior-spec/         ← 行为规格（给研发 AI）
-│   │   ├── page-structure/        ← 页面结构（给设计 AI）
-│   │   ├── cross-check/           ← 产出物一致性校验
-│   │   ├── workspace-audit/       ← 全局诊断
-│   │   ├── ppt/                   ← 多 Tab 信息文档
-│   │   ├── docx/                  ← Word 文档操作
-│   │   ├── pdf-tools/             ← PDF 工具
-│   │   └── skill-creator/         ← 创建新 Skill
+│   │   ├── interaction-map/        ← 交互大图
+│   │   ├── prototype/              ← 原型
+│   │   ├── prd/                    ← PRD
+│   │   ├── architecture-diagrams/  ← 架构图
+│   │   ├── flowchart/              ← 流程图 / 泳道图
+│   │   ├── scene-list/             ← 场景清单
+│   │   ├── requirement-framework/  ← 需求框架
+│   │   ├── competitor-analysis/    ← 竞品分析
+│   │   ├── intel-collector/        ← 竞品截图采集
+│   │   ├── data-report/            ← 数据报告
+│   │   ├── meeting-autopilot/      ← 会议录音 / 纪要
+│   │   ├── test-cases/             ← 测试用例
+│   │   ├── behavior-spec/          ← 行为规格（给研发 AI）
+│   │   ├── page-structure/         ← 页面结构（给设计 AI）
+│   │   ├── cross-check/            ← 产出物一致性校验
+│   │   ├── workspace-audit/        ← 全局诊断
+│   │   ├── ppt/                    ← 多 Tab 信息文档
+│   │   ├── pdf-tools/              ← PDF 工具
+│   │   └── skill-creator/          ← 创建新 Skill
 │   ├── commands/              ← 快捷命令
 │   ├── chat-templates/        ← context.md 模板 + HTML 产出物模板
 │   └── settings.json          ← 项目级权限设置
@@ -282,7 +282,54 @@ pm-workspace/
 
 ---
 
-## 八、问题排查
+## 八、脚本速查
+
+`scripts/` 下共 17 个脚本，按用途分四组。**Claude Code 大部分场景会自动调用**，下表给人和模型一份参考。
+
+### 8.1 外部数据源（拉 wiki / 闪记 / Figma）
+
+| 脚本 | 作用 | 典型用法 |
+|------|------|---------|
+| `pull_meeting_notes.py` | 拉钉钉闪记结构化纪要到 `inputs/`，默认剥离转写原文 | `python3 scripts/pull_meeting_notes.py "关键词" -p 项目名` |
+| `fetch_confluence.py` | 拉 Confluence/Wiki 页面（直调 REST，不需要加载 MCP） | `python3 scripts/fetch_confluence.py <url> -p 项目名` |
+| `md_to_confluence.py` | md 推到 Wiki，新建或覆盖 | `python3 scripts/md_to_confluence.py <md> --parent-id <id>` 或 `--update-id <id>` |
+| `fetch_figma.py` | 拉 Figma 节点结构 / 下载截图（省 ~15K token MCP 开销） | `python3 scripts/fetch_figma.py <url> --image -p 项目名` |
+| `call_mcp.py` | 兜底直调任何 MCP server，关掉也能用 | `python3 scripts/call_mcp.py call <server> <tool> '{}'` |
+| `toggle-mcp.sh` | 启停 MCP server（默认全关，省 token） | `./scripts/toggle-mcp.sh on figma` / `off figma` / `status` |
+
+### 8.2 项目状态管理
+
+| 脚本 | 作用 | 典型用法 |
+|------|------|---------|
+| `read_context_section.py` | context.md > 300 行时按章节读，避免全量加载 | `python3 scripts/read_context_section.py 项目名 --toc` 或 `--sections "场景编号,业务规则"` |
+| `impact-check.sh` | 对比 scene-list.md 和 deliverables/ 找过期产出 | `bash scripts/impact-check.sh 项目名` |
+| `version-bump.sh` | 自动归档旧版 + 改名 + 更新内部版本号 + 写 context.md | `bash scripts/version-bump.sh 项目名` |
+
+### 8.3 产出物质量
+
+| 脚本 | 作用 | 典型用法 |
+|------|------|---------|
+| `check_html.sh` | HTML 产出物全量自检（编号/组件/字体/术语） | `bash scripts/check_html.sh <html> <scene-list> imap` 或 `proto` |
+| `with_server.py` | 托管 dev server 生命周期跑 Playwright 自动化 | `python3 scripts/with_server.py --server "npm run dev" --port 5173 -- python3 test.py` |
+| `check_cjk_punct.py` | 扫文档里 CJK 旁的半角标点违规（PostToolUse hook 自动调） | `python3 scripts/check_cjk_punct.py <file>` |
+| `fix_cjk_punct.py` | 自动把半角标点改全角（保护代码块/URL/比例写法） | `python3 scripts/fix_cjk_punct.py <file>` 或 `--dry-run` 预览 |
+
+### 8.4 内部模块（无需手动调用）
+
+| 脚本 | 作用 |
+|------|------|
+| `audit-fast.sh` | PostToolUse hook 自动跑，写完产出物即时校验 |
+| `fill_utils.py` | 填充脚本 import 模块（`from fill_utils import fill_block, run_fill`） |
+| `inject-canary.sh` | 版权 canary token 注入，作者维护用，同事不用动 |
+| `lib/` | Python 共享模块（`confluence.py` REST 封装、`html_builder.py` CSS 拼接、`html_patcher.py` HTML patch 基类） |
+
+### 8.5 各 Skill 自带脚本
+
+每个 Skill 在 `.claude/skills/{skill}/scripts/` 下还有专属脚本（如 `prd/scripts/push_to_confluence_base.py`、`data-report/scripts/fetch_weekly_sensors.py`）。具体调用方式看对应 SKILL.md 的 frontmatter `scripts` 字段。
+
+---
+
+## 九、问题排查
 
 | 现象 | 原因 | 解决 |
 |------|------|------|

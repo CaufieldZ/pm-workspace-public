@@ -28,13 +28,13 @@
 已存在的项目直接读 `context.md`；缺素材时要求用户提供（截图/会议纪要/口述均可）。
 
 【会议纪要自动处理】
-触发：用户说「会议纪要」「meeting notes」或丢 PDF/文本说「这是今天的纪要」。不确定哪个项目先问。自动完成：
+触发：「会议纪要」「meeting notes」或丢 PDF/文本说是纪要。不确定哪个项目先问。
 
-1. 提取内容（PDF 走 §10.1 流程）存入 `inputs/meeting-YYYY-MM-DD.md`
-2. 决策结论追加第 7 章，变更追加第 9 章（动态章按日期追加，不改不删）
-3. **回写静态章**：逐条检查第 7 章新增决策，凡是改变架构/规则/术语/角色/场景的，必须同步更新第 2/3/4/5/6 章
-4. 影响分析：涉及已有产出物（改编号/术语/加场景/砍功能）时，主动告知影响范围
-5. **PRD 1.3 收敛提示**（PRD 已交付时必做）：本次会议决策中，是否存在改变 vs 线上基线 delta 的项（新增功能 / 砍功能 / 改核心规则）？若有，列出清单并提示用户：「这些决策需要收敛进 PRD 1.3 变更范围，是否现在更新 docx？」用户确认后才动 docx，不自动改。⚠️ 讨论流水（方案细节多轮调整）不提示——只提示影响最终「线上→终稿 delta」的决策
+1. 拉取/提取存 `inputs/meeting-YYYY-MM-DD.md`（meeting-autopilot skill 承接拉取流程）
+2. 决策追加第 7 章、变更追加第 9 章（动态章按日期追加，不改不删）
+3. **回写静态章**：第 7 章新增决策中改架构 / 规则 / 术语 / 角色 / 场景的，必须同步更新第 2/3/4/5/6 章
+4. **影响分析**：决策涉及已有产出物（改编号 / 术语 / 加场景 / 砍功能）时主动告知影响范围
+5. **PRD 1.3 收敛提示**（PRD 已交付时必做）：本次决策含改 vs 线上基线 delta 项（新增 / 砍 / 改核心规则）时，列出清单问「需要收敛进 PRD 1.3 变更范围,是否更新 docx？」用户确认才动。讨论流水（方案细节多轮调整）不提示。
 
 【Skill 读取规则】
 执行链路中任何一步产出前，**必须先读取**对应 skill 的 SKILL.md 和 references/ 下所有 .md 参考文件，严格按照 skill 中定义的步骤、模板、组件库、样式规范执行。禁止跳过 skill 凭自身理解直接产出。
@@ -92,14 +92,11 @@ context.md 新增或删除场景时，必须同步更新 scene-list.md，并在 
 【70% 先行】产出物先出 70% 版本确认方向，再补细节。大返工成本远高于两轮迭代。
 
 【人读产出物讲人话（强制）】
-**适用**：PRD、PPT / SOP 手册、数据周报、会议纪要（读者是研发 / 运营 / leader / 评审）。
-**不适用**：bspec / pspec / scene-list / context.md / requirement-framework / 交互大图 / 原型（AI 消费或 PM 自用，编号是契约）。
+适用：PRD / PPT / SOP / 数据周报 / 会议纪要 / 交互大图 / 原型 / 架构图 / 流程图。不适用：bspec / pspec / scene-list / context.md / requirement-framework。
 
-正文禁用「不查 context.md / scene-list 就看不懂」的 PM 内部代号：决策 N、context 条目编号、bug / CR 单号、场景编号 A-N / B-N / M-N（正文里一律换成业务白话；scene_table 左列 anchor 标题保留 `B-1 · 我看自己的个人主页` 这种形式）。
+原则：编号在锚点（scene_table 左列、IMAP `.st h2` / `.phone-label`、跨 skill id）保留 `B-1 · 业务白话` 格式；正文（PRD 段落、`.flow-note` / `.ann-text` / PPT 正文）禁裸 `A-1 / B-2 / 决策 N`，一律业务白话。判定：抽段给研发看要回查文档才懂 = 违规。
 
-判断准则：单独抽这段给研发 / 运营 / leader 看，要回查项目文档才能懂 = 违规；直接读懂 = 合格。例：`决策 1：订阅未来付费` → `订阅功能未来可能付费（本期免费）`。
-
-人读 skill 自检脚本必须扫此规则；违反即 fail（PRD `check_prd.sh` 已加，PPT / data-report 同步配置）。
+各 skill 自检脚本兜底（`check_prd.sh` / `check_imap.sh` 已加，PPT / data-report 同步配置）。
 
 【PM 职责边界】新 Skill 候选和走查范围严格限定在 PM 自己要做的事：
 - PM 侧的「走查」只做**功能/流程/业务规则**走查，不做样式还原（那是 UI/设计的事）
@@ -110,36 +107,12 @@ context.md 新增或删除场景时，必须同步更新 scene-list.md，并在 
 ### 批量变更与 cross-check
 
 【批量变更流程（强制）】
-当一次变更涉及 ≥ 2 个产出物文件时（如改场景、改术语、改业务规则、删功能），必须按以下流程执行：
+触发：变更涉及 ≥ 2 文件且影响跨文件一致性（删/新增场景、改术语/编号、改业务规则、升版、改流程节点）。单文件文案修改不触发。
 
-1. **变更清单**：改动前先列出所有受影响的文件 + 具体改动点（表格形式），给用户确认
-2. **影响检测**：`bash scripts/impact-check.sh {项目名}` 确认场景编号覆盖状态
-3. **逐文件执行**：按 pipeline 顺序改（context.md → scene-list → 需求框架 → 交互大图 → 原型 → PRD → bspec/pspec）
-4. **收尾 cross-check（强制）**：全部文件改完后，必须执行：
-   - `bash scripts/impact-check.sh {项目名}` 确认场景编号无遗漏
-   - `grep` 旧术语/旧编号确认无残留（如删掉的功能名、旧版本号、旧技术栈名）
-   - `grep` 新术语确认全部文件已同步
-   - 对照变更清单逐项勾销
-5. **不通过则修复后再交付**，禁止跳过 cross-check 直接说"改完了"
-
-触发条件（满足任一即为批量变更）：
-- 删除/新增场景
-- 改术语或编号
-- 改业务规则（如新增白名单、改频控参数）
-- 升版（V2.2→V2.3 等）
-- 改流程节点（如砍掉某功能、合并步骤）
-
-不触发：单文件内的文案/样式修改、不涉及跨文件一致性的改动。
+流程：① 列变更清单给用户确认 → ② `bash scripts/impact-check.sh {项目名}` 测覆盖 → ③ 按 pipeline 顺序改（context → scene-list → 需求框架 → imap → 原型 → PRD → bspec/pspec）→ ④ 收尾 cross-check（再跑 impact-check + grep 旧术语/编号无残留 + grep 新术语已同步）→ ⑤ 不通过则修复后再交付，禁止跳过。
 
 【版本管理与升级流程】
-- 方案变更/评审结构性改动 → 升版（v1→v2）；小修（错别字/对齐/补漏）→ 不升版，直接覆盖
-- 变更记录在产出物内部体现（PRD 1.3 变更范围、交互大图标注 `（变更）`），同时在 context.md 末尾追加一行
-- 升版时执行 `bash scripts/version-bump.sh {项目名}` 自动完成：
-  1. 旧版文件移入 `deliverables/archive/`，根目录只放最新版
-  2. 新版文件改名（V{N}→V{N+1}）
-  3. 文件内部 title/header 版本号替换
-  4. context.md 已交付产出物表更新
-- 手动升版时也必须完成以上 4 步，禁止只改文件名不改内部版本号
+方案变更/评审结构性改动 → 升版（`bash scripts/version-bump.sh {项目名}` 自动完成归档/改名/内部版本号/context.md 更新）。小修 → 不升版直接覆盖。变更记录在产出物内部体现（PRD 1.3 章、imap `（变更）` 标注）+ context.md 末尾追加一行。
 
 ### 大文件生成与文档同步
 
@@ -169,23 +142,11 @@ PPT/SOP 手册类产出物按「每页一个源文件 + orchestrator」拆分，
 
 ### 演讲叙事顺序（所有 pipeline Skill 强制）
 
-所有 pipeline 产出物（scene-list / interaction-map / prototype / PRD / bspec）的 PART / Scene / 章节顺序**必须按演讲叙事逻辑组织**，不得按"页面归属"或"功能模块"机械堆砌。
+所有 pipeline 产出物（scene-list / imap / prototype / PRD / bspec）的 PART / Scene / 章节顺序按**演讲叙事逻辑**组织，不按"页面归属/功能模块"机械堆砌。判定：当幻灯片讲一遍，听众听到的顺序是什么，章节就那么排。
 
-**判定标准**：把产出物当幻灯片讲一遍，听众听到的顺序是什么，章节就按那个顺序排。
+设计前先写一句「这个产出物讲的故事是 X → Y → Z」，再排序。常见叙事骨架：触达型 = 入口 → 落点 → 转化 → 留存 → 异常；配置型 = 列表 → 创建 → 配置 → 审核 → 监控；闭环型 = 发起方 → 跨团队衔接 → 接收方 → 反向回流；个人空间型 = 入口 → 核心承载 → 关键转化 → 自管理 → 资源位。
 
-**常见叙事骨架**（按场景挑一种）：
-
-| 场景类型 | 叙事骨架 |
-|---------|---------|
-| 触达型功能（推荐 / 增长） | 入口 → 落点 → 转化 → 留存 → 异常 |
-| 配置型功能（CMS / 后台） | 列表/概览 → 创建 → 配置 → 审核 → 监控 |
-| 闭环型功能（带打通 / 跨团队） | 发起方 → 跨团队衔接 → 接收方 → 反向回流 |
-| 个人空间型 | 入口（怎么进来）→ 核心承载（页面骨架）→ 关键转化 → 自己管理 → 资源位 |
-
-**反例**（按归属分组，违规）：主页 → 设置/分享 → Feed → 订阅 → Banner
-**正例**（按演讲叙事）：Feed 入口 → 个人主页核心 → 订阅闭环 → 自己管理 → 资源位
-
-设计 PART / 章节结构时，先写一句「这个产出物讲的故事是 X → Y → Z」，再按这条主线排序，不允许"按目录结构 / scene-list 字母顺序"直接搬。
+**PART / 章节用户故事陈述（IMAP + PRD 强制）**：每个 PART（IMAP）/ 一级功能章（PRD 第 3 章+）起头必须有一句用户故事（≤ 30 字，讲谁、做什么、为什么）。技术骨架章免。骨架脚本 `story` 字段缺则报错（imap `gen_imap_skeleton._validate_part_stories`，prd `chapter_story()`）。
 
 ### 逻辑拼图（方案变更自动推演）
 
@@ -208,13 +169,9 @@ PPT/SOP 手册类产出物按「每页一个源文件 + orchestrator」拆分，
 - 术语是否和 context.md 第 5 章一致
 不通过则停下来修正后再继续，不要填完全部再回头改。
 
-### commit 规范
+### commit 规范 + 防腐 hook
 
-前缀：`feat:` 新功能 / `fix:` 修复 / `refactor:` 重构不改功能 / `docs:` 文档 / `chore:` 配置杂务
-
-### 防腐化 hook
-
-`.githooks/pre-commit` 在 Skill/规则文件变更时自动跑 `audit.sh`，不通过则拦截 commit。激活：`git config core.hooksPath .githooks`。禁止 `--no-verify` 绕过。
+commit 前缀：`feat / fix / refactor / docs / chore`。`.githooks/pre-commit` 在 Skill / 规则文件变更时自动跑 `audit.sh`，不通过则拦截。禁止 `--no-verify` 绕过。激活一次：`git config core.hooksPath .githooks`。
 
 ### HTML 分步生成通用规则
 
@@ -250,7 +207,7 @@ PPT/SOP 手册类产出物按「每页一个源文件 + orchestrator」拆分，
   - 纯英文 display heading：1.05 – 1.1
   - 含 CJK 的 display heading（中文产出物 99% 情况）：1.25 – 1.35
   - 正文 / 段落：1.6 – 1.8
-- 颜色：最多 1 主 + 1 辅 + 1 强调 + 灰阶，禁凭空调色；Claude Design 系用 `--cd-accent: #2F6CF2`
+- 颜色：最多 1 主 + 1 辅 + 1 强调 + 灰阶，禁凭空调色；Claude Design 系用 `--cd-accent: #D97757`（Anthropic terra cotta）
 - 留白 ≥ 40% 总面积；间距只用 8pt 网格（8 / 16 / 24 / 32 / 48 / 64px）
 - 字体栈见 §三 设备规范（CJK 优先铁律）。实际用到哪种才在 `<link>` 里引，不照抄完整 CDN URL
 - CSS 变量源头唯一：生成脚本里必须 `fs.readFileSync('.claude/skills/_shared/claude-design/tokens.css')` 拼进 CSS 模板；**禁止手抄 `:root { --cd-bg:... }` 整块定义**。项目级扩展 token（如 `--cd-surface2` / `--cd-ok`）在 tokens.css 后追加一个小 `:root {}` 块即可
@@ -365,16 +322,16 @@ PPT/SOP 手册类产出物按「每页一个源文件 + orchestrator」拆分，
 - App 壳：375×812px，border-radius: 44px，深色底（iPhone 15 Pro 精细数值详见 `prototype.css`：Dynamic Island 124×36、状态栏 54、Home Indicator 140×5、圆角 48）
 - 弹窗：全屏遮罩 + 居中卡片，遮罩点击 / ✕ 均可关闭
 
-**字体（全 skill 统一一套，视觉系别只在配色）**：
-- 正文 sans：`'Noto Sans SC','Inter',system-ui,sans-serif`
-- display serif：`'Noto Serif SC','Source Serif 4',Georgia,serif`（hero 标题 / 卡片大标题）
+**字体（全 skill 统一一套，对标 Anthropic 官方 brand-guidelines + claude.ai chat UI 实测）**：
+- 正文 sans：`'Noto Sans SC','Poppins',system-ui,sans-serif`（Poppins 是 Anthropic 官方 brand-guidelines 钦定的 heading 字体，对标 claude.ai 实际用的付费 Styrene B）
+- display serif：`'Noto Serif SC','Lora',Georgia,serif`（Lora 是 Anthropic 官方 brand-guidelines 钦定的 body 字体，对标 claude.ai 实际用的付费 Tiempos / Copernicus，hero 标题 / 卡片大标题）
 - 等宽：`'JetBrains Mono','SF Mono',ui-monospace,monospace`
 - CJK 优先铁律：任何字体栈，中文字体必须排在英文字体前
-- Google Fonts 统一 @import：`Noto+Serif+SC:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500;700;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Inter:wght@100;200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500`
+- Google Fonts 统一 @import：`Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@300;400;500;600;900&family=Lora:ital,wght@0,400..700;1,400..700&family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700`
 
 **配色分类**（设计意图，非冲突）：
 - 前台 App / 交易所视觉（交互大图、移动端原型）：深色系（`--bg: #0B0E11`，涨绿 `#0ECB81`，跌红 `#F6465D`，**金融语义**）
-- Claude Design 系（ppt / flowchart / architecture-diagrams / Web 后台 / 方案文档）：纯黑 `#000` + 4 级透明白 + `--cd-accent #2F6CF2`（HTX fintech 蓝），token 定义见 `.claude/skills/_shared/claude-design/tokens.css`
+- Claude Design 系（ppt / flowchart / architecture-diagrams / Web 后台 / 方案文档 / SOP）：claude.ai chat UI 同款暖近黑 `#1F1F1E` + 暖灰白文字 `#C3C2B7` + Anthropic 官方 terra cotta `--cd-accent: #D97757`（次 accent 蓝 `#6A9BCC` / 三 accent 绿 `#788C5D`，按多 track 对比时循环用），token 定义见 `.claude/skills/_shared/claude-design/tokens.css`。营销级高对比场景切 `.theme-cd-brand` 拿官方品牌色 `#141413` / `#FAF9F5`
 - 语义色（跨主题通用，单独使用不构成主题）：成功 `#00B42A` / 失败 `#F53F3F`（Arco Design，用于状态标「已上线/下线」、审批节点「通过/拒绝」、必填星号、删除按钮）
 - 各 skill ref CSS 按定位选主题，语义色作为附加层叠加，不需要整套色板统一
 

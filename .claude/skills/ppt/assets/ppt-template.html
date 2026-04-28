@@ -6,47 +6,48 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>__TITLE__</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@300;400;500;600;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Inter:wght@100;200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@300;400;500;600;900&family=Lora:ital,wght@0,400..700;1,400..700&family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* Claude Design 深色 + HTX 蓝 accent ── 覆盖 GitHub 系 token */
+/* Claude Design · claude.ai chat UI 同款 (#1F1F1E) + Anthropic terra cotta accent */
 :root {
-  /* ── 背景层次 ── */
-  --bg:     #000000;
-  --bg2:    #0a0a0a;
-  --surface: rgba(255,255,255,0.04);
-  --surface2: rgba(255,255,255,0.07);
-  --surface3: rgba(255,255,255,0.10);
+  /* ── 背景层次（claude.ai chat UI 暖近黑 + 微亮一档）── */
+  --bg:     #1F1F1E;
+  --bg2:    #18181A;
+  --surface: rgba(195,194,183,0.04);
+  --surface2: rgba(195,194,183,0.07);
+  --surface3: rgba(195,194,183,0.10);
   /* ── 边框 ── */
-  --border:  rgba(255,255,255,0.12);
-  --border2: rgba(255,255,255,0.07);
-  /* ── 文字层次 ── */
-  --t1: #FFFFFF;
-  --t2: rgba(255,255,255,0.82);
-  --t3: rgba(255,255,255,0.58);
-  --t4: rgba(255,255,255,0.28);
-  /* ── 功能色（HTX 蓝 accent 替换 GitHub 蓝）── */
-  --blue:   #2F6CF2;
-  --blue2:  #1F54D6;
-  --blue-bg: rgba(47,108,242,0.10);
-  --brand:  #2F6CF2;
-  --green:  #0ECB81;
-  --green2: #09A86A;
-  --green-bg: rgba(14,203,129,0.08);
+  --border:  rgba(195,194,183,0.12);
+  --border2: rgba(195,194,183,0.07);
+  /* ── 文字层次（claude.ai chat UI 暖灰白）── */
+  --t1: #C3C2B7;
+  --t2: rgba(195,194,183,0.82);
+  --t3: rgba(195,194,183,0.58);
+  --t4: rgba(195,194,183,0.28);
+  /* ── 品牌 accent（Anthropic terra cotta，--blue 名字保留是历史 alias，值已切换为品牌橙） ── */
+  --blue:   #D97757;
+  --blue2:  #B45A3D;
+  --blue-bg: rgba(217,119,87,0.10);
+  --brand:  #D97757;
+  /* ── 多色 chart palette（按需用于多 track 对比，跟品牌 accent 解耦）── */
+  --green:  #788C5D;
+  --green2: #5F7048;
+  --green-bg: rgba(120,140,93,0.10);
   --orange: #D29922;
-  --orange-bg: rgba(210,153,34,0.08);
-  --purple: #a78bfa;
-  --purple-bg: rgba(167,139,250,0.08);
+  --orange-bg: rgba(210,153,34,0.10);
+  --purple: #6A9BCC;
+  --purple-bg: rgba(106,155,204,0.10);
   --red:    #F6465D;
   --red-bg: rgba(246,70,93,0.08);
   --pink:   #f778ba;
   --pink-bg: rgba(247,120,186,0.08);
-  /* ── 字体 ── */
+  /* ── 字体（Anthropic 官方 brand-guidelines 同款 Poppins/Lora + CJK Noto SC）── */
   --font-serif-cn: "Noto Serif SC", "Source Han Serif SC", serif;
-  --font-serif-en: "Source Serif 4", Georgia, serif;
+  --font-serif-en: "Lora", Georgia, serif;
   --font-mono:     "JetBrains Mono", "SF Mono", ui-monospace, monospace;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Noto Sans SC','Inter',system-ui,sans-serif;background:var(--bg);color:var(--t1);height:100vh;overflow:hidden;display:flex;-webkit-font-smoothing:antialiased;}
+body{font-family:'Noto Sans SC','Poppins',system-ui,sans-serif;background:var(--bg);color:var(--t1);height:100vh;overflow:hidden;display:flex;-webkit-font-smoothing:antialiased;}
 
 /* ===== SIDEBAR ===== */
 .sidebar{width:240px;background:var(--bg2);border-right:1px solid var(--border2);display:flex;flex-direction:column;flex-shrink:0;height:100vh;overflow:hidden;}

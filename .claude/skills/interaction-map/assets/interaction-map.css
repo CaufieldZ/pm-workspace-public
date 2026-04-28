@@ -16,17 +16,17 @@
   --border: #E2E6EB;
 
   /* 功能色（按需修改色值，但保留变量名） */
-  --blue: #2979FF;      /* 布局/主操作 */
-  --green: #0ECB81;     /* 新增/正向 */
-  --red: #F6465D;       /* 重要/策略 */
+  --blue: #007FFF;      /* HTX 品牌色 — 布局/主操作 */
+  --green: #0ECB81;     /* 新增/正向（涨绿，跨主题语义色）*/
+  --red: #F6465D;       /* 重要/策略（跌红，跨主题语义色）*/
   --purple: #8b5cf6;    /* Web端 */
   --amber: #d97706;     /* 流程/链路 */
   --gold: #FFD740;      /* 打赏/特殊 */
 
-  /* 深色主题（Phone Mockup 用） */
-  --dark: #0B0E11;
-  --dark2: #1B1D22;
-  --dark3: #2B2F36;
+  /* 深色主题（Phone Mockup 用，对照 Binance APP 实测暖近黑）*/
+  --dark: #181A20;
+  --dark2: #1E2329;
+  --dark3: #2B3139;
   --dark-text: #EAECEF;
   --dark-text2: #848E9C;
   --dark-text3: #5E6673;
@@ -78,7 +78,7 @@ body {
   border-left: 3px solid transparent;
 }
 .side-nav a:hover, .side-nav a.active {
-  color: var(--blue); background: rgba(41,121,255,.06);
+  color: var(--blue); background: rgba(0,127,255,.06);
   border-left-color: var(--blue);
 }
 .side-nav a .dot {
@@ -141,7 +141,7 @@ body {
 }
 /* anti-ai-slop 禁 3：去 border-left accent，统一全边 hairline + .gd-num 彩色徽章区分角色 */
 .gd.viewer  { background: var(--bg2); color: var(--text); border: 1px solid rgba(0,0,0,0.06); }
-.gd.host    { background: var(--bg2); color: var(--text); border: 1px solid rgba(47,108,242,0.18); }
+.gd.host    { background: var(--bg2); color: var(--text); border: 1px solid rgba(0,127,255,0.18); }
 .gd.cross   { background: var(--bg2); color: var(--text); border: 1px solid rgba(14,203,129,0.18); }
 .gd:first-child { margin-top: 0; }
 .gd .gd-num {
@@ -150,7 +150,7 @@ body {
   font-family: 'JetBrains Mono','SF Mono',ui-monospace,monospace;
 }
 .gd.viewer .gd-num { background: rgba(0,0,0,.06); color: var(--text); }
-.gd.host .gd-num   { background: rgba(47,108,242,.08); color: var(--blue); }
+.gd.host .gd-num   { background: rgba(0,127,255,.08); color: var(--blue); }
 .gd.cross .gd-num  { background: rgba(14,203,129,.08); color: var(--green); }
 .gd h2 { font-size: 18px; font-weight: 900; letter-spacing: -.3px; }
 .gd .gd-desc { font-size: 12px; opacity: .65; margin-top: 3px; }
@@ -323,7 +323,7 @@ body {
 .ph-scard-float {
   position: absolute; bottom: 8px; right: 8px;
   width: 140px; background: rgba(11,14,17,.92);
-  border: 1.5px solid rgba(41,121,255,.25);
+  border: 1.5px solid rgba(0,127,255,.25);
   border-radius: 10px; padding: 8px 10px;
   font-size: 10px; color: var(--dark-text);
   z-index: 5; backdrop-filter: blur(12px);
@@ -503,7 +503,7 @@ body {
   font-size: 13px; line-height: 1.7;
   border: 1px solid; margin-top: 24px;
 }
-.co.bl { border-color: rgba(47,108,242,0.20); background: #eff6ff; color: #1e40af; }
+.co.bl { border-color: rgba(0,127,255,0.20); background: #eff6ff; color: #1e40af; }
 .co.gn { border-color: rgba(34,197,94,0.20); background: #f0fdf4; color: #166534; }
 .co.am { border-color: rgba(245,158,11,0.20); background: #fffbeb; color: #92400e; }
 
@@ -535,36 +535,36 @@ body {
    维护：只改此 block，Binance 默认不动
    ════════════════════════════════════════════════════════════════════════ */
 .theme-cd {
-  /* ── 色板覆盖 ── */
-  --bg:    #000000;
-  --bg2:   #0a0a0a;
+  /* ── 色板覆盖（claude.ai chat UI 实测 + Anthropic 官方 brand-guidelines）── */
+  --bg:    #1F1F1E;
+  --bg2:   #2A2A29;
   --surface: rgba(255,255,255,0.04);
-  --text:  #FFFFFF;
-  --text2: rgba(255,255,255,0.82);
-  --text3: rgba(255,255,255,0.58);
-  --border: rgba(255,255,255,0.12);
-  --blue:  #2F6CF2;
-  --dark:  #000000;
+  --text:  #C3C2B7;
+  --text2: rgba(195,194,183,0.82);
+  --text3: rgba(195,194,183,0.58);
+  --border: rgba(195,194,183,0.12);
+  --blue:  #D97757;       /* terra cotta（键名保留兼容下游）*/
+  --dark:  #1F1F1E;
   --dark2: rgba(255,255,255,0.04);
   --dark3: rgba(255,255,255,0.08);
-  --dark-text:  rgba(255,255,255,0.82);
-  --dark-text2: rgba(255,255,255,0.58);
-  --dark-text3: rgba(255,255,255,0.28);
+  --dark-text:  rgba(195,194,183,0.82);
+  --dark-text2: rgba(195,194,183,0.58);
+  --dark-text3: rgba(195,194,183,0.28);
 }
 
-/* 背景 + 文字基础 */
+/* 背景 + 文字基础（CJK-first sans，对标 claude.ai chat UI）*/
 .theme-cd body,
 body.theme-cd {
-  background: #000000;
-  color: rgba(255,255,255,0.82);
-  font-family: "Noto Serif SC", "Noto Sans SC", system-ui, sans-serif;
+  background: #1F1F1E;
+  color: rgba(195,194,183,0.82);
+  font-family: "Noto Sans SC", "Poppins", system-ui, -apple-system, sans-serif;
 }
 
-/* 场景标题衬线化 */
+/* 场景标题衬线化（display heading 走 Lora + Noto Serif SC）*/
 .theme-cd .st,
 .theme-cd .scene-title,
 .theme-cd .part-title {
-  font-family: "Noto Serif SC", serif;
+  font-family: "Noto Serif SC", "Lora", Georgia, serif;
   font-weight: 900;
 }
 
@@ -575,15 +575,15 @@ body.theme-cd {
   font-size: 11px;
   letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: #2F6CF2;
+  color: #D97757;
 }
 
-/* 顶部进度条（Binance 彩虹渐变 → Claude Design 蓝）*/
+/* 顶部进度条（Binance 彩虹渐变 → Anthropic terra cotta）*/
 .theme-cd .progress-bar {
-  background: #2F6CF2;
+  background: #D97757;
 }
 
 /* 侧导航悬停 */
 .theme-cd .side-dot.active {
-  background: #2F6CF2;
+  background: #D97757;
 }

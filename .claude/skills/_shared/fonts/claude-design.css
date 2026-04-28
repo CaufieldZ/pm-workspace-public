@@ -3,22 +3,23 @@
  * 消费方：所有引入 Claude Design 美学的 skill（CSS @import 或 HTML <link>）
  *
  * 字体三分工（与 anti-ai-slop.md 字体规范对齐）：
- * - 标题 / 章节 / 重点金句 → 衬线层
- *     Noto Serif SC:    300;400;500;600;900（中文衬线主角）
- *     Source Serif 4:   variable 300-700 + italic（英文衬线副标题 / PPT editorial）
+ * - 标题 / 章节 / 重点金句 → 衬线层（claude.ai chat UI "What shall we think through?" 那个味道）
+ *     Noto Serif SC: 300;400;500;600;900（中文衬线主角）
+ *     Lora:          400-700 含斜体（英文衬线，Anthropic 官方 brand-guidelines body 字体；Tiempos 免费替代）
  * - 正文 / 表格 / 长段阅读 → sans 层（CJK 优先）
- *     HarmonyOS Sans SC: 走系统字体，无 CDN（华为机自带；其他设备 fallback PingFang SC / 雅黑 / system-ui，效果可接受）
- *     Plus Jakarta Sans: 400;500;600;700（英文 sans，替代 Inter，有性格）
+ *     Noto Sans SC:  300;400;500;700;900（中文 sans）
+ *     Poppins:       300;400;500;600;700（英文 sans，Anthropic 官方 brand-guidelines heading 字体；Styrene B 免费替代，几何感 + squishy）
  * - 数字 / 代码 / kicker / 状态标签 / meta → mono 层
- *     JetBrains Mono:   400;500;600;700（等宽，做信息节奏）
+ *     JetBrains Mono: 400;500;600;700（等宽，做信息节奏）
  *
- * 已废弃（CDN 保留兼容旧产物，新产物不再用）：
- * - Inter:           anti-ai-slop 禁单
- * - Noto Sans SC:    可用但不推荐为正文首选（中文渲染端正不潮）
+ * 已废弃（不再 CDN 加载，避免无谓流量）：
+ * - Source Serif 4：被 Lora 替代
+ * - Plus Jakarta Sans / Inter：被 Poppins 替代（Inter 同时是 anti-ai-slop 禁单）
+ * - HarmonyOS Sans SC：走系统字体不需 CDN
  *
  * CSS 内引入：@import url('../../_shared/fonts/claude-design.css');
  * HTML head 引入（脱离 skill 目录时用直接 CDN URL）：
- * <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@300;400;500;600;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@100;200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+ * <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@300;400;500;600;900&family=Lora:ital,wght@0,400..700;1,400..700&family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
  * 改字体/字重时两处同步改。
  */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@300;400;500;600;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@100;200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@300;400;500;600;900&family=Lora:ital,wght@0,400..700;1,400..700&family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');

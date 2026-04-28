@@ -69,11 +69,11 @@ SVG 只允许用于：真正的 icon（≤32×32px）、几何装饰元素、Dat
 ### 禁 5：烂大街字体
 
 - 禁止作为主字体：Inter、Roboto、Arial、Helvetica、Fraunces、Space Grotesk、DM Sans
-- 统一字体栈（三分工，CJK 优先排序）：
-  - **标题 / 章节 / 重点金句**：`Noto Serif SC`（中文衬线主角）+ `Source Serif 4`（英文衬线副标题）
-  - **正文 / 表格 / 长段阅读**：`HarmonyOS Sans SC` + `PingFang SC` fallback（CJK 渲染主力，比 Noto Sans SC 更顺眼）+ `Plus Jakarta Sans`（英文有性格的 sans，替代 Inter）
+- 统一字体栈（三分工，CJK 优先排序，对标 Anthropic 官方 brand-guidelines + claude.ai chat UI）：
+  - **标题 / 章节 / 重点金句**：`Noto Serif SC`（中文衬线主角）+ `Lora`（英文衬线，Anthropic 官方 brand-guidelines 钦定，对标 claude.ai 实际用的付费 Tiempos / Copernicus）
+  - **正文 / 表格 / 长段阅读**：`Noto Sans SC`（中文 sans 主力）+ `Poppins`（英文 sans，Anthropic 官方 brand-guidelines 钦定，对标 claude.ai 实际用的付费 Styrene B）
   - **数字 / 代码 / kicker / 状态标签 / 编号 marker / meta**：`JetBrains Mono`（等宽，做信息节奏层）
-- 备注：HarmonyOS Sans SC 是华为开源字体，Mac 通常没装走 PingFang SC fallback 效果同样好，Windows 没装走「微软雅黑」可接受；Noto Sans SC 可用但不推荐为首选（中文渲染端正不潮）；Inter 仅供旧产物兼容，新产物不再用
+- 备注：Lora + Poppins 是 Anthropic 公开 brand-guidelines skill 钦定的免费字体，授权可放心引；Source Serif 4 / Plus Jakarta Sans / Inter 仅供旧产物兼容，新产物不再用
 
 ### 禁 6：每个 card / feature 都带 icon
 
@@ -152,10 +152,11 @@ kicker: 「BUT」（给大标题做钩子）
 
 最多：**1 主色 + 1 辅色 + 1 强调色 + 灰阶**，禁止凭空调色。
 
-pm-workspace 默认配色：
-- 主色：`--cd-bg: #000000`
-- 强调：`--cd-accent: #2F6CF2`
+pm-workspace 默认配色（claude.ai chat UI 实测 + Anthropic 官方 brand-guidelines）：
+- 主色：`--cd-bg: #1F1F1E` / 文字 `--cd-ink: #C3C2B7`（claude.ai chat UI 同款暖近黑 + 暖灰白）
+- 强调：`--cd-accent: #D97757`（Anthropic terra cotta，logo 同款；次 `#6A9BCC` 蓝 / 三 `#788C5D` 绿）
 - 文字层次：`--cd-ink` / `--cd-ink-82` / `--cd-ink-58` / `--cd-ink-40`
+- 营销级高对比切 `.theme-cd-brand` 拿官方品牌 `#141413` / `#FAF9F5`
 
 ---
 

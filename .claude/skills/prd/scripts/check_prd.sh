@@ -119,6 +119,41 @@ if banned_scene_ids:
     print(f'❌ 正文残留场景编号 {len(banned_scene_ids)} 处(SKILL.md 硬规则 #11, 仅第 2 章场景地图允许): 样例 {samples}')
     fail = 1
 
+# ── 章节用户故事引言扫描(pm-workflow.md「PART/章节用户故事陈述」强制) ──
+# 第 3/4/5 章(各 View 详细需求)必须有 chapter_story 引言,紧跟 h1 后第一段非 Heading 段落
+# 技术骨架章(背景/业务规则/非功能/埋点/排期)免除
+TECH_CHAPTER_KW = ['背景', '目标', '业务规则', '非功能', '技术架构', '埋点', '监控', '排期', '里程碑',
+                   '目录', '附录', '封面', '场景地图']
+heading1_paras = []
+for i, p in enumerate(doc.paragraphs):
+    style = p.style.name if p.style else ''
+    if style == 'Heading 1':
+        heading1_paras.append((i, p.text.strip()))
+
+missing_story = []
+for idx, (i, h1_text) in enumerate(heading1_paras):
+    # 跳过技术骨架章
+    if any(kw in h1_text for kw in TECH_CHAPTER_KW):
+        continue
+    # 找紧跟的下一个非空段落
+    next_p = None
+    for j in range(i+1, min(i+5, len(doc.paragraphs))):
+        if doc.paragraphs[j].text.strip():
+            next_p = doc.paragraphs[j]
+            break
+    if next_p is None:
+        missing_story.append(f'{h1_text!r}(章后无内容)')
+        continue
+    next_style = next_p.style.name if next_p.style else ''
+    if next_style.startswith('Heading'):
+        missing_story.append(f'{h1_text!r}(直接接 {next_style},缺 chapter_story 引言)')
+
+if missing_story:
+    samples = missing_story[:5]
+    print(f'❌ 功能章缺用户故事引言 {len(missing_story)} 处(pm-workflow.md「PART/章节用户故事陈述」强制): {samples}')
+    print('   修复: h1(doc, "3. ...") 后紧跟 chapter_story(doc, "用户...一句话")')
+    fail = 1
+
 # 中文相邻半角标点(soul.md 禁止)
 CJK = r'[\u4e00-\u9fff]'
 half_punct = re.findall(rf'{CJK}[,:()]|[,:()]{CJK}', full_text)

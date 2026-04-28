@@ -96,7 +96,7 @@ def insert_paragraph_before(anchor, text: str, size_pt: int = 10,
     sys.path.insert(0, _DIR)
     from gen_prd_base import para_run
     p = anchor.insert_paragraph_before('')
-    # 走 para_run 默认 body role（HarmonyOS Sans SC + Plus Jakarta Sans）
+    # 走 para_run 默认 body role（Noto Sans SC + Poppins）
     para_run(p, text, size_pt=size_pt, bold=bold, color=color)
     return p
 
@@ -371,8 +371,8 @@ def normalize_headings(doc):
     渲染效果取决于 Word 默认 style(黑无线),和 gen_prd_base.h1()/h2() 产出的标准
     视觉不一致。本函数幂等:已有 run 属性的跳过不覆盖。
 
-    H1: fg=#1A1A2E + 16pt + bold + 段落下边框 #2E75B6
-    H2: fg=#2E75B6 + 13pt + bold
+    H1: fg=#141413 (Anthropic Dark) + 16pt + bold + 段落下边框 #D97757 (terra cotta)
+    H2: fg=#D97757 + 13pt + bold
 
     返回修复数 (h1_count, h2_count)。
     """
@@ -396,7 +396,7 @@ def normalize_headings(doc):
 def _apply_heading_style(p, hex_color, size_pt, add_border=None):
     """给 heading 段落强制刷 run 样式,可选追加段落下边框。
     强制覆盖颜色/字号/粗体/字体:老 docx 里即使 H1 已设错颜色(如黑色)也统一刷成标准色,
-    字体强制刷成 title role（Source Serif 4 + Noto Serif SC）对齐 gen_prd_base.h1/h2。
+    字体强制刷成 title role（Lora + Noto Serif SC）对齐 gen_prd_base.h1/h2。
     """
     import sys, os
     _DIR = os.path.dirname(os.path.abspath(__file__))
@@ -446,22 +446,24 @@ def normalize_fonts(doc):
     1. styles.xml docDefaults rFonts 写死 → 改为 themed (minorHAnsi/minorEastAsia)。
        让 Word 找不到 run 级字体时 fallback 到主题字体（Mac 走 PingFang+Calibri，
        Win 走 Microsoft YaHei+Calibri），而不是 substitute 成 Arial。
-    2. 所有 run rFonts：老 ascii (Arial/Calibri/Times) → Plus Jakarta Sans；
-       老 eastAsia (Arial/Microsoft YaHei/SimSun/宋体/SimHei) → HarmonyOS Sans SC。
+    2. 所有 run rFonts：老 ascii (Arial/Calibri/Times/Source Serif 4/Plus Jakarta Sans) → Poppins；
+       老 eastAsia (Arial/Microsoft YaHei/SimSun/HarmonyOS Sans SC 等) → Noto Sans SC。
        已是设计字体的 run 不动。
 
-    背景：commit 5192b83（4-26）后 PRD 字体规范升级到 Source Serif 4 / Plus Jakarta
-    Sans / Noto Serif SC / HarmonyOS Sans SC / JetBrains Mono，但旧 docx 升版时
-    继承了写死的 Arial。运行本函数把老字体一次刷成新规范。
+    背景：framework 美学切到 Anthropic 官方 brand-guidelines 后，PRD 字体规范升到
+    Lora / Poppins / Noto Serif SC / Noto Sans SC / JetBrains Mono。本函数把老字体
+    （含上一代 Source Serif 4 / Plus Jakarta Sans / HarmonyOS Sans SC）一次刷成新规范。
 
     幂等。返回 (run_changed, defaults_changed)。
     """
     LEGACY_ASCII = {'Arial', 'Calibri', 'Times New Roman', 'Times',
-                    'Helvetica', 'Roboto', 'Open Sans'}
+                    'Helvetica', 'Roboto', 'Open Sans',
+                    'Source Serif 4', 'Plus Jakarta Sans', 'Inter'}
     LEGACY_EAST = {'Arial', 'Microsoft YaHei', '微软雅黑', 'SimSun', '宋体',
-                   'SimHei', '黑体', 'STSong', 'STHeiti'}
-    DESIGN = {'Source Serif 4', 'Plus Jakarta Sans', 'Noto Serif SC',
-              'HarmonyOS Sans SC', 'JetBrains Mono', 'PingFang SC'}
+                   'SimHei', '黑体', 'STSong', 'STHeiti',
+                   'HarmonyOS Sans SC'}
+    DESIGN = {'Lora', 'Poppins', 'Noto Serif SC',
+              'Noto Sans SC', 'JetBrains Mono', 'PingFang SC'}
 
     # 1. docDefaults → themed
     defaults_changed = False
@@ -503,17 +505,17 @@ def normalize_fonts(doc):
         rFonts = rPr.find(qn('w:rFonts'))
         if rFonts is None:
             rFonts = OxmlElement('w:rFonts')
-            rFonts.set(qn('w:ascii'), 'Plus Jakarta Sans')
-            rFonts.set(qn('w:hAnsi'), 'Plus Jakarta Sans')
-            rFonts.set(qn('w:eastAsia'), 'HarmonyOS Sans SC')
+            rFonts.set(qn('w:ascii'), 'Poppins')
+            rFonts.set(qn('w:hAnsi'), 'Poppins')
+            rFonts.set(qn('w:eastAsia'), 'Noto Sans SC')
             rPr.insert(0, rFonts)
             run_changed += 1
             continue
         changed = False
         for slot, default_font, legacy_set in (
-            ('ascii',    'Plus Jakarta Sans',  LEGACY_ASCII),
-            ('hAnsi',    'Plus Jakarta Sans',  LEGACY_ASCII),
-            ('eastAsia', 'HarmonyOS Sans SC',  LEGACY_EAST),
+            ('ascii',    'Poppins',       LEGACY_ASCII),
+            ('hAnsi',    'Poppins',       LEGACY_ASCII),
+            ('eastAsia', 'Noto Sans SC',  LEGACY_EAST),
         ):
             v = rFonts.get(qn(f'w:{slot}'))
             if v is None or (v in legacy_set and v not in DESIGN):

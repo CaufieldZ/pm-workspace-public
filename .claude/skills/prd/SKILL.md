@@ -110,15 +110,16 @@ from gen_prd_base import *
 | `h1` | `(doc, text)` | 一级标题（16pt 深色 + 蓝色底线） |
 | `h2` | `(doc, text)` | 二级标题（13pt 蓝色） |
 | `h3` | `(doc, text)` | 三级标题（11pt 深色） |
+| `chapter_story` | `(doc, text)` | 章节用户故事引言（紧跟 h1，斜体浅灰一句话）。功能章 3/4/5 必填，技术骨架章可省。详见 prd-template.md |
 | `add_p` | `(doc, text="", size_pt=10, bold=False, color=None, italic=False, align=LEFT, before=0, after=4)` | 普通段落 |
 | `bullet` | `(doc, text, size_pt=10)` | 列表项（• 前缀） |
-| `make_table` | `(doc, headers: list[str], rows_data: list[list[str]], col_widths_cm: list[float], row_height_cm=None) → Table` | 通用表格（蓝底白字表头 + 隔行灰底） |
+| `make_table` | `(doc, headers: list[str], rows_data: list[list[str]], col_widths_cm: list[float], row_height_cm=None) → Table` | 通用表格（深底白字表头 + 隔行灰底） |
 | `scene_table` | `(doc, scene_id, scene_name, right_blocks: list[tuple[str, list[str]]])` | 两列 Scene 表格（左截图占位 + 右说明） |
 | `cell_text` | `(cell, text, size_pt=9, bold=False, color=None, italic=False, align=LEFT)` | 填充单元格文字 |
 | `set_cell_bg` | `(cell, hex_color)` | 设置单元格背景色 |
 | `set_cell_border` | `(cell, bottom={...}, top={...}, ...)` | 设置单元格边框 |
 | `para_run` | `(para, text, font="Arial", size_pt=10, bold=False, color=None, italic=False) → Run` | 底层：给段落加 run |
-| `C` | `dict` | 颜色常量：`C["textHeading"]="1A1A2E"`, `C["tableHeaderBg"]="2D81FF"`, `C["tagChange"]="D97706"` 等 |
+| `C` | `dict` | 颜色常量（对齐 Anthropic brand-guidelines）：`C["textHeading"]="141413"`（官方 Dark）, `C["tableHeaderBg"]="141413"`, `C["accentBlue"]="D97757"`（terra cotta，键名保留是历史 alias）, `C["tagChange"]="D97757"` 等 |
 
 ### update_prd_base.py API 速查（升版/更新已有 PRD）
 
@@ -140,13 +141,13 @@ from update_prd_base import *
 | `set_cell_blocks` | `(cell, blocks: list[tuple[str, list[str]]], numbered=True)` | 清空单元格，按结构化 blocks 重建（title 粗体 + 子条目自动加 `1./2./3.` 编号），视觉与 scene_table 右列一致。**升版 Scene/后台 table 时优先用它**。lines 已含 `N. ` 前缀或以 `  - ` 开头的二级缩进行不会被重复编号；纯序号数据（如 P0 同步"Launch Pool / 现货充值赛"列表）传 `numbered=False` |
 | `replace_cell_image` | `(cell, img_path, width_cm=7.0)` | 清空单元格旧图，插入新截图（**内部自动调 fix_dpi，无需手动调**） |
 | `fix_dpi` | `(png_path, dpi=144) → str` | 修正 @2x 截图 DPI 元数据，防止 docx 里虚化（replace_cell_image 已内置，单独调用于调试） |
-| `normalize_headings` | `(doc) → (h1_count, h2_count)` | 旧 docx 修缮专用:补 Heading 1/2 的 run 级字色字号粗体 + H1 段落下边框 #2E75B6。幂等。老脚本常用 `add_paragraph(style='Heading N')` 直接产段落,run 级属性缺失,渲染成黑色无下划线,视觉与 `gen_prd_base.h1()/h2()` 产出不一致——升版前调此函数归一化 |
+| `normalize_headings` | `(doc) → (h1_count, h2_count)` | 旧 docx 修缮专用:补 Heading 1/2 的 run 级字色字号粗体 + H1 段落下边框 #D97757（Anthropic terra cotta）。幂等。老脚本常用 `add_paragraph(style='Heading N')` 直接产段落,run 级属性缺失,渲染成黑色无下划线,视觉与 `gen_prd_base.h1()/h2()` 产出不一致——升版前调此函数归一化 |
 | `insert_heading_before` | `(anchor, text, level=2) → Paragraph` | 在 anchor 段前插入 H1/H2/H3 段落,run 级样式和 `h1()/h2()/h3()` 对齐。patch 脚本给 PRD 新增章节(6.4 / 8.3 之类)时用。**禁止** `anchor.insert_paragraph_before(text)` 裸调用 — 默认产 Normal style,Confluence 大纲树失效 |
 | `insert_paragraph_before` | `(anchor, text, size_pt=10, bold=False, color=None) → Paragraph` | 在 anchor 前插入 Normal 段落,run 级字号/粗体/颜色可控。纯插入不覆盖已有段 text |
 | `insert_description_after` | `(doc, anchor_keyword, text, size_pt=10) → Paragraph` | 按 `text.startswith(anchor_keyword)` 定位 anchor,在其后插入描述段。**锚点未命中抛异常**,不静默失败(patch 脚本最忌锚点错位) |
 | `insert_scene_blocks` | `(anchor, blocks: list[tuple[str, list[str]]], heading_level=3)` | 在 anchor 前批量插入「H3 小节 + numbered list」,body 级 Scene 展开(纯后台/CMS/无截图降级模式,替代 scene_table)。视觉与 `fill_cell_blocks` 对齐:lines 自动编号、支持内联 `**bold**` 标签、两空格加 dash 前缀作二级缩进 |
 | `remove_table` | `(table)` | 从 body 删除整张 table。配合 `insert_scene_blocks` 做「去 scene_table、改 H3 + numbered list」重构,典型场景:CMS 管理端本次无 UI 改动,去掉空截图占位的 2 列表格 |
-| `normalize_fonts` | `(doc) → (run_changed, defaults_changed)` | 老 docx 升版字体迁移:Arial/Calibri/Microsoft YaHei → Plus Jakarta Sans/HarmonyOS Sans SC;rFonts 缺失也补 design 字体;docDefaults → themed。配合 ensure_theme 是「字体三件套」的核心 |
+| `normalize_fonts` | `(doc) → (run_changed, defaults_changed)` | 老 docx 升版字体迁移:Arial/Calibri/Microsoft YaHei/Source Serif 4/Plus Jakarta Sans/HarmonyOS Sans SC → Lora/Poppins/Noto Sans SC;rFonts 缺失也补 design 字体;docDefaults → themed。配合 ensure_theme 是「字体三件套」的核心 |
 | `ensure_theme` | `(docx_path) → bool` | 注入标准 word/theme/theme1.xml(python-docx 老模板漏)。`doc.save()` **后**调用,传文件路径不传 Document 对象。docDefaults themed 引用必须有此文件才能解析 |
 | `humanize_doc` | `(doc, scene_to_human=None)` | 去 PM 内部场景编号 + 圈数字归一。scene_to_human 是 `[(code, human), ...]` 长前缀优先排序的映射表(每个项目自定义)。三步处理:① 多编号括号整删 ② 编号紧跟中文只删编号(避免重复词) ③ 孤立编号查表换白话。跳过 Heading 段 + scene_table cell[0] anchor + 场景地图编号列 |
 | `fix_scene_cell_numbering` | `(doc)` | 扫所有 scene_table 右列(以 📱/🖥/🔧 开头),≥4 段时用 `cell_paragraphs_to_blocks` 拆分后 `set_cell_blocks` 重写,统一 11pt title + 9pt 缩进编号。兼容 V2.7-era 两种 cell 模式(bold-no-blank / blank-separated) |
@@ -191,7 +192,7 @@ from update_prd_base import *
 4. **docx 已有 PNG 截图 DPI 默认 72（Playwright deviceScaleFactor=2 产物）**，需遍历 `doc.part.rels` 用 PIL 重写 `dpi=(144, 144)`。`replace_cell_image` 会自动 `fix_dpi`；批量修旧 docx 时自己写 loop。
 5. **Phone 比例截图（aspect < 0.7）必须圆角透明化**，否则深色主题里 4 角残留白方块。用 `PIL.ImageDraw.rounded_rectangle` 生成 alpha mask。
 6. **所有 docx 产出必调 `normalize_punctuation(doc)`**（soul.md 硬规则：中文相邻的半角 `,:()` 必须全角 `，：（）`）。gen/update/refine 脚本保存 docx 前调用，check_prd.sh 会扫残留。
-7. **升旧 docx 必调 `normalize_headings(doc)`**：老脚本用 `add_paragraph(style='Heading 1')` 直接产 H1/H2 时不染 run，Word 渲染成黑色无下划线，视觉与新 PRD 不一致。`normalize_headings` 幂等：H1 补 `fg=#1A1A2E + 下边框#2E75B6`，H2 补 `fg=#2E75B6`。同步处理表头 bg 从旧 `D5E8F0` 升到 `2D81FF` + 白字（`set_cell_bg` 已修复旧 shd 残留 bug，可直接调）。
+7. **升旧 docx 必调 `normalize_headings(doc)`**：老脚本用 `add_paragraph(style='Heading 1')` 直接产 H1/H2 时不染 run，Word 渲染成黑色无下划线，视觉与新 PRD 不一致。`normalize_headings` 幂等：H1 补 `fg=#141413（Anthropic Dark）+ 下边框#D97757（terra cotta）`，H2 补 `fg=#D97757`。同步处理表头 bg 从旧 `D5E8F0`/`2D81FF` 升到 `141413` + 白字（`set_cell_bg` 已修复旧 shd 残留 bug，可直接调）。
 
 8. **patch 脚本插新段落用 helper,禁止模糊段落覆盖**:
    - ✅ 插新章节: `insert_heading_before(anchor, '6.4 归因漏斗', level=2)`
@@ -225,12 +226,12 @@ from update_prd_base import *
    - 批量修复:`from update_prd_base import humanize_doc; humanize_doc(doc, scene_to_human=[('A-3b','红包弹窗'),('A-1','直播间主页'),...])`。三步处理:删多编号括号 → 编号紧跟中文只删编号(避免重复词)→ 孤立编号查表换白话
    - **重复词陷阱**:映射表写 `('F-1','CMS 主播认证')` 时,原文「F-1 主播认证管理」会变「CMS 主播认证 主播认证管理」 — humanize_doc 内置「编号紧跟中文 → 仅删编号」步骤已处理,孤立编号才查表
 
-12. **老 docx 升版必跑字体三件套**(commit 5192b83 后字体规范升级,4-26 之前 build 的 docx 升版漏跑会渲染成 Arial 风):
+12. **老 docx 升版必跑字体三件套**(framework 美学切到 Anthropic brand-guidelines 后,字体规范从 Source Serif 4/Plus Jakarta Sans/HarmonyOS Sans SC 升到 Lora/Poppins/Noto Sans SC,老 docx 升版漏跑会残留旧字体风):
    ```python
    from update_prd_base import normalize_punctuation, normalize_headings, normalize_fonts, ensure_theme
    normalize_punctuation(doc)
    normalize_headings(doc)
-   normalize_fonts(doc)         # 老 ascii=Arial → Plus Jakarta Sans;rFonts 缺失也补 design 字体
+   normalize_fonts(doc)         # 老 ascii=Arial/Source Serif 4/Plus Jakarta Sans → Poppins;rFonts 缺失也补 design 字体
    doc.save(path)
    ensure_theme(path)            # 注入 word/theme/theme1.xml(python-docx 老模板漏)
    ```
@@ -238,7 +239,7 @@ from update_prd_base import *
    - 缺 theme1.xml 的症状:docDefaults `<rFonts asciiTheme="minorHAnsi"/>` 引用悬空 → Word 无 fallback → 强制 Arial
    - run 级 rFonts 缺失的症状:走 docDefaults themed → 解析 theme1.xml minorFont(Cambria + 宋体)→ Mac 渲染 Cambria/STSong(衬线 Arial-classic 风)
    - check_prd.sh 已自动扫:缺 theme1.xml / 残留老字体 run → fail
-   - **错觉警告**:commit message 里写过「HarmonyOS Sans SC 没装会自动 fallback PingFang」是错的,docx 没 CSS fallback chain,只有 Word/Mac 系统级 substitute
+   - **错觉警告**:docx 没 CSS fallback chain,只有 Word/Mac 系统级 substitute。Lora/Poppins 没装时 Mac/Win 走系统衬线/sans 替代,样式会偏离设计稿但可读
 
 ### Step 2：收集产品信息
 

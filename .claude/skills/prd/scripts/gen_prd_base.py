@@ -27,20 +27,24 @@ def get_author() -> str:
         return ""
 
 # ── 颜色常量 ──────────────────────────────────────────────────────────────
+# 对齐 Anthropic 官方 brand-guidelines + claude.ai chat UI:
+# textHeading 用官方 Dark #141413, accent 用官方 terra cotta #D97757
+# 注：accentBlue / tagChange 等 key 名保留是历史 alias，下游脚本（gen_sop_v1/v2）
+# 依赖键名稳定，只换 value 不换 key（同 ppt-template.html --blue 处理思路）
 C = {
     "textPrimary":   "333333",
     "textSecondary": "666666",
     "textMuted":     "888888",
-    "textHeading":   "1A1A2E",
-    "textLink":      "2E75B6",
-    "tableHeaderBg": "2D81FF",
+    "textHeading":   "141413",     # Anthropic 官方 Dark
+    "textLink":      "D97757",     # Anthropic terra cotta
+    "tableHeaderBg": "141413",     # 表头深底白字（Anthropic 官方 Dark）
     "tableHeaderText": "FFFFFF",
     "tableAltRow":   "F8FAFB",
     "tableBorder":   "CCCCCC",
-    "tagNew":        "15803D",
-    "tagChange":     "D97706",
+    "tagNew":        "15803D",     # Arco 语义绿（跨主题保留）
+    "tagChange":     "D97757",     # terra cotta
     "tagGreen":      "15803D",
-    "accentBlue":    "2E75B6",
+    "accentBlue":    "D97757",     # 键名保留兼容下游，值切到 terra cotta
 }
 
 # ── 底层工具 ──────────────────────────────────────────────────────────────
@@ -57,7 +61,7 @@ def set_cell_bg(cell, hex_color):
     tcPr.append(shd)
 
 def set_cell_border(cell, **kwargs):
-    """设置单元格边框。用法：set_cell_border(cell, bottom={'val':'single','sz':4,'color':'2E75B6'})"""
+    """设置单元格边框。用法：set_cell_border(cell, bottom={'val':'single','sz':4,'color':'D97757'})"""
     tc = cell._tc
     tcPr = tc.get_or_add_tcPr()
     tcBorders = OxmlElement('w:tcBorders')
@@ -73,16 +77,17 @@ def set_cell_border(cell, **kwargs):
 
 # ── 字体三分工配置（与 anti-ai-slop.md / prd-docx-styles.md 对齐）────────
 # Word 渲染时根据字符自动选 ascii（英文/数字）或 eastAsia（中文）字体
+# Anthropic 官方 brand-guidelines 钦定的免费字体（github.com/anthropics/skills/skills/brand-guidelines）：
 # 用户系统没装这些字体时 Word 自动 fallback：
-#   HarmonyOS Sans SC 没装 → PingFang SC（Mac）/ 微软雅黑（Windows）
-#   Noto Serif SC 没装 → 系统默认衬线
-#   Plus Jakarta Sans 没装 → 系统默认 sans
+#   Noto Sans SC / Noto Serif SC 没装 → PingFang SC（Mac）/ 微软雅黑（Windows）
+#   Lora 没装 → Georgia / 系统默认衬线
+#   Poppins 没装 → 系统默认 sans
 FONT = {
-    'title': {'ascii': 'Source Serif 4',   'eastAsia': 'Noto Serif SC'},     # 标题 / 章节 / 重点
-    'body':  {'ascii': 'Plus Jakarta Sans','eastAsia': 'HarmonyOS Sans SC'}, # 正文 / 表格 / 段落
-    'mono':  {'ascii': 'JetBrains Mono',   'eastAsia': 'JetBrains Mono'},    # 代码 / 路由 / 事件名 / 状态标签 / kicker
+    'title': {'ascii': 'Lora',          'eastAsia': 'Noto Serif SC'},  # 标题 / 章节 / 重点（衬线，对标 Tiempos / Copernicus）
+    'body':  {'ascii': 'Poppins',       'eastAsia': 'Noto Sans SC'},   # 正文 / 表格 / 段落（无衬线，对标 Styrene B）
+    'mono':  {'ascii': 'JetBrains Mono','eastAsia': 'JetBrains Mono'}, # 代码 / 路由 / 事件名 / 状态标签 / kicker
     # 兼容旧脚本：font="Arial" 走 body 配置兜底
-    'Arial': {'ascii': 'Plus Jakarta Sans','eastAsia': 'HarmonyOS Sans SC'},
+    'Arial': {'ascii': 'Poppins',       'eastAsia': 'Noto Sans SC'},
 }
 
 def para_run(para, text, font="body", size_pt=10, bold=False, color=None, italic=False):
@@ -133,31 +138,79 @@ def add_p(doc, text="", size_pt=10, bold=False, color=None, italic=False,
     return p
 
 def h1(doc, text):
+    """章标题。出版物语言：加粗字号 + 加厚下边框 terra cotta 横线，留白拉开。"""
     p = doc.add_paragraph(style='Heading 1')
-    p.paragraph_format.space_before = Pt(16)
-    p.paragraph_format.space_after = Pt(6)
-    para_run(p, text, font='title', size_pt=16, bold=True, color=C["textHeading"])
+    p.paragraph_format.space_before = Pt(20)
+    p.paragraph_format.space_after = Pt(12)
+    para_run(p, text, font='title', size_pt=18, bold=True, color=C["textHeading"])
     pPr = p._p.get_or_add_pPr()
     pBdr = OxmlElement('w:pBdr')
     bottom = OxmlElement('w:bottom')
     bottom.set(qn('w:val'), 'single')
-    bottom.set(qn('w:sz'), '6')
-    bottom.set(qn('w:space'), '1')
-    bottom.set(qn('w:color'), '2E75B6')
+    bottom.set(qn('w:sz'), '12')           # 1.5pt 粗线（原 6 = 0.75pt）
+    bottom.set(qn('w:space'), '4')
+    bottom.set(qn('w:color'), C["accentBlue"])  # terra cotta
     pBdr.append(bottom)
     pPr.append(pBdr)
 
 def h2(doc, text):
+    """节标题。加 6pt 左色块 border 作 anchor（出版物锚点用法），文字走 terra cotta。"""
     p = doc.add_paragraph(style='Heading 2')
-    p.paragraph_format.space_before = Pt(12)
-    p.paragraph_format.space_after = Pt(4)
+    p.paragraph_format.space_before = Pt(14)
+    p.paragraph_format.space_after = Pt(6)
+    p.paragraph_format.left_indent = Cm(0.3)  # 让左色块和文字有空隙
     para_run(p, text, font='title', size_pt=13, bold=True, color=C["accentBlue"])
+    pPr = p._p.get_or_add_pPr()
+    pBdr = OxmlElement('w:pBdr')
+    left = OxmlElement('w:left')
+    left.set(qn('w:val'), 'single')
+    left.set(qn('w:sz'), '24')           # 3pt 短色块
+    left.set(qn('w:space'), '6')
+    left.set(qn('w:color'), C["accentBlue"])
+    pBdr.append(left)
+    pPr.append(pBdr)
 
 def h3(doc, text):
     p = doc.add_paragraph(style='Heading 3')
     p.paragraph_format.space_before = Pt(8)
     p.paragraph_format.space_after = Pt(3)
     para_run(p, text, font='title', size_pt=11, bold=True, color=C["textHeading"])
+
+def pullquote(doc, text):
+    """重点金句块，替代正文里堆 bold。出版物 pullquote 语言：
+    左 3pt terra cotta border + Lora italic + 12pt + textHeading 暗色"""
+    p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(10)
+    p.paragraph_format.space_after = Pt(10)
+    p.paragraph_format.left_indent = Cm(0.6)
+    para_run(p, text, font='title', size_pt=12, italic=True, color=C["textHeading"])
+    pPr = p._p.get_or_add_pPr()
+    pBdr = OxmlElement('w:pBdr')
+    left = OxmlElement('w:left')
+    left.set(qn('w:val'), 'single')
+    left.set(qn('w:sz'), '24')           # 3pt
+    left.set(qn('w:space'), '12')
+    left.set(qn('w:color'), C["accentBlue"])
+    pBdr.append(left)
+    pPr.append(pBdr)
+    return p
+
+def metric_run(p, value):
+    """在段落内插入 mono terra cotta 数字（如 "47%" "5%+"），
+    替代正文全 bold，让数字像 FT/经济学人那样亮起来。"""
+    return para_run(p, value, font='mono', size_pt=10, bold=True, color=C["accentBlue"])
+
+
+def chapter_story(doc, text):
+    """章节用户故事引言（pm-workflow.md「PART/章节用户故事陈述」强制）。
+    紧跟 h1 后调用，斜体浅灰一句话 ≤ 30 字，告诉读者这章在讲谁、做什么、为什么。
+    技术骨架章（背景/排期/非功能）可省略。"""
+    p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(2)
+    p.paragraph_format.space_after = Pt(8)
+    p.paragraph_format.left_indent = Cm(0.3)
+    para_run(p, text, size_pt=10, italic=True, color="6F7A85")
+    return p
 
 def bullet(doc, text, size_pt=10):
     lines = text.split('\n')
@@ -185,8 +238,10 @@ def cell_text(cell, text, size_pt=9, bold=False, color=None, italic=False,
     para_run(p, text, size_pt=size_pt, bold=bold, color=color, italic=italic)
     return p
 
-def make_table(doc, headers, rows_data, col_widths_cm, row_height_cm=None):
-    """通用表格生成：headers=列名列表, rows_data=二维列表, col_widths_cm=每列宽度"""
+def make_table(doc, headers, rows_data, col_widths_cm, row_height_cm=None,
+               mono_first_col=False):
+    """通用表格生成：headers=列名列表, rows_data=二维列表, col_widths_cm=每列宽度。
+    mono_first_col=True 时首列走 mono（适合编号 / 角色 ID / 路径，让节奏感出来）"""
     tbl = doc.add_table(rows=1 + len(rows_data), cols=len(headers))
     tbl.style = 'Table Grid'
     tbl.alignment = WD_TABLE_ALIGNMENT.LEFT
@@ -202,7 +257,16 @@ def make_table(doc, headers, rows_data, col_widths_cm, row_height_cm=None):
             cell.width = Cm(w)
             if i % 2 == 1:
                 set_cell_bg(cell, C["tableAltRow"])
-            cell_text(cell, str(val), size_pt=9, color=C["textPrimary"])
+            # 首列 mono 渲染（编号节奏）
+            if mono_first_col and j == 0:
+                cell.text = ""
+                p = cell.paragraphs[0]
+                p.paragraph_format.space_before = Pt(2)
+                p.paragraph_format.space_after = Pt(2)
+                para_run(p, str(val), font='mono', size_pt=9, bold=True,
+                         color=C["textHeading"])
+            else:
+                cell_text(cell, str(val), size_pt=9, color=C["textPrimary"])
         if row_height_cm:
             tbl.rows[i+1].height = Cm(row_height_cm)
     doc.add_paragraph().paragraph_format.space_after = Pt(6)

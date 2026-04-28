@@ -1,25 +1,25 @@
 /* PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 */
 /* ═══════════════════════════════════════════════════════════
    flowchart.css · 流程图产出物样式
-   Claude Design 深色画布（#000）+ 浅色白板卡片（白板保留功能性）
+   Claude Design 深色画布（claude.ai chat UI 同款 #1F1F1E）+ 浅色白板卡片（白板保留功能性）
    Fonts（gen 脚本在 HTML head 引入）：
-     Noto Serif SC 900/400 · Source Serif 4 · JetBrains Mono 400/500
+     Noto Serif SC 900/400 · Lora · JetBrains Mono 400/500
    Token（gen 脚本在 <style> 前 @import）：
      ../../_shared/claude-design/tokens.css · ../../_shared/claude-design/utilities.css
    ═══════════════════════════════════════════════════════════ */
 
 /* ── 本文件内联 token 兜底（@import 未加载时生效）── */
 :root {
-  --fc-bg:      #000000;
-  --fc-ink:     #FFFFFF;
-  --fc-ink-82:  rgba(255, 255, 255, 0.82);
-  --fc-ink-58:  rgba(255, 255, 255, 0.58);
-  --fc-ink-18:  rgba(255, 255, 255, 0.18);
-  --fc-hairline: rgba(255, 255, 255, 0.12);
-  --fc-accent:  #2F6CF2;
+  --fc-bg:      #1F1F1E;
+  --fc-ink:     #C3C2B7;
+  --fc-ink-82:  rgba(195, 194, 183, 0.82);
+  --fc-ink-58:  rgba(195, 194, 183, 0.58);
+  --fc-ink-18:  rgba(195, 194, 183, 0.18);
+  --fc-hairline: rgba(195, 194, 183, 0.12);
+  --fc-accent:  #D97757;
   --fc-serif-cn: "Noto Serif SC", "Source Han Serif SC", serif;
   --fc-mono:    "JetBrains Mono", "SF Mono", ui-monospace, monospace;
-  /* 流程节点功能色 */
+  /* 流程节点功能色（语义独立于品牌 accent，保持原值） */
   --fc-approved: #0ECB81;
   --fc-rejected: #F6465D;
   --fc-warn:     #D29922;

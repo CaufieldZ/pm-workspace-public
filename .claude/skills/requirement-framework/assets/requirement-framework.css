@@ -2,7 +2,7 @@
 /* pm-ws-canary-236a5364 */
 @import url('../../_shared/fonts/claude-design.css');
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Noto Sans SC','Inter',system-ui,sans-serif;background:#f8f9fb;color:#1e293b;min-height:100vh;}
+body{font-family:'Noto Sans SC','Poppins',system-ui,sans-serif;background:#f8f9fb;color:#1e293b;min-height:100vh;}
 
 /* ── 顶部 Header ── */
 .hd{background:#fff;border-bottom:1px solid #e2e8f0;padding:20px 36px;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,.04);}

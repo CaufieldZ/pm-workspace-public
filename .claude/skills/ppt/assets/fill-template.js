@@ -11,7 +11,7 @@ const path = require('path');
 
 // 配置路径
 const SKILL_DIR = path.dirname(__dirname); // .claude/skills/ppt/
-const TEMPLATE_PATH = path.join(SKILL_DIR, 'references', 'ppt-template.html');
+const TEMPLATE_PATH = path.join(SKILL_DIR, 'assets', 'ppt-template.html');
 
 function esc(s) {
   /**
@@ -65,8 +65,8 @@ function fillTemplate(options) {
   let template = fs.readFileSync(TEMPLATE_PATH, 'utf8');
 
   // 注入 presenter-mode CSS / JS（placeholder 不存在时 silently skip）
-  const presenterCSSPath = path.join(SKILL_DIR, 'references', 'presenter-mode.css');
-  const presenterJSPath  = path.join(SKILL_DIR, 'references', 'presenter-mode.js');
+  const presenterCSSPath = path.join(SKILL_DIR, 'assets', 'presenter-mode.css');
+  const presenterJSPath  = path.join(SKILL_DIR, 'assets', 'presenter-mode.js');
   if (fs.existsSync(presenterCSSPath)) {
     template = template.replace('/* __PRESENTER_CSS__ */', fs.readFileSync(presenterCSSPath, 'utf8'));
   }

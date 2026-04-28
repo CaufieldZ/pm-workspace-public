@@ -25,7 +25,7 @@ type: reference
 │  H1（Noto Serif SC 900，重点词上 accent 蓝）               │
 │  核心观点一句话                                              │
 │                                                             │
-│  English subtitle（Source Serif 4 italic，副标题）         │
+│  English subtitle（Lora italic，副标题）                   │
 │  ─────────── hairline 分隔线 ──────────                    │
 │                                                             │
 │  [body：双栏 60/40 / 2×2 grid / 列表 / big-quote / 表格]  │
@@ -41,7 +41,7 @@ type: reference
 |------|-----------|------|------|------|
 | eyebrow | `.cd-eyebrow` | JetBrains Mono | 11px | uppercase + 0.24em letter-spacing + accent 蓝 |
 | H1 | `h1.deck-title` | Noto Serif SC | 80-140px（看信息量）| 重点词用 `<span class="accent">` 单独上色 |
-| 英文副标题 | `.deck-subtitle` | Source Serif 4 italic | 26-46px | 品牌签名词粗体 + accent 斜体 |
+| 英文副标题 | `.deck-subtitle` | Lora italic | 26-46px | 品牌签名词粗体 + accent 斜体 |
 | 正文 | `.deck-body` | Noto Serif SC | 17-21px | line-height 1.75-1.85 |
 
 ---
@@ -59,12 +59,12 @@ h1.deck-title {
   color: var(--cd-ink);
 }
 h1.deck-title .accent {
-  color: var(--cd-accent);  /* #2F6CF2 */
+  color: var(--cd-accent);  /* #D97757 Anthropic terra cotta */
 }
 
 /* ── 英文副标题 ── */
 .deck-subtitle {
-  font-family: "Source Serif 4", Georgia, serif;
+  font-family: "Lora", Georgia, serif;
   font-style: italic;
   font-size: clamp(22px, 3vw, 46px);
   color: var(--cd-ink-58);

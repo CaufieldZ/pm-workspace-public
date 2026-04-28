@@ -7,7 +7,7 @@
 会议纪要 / MRD / 竞品截图 → 场景清单、交互大图、PRD、行为规格。19 个 Skill 覆盖产品经理全链路。
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-1f54d6?style=flat-square)](LICENSE)
-[![Skills](https://img.shields.io/badge/skills-20-2F6CF2?style=flat-square)](.claude/skills)
+[![Skills](https://img.shields.io/badge/skills-20-D97757?style=flat-square)](.claude/skills)
 [![Python](https://img.shields.io/badge/python-3.10+-000?style=flat-square)]()
 [![Node](https://img.shields.io/badge/node-18+-000?style=flat-square)]()
 [![Claude Code](https://img.shields.io/badge/claude_code-native-000?style=flat-square)](https://docs.anthropic.com/en/docs/claude-code)
@@ -197,13 +197,16 @@ HTML 产出物（imap · prototype · ppt · flowchart · arch-diagrams）基于
 
 | Token | 值 |
 |:-|:-|
-| 主色 | 纯黑 `#000` + 4 级透明白（82 / 58 / 40 / 18 %）+ hairline `rgba(255,255,255,.12)` |
-| Accent | HTX fintech 蓝 `#2F6CF2` |
+| 主色 | claude.ai chat UI 同款暖近黑 `#1F1F1E` + 暖灰白 `#C3C2B7` + 4 级透明灰阶 |
+| Accent | Anthropic terra cotta `#D97757`（次 `#6A9BCC` 蓝 / 三 `#788C5D` 绿，多 track 循环） |
+| 营销级高对比 | 切 `.theme-cd-brand` → 官方 `#141413` / `#FAF9F5` |
 | 语义色 | 成功 `#00B42A` · 失败 `#F53F3F`（跨主题通用） |
-| 字体 · display | `Noto Serif SC` + `Source Serif 4` |
-| 字体 · body | `Noto Sans SC` + `Inter` |
+| 字体 · display | `Noto Serif SC` + `Lora`（Anthropic brand-guidelines 钦定 body serif） |
+| 字体 · body | `Noto Sans SC` + `Poppins`（Anthropic brand-guidelines 钦定 heading sans） |
 | 字体 · mono | `JetBrains Mono` |
 | 工具类 | film grain · eyebrow · hairline · 带色阴影 · 低调水印 |
+
+色板与字体均对标 [Anthropic 官方 brand-guidelines skill](https://github.com/anthropics/skills/tree/main/skills/brand-guidelines)，免费授权可放心引用。
 
 反 AI slop 六禁（规则层强制）：全屏渐变 · emoji 装饰标题 · 圆角卡片 + 左 border accent · SVG 画 imagery · 烂大街字体（Inter/Roboto/Space Grotesk 作 CJK 主字体）· 每卡片都带 icon。
 

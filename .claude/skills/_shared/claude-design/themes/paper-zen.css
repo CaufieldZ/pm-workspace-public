@@ -1,0 +1,43 @@
+/* PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 */
+/* paper-zen — 宣纸国风
+ * 米黄宣纸底 + 松竹绿 + 赭金，国画颜料调色，给「一图流 / 教学海报 / 季度战报 / 年度总结海报 / 印刷品」用
+ * 反 AI slop 同源（暖色温 + 衬线主导 + 反工业 accent + 反 emoji），适合大字号 + 高信息密度的 A4 横版
+ *
+ * 字体覆盖：标题层强制 Songti SC + Noto Serif CJK SC，连数字也走衬线（关键反差，立刻有古籍味，不是 mono）
+ *
+ * 招式扩展（消费方按需直接用 hex，不污染 cd-* 命名空间）：
+ * - 国画 5 色 palette（每色配 -soft 浅版做 tag bg）：
+ *     竹青  #789B6C / -soft #DCE7D4
+ *     远山黛 #3F7A95 / -soft #CFE0E8
+ *     朱赤  #B85540 / -soft #EFD3CB
+ *     赭金  #A8804A
+ *     紫绛  #4F3A65 / -soft #DDD2E5
+ * - 装饰：double-line header（accent 长 + gold 短错落 7px 偏移）/ border-top 7px 色带 / dotted divider repeating-linear-gradient(90deg,c 0 5px,transparent 5px 9px)
+ * - 数字：罗马 Ⅰ Ⅱ Ⅲ + 中文层级 + 英文 STARTER 三层标识
+ * - letter-spacing：CJK 0.04–0.1em / 英文小标 0.22–0.3em（金石舒展）
+ * - 背景晕染：radial-gradient（< 6% opacity）模拟宣纸
+ * - icon：纯汉字 + 圆形底（材/问/导），不要 SVG 不要 emoji
+ *
+ * 参考实现：projects/htx-workflow-pre/deliverables/分层支持脚手架.html / 数学思维五阶进阶.html
+ */
+:root {
+  /* 底色：米黄宣纸 + 宣纸白卡片 */
+  --cd-bg:          #FAF6EC;
+  --cd-ink:         #1F1B16;
+  --cd-ink-82:      rgba(31, 27, 22, 0.82);
+  --cd-ink-58:      rgba(31, 27, 22, 0.58);
+  --cd-ink-40:      rgba(31, 27, 22, 0.40);
+  --cd-ink-18:      rgba(31, 27, 22, 0.18);
+  --cd-hairline:    rgba(31, 27, 22, 0.10);
+
+  /* Accent：松竹绿主 + 赭金装饰 */
+  --cd-accent:      #1B3A2F;
+  --cd-accent-deep: #102921;
+  --cd-accent-glow: rgba(27, 58, 47, 0.10);
+  --cd-accent-2:    #A8804A;  /* 赭金，header 边线 / ◇ 章节符号 */
+  --cd-accent-3:    #B85540;  /* 朱赤，重点高亮 / 印章感 tag */
+
+  /* 字体：标题层强制衬线（连数字也用衬线，国风关键反差） */
+  --cd-serif-cn:    "Noto Serif CJK SC", "Noto Serif SC", "Songti SC", serif;
+  --cd-serif-en:    "Noto Serif CJK SC", "Noto Serif SC", Georgia, serif;
+}

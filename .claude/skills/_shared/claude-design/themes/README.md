@@ -1,6 +1,6 @@
 # ClaudeDesign 主题包
 
-8 套主题色板，覆盖 SOP / 商业发布 / 人文 / 极简 / 技术 / 学术等场景。
+9 套主题色板，覆盖 SOP / 商业发布 / 人文 / 极简 / 技术 / 学术 / 国风等场景。
 
 **铁律**：一份 PPT 只用一套。不允许混搭。
 
@@ -18,6 +18,7 @@
 | `muji-minimal.css` | 暖白 + 极淡灰，无印/Kenya Hara | 生活方式、审美优先私享会 | bg `#FAFAF8` / accent `#8A8A86` | 7/8/10 |
 | `cyber-noir.css` | 深空黑 + 霓虹紫，电影质感 | 技术大会主题演讲、赛博美学 | bg `#050814` / accent `#A855F7` | 1/2/6 |
 | `book-architecture.css` | 象牙 + 深棕 + 朱红，书籍排印 | 出版/内容品牌/深度内容场合 | bg `#F5F0E6` / accent `#B91C1C` | 4/8/10 |
+| `paper-zen.css` | 东方质感的西方学院派 / 出版物美感（《读库》/ FT Weekend 系） | 一图流 / 教研文档 / 研究报告封面 / 教学海报 / 庆典级 PRD 配图 | bg `#FAF6EC` / accent `#1B3A2F` + gold `#A8804A` | A4 横版一图流（非 PPT layout）；配套 `paper-zen.prompt.md` 是 Chat Opus 设计 brief，做新一图流可整段贴给 Chat Opus |
 
 ---
 
@@ -50,6 +51,7 @@ const theme  = fs.readFileSync('.claude/skills/_shared/claude-design/themes/ink-
 |------|---------|------|
 | `muji-minimal` | `--cd-serif-cn` → Noto Sans SC | 标题也用细黑，呈现极简气质 |
 | `book-architecture` | `--cd-sans` → Noto Serif SC | 正文也走衬线，强化书版感 |
+| `paper-zen` | `--cd-serif-cn/en` → Noto Serif CJK SC + Songti | 标题层全衬线（连数字也是），强化古籍气；招式扩展（5 色国画 palette / 双线 header / dotted divider / radial 宣纸晕染）见 `paper-zen.css` 文件头注释 |
 
 其余主题不覆盖字体，沿用 `tokens.css` 的字体栈。
 

@@ -1,40 +1,53 @@
 /* PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 */
 /* Claude Design tokens — pm-workspace 共享 CSS 变量
- * 深色主题 + HTX 蓝 accent（#2F6CF2）
+ * Anthropic 官方品牌色板 + claude.ai chat UI 实测色 + Lora / Poppins 字体（Anthropic 官方 brand-guidelines skill 同款）
+ *
+ * 色板来源：
+ * - 官方 brand-guidelines skill：github.com/anthropics/skills/skills/brand-guidelines
+ * - claude.ai chat UI 实测：bg #1F1F1E / text #C3C2B7（比官方品牌色 #141413/#faf9f5 柔一档，长时间盯不刺眼）
+ * 默认采用 chat UI 实测色（长阅读场景 = PPT/SOP/方案文档常态），需要营销级高对比时切到 .theme-cd-brand 拿 #141413/#faf9f5
  *
  * 字体引入（推荐）：
  * - CSS 内：@import url('../../_shared/fonts/claude-design.css');
  * - HTML head（脱离 skill 目录时用直接 CDN URL，与 _shared/fonts/claude-design.css 保持一致，改字体同步改两处）：
- * <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@300;400;500;600;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Inter:wght@100;200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+ * <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@300;400;500;600;900&family=Lora:ital,wght@0,400..700;1,400..700&family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
  */
 
 :root {
-  /* ── 深色底色 ── */
-  --cd-bg:      #0f0f11;
-  --cd-ink:     #FFFFFF;
-  --cd-ink-82:  rgba(255, 255, 255, 0.82);
-  --cd-ink-58:  rgba(255, 255, 255, 0.58);
-  --cd-ink-40:  rgba(255, 255, 255, 0.40);
-  --cd-ink-18:  rgba(255, 255, 255, 0.18);
-  --cd-hairline: rgba(255, 255, 255, 0.08);
+  /* ── 深色底色（默认主题，claude.ai chat UI 实测）── */
+  --cd-bg:      #1F1F1E;
+  --cd-ink:     #C3C2B7;
+  --cd-ink-82:  rgba(195, 194, 183, 0.82);
+  --cd-ink-58:  rgba(195, 194, 183, 0.58);
+  --cd-ink-40:  rgba(195, 194, 183, 0.40);
+  --cd-ink-18:  rgba(195, 194, 183, 0.18);
+  --cd-hairline: rgba(195, 194, 183, 0.10);
 
-  /* ── HTX / fintech 通用蓝 accent ── */
-  --cd-accent:      #2F6CF2;
-  --cd-accent-deep: #1F54D6;
-  --cd-accent-glow: rgba(47, 108, 242, 0.18);
+  /* ── Anthropic 官方 accent ── */
+  --cd-accent:      #D97757;  /* terra cotta，主 accent，logo 同款 */
+  --cd-accent-deep: #B45A3D;  /* 主 accent 加深 */
+  --cd-accent-glow: rgba(217, 119, 87, 0.22);
+  --cd-accent-2:    #6A9BCC;  /* 次 accent，蓝 */
+  --cd-accent-3:    #788C5D;  /* 三 accent，绿 */
 
-  /* ── 浅色模式（cream 背景，用于后台 / PPT 等）── */
-  --cd-light-bg:   #F5F4F0;
-  --cd-light-ink:  #1A1918;
-  --cd-light-dim:  #8B867E;
-  --cd-light-hair: rgba(0, 0, 0, 0.08);
+  /* ── 浅色模式（cream 背景，用于后台 / PPT 浅色版）── */
+  --cd-light-bg:   #FAF9F5;   /* Anthropic 官方 Light */
+  --cd-light-ink:  #141413;   /* Anthropic 官方 Dark */
+  --cd-light-dim:  #B0AEA5;   /* 官方 Mid Gray */
+  --cd-light-soft: #E8E6DC;   /* 官方 Light Gray，柔和分区背景 */
+  --cd-light-hair: rgba(20, 20, 19, 0.10);
 
-  /* ── 字体 ── */
-  /* 字体三分工：标题 serif（衬线主角）/ 正文 sans（CJK 优先）/ 代码 mono（信息节奏层）
-   * CJK 优先铁律：中文字体必须排在英文字体前 */
+  /* ── 字体 ──
+   * 字体三分工：标题 serif（衬线主角，跟 claude.ai chat UI 那个 "What shall we think through?" 一脉相承）
+   *           正文 sans（CJK 优先 + Anthropic 官方 Poppins）
+   *           代码 mono（信息节奏层）
+   * CJK 优先铁律：中文字体必须排在英文字体前
+   * Lora ≈ Tiempos（claude.ai 实际用的 marketing serif）—— Klim Type Foundry 同设计师 DNA，Anthropic brand-guidelines 钦定的免费替代
+   * Poppins ≈ Styrene B（claude.ai 实际用的 UI sans）—— Anthropic brand-guidelines 钦定的免费替代
+   */
   --cd-serif-cn: "Noto Serif SC", "Source Han Serif SC", serif;
-  --cd-serif-en: "Source Serif 4", Georgia, serif;
-  --cd-sans:     "HarmonyOS Sans SC", "PingFang SC", "Plus Jakarta Sans", -apple-system, system-ui, sans-serif;
+  --cd-serif-en: "Lora", Georgia, "Times New Roman", serif;
+  --cd-sans:     "Noto Sans SC", "Poppins", "PingFang SC", -apple-system, system-ui, sans-serif;
   --cd-mono:     "JetBrains Mono", "SF Mono", ui-monospace, monospace;
 
   /* ── 间距系统（8pt 网格）── */
@@ -55,9 +68,20 @@
 .theme-cd-light {
   --cd-bg:      var(--cd-light-bg);
   --cd-ink:     var(--cd-light-ink);
-  --cd-ink-82:  rgba(26, 25, 24, 0.82);
-  --cd-ink-58:  rgba(26, 25, 24, 0.58);
-  --cd-ink-40:  rgba(26, 25, 24, 0.40);
-  --cd-ink-18:  rgba(26, 25, 24, 0.18);
-  --cd-hairline: rgba(0, 0, 0, 0.10);
+  --cd-ink-82:  rgba(20, 20, 19, 0.82);
+  --cd-ink-58:  rgba(20, 20, 19, 0.58);
+  --cd-ink-40:  rgba(20, 20, 19, 0.40);
+  --cd-ink-18:  rgba(20, 20, 19, 0.18);
+  --cd-hairline: rgba(20, 20, 19, 0.10);
+}
+
+/* 营销级高对比作用域（Anthropic 官方品牌色 #141413 / #faf9f5），套在 hero / 印刷物 / 高反差封面 */
+.theme-cd-brand {
+  --cd-bg:      #141413;
+  --cd-ink:     #FAF9F5;
+  --cd-ink-82:  rgba(250, 249, 245, 0.82);
+  --cd-ink-58:  rgba(250, 249, 245, 0.58);
+  --cd-ink-40:  rgba(250, 249, 245, 0.40);
+  --cd-ink-18:  rgba(250, 249, 245, 0.18);
+  --cd-hairline: rgba(250, 249, 245, 0.10);
 }

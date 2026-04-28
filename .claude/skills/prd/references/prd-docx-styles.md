@@ -7,13 +7,13 @@
 
 | role | ascii（英文/数字）| eastAsia（中文）| 用途 |
 |------|------------------|----------------|------|
-| **title** | Source Serif 4 | Noto Serif SC | 封面 Title / Subtitle、H1 / H2 / H3、Scene 模块标题（触发方式 / 关键交互 / 校验逻辑等） |
-| **body** | Plus Jakarta Sans | HarmonyOS Sans SC | 默认正文、表格内容、bullet、cell_text |
+| **title** | Lora | Noto Serif SC | 封面 Title / Subtitle、H1 / H2 / H3、Scene 模块标题（触发方式 / 关键交互 / 校验逻辑等） |
+| **body** | Poppins | Noto Sans SC | 默认正文、表格内容、bullet、cell_text |
 | **mono** | JetBrains Mono | JetBrains Mono | 代码、路由、事件名、状态标签（NEW / 变更 / P0）、Header / Footer |
 
 Word 渲染时按字符自动选（中文走 eastAsia，英文 / 数字走 ascii）。用户系统没装相应字体时 Word 自动 fallback：
 
-- HarmonyOS Sans SC 没装 → PingFang SC（Mac）/ 微软雅黑（Windows）
+- Noto Sans SC 没装 → PingFang SC（Mac）/ 微软雅黑（Windows）
 - Noto Serif SC 没装 → 系统默认中文衬线
 - 不需要强制用户装字体
 
@@ -55,11 +55,11 @@ gen_prd_base.py 的 FONT 字典（实际生效配置）：
 
 ```python
 FONT = {
-  'title': {'ascii': 'Source Serif 4',    'eastAsia': 'Noto Serif SC'},
-  'body':  {'ascii': 'Plus Jakarta Sans', 'eastAsia': 'HarmonyOS Sans SC'},
+  'title': {'ascii': 'Lora',    'eastAsia': 'Noto Serif SC'},
+  'body':  {'ascii': 'Poppins', 'eastAsia': 'Noto Sans SC'},
   'mono':  {'ascii': 'JetBrains Mono',    'eastAsia': 'JetBrains Mono'},
   # 兼容旧脚本：font="Arial" 自动映射到 body
-  'Arial': {'ascii': 'Plus Jakarta Sans', 'eastAsia': 'HarmonyOS Sans SC'},
+  'Arial': {'ascii': 'Poppins', 'eastAsia': 'Noto Sans SC'},
 }
 ```
 
@@ -69,7 +69,7 @@ styles: {
   default: {
     document: {
       run: {
-        // 默认走 body role：Plus Jakarta Sans (英文) + HarmonyOS Sans SC (中文)
+        // 默认走 body role：Poppins (英文) + Noto Sans SC (中文)
         size: 22,                   // 11pt 正文
         color: "333333"
       },
@@ -83,7 +83,7 @@ styles: {
     {
       id: "Title", name: "Title",
       basedOn: "Normal", next: "Normal", quickFormat: true,
-      run: { size: 48, bold: true, font: "title", color: "1A1A2E" },
+      run: { size: 48, bold: true, font: "title", color: "141413" },
       paragraph: { spacing: { before: 480, after: 120 }, alignment: AlignmentType.CENTER }
     },
     // ── 副标题（title role）──
@@ -97,18 +97,18 @@ styles: {
     {
       id: "Heading1", name: "Heading 1",
       basedOn: "Normal", next: "Normal", quickFormat: true,
-      run: { size: 32, bold: true, font: "title", color: "1A1A2E" },
+      run: { size: 32, bold: true, font: "title", color: "141413" },
       paragraph: {
         spacing: { before: 480, after: 240 },
         outlineLevel: 0,
-        border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: "2E75B6", space: 1 } }
+        border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: "D97757", space: 1 } }
       }
     },
     // ── H2 · 节标题（title role）──
     {
       id: "Heading2", name: "Heading 2",
       basedOn: "Normal", next: "Normal", quickFormat: true,
-      run: { size: 26, bold: true, font: "title", color: "2E75B6" },
+      run: { size: 26, bold: true, font: "title", color: "D97757" },
       paragraph: { spacing: { before: 360, after: 180 }, outlineLevel: 1 }
     },
     // ── H3 · 子节标题（title role）──
@@ -126,18 +126,18 @@ styles: {
 
 | 用途 | font role | 字号(half-pt) | 实际pt | 颜色 | 粗体 |
 |------|-----------|--------------|--------|------|------|
-| 封面标题 | **title** | 48 | 24pt | #1A1A2E | ✓ |
+| 封面标题 | **title** | 48 | 24pt | #141413 | ✓ |
 | 封面副标题 | **title** | 28 | 14pt | #666666 | — |
-| H1 章标题 | **title** | 32 | 16pt | #1A1A2E | ✓ |
-| H2 节标题 | **title** | 26 | 13pt | #2E75B6 | ✓ |
+| H1 章标题 | **title** | 32 | 16pt | #141413 | ✓ |
+| H2 节标题 | **title** | 26 | 13pt | #D97757 | ✓ |
 | H3 子节 | **title** | 22 | 11pt | #333333 | ✓ |
-| Scene 模块标题（触发方式 / 关键交互）| **title** | 20 | 10pt | #1A1A2E | ✓ |
+| Scene 模块标题（触发方式 / 关键交互）| **title** | 20 | 10pt | #141413 | ✓ |
 | 正文 | **body** | 22 | 11pt | #333333 | — |
 | 表头文字 | **body** | 18 | 9pt | #FFFFFF | ✓ |
 | 表格正文 | **body** | 18 | 9pt | #333333 | — |
 | 代码 / 路由 / 事件名 | **mono** | 18 | 9pt | #C7254E | — |
 | 斜体说明 | **body** italic | 22 | 11pt | #888888 | — |
-| 标注（变更）/ NEW / P0 tag | **mono** | 20 | 10pt | #D97706 | ✓ |
+| 标注（变更）/ NEW / P0 tag | **mono** | 20 | 10pt | #D97757 | ✓ |
 | Header / Footer | **mono** | 16 | 8pt | #AAAAAA | — |
 
 ## 颜色定义
@@ -148,11 +148,11 @@ const COLORS = {
   textPrimary:   "333333",   // 正文
   textSecondary: "666666",   // 副标题/次要
   textMuted:     "888888",   // 斜体说明
-  textHeading:   "1A1A2E",   // 标题/表头
-  textLink:      "2E75B6",   // H2 / 链接蓝
+  textHeading:   "141413",   // 标题/表头
+  textLink:      "D97757",   // H2 / 链接蓝
 
   // 表格
-  tableHeaderBg: "2D81FF",   // 表头底色（蓝色）
+  tableHeaderBg: "141413",   // 表头底色（蓝色）
   tableHeaderText: "FFFFFF", // 表头文字（白色）
   tableAltRowBg: "F8FAFB",   // 交替行底色（极浅灰）
   tableBorder:   "CCCCCC",   // 边框灰
@@ -161,7 +161,7 @@ const COLORS = {
   // 状态标注
   tagNew:        "15803D",   // NEW 绿
   tagNewBg:      "DCFCE7",
-  tagChange:     "D97706",   // 变更 琥珀
+  tagChange:     "D97757",   // 变更 琥珀
   tagChangeBg:   "FEF3C7",
   tagP0:         "15803D",   // P0 绿
   tagP0Bg:       "DCFCE7",
@@ -173,8 +173,8 @@ const COLORS = {
   // 强调
   codeBg:        "F5F5F5",   // 代码背景
   codeText:      "C7254E",   // 代码文字
-  accentBlue:    "2E75B6",   // H1 底线 / H2 文字
-  accentDark:    "1A1A2E",   // 深色强调
+  accentBlue:    "D97757",   // H1 底线 / H2 文字
+  accentDark:    "141413",   // 深色强调
 };
 ```
 
@@ -196,7 +196,7 @@ width: { size: 12960, type: WidthType.DXA },
 columnWidths: [3320, 9640],
 
 // 表头行
-shading: { fill: "2D81FF", type: ShadingType.CLEAR },  // 蓝底
+shading: { fill: "141413", type: ShadingType.CLEAR },  // 蓝底
 // 表头文字 color: "FFFFFF"（白字），font: body
 // 正文行无底色，font: body
 ```
@@ -209,7 +209,7 @@ width: { size: 12960, type: WidthType.DXA },
 columnWidths: [1100, 6240, 2770, 2850],
 
 // 表头行
-shading: { fill: "2D81FF", type: ShadingType.CLEAR },  // 蓝底白字
+shading: { fill: "141413", type: ShadingType.CLEAR },  // 蓝底白字
 // 编号列内容走 mono（A / B-1 / M-1 等编号有节奏感），其他列 body
 ```
 

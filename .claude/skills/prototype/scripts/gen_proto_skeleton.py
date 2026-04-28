@@ -133,7 +133,7 @@ def _dark_view(view, active):
 
     if is_phone:
         return f'''
-<div class="gnav-view-section{active}" id="{view["id"]}" style="background:#0B0E11;color:#EAECEF;min-height:calc(100vh - 52px);display:flex;justify-content:center;padding:0;">
+<div class="gnav-view-section{active}" id="{view["id"]}" style="background:#181A20;color:#EAECEF;min-height:calc(100vh - 52px);display:flex;justify-content:center;padding:0;">
 <div class="app-mock">
   <div class="ph-status"><span>9:41</span><span>⚡📶</span></div>
   <div class="p-nav">
@@ -159,7 +159,7 @@ def _dark_view(view, active):
 '''
     else:
         return f'''
-<div class="gnav-view-section{active}" id="{view["id"]}" style="background:#0B0E11;color:#EAECEF;min-height:calc(100vh - 52px);">
+<div class="gnav-view-section{active}" id="{view["id"]}" style="background:#181A20;color:#EAECEF;min-height:calc(100vh - 52px);">
   <div class="p-nav">
     <div class="p-nav-logo" onclick="goPage('{view["pages"][0]["id"]}')"><span>🔥</span><b>{view.get("nav_name", view["name"])}</b></div>
     <div class="p-nav-right">

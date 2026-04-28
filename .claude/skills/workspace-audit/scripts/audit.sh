@@ -212,7 +212,7 @@ if run_cat 2; then
       echo "    ⚠️  $short 仍引用遗留字体（HarmonyOS/Plus Jakarta/IBM Plex/DM Sans）"
       FONT_ISSUES=$((FONT_ISSUES + 1))
     fi
-    body_fonts=$(grep -oE "font-family:[^;]+" "$f" 2>/dev/null | grep -v monospace | grep -v 'JetBrains' || true)
+    body_fonts=$(grep -oE "font-family:[^;]+" "$f" 2>/dev/null | grep -v monospace | grep -v 'JetBrains' | grep -vE 'var\(--(cd-|font-|fc-|arch-)?mono\)' || true)
     if [ -n "$body_fonts" ]; then
       # 正文至少带一个 CJK 字体（Noto Sans SC / Noto Serif SC 都算）
       if ! echo "$body_fonts" | grep -qE "Noto (Sans|Serif) SC"; then

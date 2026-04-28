@@ -7,7 +7,7 @@
 const { Graph } = window.X6;
 
 // ── 主题常量 ────────────────────────────────────────
-const FONT = "'Noto Sans SC','Inter',system-ui,sans-serif";
+const FONT = "'Noto Sans SC','Poppins',system-ui,sans-serif";
 const STROKE = '#1F2329';
 const FILL = {
   terminal: '#E8E5FF',

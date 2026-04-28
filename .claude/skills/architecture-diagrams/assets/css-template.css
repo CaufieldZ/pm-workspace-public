@@ -4,23 +4,23 @@
  * ═══════════════════════════════════════════════════════════════════════════
  * 架构图集 CSS 模板 · Architecture Diagrams CSS Template
  * 用法：完整复制到 <style> 标签内，禁止重写
- * 版本：v3.0 · Claude Design 深色主题 + HTX 蓝 accent
- * Fonts（HTML head 引入）：Noto Serif SC · Source Serif 4 · JetBrains Mono
+ * 版本：v3.1 · Claude Design 深色主题（claude.ai chat UI 同款 #1F1F1E）+ Anthropic terra cotta
+ * Fonts（HTML head 引入）：Noto Serif SC · Lora · Noto Sans SC · Poppins · JetBrains Mono
  * ═══════════════════════════════════════════════════════════════════════════
  */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@300;400;500;600;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Inter:wght@100;200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@300;400;500;600;900&family=Lora:ital,wght@0,400..700;1,400..700&family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 /* ── 内联 Claude Design token 兜底 ── */
 :root {
-  --arch-bg:       #000000;
-  --arch-surface:  rgba(255,255,255,0.04);
-  --arch-surface2: rgba(255,255,255,0.07);
-  --arch-ink:      #FFFFFF;
-  --arch-ink-82:   rgba(255,255,255,0.82);
-  --arch-ink-58:   rgba(255,255,255,0.58);
-  --arch-ink-40:   rgba(255,255,255,0.40);
-  --arch-hair:     rgba(255,255,255,0.12);
-  --arch-accent:   #2F6CF2;
+  --arch-bg:       #1F1F1E;
+  --arch-surface:  rgba(195,194,183,0.04);
+  --arch-surface2: rgba(195,194,183,0.07);
+  --arch-ink:      #C3C2B7;
+  --arch-ink-82:   rgba(195,194,183,0.82);
+  --arch-ink-58:   rgba(195,194,183,0.58);
+  --arch-ink-40:   rgba(195,194,183,0.40);
+  --arch-hair:     rgba(195,194,183,0.12);
+  --arch-accent:   #D97757;
   --arch-mono:     "JetBrains Mono", "SF Mono", ui-monospace, monospace;
   --arch-serif-cn: "Noto Serif SC", serif;
 }
