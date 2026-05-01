@@ -27,6 +27,8 @@
 
 **Fill 内容边界契约（跨 Skill 通用）**：每个 Skill 在 SKILL.md 声明「Fill 内容契约」，明确骨架 vs fill 各提供什么。**禁止同时在骨架和 fill 中生成设备壳**（.phone / .webframe / .app-mock）。两种合法模式：① 骨架生成壳，fill 写内部内容（prototype 模式）；② 骨架只生成空容器，fill 生成壳+内容（interaction-map 模式）。新建 HTML Skill 必须先定义 Fill 契约再写骨架。
 
+**大文档源码拆分（> 1500 行或 Tab ≥ 10，PPT / SOP 手册类）**：三层架构——`gen_{类型}_v{N}.js`（orchestrator 只拼接，不含业务逻辑）+ `{类型}-src/data.js`（全局数据层，pages 只读）+ `{类型}-src/pages/page-0X.js`（每 Tab 一个源文件，≤ 150 行超过继续拆）。改动流程：改单页文案只动 `pages/page-0X.js`；改全局数据（术语改名）动 `data.js`；加新 Tab 建新 page + orchestrator 注册。
+
 ---
 
 ## 二、Fill 质量强制规则（所有模型）

@@ -21,7 +21,7 @@ fi
 CHANGED=$(git diff --cached --name-only --diff-filter=ACMR)
 
 NEEDS_AUDIT=false
-echo "$CHANGED" | grep -qE '^\.claude/skills/|^\.claude/rules/|^CLAUDE\.md$' && NEEDS_AUDIT=true
+echo "$CHANGED" | grep -qE '^\.claude/skills/|^\.claude/rules/|^\.claude/hooks/|^CLAUDE\.md$' && NEEDS_AUDIT=true
 
 if [ "$NEEDS_AUDIT" = false ]; then
   exit 0
@@ -30,7 +30,7 @@ fi
 echo "🔍 检测到 Skill/规则文件变更，运行防腐化审计..."
 echo ""
 
-bash .claude/skills/workspace-audit/scripts/audit.sh 1,2,3,4,7,12,13,14
+bash .claude/skills/workspace-audit/scripts/audit.sh 1,2,3,4,7,12,13,14,15
 
 if [ $? -ne 0 ]; then
   echo ""

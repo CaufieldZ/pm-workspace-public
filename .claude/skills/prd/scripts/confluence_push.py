@@ -23,12 +23,12 @@ push_to_confluence_base.py — 推送 PRD docx 到 Confluence Server
 示例:
     # 模式 A:新建/upsert
     python3 .claude/skills/prd/scripts/push_to_confluence_base.py \\
-        projects/growth/activity-center/deliverables/prd-htx-v1.docx \\
-        --title "HTX 活动中心 PRD v1" --space HTX --parent-id 12345678
+        projects/growth/activity-center/deliverables/prd-example-v1.docx \\
+        --title "示例活动中心 PRD v1" --space Platform C --parent-id 12345678
 
     # 模式 B:按 pageId 覆盖
     python3 .claude/skills/prd/scripts/push_to_confluence_base.py \\
-        projects/community/base/deliverables/prd-htx-community-v3.4.docx \\
+        projects/community/base/deliverables/prd-proj-community-v3.4.docx \\
         --page-id 155652375
 """
 

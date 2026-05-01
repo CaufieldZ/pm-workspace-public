@@ -134,7 +134,7 @@ python3 .claude/skills/prd/scripts/push_to_confluence_base.py "<docx>"
 
 # 路径 A：新建页面 / 按标题 upsert
 python3 .claude/skills/prd/scripts/push_to_confluence_base.py "<docx>" \
-    --title "HTX · {项目名} · v{N}" --space jituankejizhongxin --parent-id "<id>"
+    --title "Platform C · {项目名} · v{N}" --space jituankejizhongxin --parent-id "<id>"
 
 # 路径 B：已知 pageId 直接覆盖
 python3 .claude/skills/prd/scripts/push_to_confluence_base.py "<docx>" --page-id 155652375

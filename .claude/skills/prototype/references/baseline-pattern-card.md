@@ -8,8 +8,8 @@
 
 | 标杆 | 路径 | 范式 | 端构成 | 场景数 |
 |------|------|------|--------|-------|
-| V8 直播 | [HTX_观众端可交互原型_V8.html](../../../../projects/livestream/q2-update/deliverables/HTX_观众端可交互原型_V8.html) | 单 phone + scene chips | 纯 App | 17 |
-| Community v3 | [proto-htx-community-v3.html](../../../../projects/community/base/deliverables/proto-htx-community-v3.html) | 单 phone + scene chips | 纯 App | 7 |
+| V8 直播 | [示例_观众端可交互原型_V8.html](../../../../projects/livestream/q2-update/deliverables/示例_观众端可交互原型_V8.html) | 单 phone + scene chips | 纯 App | 17 |
+| Community v3 | [proto-proj-community-v3.html](../../../../projects/community/base/deliverables/proto-proj-community-v3.html) | 单 phone + scene chips | 纯 App | 7 |
 | Activity v5.1 | [活动中心_可交互原型_v5.1.html](../../../../projects/growth/activity-center/deliverables/活动中心_可交互原型_v5.1.html) | 多 view 切换 (gnav) | Web 前台 + Web 后台 | 12 |
 
 ## 3 标杆 × 5 场景对照矩阵

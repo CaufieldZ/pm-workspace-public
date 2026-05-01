@@ -145,4 +145,4 @@ python3 .claude/skills/prd/scripts/check_prd_human_voice.py <docx>
 
 ## 历史
 
-- 2026-04-29: 沉淀。htx-community v3.4 PRD 抛光后用户反馈「PRD 是人读的必须讲人话」，把 patch_prd_v3_4_polish.py 通用规则提取成 helper + scan 模块，三道闸接入。规则文件 + 共享扫描 + 自检接入 + push gate 复用 + save_prd 一键 wrapper。
+- 2026-04-29: 沉淀。proj-community v3.4 PRD 抛光后用户反馈「PRD 是人读的必须讲人话」，把 patch_prd_v3_4_polish.py 通用规则提取成 helper + scan 模块，三道闸接入。规则文件 + 共享扫描 + 自检接入 + push gate 复用 + save_prd 一键 wrapper。

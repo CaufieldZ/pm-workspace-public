@@ -7,7 +7,7 @@
 set -o pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-CATEGORIES="${1:-1,2,3,4,7,13,14}"
+CATEGORIES="${1:-1,2,3,4,7,13,14,15}"
 GLOBAL_FAIL=0
 
 # ─── 常量 ───
@@ -246,6 +246,26 @@ if run_cat 2; then
     fi
   done
   [ "$ORDER_FAIL" -eq 0 ] && echo "    ✅ 字体栈顺序正确（CJK 优先）"
+
+  # 2.6 同文件字体栈一致性（focus 英文 fallback：焕新时遗漏会导致一处 Inter 一处 Poppins）
+  echo ""
+  echo "--- 同文件字体栈一致性 ---"
+  INCON_FAIL=0
+  for f in .claude/skills/*/assets/*.css; do
+    [ -f "$f" ] || continue
+    short=$(echo "$f" | sed 's|.claude/skills/||')
+    # 提取所有 font-family 声明里的英文 sans fallback（匹配单引号和双引号两种写法）
+    en_fonts=$(grep -oE "font-family:[^;]+" "$f" 2>/dev/null | \
+      grep -oE "['\"](Inter|Poppins|Plus Jakarta Sans|DM Sans|HarmonyOS Sans SC|Roboto|Space Grotesk|Fraunces)['\"]" | \
+      tr -d '"'"'" | sort -u)
+    [ -z "$en_fonts" ] && continue
+    n=$(echo "$en_fonts" | wc -l | tr -d ' ')
+    if [ "$n" -gt 1 ]; then
+      echo "    ❌ $short 混用 $n 种英文 fallback：$(echo "$en_fonts" | tr '\n' ' ')"
+      INCON_FAIL=1; GLOBAL_FAIL=1
+    fi
+  done
+  [ "$INCON_FAIL" -eq 0 ] && echo "    ✅ 各 CSS 同文件内英文 fallback 一致"
   echo ""
 fi
 
@@ -878,6 +898,144 @@ if run_cat 14; then
   fi
 
   echo ""
+fi
+
+# ─────────────────────────────────────────────
+# 类别 15：Hooks 健康度
+# bash 语法 + BSD sed 兼容性 + 引用脚本存在性 + settings.json 登记一致
+# ─────────────────────────────────────────────
+if run_cat 15; then
+  echo "===== 15. Hooks 健康度 ====="
+  echo ""
+  HOOKS_FAIL=0
+
+  HOOK_DIR=".claude/hooks"
+  if [ ! -d "$HOOK_DIR" ]; then
+    echo "  ⏭️  $HOOK_DIR 不存在，跳过"
+    echo ""
+  else
+    # 15.1 bash -n 语法
+    echo "--- bash -n 语法 ---"
+    SYNTAX_FAIL=0
+    for f in "$HOOK_DIR"/*.sh "$HOOK_DIR"/lib/*.sh; do
+      [ -f "$f" ] || continue
+      if ! bash -n "$f" 2>/dev/null; then
+        echo "  ❌ $(echo "$f" | sed "s|$HOOK_DIR/||") 语法错误"
+        bash -n "$f" 2>&1 | head -2 | sed 's/^/      /'
+        SYNTAX_FAIL=1; HOOKS_FAIL=1; GLOBAL_FAIL=1
+      fi
+    done
+    [ "$SYNTAX_FAIL" -eq 0 ] && echo "  ✅ 所有 hook 脚本语法通过"
+
+    # 15.2 BSD sed 分隔符/alternation 冲突
+    # 匹配 `'s|...(a|b|c)...|' ` — 分隔符 | 与 alternation | 打架
+    # 2026-05-01 pre-scripts-first.sh 翻车同款 bug
+    echo ""
+    echo "--- BSD sed 分隔符冲突 lint ---"
+    SED_FAIL=0
+    SED_HITS=$(grep -nE "sed[^'\"]*['\"]s\|[^'\"]*\([^)|]+\|[^)|]+(\|[^)|]+)*\)" "$HOOK_DIR"/*.sh 2>/dev/null)
+    if [ -n "$SED_HITS" ]; then
+      echo "  ❌ 发现 sed 用 | 做分隔符且 pattern 含 (a|b|c) alternation（BSD sed 会报 'parentheses not balanced'）："
+      echo "$SED_HITS" | sed 's/^/     /'
+      echo "     修法：换分隔符，如 sed 's#...(a|b|c)...#\\1#'"
+      SED_FAIL=1; HOOKS_FAIL=1; GLOBAL_FAIL=1
+    fi
+    [ "$SED_FAIL" -eq 0 ] && echo "  ✅ 无 BSD sed 分隔符冲突"
+
+    # 15.3 引用脚本存在性
+    # 用 python3 抽更稳：捕获 ${PROJECT_DIR}/path 或 $VAR/path 或裸 .claude/... / scripts/... 路径
+    echo ""
+    echo "--- 引用脚本存在性 ---"
+    REF_FAIL=0
+    REFS=$(python3 - "$HOOK_DIR" <<'PYEOF'
+import os, re, sys, glob
+hook_dir = sys.argv[1]
+refs = set()
+# 捕获：${VAR[:-default]}/relpath  或  $VAR/relpath  或  裸 .claude/.../.sh|.py|.js  或  scripts/xxx.sh|py|js
+patterns = [
+    re.compile(r'\$\{(?:CLAUDE_PROJECT_DIR|PROJECT_DIR|ROOT)(?::-[^}]*)?\}/([A-Za-z0-9_./-]+\.(?:sh|py|js))'),
+    re.compile(r'\$(?:CLAUDE_PROJECT_DIR|PROJECT_DIR|ROOT)/([A-Za-z0-9_./-]+\.(?:sh|py|js))'),
+    re.compile(r'(?<![A-Za-z0-9_/-])(\.claude/(?:skills|hooks)/[A-Za-z0-9_./-]+\.(?:sh|py|js))'),
+    re.compile(r'(?<![A-Za-z0-9_/-])(scripts/[A-Za-z0-9_./-]+\.(?:sh|py|js))'),
+]
+for f in sorted(glob.glob(f'{hook_dir}/*.sh')):
+    src = open(f, encoding='utf-8', errors='ignore').read()
+    for p in patterns:
+        for m in p.findall(src):
+            # 过滤含通配符 / 路径拼接占位 / tmp 的
+            if any(c in m for c in ['*', '${', '$(', '$']): continue
+            if m.startswith('tmp/') or '/tmp/' in m: continue
+            refs.add(m)
+for r in sorted(refs):
+    print(r)
+PYEOF
+)
+    for ref in $REFS; do
+      if [ ! -f "$ref" ]; then
+        echo "  ❌ hook 引用但文件不存在：$ref"
+        REF_FAIL=1; HOOKS_FAIL=1; GLOBAL_FAIL=1
+      fi
+    done
+    [ "$REF_FAIL" -eq 0 ] && echo "  ✅ hook 引用的脚本均存在（$(echo "$REFS" | wc -l | tr -d ' ') 条）"
+
+    # 15.4 settings.json hooks 节注册一致性
+    echo ""
+    echo "--- settings.json 注册一致性 ---"
+    SETTINGS=".claude/settings.json"
+    REG_FAIL=0
+    if [ -f "$SETTINGS" ] && command -v python3 >/dev/null 2>&1; then
+      REGISTERED=$(python3 -c "
+import json, re
+try:
+    data = json.load(open('$SETTINGS', encoding='utf-8'))
+except Exception: raise SystemExit
+paths = set()
+hooks = data.get('hooks', {})
+for events in hooks.values():
+    for entry in events:
+        for h in entry.get('hooks', []):
+            cmd = h.get('command', '')
+            m = re.search(r'\.claude/hooks/[a-zA-Z0-9_.-]+\.sh', cmd)
+            if m: paths.add(m.group(0))
+for p in sorted(paths):
+    print(p)
+")
+      # 注册的都该存在
+      for r in $REGISTERED; do
+        if [ ! -f "$r" ]; then
+          echo "  ❌ settings.json 注册了 $r 但文件不存在"
+          REG_FAIL=1; HOOKS_FAIL=1; GLOBAL_FAIL=1
+        fi
+      done
+      # 存在的都该注册（孤儿 hook 检测）
+      for f in "$HOOK_DIR"/*.sh; do
+        base=$(basename "$f")
+        rel=".claude/hooks/$base"
+        if ! echo "$REGISTERED" | grep -qx "$rel"; then
+          echo "  ⚠️  $rel 存在但 settings.json 未注册（孤儿 hook）"
+          # warn 不 fail（可能是主动禁用的 hook）
+        fi
+      done
+      [ "$REG_FAIL" -eq 0 ] && echo "  ✅ settings.json 注册与 hook 文件一致"
+    else
+      echo "  ⏭️  settings.json 或 python3 不可用，跳过"
+    fi
+
+    # 15.5 pre-commit trigger 覆盖 hooks 层
+    echo ""
+    echo "--- pre-commit trigger 覆盖 ---"
+    if [ -f .githooks/pre-commit ]; then
+      if grep -q '\\.claude/hooks/' .githooks/pre-commit; then
+        echo "  ✅ .githooks/pre-commit 已覆盖 .claude/hooks/ 变更"
+      else
+        echo "  ❌ .githooks/pre-commit trigger 未包含 ^\\.claude/hooks/，改 hook 不会触发防腐审计"
+        HOOKS_FAIL=1; GLOBAL_FAIL=1
+      fi
+    fi
+
+    [ "$HOOKS_FAIL" -eq 0 ] && echo ""
+    echo ""
+  fi
 fi
 
 echo "===== 审计完成 ====="

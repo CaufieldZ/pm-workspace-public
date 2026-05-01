@@ -37,7 +37,13 @@ def generate_skeleton(project: dict, views: list, output_path: str):
             "name": str,         # Tab 显示名
             "icon": str,         # Tab icon emoji
             "theme": str,        # "dark" | "light"
+            "device": str,       # "phone" = 对客 App（.app-mock 375×812）|
+                                 #  "web-front" = 对客 web（.web-front 全宽 + .p-nav + .wf-footer）|
+                                 #  省略 = legacy Web 全宽（.p-nav 裸铺，不推荐，新项目请用 web-front）
+                                 # light theme 时 device 忽略，固定用 .layout + sidebar（内部后台）
             "pages": [{"id": str, "name": str}, ...],
+            # web-front device only (optional):
+            "nav_items": [str, ...],  # 顶 nav 菜单项，默认 ['买币', '行情', '交易', '合约', '赚币']
             # light theme only:
             "sidebar": [{"icon": str, "name": str}, ...],
         }, ...]
@@ -127,7 +133,12 @@ def _dark_view(view, active):
 </div>''')
     pages_html = '\n'.join(pages)
 
-    is_phone = view.get('device') == 'phone'
+    device = view.get('device')
+
+    if device == 'web-front':
+        return _dark_web_front(view, active, pages_html)
+
+    is_phone = device == 'phone'
 
     if is_phone:
         return f'''
@@ -176,6 +187,65 @@ def _dark_view(view, active):
       <!-- FILL_END:drawer-{view["id"]} -->
     </div>
   </div>
+</div>
+'''
+
+
+def _dark_web_front(view, active, pages_html):
+    """对客 web 壳：.web-front 容器 + 复用 .p-nav / .p-dropdown / .p-btn-blue + .wf-footer 补件"""
+    nav_items = view.get('nav_items', ['买币', '行情', '交易', '合约', '赚币'])
+    nav_items_html = '\n    '.join(
+        f'<div class="p-nav-item">{item} ▾</div>' for item in nav_items
+    )
+    footer_name = view.get("nav_name", view["name"])
+    return f'''
+<div class="gnav-view-section{active}" id="{view["id"]}">
+<div class="web-front">
+  <!-- 顶 nav（复用 .p-nav / .p-nav-item / .p-btn-blue）-->
+  <div class="p-nav">
+    <div class="p-nav-logo" onclick="goPage('{view["pages"][0]["id"]}')"><span>🔥</span><b>{view.get("nav_name", view["name"])}</b></div>
+    {nav_items_html}
+    <div class="p-nav-right">
+      <button class="p-btn-out">💰 资产</button>
+      <button class="p-btn-blue">登录 / 注册</button>
+    </div>
+  </div>
+{pages_html}
+
+  <!-- footer（三列 + legal） -->
+  <div class="wf-footer">
+    <div class="wf-footer-cols">
+      <!-- FILL_START:footer-{view["id"]} -->
+      <div>
+        <h4>关于</h4>
+        <a>公司介绍</a><a>新闻中心</a><a>联系我们</a>
+      </div>
+      <div>
+        <h4>服务</h4>
+        <a>帮助中心</a><a>API 文档</a><a>费率说明</a>
+      </div>
+      <div>
+        <h4>合规</h4>
+        <a>服务条款</a><a>隐私政策</a><a>风险提示</a>
+      </div>
+      <!-- FILL_END:footer-{view["id"]} -->
+    </div>
+    <div class="wf-footer-legal">
+      <span>© 2026 {footer_name}. All rights reserved.</span>
+      <span>Ver {view.get("version", "原型")}</span>
+    </div>
+  </div>
+
+  <!-- 抽屉（右侧滑入，对客 web 模式） -->
+  <div class="p-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+  <div class="p-drawer" id="drawerPanel">
+    <div class="p-drawer-bar"><h3>详情</h3><span class="dx" onclick="closeDrawer()">✕</span></div>
+    <div class="p-drawer-body" style="padding:16px 20px;">
+      <!-- FILL_START:drawer-{view["id"]} -->
+      <!-- FILL_END:drawer-{view["id"]} -->
+    </div>
+  </div>
+</div><!-- .web-front -->
 </div>
 '''
 
@@ -251,11 +321,15 @@ def _script(js):
 def _print_summary(views):
     total_pages = sum(len(v.get('pages', [])) for v in views)
     print(f'   {len(views)} 个 View, {total_pages} 个页面占位')
+    device_labels = {'phone': '对客 App', 'web-front': '对客 web'}
     for v in views:
         pages = v.get('pages', [])
         ids = ', '.join(p['id'] for p in pages) if pages else '(无页面)'
-        theme = '深色' if v.get('theme') != 'light' else '浅色'
-        print(f'   {v["name"]}（{theme}）: {ids}')
+        if v.get('theme') == 'light':
+            label = '内部后台'
+        else:
+            label = device_labels.get(v.get('device'), '对客 web（legacy 全宽）')
+        print(f'   {v["name"]}（{label}）: {ids}')
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -266,13 +340,26 @@ if __name__ == '__main__':
     project = {"name": "示例产品", "version": "v1.0"}
     views = [
         {
-            "id": "user-view",
-            "name": "用户端",
+            "id": "app-view",
+            "name": "对客 App",
             "icon": "📱",
             "theme": "dark",
+            "device": "phone",
             "pages": [
-                {"id": "main", "name": "首页"},
-                {"id": "detail", "name": "详情"},
+                {"id": "app-main", "name": "首页"},
+                {"id": "app-detail", "name": "详情"},
+            ]
+        },
+        {
+            "id": "web-view",
+            "name": "对客 web",
+            "icon": "🖥",
+            "theme": "dark",
+            "device": "web-front",
+            "nav_name": "示例产品",
+            "pages": [
+                {"id": "web-main", "name": "首页"},
+                {"id": "web-detail", "name": "详情"},
             ]
         },
         {

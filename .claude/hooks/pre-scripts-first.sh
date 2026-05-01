@@ -63,9 +63,10 @@ case "$TOOL_NAME" in
     if echo "$FILE_PATH" | grep -qE 'projects/[^/]+/.*\.(html|docx)$' && \
        ! echo "$FILE_PATH" | grep -qE '/(archive|inputs|screenshots|scripts|sop-src)/'; then
       # 项目目录：先试两层（产品线/项目），失败回落到一层（顶级项目）
-      PROJECT_DIR=$(echo "$FILE_PATH" | sed -nE 's|(.*projects/[^/]+/[^/]+)/(deliverables|scripts|inputs|screenshots).*|\1|p')
-      [ -z "$PROJECT_DIR" ] && PROJECT_DIR=$(echo "$FILE_PATH" | sed -nE 's|(.*projects/[^/]+)/(deliverables|scripts|inputs|screenshots).*|\1|p')
-      [ -z "$PROJECT_DIR" ] && PROJECT_DIR=$(echo "$FILE_PATH" | sed -E 's|(.*projects/[^/]+)/.*|\1|')
+      # 注：BSD sed `-E` 下 `|` 做 delimiter 会跟 alternation 的 `|` 打架，换 `#`
+      PROJECT_DIR=$(echo "$FILE_PATH" | sed -nE 's#(.*projects/[^/]+/[^/]+)/(deliverables|scripts|inputs|screenshots).*#\1#p')
+      [ -z "$PROJECT_DIR" ] && PROJECT_DIR=$(echo "$FILE_PATH" | sed -nE 's#(.*projects/[^/]+)/(deliverables|scripts|inputs|screenshots).*#\1#p')
+      [ -z "$PROJECT_DIR" ] && PROJECT_DIR=$(echo "$FILE_PATH" | sed -E 's#(.*projects/[^/]+)/.*#\1#')
       GEN_FILES=$(ls "$PROJECT_DIR/scripts/"gen_*.py "$PROJECT_DIR/scripts/"gen_*.js \
                     "$PROJECT_DIR/scripts/"patch_*.py "$PROJECT_DIR/scripts/"patch_*.js \
                     "$PROJECT_DIR/scripts/"update_*.py "$PROJECT_DIR/scripts/"update_*.js 2>/dev/null)
@@ -80,7 +81,7 @@ case "$TOOL_NAME" in
         LINE_COUNT=$(echo "$CONTENT" | wc -l | tr -d ' ')
         if [ "$LINE_COUNT" -gt 200 ]; then
           echo "❌ 首次生成 >200 行 HTML 禁止直接 Write（${LINE_COUNT} 行）" >&2
-          echo "   应先写 gen 脚本到 projects/${PROJECT}/scripts/gen_*.py，再 python3 执行生成" >&2
+          echo "   应先写 gen 脚本到 ${PROJECT_DIR}/scripts/gen_*.py，再 python3 执行生成" >&2
           log_event hook scripts-first block "large first-gen html: $FILE_PATH $LINE_COUNT lines"
           exit 2
         fi

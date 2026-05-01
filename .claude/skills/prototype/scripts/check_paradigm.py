@@ -9,7 +9,7 @@
     范式: 单 phone + scene chips
     端类型: app
     场景数: 17
-    标杆: projects/htx-live-streaming-updateQ2/deliverables/HTX_观众端可交互原型_V8.html
+    标杆: <PARADIGMS 里对应范式的 baseline 路径>
     骨架模式: single-phone-scenes
     必读 references:
       - .claude/skills/prototype/references/crypto-app-vocabulary.md
@@ -36,9 +36,9 @@ ROOT = Path(__file__).resolve().parents[4]
 PARADIGMS = {
     "single-phone-scenes": {
         "name": "单 phone + scene chips",
-        "baseline": "projects/livestream/q2-update/deliverables/HTX_观众端可交互原型_V8.html",
+        "baseline": "projects/livestream/q2-update/deliverables/示例_观众端可交互原型_V8.html",
         "alt_baselines": [
-            "projects/community/base/deliverables/proto-htx-community-v3.html",
+            "projects/community/base/deliverables/proto-proj-community-v3.html",
         ],
     },
     "single-phone-no-nav": {

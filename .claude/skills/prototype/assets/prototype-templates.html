@@ -246,9 +246,9 @@
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<!-- ## E. 设备壳真品组件（Figma 抽取 · HTX 自家设计稿）                    -->
+<!-- ## E. 设备壳真品组件（Figma 抽取 · 示例自家设计稿）                    -->
 <!--                                                                         -->
-<!-- 来源：HTX 官方 Figma                                                    -->
+<!-- 来源：示例官方 Figma                                                    -->
 <!--   - file ewHDBGMTwKVgzcNW3B4FM0 (App-Sparkle 视觉升级 4.0)              -->
 <!--   - file DUxCewcwzc5GKoP01K4TJy (社区交易卡片)                          -->
 <!--                                                                         -->
@@ -268,7 +268,7 @@
   </div>
 </div>
 <!-- 配套 CSS（如需独立使用复制下方）：
-.sbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:44px;font-family:'HarmonyOS Sans SC','SF Pro Display',-apple-system,sans-serif;}
+.sbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:44px;font-family:'Noto Sans SC','Poppins',system-ui,-apple-system,sans-serif;}
 .sbar[data-theme="dark"]{background:#000;color:#FFF;}
 .sbar[data-theme="light"]{background:#FFF;color:#000;}
 .sbar-time{font-size:17px;font-weight:600;letter-spacing:-0.3px;}
@@ -290,12 +290,12 @@
   </div>
 </div>
 
-<!-- ───────── E3. HTX App 底部导航 · 双层 134px · 含交易圆形主按钮 ───────── -->
-<!-- 来源：Figma node 12547-22326 · ./figma-anchors/htx-bottom-nav.png + spec.txt -->
-<!-- 关键事实：HTX 真品**不是**单层 5-tab！上层「发现/关注/快讯/直播/公告」浮层 + 下层 5 tab + 交易圆形 FAB -->
+<!-- ───────── E3. 示例 App 底部导航 · 双层 134px · 含交易圆形主按钮 ───────── -->
+<!-- 来源：Figma node 12547-22326 · ./figma-anchors/app-bottom-nav.png + spec.txt -->
+<!-- 关键事实：示例真品**不是**单层 5-tab！上层「发现/关注/快讯/直播/公告」浮层 + 下层 5 tab + 交易圆形 FAB -->
 <!-- 用法：放 .app-mock 直接子级，position:absolute bottom:0 -->
-<nav class="htx-tbar">
-  <div class="htx-tbar-top">
+<nav class="p-tbar">
+  <div class="p-tbar-top">
     <span class="t on">发现</span>
     <span class="t">关注</span>
     <span class="t">快讯</span>
@@ -303,7 +303,7 @@
     <span class="t">公告</span>
     <span class="caret-up">︿</span>
   </div>
-  <div class="htx-tbar-main">
+  <div class="p-tbar-main">
     <div class="tab on"><i class="ic-home">🏠</i><span>首页</span></div>
     <div class="tab"><i class="ic-market">📊</i><span>行情</span></div>
     <div class="tab tab-fab"><i class="ic-trade">⇄</i><span>交易</span></div>
@@ -313,19 +313,19 @@
   <div class="home-ind"><div></div></div>
 </nav>
 <!-- 配套 CSS（颜色与 indicator 数值来自 Figma spec.txt）：
-.htx-tbar{position:absolute;left:0;right:0;bottom:0;background:#191919;border-radius:20px 20px 0 0;font-family:inherit;}
-.htx-tbar-top{display:flex;align-items:center;height:56px;padding:0 16px;gap:18px;}
-.htx-tbar-top .t{font-size:16px;font-weight:500;line-height:20px;color:#828282;position:relative;padding:8px 0;cursor:pointer;}
-.htx-tbar-top .t.on{color:#FFFFFF;}
-.htx-tbar-top .t.on::after{content:'';position:absolute;left:50%;transform:translateX(-50%);bottom:6px;width:16px;height:3px;background:#007FFF;border-radius:1.5px;}
-.htx-tbar-top .caret-up{margin-left:auto;color:#FFFFFF;font-size:14px;cursor:pointer;}
-.htx-tbar-main{display:flex;height:44px;}
-.htx-tbar-main .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#828282;cursor:pointer;font-size:10px;font-weight:400;line-height:14px;}
-.htx-tbar-main .tab.on{color:#FFFFFF;}
-.htx-tbar-main .tab i{font-style:normal;font-size:18px;margin-bottom:2px;}
-.htx-tbar-main .tab-fab{position:relative;}
-.htx-tbar-main .tab-fab i{width:44px;height:44px;border-radius:50%;background:#FFFFFF;color:#000;display:flex;align-items:center;justify-content:center;position:absolute;top:-12px;font-size:22px;}
-.htx-tbar-main .tab-fab span{margin-top:32px;}
+.p-tbar{position:absolute;left:0;right:0;bottom:0;background:#191919;border-radius:20px 20px 0 0;font-family:inherit;}
+.p-tbar-top{display:flex;align-items:center;height:56px;padding:0 16px;gap:18px;}
+.p-tbar-top .t{font-size:16px;font-weight:500;line-height:20px;color:#828282;position:relative;padding:8px 0;cursor:pointer;}
+.p-tbar-top .t.on{color:#FFFFFF;}
+.p-tbar-top .t.on::after{content:'';position:absolute;left:50%;transform:translateX(-50%);bottom:6px;width:16px;height:3px;background:#007FFF;border-radius:1.5px;}
+.p-tbar-top .caret-up{margin-left:auto;color:#FFFFFF;font-size:14px;cursor:pointer;}
+.p-tbar-main{display:flex;height:44px;}
+.p-tbar-main .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#828282;cursor:pointer;font-size:10px;font-weight:400;line-height:14px;}
+.p-tbar-main .tab.on{color:#FFFFFF;}
+.p-tbar-main .tab i{font-style:normal;font-size:18px;margin-bottom:2px;}
+.p-tbar-main .tab-fab{position:relative;}
+.p-tbar-main .tab-fab i{width:44px;height:44px;border-radius:50%;background:#FFFFFF;color:#000;display:flex;align-items:center;justify-content:center;position:absolute;top:-12px;font-size:22px;}
+.p-tbar-main .tab-fab span{margin-top:32px;}
 -->
 
 <!-- ───────── E4. 订阅 + 铃铛 CTA bar 模板 · v2 踩坑沉淀 ───────── -->

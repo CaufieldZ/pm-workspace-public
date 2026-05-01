@@ -1,7 +1,7 @@
 ---
 name: workspace-audit
 description: >
-  当用户说「审计」「诊断」「跑一遍审计」时触发。覆盖全局诊断 13 类(文件 / 数值 / 依赖 / 规则 / Token / 工程健壮性 / scripts 声明完整性 / scripts/lib import / 三件套纯洁性等)。支持按类别选择执行。
+  当用户说「审计」「诊断」「跑一遍审计」时触发。覆盖全局诊断 14 类(文件 / 数值 / 依赖 / 规则 / Token / 工程健壮性 / scripts 声明完整性 / scripts/lib import / 三件套纯洁性 / hooks 健康度等)。支持按类别选择执行。
 type: tool
 output_format: .md
 depends_on: []
@@ -35,6 +35,7 @@ scripts:
 12. Scripts 字段存在性 — 各 SKILL.md frontmatter `scripts:` 声明的脚本必须真实存在
 13. scripts/lib import 链路 — 共享模块能被 skill 脚本正确 import
 14. 三件套纯洁性 — scripts/ 仅可执行代码 · references/ 仅 .md · assets/ 不含 .md（按 Anthropic Progressive Disclosure 规范）
+15. Hooks 健康度 — `.claude/hooks/` 语法检查、BSD sed 兼容性、引用脚本存在性、settings.json 注册一致性、pre-commit trigger 覆盖
 
 **Phase 2 — 模型推理检查**
 
@@ -52,8 +53,8 @@ bash .claude/skills/workspace-audit/scripts/audit.sh <类别编号逗号分隔>
 ```
 
 示例：
-- 全部执行：`bash .claude/skills/workspace-audit/scripts/audit.sh 1,2,3,4,5,6,7,12,13,14`
-- 只跑 pre-commit 覆盖的：`bash .claude/skills/workspace-audit/scripts/audit.sh 1,2,3,4,7,12,13,14`
+- 全部执行：`bash .claude/skills/workspace-audit/scripts/audit.sh 1,2,3,4,5,6,7,12,13,14,15`
+- 只跑 pre-commit 覆盖的：`bash .claude/skills/workspace-audit/scripts/audit.sh 1,2,3,4,7,12,13,14,15`
 
 ## Phase 2 执行方式
 
@@ -69,6 +70,8 @@ grep -rn "font-family" .claude/skills/*/assets/*.css 2>/dev/null
 
 - 逐个比较每个 CSS 文件的 font-family 声明与 pm-workflow §三 规范
 - 特别检查：正文栈 vs 等宽栈是否混写；PPT JetBrains Mono 白名单
+- **editorial 产出物豁免**：`scene-list` 这种叙事/阅读型产出物允许正文栈挂 `'Noto Serif SC'` 做 fallback（例：`'Noto Sans SC', 'Noto Serif SC', 'Poppins', ...`），增强中文阅读感。非 editorial 类（imap / prototype / ppt / arch / flowchart）正文栈必须是 `'Noto Sans SC','Poppins'`，不得掺 Serif
+- **同文件字体一致性**：同一 CSS 内多处 `font-family` 声明必须用同一套英文 fallback（如 :44 和 :558 一处 `'Inter'` 一处 `'Poppins'` 算真 bug，通常是焕新时遗漏）
 
 **8.2 色板一致性**
 
@@ -122,9 +125,19 @@ grep -rn "sk-\|api[_-]key\|token.*=\|password\|secret\|Bearer " . --include='*.m
 - 判断匹配项是否为真正的明文密钥
 - .mcp.json 是否在 .gitignore 中
 
-**9.2 .gitignore 覆盖度**
+**9.2 双层脱敏覆盖度**
 
-确认以下全被 ignore：projects/ / /references/ / soul.md / node_modules/ / .mcp.json / deliverables/
+本工作区双层脱敏，判断"是否会泄露"时必须同时查：
+
+- **Layer 1 `.gitignore`** — 不进 private git。覆盖真 secret / 本机配置：`.mcp.json / .env / node_modules/ / .claude/session-state.md / projects/ / references/ / deliverables/`
+- **Layer 2 `sync_public.sh` `--exclude` 列表** — 进 private git 但不同步到 public repo。覆盖个人偏好 / 战略主线 / 项目内容：`.claude/rules/soul.md / product-lines.md / workspace-context.md / .claude/runbooks/ / .claude/skills/data-report/ 等`
+
+```bash
+# 看 Layer 2 实际覆盖
+grep -- '--exclude' sync_public.sh
+```
+
+判定规则：文件在 Layer 1 **或** Layer 2 任一层即为"已脱敏"，不算泄露。只有既不在 .gitignore 又不在 sync_public.sh exclude 列表里的敏感内容才报 🔴。
 
 **9.3 git tracked 大文件**
 

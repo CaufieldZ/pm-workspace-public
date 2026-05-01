@@ -1,16 +1,16 @@
 """
 context.md 按需读取工具——生成富目录 / 按章节选读 / 关键词定位。
 
-用法:
+用法（{项目} 占位符指项目路径片段，单层如 `sensors-metrics`、两层如 `livestream/q2-update`）:
   # 富目录（首次接触项目必跑）
-  python3 scripts/read_context_section.py htx-live-streaming-updateQ2 --toc
+  python3 scripts/read_context_section.py {项目} --toc
 
   # 按章节名选读（模糊匹配，支持 ## 和 ### 两级）
-  python3 scripts/read_context_section.py htx-live-streaming-updateQ2 \\
+  python3 scripts/read_context_section.py {项目} \\
     --sections "场景编号,技术架构,业务规则/连麦"
 
   # 关键词定位（返回命中章节 + 上下文行）
-  python3 scripts/read_context_section.py htx-live-streaming-updateQ2 \\
+  python3 scripts/read_context_section.py {项目} \\
     --grep "连麦" --context 5
 """
 

@@ -3,9 +3,10 @@
 # 命中风险模式 + 状态文件超 3 分钟未更新 → stderr 打印警告(不拦截)
 #
 # 风险模式:
-#   - Bash 命令含 playwright / chromium / browser.*launch / screenshot.*full_page
-#   - Bash 命令含 render_.*\.py 且涉及截图验证
+#   - Bash: full_page=True 截图 / headless=False / wait_for_* timeout >= 10s
+#   - Bash: render_.*\.py 大文件渲染脚本
 #   - Write/Edit 目标已存在且 > 500 行(可能是大 HTML 产出物)
+# 注:普通 page.goto / browser.launch / 单张 screenshot 不算高风险(常规 UI 验证)
 #
 # 设计:warn 不 block,误拦比漏报代价更低
 
@@ -26,10 +27,14 @@ risky_reason=""
 case "$TOOL_NAME" in
   Bash)
     CMD=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tool_input',{}).get('command',''))" 2>/dev/null)
-    if echo "$CMD" | grep -qE 'playwright|chromium|browser\.(launch|new_page)|screenshot.*full_page|page\.goto'; then
+    # 只保留真能把 context / 进程搞炸的模式：
+    #   - 全页截图(base64 爆 context)
+    #   - 非 headless 浏览(可能挂起)
+    #   - 长超时等待(wait_for_* timeout >= 5 位数毫秒 = 10s+)
+    if echo "$CMD" | grep -qE 'full_page=True|headless=False|wait_for_(selector|function|load_state).*timeout=[0-9]{5,}'; then
       is_risky=1
-      risky_reason="Playwright/浏览器渲染"
-    elif echo "$CMD" | grep -qE 'python3.*render_.*\.py|node.*gen_.*\.js.*[0-9]{3}'; then
+      risky_reason="长页面截图/长超时等待/非 headless 浏览"
+    elif echo "$CMD" | grep -qE 'python3.*render_.*\.py'; then
       is_risky=1
       risky_reason="大文件渲染脚本"
     fi

@@ -2,9 +2,9 @@
    GLOBAL RESET & GNAV（全局导航）
 ═══════════════════════════════════════ */
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:#f0f2f5;font-family:'HarmonyOS Sans SC','Noto Sans SC','Poppins',system-ui,-apple-system,sans-serif;font-size:13px;color:#1e293b;min-height:100vh;}
+body{background:#f0f2f5;font-family:'Noto Sans SC','Poppins',system-ui,-apple-system,sans-serif;font-size:13px;color:#1e293b;min-height:100vh;}
 
-/* gnav = 全局 chrome（PM 评审"包装"层，HTX 真实产品里没这条），走 Anthropic 暖近黑 + terra cotta */
+/* gnav = 全局 chrome（PM 评审"包装"层，示例真实产品里没这条），走 Anthropic 暖近黑 + terra cotta */
 .gnav{position:fixed;top:0;left:0;right:0;z-index:9999;background:#1F1F1E;border-bottom:1px solid rgba(217,119,87,.15);display:flex;align-items:center;padding:0 32px;height:52px;gap:20px;box-shadow:0 2px 12px rgba(0,0,0,.3);}
 .gnav-logo{font-size:15px;font-weight:800;color:#C3C2B7;white-space:nowrap;display:flex;align-items:center;gap:8px;}
 .gnav-logo span{font-size:20px;}
@@ -130,7 +130,7 @@ body{background:#f0f2f5;font-family:'HarmonyOS Sans SC','Noto Sans SC','Poppins'
 ═══════════════════════════════════════ */
 :root{
   --bg:#F5F6FA;--white:#FFF;--border:#E4E7ED;--border-l:#DCDFE6;
-  --blue:#007FFF;--blue-l:#E6F4FF;--blue-d:#0066CC;  /* HTX 真品牌色 */
+  --blue:#007FFF;--blue-l:#E6F4FF;--blue-d:#0066CC;  /* 示例真品牌色 */
   --green:#00B42A;--green-l:#E8F5E9;
   --red:#F53F3F;--red-l:#FFEBEE;
   --orange:#FF7D00;--orange-l:#FFF3E0;
@@ -255,7 +255,7 @@ body{background:#f0f2f5;font-family:'HarmonyOS Sans SC','Noto Sans SC','Poppins'
    · 圆角 48px · Dynamic Island 124×36（top:10）
    · 状态栏内容 padding-top 21px（与 Dynamic Island 中心 y=28 对齐）
    · Home Indicator 134×5（Figma node 12547-22326 真品）
-   · 字体栈：'HarmonyOS Sans SC'（HTX 钦定）→ Noto Sans SC → Poppins
+   · 字体栈：Noto Sans SC → Poppins（pm-workflow §三 Claude Design 统一套装）
    · 内容左右 padding 12px
 ═══════════════════════════════════════ */
 .app-mock{width:375px;height:812px;margin:24px auto;border-radius:48px;border:3px solid #2B3139;background:#181A20;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06);display:flex;flex-direction:column;}
@@ -265,7 +265,7 @@ body{background:#f0f2f5;font-family:'HarmonyOS Sans SC','Noto Sans SC','Poppins'
 
 /* 状态栏：内容 top-padding 21px 让 time/icon 与 Dynamic Island（top:10 + height:36 → 中心 y=28）垂直居中对齐
    Figma 真品 ios-statusbar (node 282-5797 / 1116-25679) 状态栏整体高度 44px，本布局适配 iPhone 15 Pro Dynamic Island 配置 */
-.app-mock .ph-status{display:flex;justify-content:space-between;padding:21px 28px 6px;font-size:12px;color:#848E9C;flex-shrink:0;font-family:'HarmonyOS Sans SC','SF Pro Display',-apple-system,sans-serif;}
+.app-mock .ph-status{display:flex;justify-content:space-between;padding:21px 28px 6px;font-size:12px;color:#848E9C;flex-shrink:0;font-family:'Noto Sans SC','Poppins',system-ui,-apple-system,sans-serif;}
 .app-mock .p-nav{position:relative;top:auto;flex-shrink:0;padding:0 12px;height:40px;border-radius:0;}
 .app-mock .p-nav-logo b{font-size:14px;}
 .app-mock .p-btn-out,.app-mock .p-btn-blue{font-size:11px;padding:4px 10px;}
@@ -308,6 +308,23 @@ body{background:#f0f2f5;font-family:'HarmonyOS Sans SC','Noto Sans SC','Poppins'
 .app-mock .cta-sub{font-size:9px;font-weight:400;opacity:.85;margin-top:2px;}
 .app-mock .bell-btn{background:#1B1D22;border:1px solid #2B2F36;color:#FCD535;width:42px;height:42px;border-radius:8px;font-size:16px;cursor:pointer;flex-shrink:0;}
 .app-mock .bell-btn.muted{color:#5E6673;}
+
+/* ═══════════════════════════════════════
+   .web-front — 对客 web 壳（前台桌面 / 官网 / 活动页 / 交易所 web 主站）
+   视觉：Binance 深色底 + 示例品牌蓝 accent #007FFF（复用 .p-nav / .p-btn-blue / .p-dropdown / .p-header / .p-carousel 现有类库）
+   布局：全宽铺满（跟真实 web 体验一致），不固定宽度
+   gen_proto_skeleton.py 在 device:"web-front" 时应用
+═══════════════════════════════════════ */
+.web-front{background:#0B0E11;color:#EAECEF;min-height:calc(100vh - 52px);display:flex;flex-direction:column;}
+.web-front > .p-page{flex:1;}
+
+/* footer — 三列链接 + legal（.web-front 专属补件，prototype.css 原无 web 页脚） */
+.wf-footer{background:#0D1117;border-top:1px solid #2B3139;padding:48px 24px 24px;margin-top:auto;flex-shrink:0;}
+.wf-footer-cols{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:48px;}
+.wf-footer h4{font-size:12px;font-weight:700;color:#EAECEF;margin-bottom:16px;letter-spacing:.08em;text-transform:uppercase;}
+.wf-footer a{display:block;font-size:13px;color:#848E9C;margin-bottom:8px;text-decoration:none;cursor:pointer;}
+.wf-footer a:hover{color:#EAECEF;}
+.wf-footer-legal{max-width:1200px;margin:32px auto 0;padding-top:24px;border-top:1px solid #1F2226;font-size:12px;color:#5E6673;display:flex;justify-content:space-between;align-items:center;}
 
 /* ═══════════════════════════════════════
    Web 后台 Claude Design 深色主题（.theme-cd 作用域）

@@ -131,8 +131,8 @@ python3 .claude/skills/prototype/scripts/check_paradigm.py {项目名}
 范式确认后，模型主动问用户：
 
 > 这个项目对标哪些真品？请给 1-3 个来源（任选其一）：
-> 1. **Figma 真品链接**（HTX 项目优先 — 直接 fetch_figma 入档最高权威）
-> 2. **竞品截图**（Binance / OKX / Bitget / Gate / HTX 实际页面截图）
+> 1. **Figma 真品链接**（示例项目优先 — 直接 fetch_figma 入档最高权威）
+> 2. **竞品截图**（Binance / OKX / Bitget / Gate / 示例平台实际页面截图）
 > 3. **已有 IMAP**（上游 IMAP 已存在则直接用）
 
 收集动作：
@@ -153,9 +153,12 @@ prototype HTML 的两层美学约束：
 
 ### 主题层（按范式选）
 
-- **前台 App / 交易所视觉**（单 phone + scene chips / 单 phone 无 nav）：Binance 深色系合法主题 — `--bg:#0B0E11` + 涨绿 `#0ECB81` + 跌红 `#F6465D` + 金 `#FCD535`，金融语义保留。HTX 项目字体栈 `'HarmonyOS Sans SC','Noto Sans SC',...`（CJK 优先 + HTX 钦定）
-- **Web 后台 / CMS**（单 view + sidebar）：Claude Design 系暖近黑 — `--cd-bg:#1F1F1E` + accent `#D97757`，token 来自 `.claude/skills/_shared/claude-design/tokens.css`
-- **多 view（gnav 共建）**：前台 App 走 Binance、后台 view 走 Claude Design，两套主题在同一 HTML 共存合法（参考 activity-center v5.1）
+prototype 覆盖三档设备（SKILL.md device 字段 + theme 字段决定壳）：
+
+- **对客 App**（`device:"phone"` + dark 主题，`.app-mock` 375×812）：Binance 深色系合法主题 — `--bg:#0B0E11` + 涨绿 `#0ECB81` + 跌红 `#F6465D` + 金 `#FCD535`（金融语义保留）。字体栈走 pm-workflow §三 统一 `'Noto Sans SC','Poppins',...`（CJK 优先）
+- **对客 web**（`device:"web-front"` + dark 主题，`.web-front` 全宽）：Binance 深色底 `#0B0E11` + 示例品牌蓝 accent `#007FFF`，复用 prototype.css 现有 `.p-nav / .p-nav-item / .p-btn-blue / .p-dropdown / .p-header / .p-carousel / .p-card` 组件库（**不造新类**），footer 走 `.wf-footer`
+- **内部后台 web**（`theme:"light"`，device 忽略，`.layout` + sidebar）：默认 MGT 浅色 `--bg:#F5F6FA` + 示例品牌蓝 `--blue:#007FFF` + 深蓝侧边栏 `#001529`；深色诉求场景可叠 `.theme-cd` class 切换到 Claude Design 暖近黑 `#1F1F1E` + accent `#D97757`（token 来自 `.claude/skills/_shared/claude-design/tokens.css`）
+- **多 view（gnav 共建）**：三档任意组合在同一 HTML 合法，通过顶部 gnav Tab 切换（参考 activity-center v5.1 的 Web/App 共存范式）
 
 ### 通用底线（所有范式必吃）
 
@@ -241,13 +244,17 @@ generate_skeleton(project, views, output_path)
     "id": "user-view",         # DOM id
     "name": "用户端",           # Tab 显示名
     "icon": "📱",              # Tab icon
-    "theme": "dark",           # "dark" | "light"
-    "device": "phone",         # "phone" = 375×812 手机壳（App 端必须用）| 省略 = Web 全宽
+    "theme": "dark",           # "dark" | "light"（light 强制内部后台壳 .layout + sidebar）
+    "device": "phone",         # "phone" = 对客 App（.app-mock 375×812）|
+                               # "web-front" = 对客 web（.web-front + .p-nav + .wf-footer 全宽）|
+                               # 省略 = legacy Web 全宽（.p-nav 裸铺，仅兼容旧项目，新项目请用 web-front）
     "nav_name": "产品名",      # dark 主题的 p-nav 显示名（可选）
     "pages": [
         {"id": "main", "name": "首页"},
         {"id": "detail", "name": "详情"},
     ],
+    # device="web-front" 额外字段（可选）：
+    "nav_items": ["买币", "行情", "交易", "合约", "赚币"],  # 顶 nav 菜单项，默认即此
     # light 主题额外字段：
     "sidebar_group": "功能管理",  # 侧边栏分组标题
     "sidebar": [

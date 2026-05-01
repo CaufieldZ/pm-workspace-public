@@ -10,7 +10,7 @@ ppt · flowchart · architecture-diagrams · interaction-map · prototype · prd
 ## 内容
 
 - `claude-design/` — claude-design 美学 token + 工具类 + 内容规范 + 对标 demo
-  - `tokens.css` — 深色 token + HTX 蓝 accent + 四字体
+  - `tokens.css` — 深色 token + Platform C 蓝 accent + 四字体
   - `utilities.css` — 视觉质感工具类（film grain / eyebrow / hairline / 带色阴影 / 低调水印）
   - `anti-ai-slop.md` — 反 AI slop 规范（黑名单 + Scale + 决策速查）
   - `asset-quality-rubric.md` — 5-10-2-8 素材门槛

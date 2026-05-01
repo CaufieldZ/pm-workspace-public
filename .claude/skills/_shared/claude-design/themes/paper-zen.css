@@ -17,7 +17,7 @@
  * - 背景晕染：radial-gradient（< 6% opacity）模拟宣纸
  * - icon：纯汉字 + 圆形底（材/问/导），不要 SVG 不要 emoji
  *
- * 参考实现：projects/htx-workflow-pre/deliverables/分层支持脚手架.html / 数学思维五阶进阶.html
+ * 参考实现：projects/proj-workflow-pre/deliverables/分层支持脚手架.html / 数学思维五阶进阶.html
  */
 :root {
   /* 底色：米黄宣纸 + 宣纸白卡片 */

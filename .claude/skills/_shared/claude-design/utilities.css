@@ -56,7 +56,7 @@
 
 /* ═══════════════════════════════════════════════
    低调水印（左上角 mono uppercase）
-   用法：<div class="cd-watermark-tl">HTX PM-WORKSPACE</div>
+   用法：<div class="cd-watermark-tl">PM-WORKSPACE</div>
    ═══════════════════════════════════════════════ */
 .cd-watermark-tl {
   position: absolute;

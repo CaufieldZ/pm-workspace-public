@@ -66,7 +66,7 @@ IMAP 是静态数据，只画新态全景。禁止出现差量叙事：
 
 屏幕上的 `.anno-n` 编号徽章和 ann-card 里的 `.ann-num` 编号圆**必须用相同字符样式**：要么都阿拉伯数字 `1 2 3`，要么都圆圈数字 `① ② ③`，**不能混用**。
 
-**Why**：读者在屏幕上看到 ①，要在 ann-card 里能找到 ① 对应说明；如果 ann-card 写 `1` 就找不到对应。Felix 在 imap-htx-community-leaderboard v1 实测踩坑——anno-n 用 ①，ann-num 用 1，编号无法对应。
+**Why**：读者在屏幕上看到 ①，要在 ann-card 里能找到 ① 对应说明；如果 ann-card 写 `1` 就找不到对应。Felix 在 imap-proj-community-leaderboard v1 实测踩坑——anno-n 用 ①，ann-num 用 1，编号无法对应。
 
 **默认建议**：用阿拉伯数字 `1 2 3`（更通用，跟跨端表 / 漏斗序号一致）。
 
@@ -173,7 +173,7 @@ grep -nE '详见 [A-Z]-[0-9]|→ 见 [A-Z]-[0-9]|详细交互 → 见' deliverab
 - `.anno` / `.anno-n`（手机内部 overlay）：**限用**——允许作为 ann-card 编号的屏幕锚点，禁止配合差量标签/文案滥用（详见三大规则 #2）
 - ~~`.ann-tag.new` / `.ann-tag.chg` / `.ann-tag.del`~~（差量标签）：**退役**
 
-> ann-card 不是只写外壳 + ann-num，必须包含完整子结构（card-title + ann-item > ann-num + ann-text）。`.ann-tag` 若使用仅限 p0/p1/p2。手机内部视觉还原密度按场景复杂度自行拿捏，不设行数硬上限——参考 `projects/htx-community/deliverables/imap-htx-community-v6.html` 的密集 inline-style 风格。
+> ann-card 不是只写外壳 + ann-num，必须包含完整子结构（card-title + ann-item > ann-num + ann-text）。`.ann-tag` 若使用仅限 p0/p1/p2。手机内部视觉还原密度按场景复杂度自行拿捏，不设行数硬上限——复杂场景允许走密集 inline-style 写法，不强制拆 CSS class。
 
 ### Fill 文案规则（人读产物讲人话强制）
 
@@ -380,7 +380,7 @@ u.save()
 
 **端能力校验**：patch 前检查每个 Screen 画的交互是否能在目标端实际执行（H5 不能跑 TRTC 推流、OBS 主播看不到 Web 工作台等），不要画目标端做不到的按钮/功能。
 
-**真实样本参考**：[projects/htx-activity-center/scripts/patch_imap_v49.py](../../projects/htx-activity-center/scripts/patch_imap_v49.py) — 7-delta 案例（04-23 八项决策 + 04-24 外显标签），`MATCH` 已验证。
+**真实样本参考**：[assets/examples/patch-7-delta-example.py](assets/examples/patch-7-delta-example.py) — 7-delta 案例冻结快照（源自活动中心 patch_imap_v49.py，04-23 八项决策 + 04-24 外显标签），`MATCH` 已验证。
 
 ### 分步生成的占位模板
 

@@ -133,7 +133,7 @@ CMS / 纯后台 / 本次 UI 不改只改后端的场景：
 - ✅ 用 `insert_scene_blocks(anchor, blocks, heading_level=3)`（body 级 H3 + numbered list）
 - 判断准则：Scene 改动范围内**没有任何 UI 可以截图** → 降级 body 级；有任何 UI 改动 → 走 scene_table 配截图
 - 迭代模式下常见场景：CMS 保留现状仅后端改字段响应、纯规则说明章节、功能已完整不改只做文档化
-- 参考 prd-template.md「两种 Scene 展开模式」 + patch 示例 `htx-live-streaming-updateQ2/scripts/patch_prd_v27_ch7.py`
+- 参考 prd-template.md「两种 Scene 展开模式」 + patch 示例 `proj-live-streaming/scripts/patch_prd_v27_ch7.py`
 
 ---
 

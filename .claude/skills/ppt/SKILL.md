@@ -307,7 +307,7 @@ fillTemplate({
 
 当 PPT 规模达到「SOP 手册」级（3000+ 行、20+ Tab），单脚本会膨胀到 2000 行以上，修改一页仍需在巨型文件里 grep 定位——失去脚本化的意义。此时必须采用「每页一个源文件 + orchestrator 编排」模式。
 
-**标准目录结构**（以 `projects/htx-workflow-pre/` 下 SOP-final.html 为参考实现）：
+**标准目录结构**（以 `_demos/proj-workflow-pre/` 下 SOP-final.html 为参考实现）：
 
 ```
 scripts/

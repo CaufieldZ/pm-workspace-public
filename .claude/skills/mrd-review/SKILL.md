@@ -151,7 +151,7 @@ scripts:
 
 主线程只读 `inputs/mrd-extract-{slug}.md`（800 字内），原始 MRD docx/md 不进主 context。
 
-**例外**：MRD < 200 段且 < 10 个表格，主线程直接 Read 也行（这次 htx-queen-s4 是 177 段 + 16 表格，临界值，可以不派但派了更稳）。
+**例外**：MRD < 200 段且 < 10 个表格，主线程直接 Read 也行（这次 proj-queen-s4 是 177 段 + 16 表格，临界值，可以不派但派了更稳）。
 
 ### Step 2：通读 extract + 标记关键判断点
 

@@ -98,7 +98,7 @@ def scene_e2(): return f'<div class="scr" id="s-e-2">...{_self_perf_unlock_hint(
 scene-list.md 中**每个场景**必须满足下列任一才允许进 Step A：
 
 - ✅ 有竞品截图（Step 0 已收集到 `inputs/competitors/`，每场景至少 1 张直接对应的截图）
-- ✅ 有 Figma 真品（HTX 项目优先 — 见 [crypto-app-vocabulary.md § E](crypto-app-vocabulary.md)）
+- ✅ 有 Figma 真品（示例项目优先 — 见 [crypto-app-vocabulary.md § E](crypto-app-vocabulary.md)）
 - ✅ context.md 第 4 章对该场景有「布局描述 + 必备组件清单 + 状态变体说明」三段式描述（≥ 200 字 / 场景）
 
 至少 1 项满足；3 项都没 → 停下来问用户补，禁止继续。

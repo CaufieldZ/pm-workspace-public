@@ -1,6 +1,6 @@
 """把 Figma --nodes JSON 抽成扁平 spec — name / type / size / fill / text / font。
 
-用法：python3 _extract.py htx-bottom-nav.json > htx-bottom-nav.spec.txt
+用法：python3 _extract.py app-bottom-nav.json > app-bottom-nav.spec.txt
 """
 import json
 import sys

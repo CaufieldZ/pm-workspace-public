@@ -39,47 +39,19 @@
 3. 不确定是否相关 → 读。宁可多读不可漏读
 4. ≤ 300 行 → 直接全量 Read
 
-【脚本优先（强制）】读取 SKILL.md 后，先看 frontmatter `scripts` 字段。该字段列出本 Skill 所有可用脚本及调用方式。规则：
-- `scripts` 字段里列出的脚本，对应步骤**必须调用**，不得跳过脚本自己手写等效逻辑
-- 无前缀的脚本在 `.claude/skills/{skill}/scripts/` 下，`scripts/` 前缀的在根目录 `scripts/` 下
-- `scripts/lib/` 前缀的是共享 Python 模块（被 skill 脚本 import，不直接调用）：`confluence.py`（认证 + REST）、`html_builder.py`（CSS 展开 + 资源读取）、`html_patcher.py`（HTML patch 基类）
-- 脚本调用失败时先读脚本源码排查参数错误，不得回退到手写
-- 项目级脚本在 `projects/{项目}/scripts/` 下，优先复用已有的 `gen_*` / `fill_*`，没有再从 Skill scripts 复制模板新建
+【脚本优先（强制）】读 SKILL.md 后看 frontmatter `scripts` 字段，列出的脚本对应步骤**必须调用**，不得手写等效逻辑；失败时读源码排错，不回退手写。路径约定：无前缀在 `.claude/skills/{skill}/scripts/`，`scripts/` 前缀在根目录，`scripts/lib/` 是共享 Python 模块（`confluence` / `html_builder` / `html_patcher`，被 import 不直接调）。项目级脚本在 `projects/{项目}/scripts/` 下，优先复用 `gen_*` / `fill_*`。
 
 【编码纪律】动手前，不确定的事列歧义选项让用户选，别自己猜一个就写。多步骤任务先列 1/2/3 步计划，每步带验证标准，不清晰不动手。写完自查：每行改动能不能回溯到用户请求、有没有 50 行能搞定却写了 200 行。
 
-【计时】每个产出物步骤完成后，用 bash 执行 `date +%s` 获取时间戳。在 Step A 开始前记一次，每个 Step 完成后记一次，报告耗时。
-
 【compact 指引】每完成一个 Skill Step（A/B/C）或切换项目后，用 Write 工具覆盖 `.claude/session-state.md`，更新项目名/Skill/Step/已填 Scene/下一步。PreCompact hook 会在 compact 前自动注入该文件到摘要，防止进度丢失。手动切换项目（非通过 Skill 流程）必须立刻同步，否则残留旧状态会误导后续执行。
 
-【高风险操作前强制保存 session-state】以下操作前必须先 Write `.claude/session-state.md`（1-2 句话描述当前在做什么 + 下一步），操作完成后再 Write 一次更新结果：
+【高风险操作前强制保存 session-state】以下操作前先 Write `.claude/session-state.md`（当前在做什么 + 下一步），完成后再 Write 更新结果：Playwright / headless 浏览器调用、含 render 的大文件渲染脚本（或生成 > 500 行 HTML 的 node 脚本）、连续 ≥ 3 次 Write/Edit 同一 > 500 行文件、一次预期输出 > 200 行的 bash（日志/诊断/长 grep）。`pre-risky-op.sh` 会在命中时打 stderr warning 兜底，看到 warning 立刻 Write。
 
-- Playwright / headless 浏览器调用（`chromium.launch`、`page.screenshot(full_page=True)`、`page.goto`）
-- 大文件渲染验证脚本（含 render 关键字的 py，或生成 > 500 行 HTML 的 node 脚本）
-- 连续 ≥ 3 次 Write/Edit 同一 > 500 行文件
-- 一次预期输出 > 200 行的 bash 命令（日志/诊断/长 grep）
+【UI / webapp 验证】跑本地 server 测前端走 `scripts/with_server.py`（托管 server 生命周期，`--help` 有完整用法），别自己起后台进程忘了关。Playwright 统一 `headless=True` + `wait_for_load_state('networkidle')` 再操作 DOM，别立刻截屏。
 
-`.claude/hooks/pre-risky-op.sh` 会在命中上述模式时打印 stderr warning（不拦截），看到 warning 立刻 Write session-state 再继续。
+【Playwright 验证纪律】默认用 assertion（`is_visible` / `get_attribute` / `text_content` / `evaluate`），不截图。截图 + Read 仅用于：① 视觉 bug 确认（溢出/遮挡/样式错位）② 最终交付给用户看效果。一次 ≤ 2 张，`full_page` 仅在需要看超出视口内容时用。
 
-【UI / webapp 验证】需要跑本地 server 测前端时，走 `scripts/with_server.py`（fork 自 Anthropic webapp-testing）托管 server 生命周期，不要自己起后台进程忘了关：
-
-```bash
-python3 scripts/with_server.py --server "npm run dev" --port 5173 -- python3 your_playwright.py
-```
-
-脚本 `--help` 有完整用法。Playwright 统一 `headless=True` + `wait_for_load_state('networkidle')` 再操作 DOM，不要立刻截屏。
-
-【Playwright 验证纪律】默认 assertion 验证功能（`is_visible` / `get_attribute` / `text_content` / `evaluate`），不截图。截图 + Read 仅用于：① 视觉 bug 确认（溢出/遮挡/样式错位）② 最终交付给用户看效果。一次验证截图 ≤ 2 张，`full_page` 仅在需要看超出视口内容时才用。
-
-【切 Sonnet 提醒】Opus 完成方案讨论并 commit context.md 后，提醒用户新开 Sonnet session 跑产出物链路省约 46%（如 `/交互大图 {项目名}`）。用户说"不用换"则继续。
-
-【被墙下载走代理】`pip install` / `npm install` / `brew install` / `git clone`（GitHub 走 SSH 已配 443，除外）/ `curl` / `wget` / `go get` / `cargo` 等外网下载命令，被墙时加代理前缀：
-
-```bash
-ALL_PROXY=http://127.0.0.1:7897 <原命令>
-```
-
-判定：命令执行超时或报 `connection refused` / `timeout` / `reset` 且目标域名非国内，自动加代理重试一次。国内域名（`.cn` / `pypi.tuna.tsinghua` / `npmmirror`）不走代理。
+【被墙下载走代理】外网命令（`pip` / `npm` / `brew` / `curl` / `wget` / `go get` / `cargo`，GitHub SSH 已配 443 除外）超时或 `connection refused` / `timeout` / `reset` 且目标非国内域名时，加前缀 `ALL_PROXY=http://127.0.0.1:7897` 重试一次。国内域名（`.cn` / `pypi.tuna.tsinghua` / `npmmirror`）不走代理。
 
 ### MCP 配置
 
@@ -93,37 +65,17 @@ ALL_PROXY=http://127.0.0.1:7897 <原命令>
 
 ### context.md 规则
 
-context.md 由本地 Opus 写入（ChatOpus 仅做方案讨论和决策建议，不直接写文件），共九章。session 接手时按需读取（见上文「context.md 按需读取」），新项目或迭代时主动落地讨论结论到对应章节。
+context.md 由本地 Opus 写入（ChatOpus 不写文件），共九章。session 接手按需读取（见上文），新项目 / 迭代主动落地讨论结论到对应章节。
 
-**九章分为静态章和动态章：**
-- 静态章（1/2/3/4/5/6）：描述"项目现在是什么样"，内容必须反映最新状态
-- 动态章（7/9）：描述"怎么变过来的"，按日期追加不改不删
-- 混合章（8）：执行计划+阻塞项=当前状态，已交付记录=历史
+**九章分类**：静态章（1/2/3/4/5/6，反映项目最新状态）+ 动态章（7/9，按日期追加不改不删）+ 混合章（8，执行计划 / 阻塞 = 当前态，已交付 = 历史）。**核心约束：静态章不能与动态章最新决策矛盾。**
 
-**核心约束：静态章不允许与动态章最新决策矛盾。**
+**允许的修改**（用户明确指示时）：动态章新增决策 / 规则 / 术语按章节追加 → 同步回写静态章 2/5/6；会议纪要处理先动态再静态（详见 pm-workflow「会议纪要自动处理」）。
 
-**允许的修改**（用户明确指示时）：
-
-- 用户说"把 XX 决策加到 context"→ 追加到第 7 章（动态），**然后检查是否需要同步更新第 2/5/6 章（静态）**
-- 用户说"加一条业务规则"→ 追加到第 6 章
-- 用户说"加个术语"→ 追加到第 5 章
-- 用户说"更新 context"或会议纪要处理后 → 先更新动态章，再回写静态章（详见 pm-workflow.md「会议纪要自动处理」）
-
-**禁止的修改**：
-
-- 模型自行判断后修改（遇到 context.md 未覆盖的问题，停下来问用户）
-- 删除或改写动态章（第 7/9 章）已有条目（提示用户回 Chat 讨论）
-- 修改第 4 章场景编号（编号锁定不可改，新增只追加）
-- 静态章更新时跳过回写（第 7 章加了新决策但第 2/6 章没跟着改）
+**禁止的修改**：自行判断后改（未覆盖的问题停下问用户）、删 / 改写动态章 7/9 已有条目（提示回 Chat 讨论）、改第 4 章场景编号（锁定只追加）、静态章跳过回写（第 7 章加了新决策但第 2/6 章没跟着改）。
 
 ### 工具调用纪律
 
-【上下文预算】每次调用前评估返回量，优先用精准方式：
-
-- GitHub 信息用 `gh api` 取 JSON，不用 Firecrawl 抓整页 README
-- 钉钉文档先 `list_document_blocks` 看结构，按 `startIndex/endIndex` 取段落，不一次 `get_document_content` 拉全文（除非文件很短或用户要全文）
-- Confluence 内部 wiki 链接用 Confluence MCP 抓取，不走 Firecrawl（认证墙）
-- 图片分析统一用 Claude Read 工具（多模态），不走第三方 MCP
+【上下文预算】调用前评估返回量：GitHub 用 `gh api` 取 JSON 不用 Firecrawl 抓整页；钉钉先 `list_document_blocks` 看结构按段落取不一次拉全文；Confluence 内部链接走 Confluence MCP 不走 Firecrawl（认证墙）；图片统一 Claude Read（多模态）不走第三方 MCP。
 
 【禁止重复读取】同一 session 内已读过的文件不再整体重读。HTML 产出物允许 grep 局部回读，禁止 Read 全文。需要局部信息时用 Grep 或 Read offset/limit。
 
@@ -132,42 +84,15 @@ context.md 由本地 Opus 写入（ChatOpus 仅做方案讨论和决策建议，
 - HTML 产出物（通常 > 1000 行）：只用 Grep 取目标片段，绝不 Read 全文
 - assets/ 下 CSS/JS 文件：不主动读取，SKILL.md 的 API 速查表已够用
 
-【Web 工具选择】
-- **默认用 Claude Code 内建**：已知 URL → `WebFetch`；不知道 URL → `WebSearch`。内建工具 0 schema 开销，够用 90% 场景
-- **WebFetch 返空 / SPA / 多页 / 需要截图**：走 `scripts/fetch_web.py`（直接打 Firecrawl HTTP API，省 ~6K MCP token）。已知 URL `fetch_web.py <url>`；抓多页 `fetch_web.py <url> --map` 拿 URL 列表再 `--batch urls.txt` 批量抓。**禁用** firecrawl `crawl`（返回量不可控）。
-- firecrawl MCP server 默认禁用（已被脚本替代）
+【Web 工具选择】默认用 Claude Code 内建（0 schema 开销）：已知 URL → `WebFetch`；不知道 URL → `WebSearch`。内建不够用（返空 / SPA / 多页 / 需要截图）走 `scripts/fetch_web.py`：单页 `fetch_web.py <url>`，多页 `--map` 拿 URL 列表再 `--batch`。禁用 firecrawl `crawl`（返回量不可控），MCP server 默认禁用。
 
-【MCP 调用策略】
+【MCP 调用策略】MCP server 默认全关（figma ~15K、dingtalk-doc ~12K token）。优先级：① 快捷路由脚本 → ② `scripts/call_mcp.py call <server> <tool> '{}'` → ③ `./scripts/toggle-mcp.sh on <server>`（仅高频交互式）。调用克制：神策先确认事件名 / 属性名再 query 不走 `list_events_all`；Confluence 用 `search_pages` 不用 `execute_cql_search`；Figma 仅在链接给出时调。
 
-MCP server 默认全关（figma ~15K、dingtalk-doc ~12K token）。优先级：① 快捷路由表里的专用脚本 → ② `scripts/call_mcp.py call <server> <tool> '{}'` → ③ `./scripts/toggle-mcp.sh on <server>` 加载 server（仅高频交互式操作）。
-
-**MCP 调用克制**：
-- 神策：先确认事件名和属性名再 query，不要先 `list_events_all`
-- Confluence：`search_pages` 优先于 `execute_cql_search`
-- Figma：仅在用户给出链接或明确要求时调用
-
-【PRD 截图规范】从交互大图截图给 PRD 时，只截设备框（.phone / .webframe），不截虚线标注框和注解卡。迭代 docx 时先改内容再插图。
-
-【子 Agent 调度】子 Agent 跑 Haiku（较笨），派不派看三条同时满足：中间输出 ≫ 最终结论 + 主线程不需要过程 + 任务有客观对错标准。
-
-**必须派**（机械活，Haiku 稳）：
-
-- 审计脚本执行 → `workspace-audit`/`impact-check.sh`，收红绿表
-- HTML/md 产出物 grep 校验 → 找 `.aw`/`.anno` 计数、找 `FILL_START` 残留，收 pass/fail
-- 长日志 / > 200 行 bash 输出判断 → 找 ERROR/FAIL 关键字
-- git 考古（客观事实）→ 「谁什么时候改的」，返回 commit hash + 日期
-- 结构化数据批量提取 → 「抓 10 个页面的 H1/按钮文案列表」只提事实
-
-**压窄后再派**（子 Agent 抓原料，主线程做判断/对比/选型）：竞品采集、大文档提取、精确事件名查询、并行多路探索。
-
-**禁止派**：
-
-- Skill 主流程产出（交互大图/PRD/原型 Step A/B/C）—— 上下文连续性是硬依赖
-- context.md / scene-list.md 读写 —— 项目状态必须在主线程
-- 跨项目方法论总结（「看 XX 怎么写的给我们写一版」）—— Haiku 容易出套话，必须主线程 Opus 读
-- 方案选型 / 权衡 / 推荐 —— 含「好不好/该选哪个/应该怎么做」的判断
-
-**prompt 规则**：指定 `subagent_type` + 末尾加长度限制 + 只要事实（列表/表格/计数/pass-fail），不收自然语言结论段。
+【子 Agent 调度】子 Agent 跑 Haiku。派的三同时条件：中间输出 ≫ 最终结论 + 主线程不需要过程 + 任务有客观对错标准。
+- **必须派**（机械活）：审计脚本执行（`workspace-audit` / `impact-check.sh`，收红绿表）、HTML/md grep 校验（`.aw` / `.anno` / `FILL_START` 计数 pass/fail）、> 200 行日志判断（找 ERROR/FAIL）、git 考古事实（commit hash + 日期）、结构化批量提取（10 页面的 H1/按钮文案）。
+- **压窄后派**（抓原料，主线程判断/选型）：竞品采集、大文档提取、精确事件名查询、并行多路探索。
+- **禁止派**：Skill 主流程产出 Step A/B/C（上下文连续性是硬依赖）、context.md / scene-list.md 读写（状态必须在主线程）、跨项目方法论总结（Haiku 出套话）、方案选型 / 权衡 / 推荐（含判断）。
+- **prompt 规则**：指定 `subagent_type` + 末尾加长度限制 + 只收事实（列表/表格/计数/pass-fail），不收自然语言结论段。
 
 【格式规范】
 
@@ -178,10 +103,7 @@ MCP server 默认全关（figma ~15K、dingtalk-doc ~12K token）。优先级：
 
 ### Public Repo 脱敏同步
 
-`sync_public.sh` 将框架层脱敏同步到独立 public repo，private repo 不动。
-- 排除：`projects/`、`references/`、`deliverables/`、`.private/`、`.claude/projects/`
-- `.public/overrides/` 存放通用替换文件（biz-trading/social/livestream、prd-example）
-- 只改 skill/rules/脚本/模板 才需同步，改项目内容不触发
+`sync_public.sh` 把框架层脱敏到独立 public repo（private repo 不动）。排除：`projects/` `references/` `deliverables/` `.private/` `.claude/projects/`。`.public/overrides/` 存通用替换文件。只改 skill / rules / 脚本 / 模板才触发。
 
 ### 项目状态获取
 

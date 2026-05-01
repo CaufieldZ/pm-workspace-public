@@ -62,7 +62,7 @@ SLOP_RULES = [
     {
         "name": "字体栈 CJK 优先",
         "check": lambda h: bool(re.search(r"font-family:[^;]*Noto Sans SC[^;]*Inter|font-family:[^;]*HarmonyOS Sans SC|font-family:[^;]*Noto Sans SC", h)),
-        "hint": "CJK 字体必须排英文字体前；HTX 项目优先 HarmonyOS Sans SC",
+        "hint": "CJK 字体必须排英文字体前；示例项目优先 HarmonyOS Sans SC",
     },
 ]
 

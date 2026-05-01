@@ -5,7 +5,7 @@
 #   「骨架脚本生成前,先 grep 两个文件的版本号,不一致则停止并提示用户先同步」
 #
 # 触发:命令含 gen_imap_skeleton / gen_proto_skeleton / gen_prd_base / gen_prd_v 等
-# 检测:从命令抽项目名,grep 两个文件前 30 行的 vN.M 版本号
+# 检测:从命令抽项目名,grep 两个文件前 50 行的 vN.M 版本号
 #       不一致 → exit 2
 
 set +e
@@ -37,7 +37,7 @@ SCENE_FILE="$PROJECT_DIR/projects/$PROJECT_NAME/scene-list.md"
 
 # 抽前 50 行的第一个 vN.M(允许 v1, v1.1, v12.34)
 extract_version() {
-  head -50 "$1" | grep -oE '\bv[0-9]+(\.[0-9]+)?' | head -1
+  head -n 50 "$1" | grep -oE '\bv[0-9]+(\.[0-9]+)?' | head -1
 }
 
 CTX_V=$(extract_version "$CONTEXT_FILE")

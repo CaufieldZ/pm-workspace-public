@@ -45,7 +45,6 @@ PROJECT_PATH=$(echo "$FILE_PATH" | sed -nE 's|.*projects/([^/]+/[^/]+)/deliverab
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 SCRIPTS_DIR="$PROJECT_DIR/projects/$PROJECT_PATH/scripts"
-PROJECT_NAME="$PROJECT_PATH"
 [ ! -d "$SCRIPTS_DIR" ] && exit 0
 
 # 找 gen / fill / patch 脚本(deliverable 生成或局部修补)

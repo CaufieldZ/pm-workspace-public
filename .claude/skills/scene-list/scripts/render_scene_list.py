@@ -11,7 +11,7 @@
 - md 是 source of truth，HTML 是消费视图
 - 自适应表头：不假设固定列数，按表头第一行动态生成 <th>
 - 列语义识别：编号 / 优先级 / 设备 / 端 → 加 class
-- 兼容现有 8 个项目（含 htx-queen 专属结构）
+- 兼容现有 8 个项目（含 proj-queen 专属结构）
 """
 from __future__ import annotations
 

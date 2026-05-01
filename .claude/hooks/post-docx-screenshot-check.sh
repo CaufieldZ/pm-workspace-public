@@ -51,9 +51,14 @@ mtime() {
 WARN=""
 FAIL=""
 
-for project_dir in "$CLAUDE_PROJECT_DIR"/projects/*/; do
+# Schema v2 项目路径可能是 projects/{产品线}/{项目}/ 或 projects/{顶级}/
+# 用 deliverables/ 作为项目根锚点，一次性收齐两种布局
+PROJECT_DIRS=$(find "$CLAUDE_PROJECT_DIR/projects" -maxdepth 3 -type d -name deliverables 2>/dev/null \
+  | sed -E 's#/deliverables$##')
+
+for project_dir in $PROJECT_DIRS; do
   [ -d "$project_dir" ] || continue
-  proj=$(basename "$project_dir")
+  proj=${project_dir#"$CLAUDE_PROJECT_DIR/projects/"}
 
   # 跳过 archive
   proto_dir="$project_dir/deliverables"
@@ -62,7 +67,9 @@ for project_dir in "$CLAUDE_PROJECT_DIR"/projects/*/; do
   [ -d "$shots_dir" ] || continue
 
   # 找最新 prototype html mtime（排除 archive/）
-  proto_t=$(find "$proto_dir" -maxdepth 1 -name '*可交互原型*.html' -type f 2>/dev/null \
+  # 命名两派都认：旧派 `*可交互原型*.html`，Schema v2 派 `proto-*.html`
+  proto_t=$(find "$proto_dir" -maxdepth 1 -type f \
+    \( -name '*可交互原型*.html' -o -name 'proto-*.html' \) 2>/dev/null \
     | while read -r f; do mtime "$f"; done | sort -n | tail -1)
   [ -z "$proto_t" ] && continue
 

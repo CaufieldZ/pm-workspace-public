@@ -14,7 +14,7 @@
   --border: #E2E6EB;
 
   /* 功能色（按需修改色值，但保留变量名） */
-  --blue: #007FFF;      /* HTX 品牌色 — 布局/主操作 */
+  --blue: #007FFF;      /* Platform C 品牌色 — 布局/主操作 */
   --green: #0ECB81;     /* 新增/正向（涨绿，跨主题语义色）*/
   --red: #F6465D;       /* 重要/策略（跌红，跨主题语义色）*/
   --purple: #8b5cf6;    /* Web端 */
@@ -41,7 +41,7 @@
 * { margin:0; padding:0; box-sizing:border-box; }
 html { scroll-behavior: smooth; }
 body {
-  font-family: 'Noto Sans SC','Inter',system-ui,sans-serif;
+  font-family: 'Noto Sans SC','Poppins',system-ui,sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;

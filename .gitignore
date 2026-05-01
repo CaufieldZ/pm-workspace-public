@@ -48,3 +48,6 @@ references/competitors/_logs/
 
 # Skill 导出包（给 AI 中台/外部团队的一次性交付件，源文件在 .claude/skills/）
 /exports/
+
+# 本地 CLI 工具 binary（源码 main.go / go.mod / go.sum 保留，go build 生成）
+/scripts/opencode-client/opencode-client

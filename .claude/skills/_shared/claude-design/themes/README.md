@@ -10,7 +10,7 @@
 
 | 主题文件 | 调性 | 适合场景 | 关键色 | 推荐 layout |
 |---------|------|---------|--------|------------|
-| `fintech-dark.css` | 深黑 + HTX 蓝，专业金融感 | 内部产品评审、金融类对外演讲 | bg `#0f0f11` / accent `#2F6CF2` | 全部 layout |
+| `fintech-dark.css` | 深黑 + Platform C 蓝，专业金融感 | 内部产品评审、金融类对外演讲 | bg `#0f0f11` / accent `#2F6CF2` | 全部 layout |
 | `ink-classic.css` | 墨黑 + 暖米，Monocle 杂志感 | 通用分享、商业发布、科技产品 | bg `#f1efea` / accent `#B22222` | 1/3/4/8 |
 | `indigo-porcelain.css` | 深靛蓝 + 瓷白，学术期刊感 | 研究/数据/工程师文化分享 | bg `#f1f3f5` / accent `#1565C0` | 3/5/6/9 |
 | `kraft-paper.css` | 深棕 + 暖米，牛皮纸人文感 | 文学/历史/人文/怀旧主题 | bg `#eedfc7` / accent `#8B4513` | 4/7/8/10 |
