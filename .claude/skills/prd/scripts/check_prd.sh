@@ -11,10 +11,39 @@ echo "=========================================="
 echo "  PRD 自检: $(basename "$FILE")"
 echo "=========================================="
 
-SCENE_COUNT=$(grep -cP '^\|.*[A-Z]-?\d' "$SCENE_LIST" 2>/dev/null || echo "0")
+# 用 -E（POSIX ERE）兼容 macOS BSD grep，[0-9] 替代 \d；2>&1 暴露 pattern 错误
+SCENE_COUNT=$(grep -cE '^\|.*[A-Z]-?[0-9]' "$SCENE_LIST" 2>&1)
+if ! [[ "$SCENE_COUNT" =~ ^[0-9]+$ ]]; then
+    echo "❌ scene-list 计数失败（grep 报错）: $SCENE_COUNT"
+    exit 2
+fi
 echo "scene-list 中场景数: $SCENE_COUNT"
+if [ "$SCENE_COUNT" -eq 0 ]; then
+    echo "❌ scene-list 中未匹配到任何场景行（pattern: ^\|.*[A-Z]-?[0-9]）"
+    echo "   排查：检查 $SCENE_LIST 表格是否用 | 分隔 / 编号是否 A-1 / B-2 这种格式"
+    exit 2
+fi
 
 fail=0
+
+# ── 0. 截图新鲜度检查（升版 patch 路线必查，放最前面避免被 python heredoc 早退掩盖）──
+PROJ_DIR=$(dirname "$(dirname "$FILE")")
+PROTO_HTML=$(ls "$PROJ_DIR"/deliverables/*可交互原型*.html 2>/dev/null | head -1 || true)
+SHOT_DIR="$PROJ_DIR/screenshots"
+if [ -n "$PROTO_HTML" ] && [ -d "$SHOT_DIR" ]; then
+    _mtime() { stat -f %m "$1" 2>/dev/null || stat -c %Y "$1" 2>/dev/null; }
+    PROTO_T=$(_mtime "$PROTO_HTML")
+    OLDEST_PNG_T=$(find "$SHOT_DIR" -name '*.png' -type f 2>/dev/null \
+      | grep -Ev '/(.*_v[0-9]+|archive|deprecated|old)/' \
+      | while read -r f; do _mtime "$f"; done | sort -n | head -1)
+    if [ -n "$PROTO_T" ] && [ -n "$OLDEST_PNG_T" ] && [ "$PROTO_T" -gt "$OLDEST_PNG_T" ]; then
+        DELTA_H=$(( (PROTO_T - OLDEST_PNG_T) / 3600 ))
+        echo "❌ 截图过期：原型 $(basename "$PROTO_HTML") 比 screenshots/ 中最旧截图新 ${DELTA_H}h"
+        echo "   修复：跑 screenshot_*.py 重拍 + insert_*.py 回填到 docx"
+        echo "   或在 update_*.py 末尾调 assert_screenshots_fresh() 强制断言"
+        fail=1
+    fi
+fi
 
 # ── 1. 项目脚本禁止重定义框架函数 ─────────────────
 if [ -d "$SCRIPTS_DIR" ]; then
@@ -47,190 +76,145 @@ if [ -d "$SCRIPTS_DIR" ]; then
 fi
 
 # ── 2. docx 内容扫描 ─────────────────────────────────
-python3 - "$FILE" "$SCENE_COUNT" <<'PY'
-import re, sys
+# ── 2. docx 内容扫描（统一委托 humanize.scan_prd_structural + scan_human_voice）─
+_HUMAN_VOICE_DIR="$(cd "$(dirname "$0")" && pwd)"
+python3 - "$FILE" "$SCENE_COUNT" "$_HUMAN_VOICE_DIR" <<'PY'
+import sys
 from docx import Document
+
 FILE = sys.argv[1]
 SCENES = int(sys.argv[2])
+sys.path.insert(0, sys.argv[3])
 
 doc = Document(FILE)
-paras = len(doc.paragraphs)
-tables = len(doc.tables)
-print(f'段落数: {paras}')
-print(f'表格数: {tables}')
+print(f'段落数: {len(doc.paragraphs)}')
+print(f'表格数: {len(doc.tables)}')
+print(f'scene-list 期望场景数: {SCENES}')
 
 fail = 0
-if paras < max(20, SCENES * 3):
-    print(f'❌ 段落数异常: {paras}, 期望 > {max(20, SCENES * 3)}')
-    fail = 1
-if tables < SCENES:
-    print(f'❌ 表格数异常: {tables}, 期望 > {SCENES}')
+
+# 结构性 / 内容性扫描:圈数字 / 决策编号 / 占位符 / 1.3 流水账 / 章节故事引言 /
+# Scene 右列层次 / 段落表格数 / 截图 DPI / CJK 半角 / theme / 老字体 / 多端章节
+from humanize import scan_prd_structural, report_structural_violations
+struct = scan_prd_structural(doc, scene_count=SCENES, docx_path=FILE)
+if report_structural_violations(struct, file=sys.stdout):
     fail = 1
 
-chunks = [p.text for p in doc.paragraphs]
-for t in doc.tables:
-    for row in t.rows:
-        for c in row.cells:
-            chunks.append(c.text)
-full_text = '\n'.join(chunks)
+# 系统设计字体可用性(本机环境 warn,docx 文件本身不受影响)
+import shutil, subprocess
+if shutil.which('fc-list'):
+    DESIGN_FONTS = ['Poppins', 'Lora', 'Noto Sans SC', 'Noto Serif SC', 'JetBrains Mono']
+    missing = []
+    for f in DESIGN_FONTS:
+        r = subprocess.run(['fc-list', f], capture_output=True, text=True)
+        if not r.stdout.strip():
+            missing.append(f)
+    if missing:
+        print(f'⚠️  本机未装 {len(missing)}/{len(DESIGN_FONTS)} 个设计字体: {", ".join(missing)}')
+        print('   Word 会 fallback 到系统衬线/sans 替代,docx 字距 / 字形可能与设计稿不同(docx 文件本身正确)')
+        print('   装齐: brew install --cask font-poppins font-lora font-noto-sans-sc font-noto-serif-sc font-jetbrains-mono')
 
-for kw in ['待填充', 'TBD', 'TODO', 'FIXME', '← 此处粘贴']:
-    if kw in full_text:
-        print(f'❌ 残留占位符: {kw}')
+# 讲人话扫描(流水账日期 / snake_case / CSS 实现细节)— 与 push gate 共享同一份规则
+try:
+    from humanize import scan_human_voice, report_violations
+    voice_result = scan_human_voice(doc)
+    if report_violations(voice_result, file=sys.stdout):
         fail = 1
-
-CIRCLE = re.compile(r'[\u2460-\u2473\u24eb-\u24ff]')
-if CIRCLE.search(full_text):
-    uniq = sorted(set(CIRCLE.findall(full_text)))
-    print(f'❌ 圈数字残留(CLAUDE.md 禁止产出物用 ①②③, 统一 1./2./3.): {"".join(uniq)}')
-    fail = 1
-
-# PM 内部编号扫描(memory feedback_prd_no_scene_id_in_body.md)
-# scene_table 第 0 列是场景标题 anchor,允许「📱 X-N · 名称」编号;其他位置出现即违规
-DECISION_RE = re.compile(r'决策\s*\d+')
-SCENE_ID_BODY_RE = re.compile(r'[A-G]-\d+(?:\s*/\s*[A-G]-\d+){0,5}')
-banned_decisions = []
-banned_scene_ids = []
-for ti, t in enumerate(doc.tables):
-    for ri, row in enumerate(t.rows):
-        for ci, cell in enumerate(row.cells):
-            if ci == 0:
-                continue  # 第 0 列是场景标题 anchor
-            txt = cell.text
-            if DECISION_RE.search(txt):
-                banned_decisions.append(f'T{ti}R{ri}C{ci}: {txt[:40]!r}')
-            # T0=封面属性表, T1=1.x 元信息, T2=第 2 章场景地图(允许 A-N/B-N 罗列), T3+=scene_table
-            if ti >= 3 and SCENE_ID_BODY_RE.search(txt):
-                banned_scene_ids.append(f'T{ti}R{ri}C{ci}: {txt[:40]!r}')
-# 段落扫决策编号(排除 Heading 标题,允许章节编号 2.1 / 6.3)
-for p in doc.paragraphs:
-    style = p.style.name if p.style else ''
-    if style.startswith('Heading'):
-        continue
-    if DECISION_RE.search(p.text):
-        banned_decisions.append(f'P[{style}]: {p.text[:40]!r}')
-
-if banned_decisions:
-    samples = banned_decisions[:5]
-    print(f'❌ 正文残留决策编号 {len(banned_decisions)} 处(SKILL.md 硬规则 #11): 样例 {samples}')
-    fail = 1
-if banned_scene_ids:
-    samples = banned_scene_ids[:5]
-    print(f'❌ 正文残留场景编号 {len(banned_scene_ids)} 处(SKILL.md 硬规则 #11, 仅第 2 章场景地图允许): 样例 {samples}')
-    fail = 1
-
-# ── 章节用户故事引言扫描(pm-workflow.md「PART/章节用户故事陈述」强制) ──
-# 第 3/4/5 章(各 View 详细需求)必须有 chapter_story 引言,紧跟 h1 后第一段非 Heading 段落
-# 技术骨架章(背景/业务规则/非功能/埋点/排期)免除
-TECH_CHAPTER_KW = ['背景', '目标', '业务规则', '非功能', '技术架构', '埋点', '监控', '排期', '里程碑',
-                   '目录', '附录', '封面', '场景地图']
-heading1_paras = []
-for i, p in enumerate(doc.paragraphs):
-    style = p.style.name if p.style else ''
-    if style == 'Heading 1':
-        heading1_paras.append((i, p.text.strip()))
-
-missing_story = []
-for idx, (i, h1_text) in enumerate(heading1_paras):
-    # 跳过技术骨架章
-    if any(kw in h1_text for kw in TECH_CHAPTER_KW):
-        continue
-    # 找紧跟的下一个非空段落
-    next_p = None
-    for j in range(i+1, min(i+5, len(doc.paragraphs))):
-        if doc.paragraphs[j].text.strip():
-            next_p = doc.paragraphs[j]
-            break
-    if next_p is None:
-        missing_story.append(f'{h1_text!r}(章后无内容)')
-        continue
-    next_style = next_p.style.name if next_p.style else ''
-    if next_style.startswith('Heading'):
-        missing_story.append(f'{h1_text!r}(直接接 {next_style},缺 chapter_story 引言)')
-
-if missing_story:
-    samples = missing_story[:5]
-    print(f'❌ 功能章缺用户故事引言 {len(missing_story)} 处(pm-workflow.md「PART/章节用户故事陈述」强制): {samples}')
-    print('   修复: h1(doc, "3. ...") 后紧跟 chapter_story(doc, "用户...一句话")')
-    fail = 1
-
-# 中文相邻半角标点(soul.md 禁止)
-CJK = r'[\u4e00-\u9fff]'
-half_punct = re.findall(rf'{CJK}[,:()]|[,:()]{CJK}', full_text)
-if half_punct:
-    samples = list(set(half_punct))[:5]
-    print(f'❌ 中文相邻半角标点({len(half_punct)} 处, 调 normalize_punctuation): 样例 {samples}')
-    fail = 1
-
-flat = []
-no_numbered = []
-NUMBERED = re.compile(r'^\d+\.\s')
-for ti, t in enumerate(doc.tables):
-    if len(t.columns) != 2 or len(t.rows) < 1:
-        continue
-    right = t.rows[0].cells[1]
-    ps = [p for p in right.paragraphs if p.text.strip()]
-    if len(ps) == 1 and len(ps[0].text) > 100:
-        flat.append(f'T{ti}({len(ps[0].text)}字)')
-        continue
-    # scene 右列段落数 >= 4 但没有任何段以 "N. " 开头 = 违反 numbered list 规范
-    if len(ps) >= 4:
-        has_num = any(NUMBERED.match(p.text) for p in ps)
-        if not has_num:
-            no_numbered.append(f'T{ti}({len(ps)}段)')
-if flat:
-    print(f'❌ Scene 右列扁平化(单段落>100字符, 用 set_cell_blocks 重建): {", ".join(flat)}')
-    fail = 1
-if no_numbered:
-    print(f'❌ Scene 右列缺 numbered list(≥4 段且无 "N." 编号, prd-template 强制): {", ".join(no_numbered)}')
-    fail = 1
-
-import io
-from PIL import Image
-bad_dpi = 0
-for rel in doc.part.rels.values():
-    if 'image' not in rel.target_ref:
-        continue
-    try:
-        img = Image.open(io.BytesIO(rel.target_part.blob))
-        dpi = img.info.get('dpi', (None, None))
-        if not dpi[0] or dpi[0] < 130:
-            bad_dpi += 1
-    except Exception:
-        pass
-if bad_dpi:
-    print(f'❌ 截图 DPI<130 有 {bad_dpi} 张(Playwright 默认 72, 需 fix_dpi 到 144)')
-    fail = 1
-
-# ── 字体三件套自检（commit 5192b83 后所有 PRD 必须通过）──
-import zipfile
-from docx.oxml.ns import qn
-with zipfile.ZipFile(sys.argv[1]) as z:
-    if 'word/theme/theme1.xml' not in z.namelist():
-        print('❌ 缺 word/theme/theme1.xml(老 python-docx 模板漏注入,导致 docDefaults themed 失效→ Word fallback Arial)。')
-        print('   修复: from update_prd_base import ensure_theme; ensure_theme(docx_path)')
-        fail = 1
-
-LEGACY_FONTS = {'Arial', 'Calibri', 'Times New Roman', 'Times', 'Helvetica',
-                'Microsoft YaHei', '微软雅黑', 'SimSun', '宋体', 'SimHei', '黑体'}
-W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
-legacy_count = 0
-for r in doc.element.body.iter(f'{{{W}}}r'):
-    rPr = r.find(qn('w:rPr'))
-    if rPr is None: continue
-    rFonts = rPr.find(qn('w:rFonts'))
-    if rFonts is None: continue
-    for slot in ('ascii', 'hAnsi', 'eastAsia'):
-        if rFonts.get(qn(f'w:{slot}')) in LEGACY_FONTS:
-            legacy_count += 1
-            break
-if legacy_count:
-    print(f'❌ 正文残留老字体 run {legacy_count} 个(Arial/Calibri/Microsoft YaHei 等,会渲染成 Arial 风)。')
-    print('   修复: from update_prd_base import normalize_fonts; normalize_fonts(doc)')
-    fail = 1
+except ImportError as e:
+    print(f'⚠️  讲人话扫描跳过({e})')
 
 if fail:
     print('❌ PRD 自检未通过')
     sys.exit(1)
 print('✅ PRD 自检通过')
 PY
+
+# ── 3. context.md 第 6 章业务规则联动自检（PR2 预留三条，warn 不阻断）──
+# PR2 改造 context-template 第 6 章：主表三件套 + 5 类白名单子章。本节兜底检查
+# 项目 context.md 是否符合 PR2 模板。老项目（context.md 旧格式）warn 提示重写。
+CONTEXT_MD="$(dirname "$SCENE_LIST")/context.md"
+if [ -f "$CONTEXT_MD" ]; then
+python3 - "$CONTEXT_MD" <<'PY'
+import re, sys
+from pathlib import Path
+
+ctx = Path(sys.argv[1])
+text = ctx.read_text(encoding='utf-8')
+
+# 提取第 6 章「业务规则」内容
+m = re.search(r'^##\s+(?:6\.|六、)\s*业务规则[^\n]*\n', text, re.MULTILINE)
+if not m:
+    print('ℹ️  context.md 无第 6 章业务规则，跳过 PR2 模板自检')
+    sys.exit(0)
+start = m.end()
+nx = re.search(r'^##\s+(?:7\.|七、)', text[start:], re.MULTILINE)
+section = text[start:(start + nx.start()) if nx else len(text)]
+
+warns = []
+
+# ① 找主表（第一个 markdown 表格，表头含「条件 + 行为 + 异常态」）
+TABLE_HEADER_RE = re.compile(r'^\|.*条件.*\|.*行为.*\|.*异常态.*\|', re.MULTILINE)
+header_match = TABLE_HEADER_RE.search(section)
+if not header_match:
+    warns.append('① context.md 第 6 章缺主表（表头需含「条件 / 行为 / 异常态」三列）')
+else:
+    # 主表必须先于所有子章
+    first_subsection = re.search(r'^###\s+', section, re.MULTILINE)
+    if first_subsection and header_match.start() > first_subsection.start():
+        warns.append('① 主表位置错误：必须先于所有 ### 子章（PR2 模板硬规则）')
+
+    # ② 提取主表行（| ... | 但跳过分隔行 |---|）
+    rows = []
+    for ln in section[header_match.end():].splitlines():
+        if not ln.startswith('|'):
+            break
+        cells = [c.strip() for c in ln.strip('|').split('|')]
+        if all(set(c) <= set('-: ') for c in cells if c):
+            continue  # 分隔行
+        rows.append(cells)
+    real_rules = [r for r in rows if len(r) >= 4]  # 规则 ID / 条件 / 行为 / 异常态
+    if not real_rules:
+        warns.append('② 主表无规则行（Rule 数 ≥ 1）')
+    else:
+        empty_cell_rows = []
+        for r in real_rules:
+            # 跳过示例行（含「示例」字样）
+            if any('示例' in c for c in r):
+                continue
+            cond, behav, fallback = r[1], r[2], r[3]
+            if not (cond and behav and fallback):
+                empty_cell_rows.append(r[0] if r[0] else '?')
+        if empty_cell_rows:
+            warns.append(
+                f'② 主表 {len(empty_cell_rows)} 条 Rule 三列有空（条件/行为/异常态需均非空）：'
+                f'{empty_cell_rows[:5]}'
+            )
+
+# ③ 子章前缀白名单（6 类穷举）
+WHITELIST = {'设计原则', '数据契约', 'UI 形态', '字段定义', '跨端架构', '关键假设'}
+sub_titles = re.findall(r'^###\s+(\d+(?:\.\d+)?)\s+([^\n·]+?)(?:\s*·|\s*$)',
+                        section, re.MULTILINE)
+out_of_whitelist = []
+for num, prefix in sub_titles:
+    p = prefix.strip()
+    if p in ('子章类型白名单（5 类，穷举）', '子章类型白名单（6 类，穷举）'):
+        continue  # 模板自身的元数据子章（5/6 类穷举均跳过，迁移期兼容）
+    if p not in WHITELIST:
+        out_of_whitelist.append(f'### {num} {p}')
+if out_of_whitelist:
+    warns.append(
+        f'③ 子章前缀不在白名单（{", ".join(WHITELIST)}）：'
+        f'{out_of_whitelist[:5]}'
+    )
+
+if warns:
+    print(f'⚠️  context.md 第 6 章 PR2 模板自检（{len(warns)} 处，warn 不阻断）')
+    for w in warns:
+        print(f'   {w}')
+    print(f'   规范：.claude/chat-templates/context-template.md 第 6 章')
+else:
+    print('✅ context.md 第 6 章符合 PR2 模板')
+PY
+fi
+
+# 截图新鲜度检查已挪到脚本开头第 0 步

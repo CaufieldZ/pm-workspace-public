@@ -25,8 +25,27 @@ BASENAME=$(basename "$FILE")
 
 FAIL=""
 
+# ── 0. standalone 产物跳过场景编号检查 ──
+# standalone skill (mrd-review / competitor-analysis 等) 不在 pipeline 上,
+# 产物本就不应该带 scene-list 编号 (例: 评审 MRD 时产品场景还没定)
+STANDALONE_PREFIXES=""
+for f in "$ROOT"/.claude/skills/*/SKILL.md; do
+  type_val=$(sed -n 's/^type: *//p' "$f" 2>/dev/null | head -1 | tr -d ' ')
+  [ "$type_val" != "standalone" ] && continue
+  pfx=$(sed -n 's/^output_prefix: *//p' "$f" 2>/dev/null | head -1 | tr -d ' ')
+  [ -z "$pfx" ] && continue
+  [ "$pfx" = "none" ] && continue
+  STANDALONE_PREFIXES="$STANDALONE_PREFIXES|$pfx"
+done
+STANDALONE_PREFIXES="${STANDALONE_PREFIXES#|}"
+
+SKIP_SCENE_CHECK=0
+if [ -n "$STANDALONE_PREFIXES" ] && echo "$BASENAME" | grep -qE "^($STANDALONE_PREFIXES)"; then
+  SKIP_SCENE_CHECK=1
+fi
+
 # ── 1. 场景编号一致性 ──
-if [ -f "$SCENE_LIST" ]; then
+if [ -f "$SCENE_LIST" ] && [ "$SKIP_SCENE_CHECK" = "0" ]; then
   # 从 scene-list 表格第一列提取主场景编号（A/B/M/D/E/F/G 等，含连字号子编号）
   # 提取编号，复合编号（B-1a/b/c）只取第一个变体（B-1a）
   SCENE_IDS=$(grep -E '^\|' "$SCENE_LIST" \

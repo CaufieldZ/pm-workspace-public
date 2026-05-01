@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 """从 Figma 拉取文件/节点/截图。
 
 用法:
@@ -11,7 +10,15 @@
   python3 scripts/fetch_figma.py <url> --tree                 # 打印完整节点树（用于找 node-id）
   python3 scripts/fetch_figma.py <url> --search "关键词"      # 按名称搜索节点
 
-直调 Figma REST API，不需要加载 MCP server（省 ~15K token）。
+批量下载（替代 mcp__figma__download_figma_images，省 ~15K token）:
+  # 内联映射：nodeId=fileName 用逗号分隔
+  python3 scripts/fetch_figma.py <url> --batch "1:2=icon-home.png,3:4=logo.svg" -p 项目名
+  # JSON 文件：[{"nodeId":"1:2","fileName":"icon-home.png"}, ...]
+  python3 scripts/fetch_figma.py <url> --batch nodes.json --out-dir assets/icons
+  # stdin 喂 JSON
+  cat nodes.json | python3 scripts/fetch_figma.py <url> --batch -
+
+直调 Figma REST API，不需要加载 MCP server。
 
 Figma URL 格式:
   https://www.figma.com/design/{file_key}/{title}?node-id={node_id}
@@ -34,15 +41,17 @@ API_BASE = "https://api.figma.com/v1"
 # ── 凭证 ──────────────────────────────────────────────────────
 
 def load_pat():
-    pat = os.environ.get("FIGMA_PAT")
-    if pat:
-        return pat
+    for var in ("FIGMA_PAT", "FIGMA_API_KEY"):
+        pat = os.environ.get(var)
+        if pat:
+            return pat
     for src in [ROOT / ".mcp-disabled.json", ROOT / ".mcp.json"]:
         if src.exists():
             cfg = json.loads(src.read_text())
             env = cfg.get("mcpServers", {}).get("figma", {}).get("env", {})
-            if "FIGMA_PAT" in env:
-                return env["FIGMA_PAT"]
+            for key in ("FIGMA_PAT", "FIGMA_API_KEY"):
+                if key in env and env[key]:
+                    return env[key]
     sys.exit(
         "错误：找不到 Figma PAT。\n"
         "三种配法任选一种：\n"
@@ -141,6 +150,113 @@ def get_image_url(pat, file_key, node_id, fmt="png", scale=2):
     return url
 
 
+def get_image_urls_batch(pat, file_key, node_ids, fmt="png", scale=2):
+    """批量获取多个节点的渲染图 URL。Figma API 支持 ids 用逗号分隔传入。
+
+    返回 {node_id: url} 字典。Figma 对失败节点（空 Frame / 不可见）返回 None。
+    """
+    if not node_ids:
+        return {}
+    data = api_get(pat, f"/images/{file_key}", {
+        "ids": ",".join(node_ids),
+        "format": fmt,
+        "scale": str(scale),
+    })
+    return data.get("images", {}) or {}
+
+
+# ── 批量下载 input 解析 ────────────────────────────────────────
+
+def parse_batch_arg(batch_arg):
+    """解析 --batch 参数。支持三种形式：
+      1. 内联：'1:2=icon-home.png,3:4=logo.svg'
+      2. JSON 文件路径
+      3. '-' 从 stdin 读 JSON
+
+    返回 [(nodeId, fileName), ...]
+    """
+    if batch_arg == "-":
+        raw = sys.stdin.read()
+        return _parse_json_nodes(raw)
+    if "=" in batch_arg and not Path(batch_arg).exists():
+        # 内联格式
+        items = []
+        for pair in batch_arg.split(","):
+            pair = pair.strip()
+            if not pair:
+                continue
+            if "=" not in pair:
+                sys.exit(f"错误：内联格式应为 nodeId=fileName，得到: {pair!r}")
+            nid, fname = pair.split("=", 1)
+            items.append((nid.strip(), fname.strip()))
+        return items
+    # JSON 文件
+    p = Path(batch_arg)
+    if not p.exists():
+        sys.exit(f"错误：批量描述文件不存在: {batch_arg}")
+    return _parse_json_nodes(p.read_text())
+
+
+def _parse_json_nodes(raw):
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as e:
+        sys.exit(f"错误：JSON 解析失败: {e}")
+    if not isinstance(data, list):
+        sys.exit("错误：JSON 顶层应为列表，例如 [{\"nodeId\":\"1:2\",\"fileName\":\"a.png\"}]")
+    items = []
+    for i, item in enumerate(data):
+        if not isinstance(item, dict) or "nodeId" not in item or "fileName" not in item:
+            sys.exit(f"错误：JSON 第 {i} 项缺 nodeId / fileName")
+        items.append((item["nodeId"], item["fileName"]))
+    return items
+
+
+def fmt_from_filename(filename, default="png"):
+    """从文件名后缀推断格式。"""
+    suffix = Path(filename).suffix.lower().lstrip(".")
+    if suffix in ("png", "svg", "pdf", "jpg"):
+        return "jpg" if suffix == "jpg" else suffix
+    return default
+
+
+def download_batch(pat, file_key, items, out_dir, scale=2):
+    """批量下载节点渲染图到 out_dir。
+
+    items: [(nodeId, fileName), ...]
+    按格式（PNG/SVG/PDF）分组批量请求 API（每组一次 API 调用），再逐个下载二进制。
+    返回 [(filepath, size_bytes), ...] 成功项；失败项打印 stderr 并跳过。
+    """
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    by_fmt = {}
+    for nid, fname in items:
+        fmt = fmt_from_filename(fname)
+        by_fmt.setdefault(fmt, []).append((nid, fname))
+
+    saved = []
+    for fmt, group in by_fmt.items():
+        node_ids = [nid for nid, _ in group]
+        url_map = get_image_urls_batch(pat, file_key, node_ids, fmt=fmt, scale=scale)
+        for nid, fname in group:
+            url = url_map.get(nid)
+            if not url:
+                print(f"  ⚠ 跳过 {nid} ({fname})：Figma 未返回 URL（可能是空 Frame / 不可见）", file=sys.stderr)
+                continue
+            try:
+                img_bytes = download_bytes(url)
+            except Exception as e:
+                print(f"  ⚠ 下载失败 {nid} ({fname}): {e}", file=sys.stderr)
+                continue
+            out_path = out_dir / fname
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_bytes(img_bytes)
+            saved.append((out_path, len(img_bytes)))
+            print(f"  ✓ {fname} ({len(img_bytes) // 1024} KB)", file=sys.stderr)
+    return saved
+
+
 def walk_tree(node, depth=0, max_depth=None):
     """递归遍历节点树，返回 (depth, id, type, name) 列表。"""
     if max_depth is not None and depth > max_depth:
@@ -173,6 +289,8 @@ def main():
     parser.add_argument("url", help="Figma 文件/节点 URL")
     parser.add_argument("--nodes", action="store_true", help="获取 URL 中 node-id 的详细属性")
     parser.add_argument("--image", action="store_true", help="下载节点截图（PNG）")
+    parser.add_argument("--batch", metavar="MAP|FILE|-",
+                        help="批量下载：内联 nodeId=fileName,... 或 JSON 文件路径或 - 从 stdin 读")
     parser.add_argument("--tree", action="store_true", help="打印完整节点树")
     parser.add_argument("--search", metavar="关键词", help="按名称搜索节点")
     parser.add_argument("--depth", type=int, default=None, help="--tree 的最大深度")
@@ -180,10 +298,26 @@ def main():
     parser.add_argument("--format", choices=["png", "svg", "pdf"], default="png", help="截图格式")
     parser.add_argument("-o", "--output", help="输出文件路径")
     parser.add_argument("-p", "--project", help="项目名，截图存到 projects/{项目}/screenshots/")
+    parser.add_argument("--out-dir", help="批量下载输出目录（与 -p 互斥；默认 figma-export/）")
     args = parser.parse_args()
 
     pat = load_pat()
     file_key, node_id = parse_figma_url(args.url)
+
+    if args.batch:
+        items = parse_batch_arg(args.batch)
+        if not items:
+            sys.exit("错误：批量列表为空")
+        if args.project:
+            out_dir = ROOT / "projects" / args.project / "screenshots" / "figma"
+        elif args.out_dir:
+            out_dir = Path(args.out_dir)
+        else:
+            out_dir = Path("figma-export")
+        print(f"批量下载 {len(items)} 个节点 → {out_dir}", file=sys.stderr)
+        saved = download_batch(pat, file_key, items, out_dir, scale=args.scale)
+        print(f"\n完成：{len(saved)}/{len(items)} 张已保存到 {out_dir}", file=sys.stderr)
+        return
 
     if args.image:
         if not node_id:

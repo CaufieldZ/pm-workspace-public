@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # 页面结构 PRD 模板
 
 > 本文件定义页面结构 PRD 的章节结构和填充规范。

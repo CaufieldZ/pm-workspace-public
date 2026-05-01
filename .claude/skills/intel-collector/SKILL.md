@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: intel-collector
 description: >
@@ -15,7 +14,6 @@ scripts:
   scheduled-scrape.py: "定时批量抓取 — python3 scheduled-scrape.py <config>"
   intel-cron.sh: "crontab 入口 — 调 scheduled-scrape.py"
 ---
-<!-- pm-ws-canary-236a5364 -->
 
 # 情报采集 Skill（Intel Collector）
 

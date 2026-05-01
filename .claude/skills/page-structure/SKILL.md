@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: page-structure
 description: >
@@ -12,7 +11,6 @@ optional_inputs: [interaction-map, prototype]
 consumed_by: [cross-check]
 scripts: []
 ---
-<!-- pm-ws-canary-236a5364 -->
 
 # 页面结构 PRD Skill（Page Structure）
 

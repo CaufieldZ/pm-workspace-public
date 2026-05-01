@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 """通用 MCP 调用脚本——HTTP 和 stdio 均支持，不需要在 Claude Code 里加载 server。
 
 用法:
@@ -12,12 +11,15 @@ server 名从 .mcp.json / .mcp-disabled.json / ~/.claude.json 自动读取，
 MCP 关掉也能调。
 """
 
-import json, os, subprocess, sys, urllib.request
+import json, os, subprocess, sys, time, urllib.error, urllib.parse, urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MCP_JSON = os.path.join(ROOT, ".mcp.json")
 DISABLED_JSON = os.path.join(ROOT, ".mcp-disabled.json")
 CLAUDE_JSON = os.path.expanduser("~/.claude.json")
+KEYCHAIN_SERVICE = "Claude Code-credentials"
+
+_oauth_cache = {}  # {server_name: (access_token, expires_at)}
 
 # ── config loading ──────────────────────────────────────────────
 
@@ -66,18 +68,112 @@ def get_server(name):
 
 # ── HTTP transport ──────────────────────────────────────────────
 
-def http_call(url, method, params=None):
+def _get_oauth_token(server_name, oauth_cfg):
+    """Get OAuth access token from Keychain for an MCP server.
+    Returns (token, None) or exits on failure.
+    """
+    global _oauth_cache
+    now = time.time()
+
+    if server_name in _oauth_cache:
+        token, expires_at = _oauth_cache[server_name]
+        if expires_at is None or now + 300 < expires_at / 1000:
+            return token
+
+    key = oauth_cfg.get("keychainKey", server_name)
+    try:
+        raw = subprocess.check_output(
+            ["security", "find-generic-password", "-s", KEYCHAIN_SERVICE, "-w"],
+            stderr=subprocess.DEVNULL,
+        ).decode().strip()
+        data = json.loads(raw)
+    except (subprocess.CalledProcessError, json.JSONDecodeError):
+        sys.exit(f"错误：无法从 Keychain 读取 {server_name} OAuth token")
+
+    oauth_map = data.get("mcpOAuth", {})
+    for k, v in oauth_map.items():
+        if key in k or k.startswith(f"plugin:{key}") or k == key:
+            token = v["accessToken"]
+            expires_at = v.get("expiresAt", 0)
+            if now + 300 < expires_at / 1000:
+                _oauth_cache[server_name] = (token, expires_at)
+                return token
+            # Token expired, try refresh
+            refresh_token = v.get("refreshToken")
+            if refresh_token:
+                new_token, new_refresh, new_expires_at = _refresh_oauth(
+                    server_name, oauth_cfg, refresh_token, v, data
+                )
+                if new_token:
+                    return new_token
+            sys.exit(f"错误：{server_name} OAuth token 已过期且刷新失败")
+
+    sys.exit(f"错误：Keychain 中未找到 {server_name} 的 OAuth token")
+
+
+def _refresh_oauth(server_name, oauth_cfg, refresh_token, oauth_entry, keychain_data):
+    """Refresh OAuth token and write back to Keychain."""
+    url = oauth_cfg.get("tokenUrl", "https://mcp.slack.com/oauth/token")
+    client_id = oauth_cfg.get("clientId", "")
+    data = urllib.parse.urlencode({
+        "grant_type": "refresh_token",
+        "refresh_token": refresh_token,
+        "client_id": client_id,
+    }).encode()
+    req = urllib.request.Request(
+        url,
+        data=data,
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            result = json.load(resp)
+    except Exception:
+        return None, None, None
+
+    new_access = result.get("access_token")
+    new_refresh = result.get("refresh_token", refresh_token)
+    expires_in = result.get("expires_in", 43200)
+    if not new_access:
+        return None, None, None
+
+    new_expires_at = int((time.time() + expires_in) * 1000)
+    oauth_entry["accessToken"] = new_access
+    oauth_entry["refreshToken"] = new_refresh
+    oauth_entry["expiresAt"] = new_expires_at
+
+    oauth_map = keychain_data.get("mcpOAuth", {})
+    for k in oauth_map:
+        if k == oauth_entry.get("serverName") or server_name in k:
+            oauth_map[k] = oauth_entry
+            break
+    keychain_data["mcpOAuth"] = oauth_map
+
+    payload = json.dumps(keychain_data, separators=(",", ":"))
+    subprocess.run(
+        ["security", "delete-generic-password", "-s", KEYCHAIN_SERVICE],
+        capture_output=True,
+    )
+    subprocess.run(
+        ["security", "add-generic-password", "-s", KEYCHAIN_SERVICE,
+         "-a", "Claude Key", "-w", payload, "-U"],
+        capture_output=True,
+    )
+    _oauth_cache[server_name] = (new_access, new_expires_at)
+    return new_access, new_refresh, new_expires_at
+
+
+def http_call(url, method, params=None, auth_header=None):
+    headers = {"Content-Type": "application/json", "Accept": "application/json"}
+    if auth_header:
+        headers["Authorization"] = auth_header
     payload = json.dumps({
         "jsonrpc": "2.0",
         "id": 1,
         "method": method,
         "params": params or {},
     }).encode()
-    req = urllib.request.Request(
-        url,
-        data=payload,
-        headers={"Content-Type": "application/json", "Accept": "application/json"},
-    )
+    req = urllib.request.Request(url, data=payload, headers=headers)
     with urllib.request.urlopen(req, timeout=60) as resp:
         result = json.load(resp)
     if "error" in result:
@@ -85,12 +181,12 @@ def http_call(url, method, params=None):
     return result.get("result", {})
 
 
-def http_init(url):
+def http_init(url, auth_header=None):
     http_call(url, "initialize", {
         "protocolVersion": "2024-11-05",
         "capabilities": {},
         "clientInfo": {"name": "call-mcp", "version": "0.1"},
-    })
+    }, auth_header=auth_header)
 
 
 # ── stdio transport ─────────────────────────────────────────────
@@ -212,13 +308,23 @@ def cmd_servers():
         print(f"  {name:<20} {transport:<6} {url}")
 
 
+def _get_auth_header(cfg):
+    oauth = cfg.get("oauth")
+    if oauth:
+        token = _get_oauth_token(cfg.get("_name", ""), oauth)
+        return f"Bearer {token}"
+    return None
+
+
 def cmd_list(server_name):
     cfg = get_server(server_name)
+    cfg["_name"] = server_name
     transport = cfg.get("_transport", "stdio")
+    auth = _get_auth_header(cfg)
 
     if transport in ("http", "sse"):
-        http_init(cfg["url"])
-        result = http_call(cfg["url"], "tools/list")
+        http_init(cfg["url"], auth_header=auth)
+        result = http_call(cfg["url"], "tools/list", auth_header=auth)
     else:
         mcp = StdioMCP(cfg["command"], cfg.get("args", []), cfg.get("env"))
         try:
@@ -235,12 +341,14 @@ def cmd_list(server_name):
 
 def cmd_call(server_name, tool_name, extra_args):
     cfg = get_server(server_name)
+    cfg["_name"] = server_name
     transport = cfg.get("_transport", "stdio")
     arguments = parse_args_to_json(extra_args)
+    auth = _get_auth_header(cfg)
 
     if transport in ("http", "sse"):
-        http_init(cfg["url"])
-        result = http_call(cfg["url"], "tools/call", {"name": tool_name, "arguments": arguments})
+        http_init(cfg["url"], auth_header=auth)
+        result = http_call(cfg["url"], "tools/call", {"name": tool_name, "arguments": arguments}, auth_header=auth)
     else:
         mcp = StdioMCP(cfg["command"], cfg.get("args", []), cfg.get("env"))
         try:

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 """
 PPT Skill — 口播稿 docx 生成模板
 用法：复制到项目 scripts/ 目录，填入 NOTES 数据，运行 python3 gen_notes_v1.py

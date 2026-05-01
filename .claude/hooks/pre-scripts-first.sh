@@ -5,6 +5,9 @@
 # 设计: warn 不 block,误报成本低于漏报
 
 set +e
+
+source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/log.sh"
+
 INPUT=$(cat)
 TOOL_NAME=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tool_name',''))" 2>/dev/null)
 
@@ -43,6 +46,7 @@ case "$TOOL_NAME" in
     CMD=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tool_input',{}).get('command',''))" 2>/dev/null)
     if has_raw_docx_import "$CMD" && ! is_whitelisted "$CMD"; then
       print_prd_warning
+      log_event hook scripts-first warn "raw docx import in Bash"
     fi
     ;;
   Write|Edit)
@@ -53,17 +57,22 @@ case "$TOOL_NAME" in
     CONTENT=$(echo "$INPUT" | python3 -c "import sys,json; t=json.load(sys.stdin).get('tool_input',{}); print(t.get('content','') or t.get('new_string',''))" 2>/dev/null)
     if has_raw_docx_import "$CONTENT" && ! is_whitelisted "$CONTENT"; then
       print_prd_warning
+      log_event hook scripts-first warn "raw docx import in Write/Edit: $FILE_PATH"
     fi
-    # HTML/docx 产出物脚本化检查: 命中 projects/{项目}/ 下任意位置的 .{html,docx}，排除 archive/inputs/screenshots/scripts/sop-src
+    # HTML/docx 产出物脚本化检查: 命中 projects/{产品线}/{项目}/ 或 projects/{顶级}/ 下，排除 archive/inputs/screenshots/scripts/sop-src
     if echo "$FILE_PATH" | grep -qE 'projects/[^/]+/.*\.(html|docx)$' && \
        ! echo "$FILE_PATH" | grep -qE '/(archive|inputs|screenshots|scripts|sop-src)/'; then
-      PROJECT_DIR=$(echo "$FILE_PATH" | sed -E 's|(.*projects/[^/]+)/.*|\1|')
+      # 项目目录：先试两层（产品线/项目），失败回落到一层（顶级项目）
+      PROJECT_DIR=$(echo "$FILE_PATH" | sed -nE 's|(.*projects/[^/]+/[^/]+)/(deliverables|scripts|inputs|screenshots).*|\1|p')
+      [ -z "$PROJECT_DIR" ] && PROJECT_DIR=$(echo "$FILE_PATH" | sed -nE 's|(.*projects/[^/]+)/(deliverables|scripts|inputs|screenshots).*|\1|p')
+      [ -z "$PROJECT_DIR" ] && PROJECT_DIR=$(echo "$FILE_PATH" | sed -E 's|(.*projects/[^/]+)/.*|\1|')
       GEN_FILES=$(ls "$PROJECT_DIR/scripts/"gen_*.py "$PROJECT_DIR/scripts/"gen_*.js \
                     "$PROJECT_DIR/scripts/"patch_*.py "$PROJECT_DIR/scripts/"patch_*.js \
                     "$PROJECT_DIR/scripts/"update_*.py "$PROJECT_DIR/scripts/"update_*.js 2>/dev/null)
       if [ -n "$GEN_FILES" ]; then
         GEN_LIST=$(echo "$GEN_FILES" | xargs -n1 basename | tr '\n' ' ')
         print_html_regen_warning "$FILE_PATH" "$PROJECT_DIR" "$GEN_LIST"
+        log_event hook scripts-first block "scripted html: $FILE_PATH"
         exit 2
       fi
       # 首次生成大 HTML 拦截：deliverables/ 下无 gen 脚本，但 Write 内容 > 200 行
@@ -72,6 +81,7 @@ case "$TOOL_NAME" in
         if [ "$LINE_COUNT" -gt 200 ]; then
           echo "❌ 首次生成 >200 行 HTML 禁止直接 Write（${LINE_COUNT} 行）" >&2
           echo "   应先写 gen 脚本到 projects/${PROJECT}/scripts/gen_*.py，再 python3 执行生成" >&2
+          log_event hook scripts-first block "large first-gen html: $FILE_PATH $LINE_COUNT lines"
           exit 2
         fi
       fi

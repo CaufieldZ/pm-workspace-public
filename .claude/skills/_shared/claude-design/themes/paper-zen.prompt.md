@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # paper-zen 设计语言研究 prompt（Chat Opus 调起来用）
 
 > 来源：Felix 老婆 Chat Opus session 钦点产物，对应主题 [paper-zen.css](paper-zen.css)。

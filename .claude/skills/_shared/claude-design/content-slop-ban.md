@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: content-slop-ban
 description: PRD / 数据报告内容纪律——禁编造数据、禁 filler content、禁单方面增加内容、印刷文档 Scale 规范

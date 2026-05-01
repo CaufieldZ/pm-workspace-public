@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: shapes-toolkit
 description: PPT 特殊形状 SVG 工具包，补充 X6 节点类型之外的架构图常用形状

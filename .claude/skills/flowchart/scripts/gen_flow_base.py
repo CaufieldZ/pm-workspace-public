@@ -1,4 +1,3 @@
-# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 """
 gen_flow_base.py · 流程图 HTML 生成器
 

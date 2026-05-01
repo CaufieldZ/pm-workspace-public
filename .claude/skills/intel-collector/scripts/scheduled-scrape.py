@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 """
 scheduled-scrape.py — 定时采集竞品公告 & Crypto 媒体内容
 用法:

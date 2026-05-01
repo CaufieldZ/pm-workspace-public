@@ -1,36 +1,50 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # PM 工作流规范
 
 ## 〇、全局规则
 
+### ChatOpus vs 本地 Opus 分工
+
+- **ChatOpus（顾问）**：决策辩论 / 方案 review / 审计 / 元问题讨论。不写产出物，不修改文件。
+- **本地 Opus（执行主力）**：所有产出物由你写——context.md / scene-list / IMAP / PRD / bspec / pspec / 测试用例 等。ChatOpus 在 chat 轨给出的决策建议由你落地到 context.md 对应章节。
+- **协作流程**：你出方案 → 你直接落地 → Felix 主导 review。review 中拿不准的判断点由 Felix 单独贴 ChatOpus 讨论，不再整个 diff 贴过去审批。
+
 ### 项目结构与 Skill 读取
 
 【项目结构】
-每个项目在 `projects/{项目名}/` 下独立管理：
-- `context.md` — 产品现状 + 需求 + 场景编号 + 术语 + 决策 + 待办（开工前必读，Chat 更新后覆盖）
-- `screenshots/` — 现有产品截图 + 竞品截图（context.md 引用）
-- `scene-list.md` — 场景清单（确认后锁定）
-- `inputs/` — 原始素材（会议纪要/竞品分析/口述整理等）
-- `scripts/` — 产出物生成脚本（gen_prd_v1.py、gen_imap_v1.py 等），版本迭代时复用，不删除
-- `deliverables/` — 交互大图 / 原型 / PRD 等产出物
-  - `archive/` — 旧版归档
 
-跨项目共用的竞品素材放 `references/competitors/{平台名}/`，按功能模块分子目录，项目 context.md 用相对路径引用。
+`projects/{产品线}/{项目}/` 两层。**没有产品线级 context.md** — 产品线认知靠 `@product-lines.md`（每 session 必读），项目认知靠各自的 `context.md`。
+
+```
+projects/
+├── {产品线-A}/{项目1, 项目2, 项目3, ...}/   ← 业务线下展开多个并列项目
+├── {产品线-B}/{项目1, 项目2}/
+├── {产品线-C}/{项目1, 项目2, 项目3}/
+├── {顶级方案型项目}/         ← 不归任何产品线（如跨组织共建方案）
+└── {顶级基建项目}/           ← 不走 PRD pipeline（如埋点目录、流动性底座）
+```
+
+每个项目目录下：`context.md` + `scene-list.md` + `inputs/` + `scripts/` + `deliverables/`（具体见 `.claude/chat-templates/context-template.md`）。
+
+**路径占位约定**：SKILL.md / 脚本里的 `{项目}` 是**完整项目路径片段**——产品线下项目用两段（`{产品线}/{项目}`），顶级项目用一段（`{顶级项目}`）。即 `projects/{项目}/deliverables/` 实例化时用对应实际路径。无需改 SKILL.md 模板。
+
+> 具体业务线 / 项目命名按你的工作内容自定义，不进 public sync。
+
+跨项目共享：竞品素材 `references/competitors/{平台}/`；同产品线下若术语 / 业务规则真重复，季度 review 拆到 `projects/{产品线}/glossary.md`。
 
 【一键开项目】
-触发：用户说「新项目」「开个项目」「做个新需求」、直接丢截图/文件说要做什么、或提到 `projects/` 下不存在的项目名。自动完成：
 
-1. 建完整目录结构（context.md + screenshots/ + inputs/ + deliverables/archive/ + scene-list.md）
-2. 按 `.claude/chat-templates/context-template.md` 九章模板填 context.md，截图存 screenshots/、会议纪要/口述存 inputs/
-3. 给初步场景划分建议（不锁定）+ 链路推荐（简单/复杂/超复杂）
-4. 一次性输出 context.md + 场景建议 + 链路给用户确认，不分三次问
+触发：「新项目」「开个项目」、丢截图/文件说要做什么、或提到 `projects/` 下不存在的项目名。
 
-已存在的项目直接读 `context.md`；缺素材时要求用户提供（截图/会议纪要/口述均可）。
+1. 按 `product-lines.md` 识别归属（community / livestream / growth / 顶级方案型 / 顶级基建）— 不明确先问
+2. 建 `projects/{产品线}/{项目}/` 目录 + 九章 context.md
+3. 给场景划分建议 + 链路推荐 + context 一次性输出，等用户确认
+
+【迁移历史】Schema v1（扁平 `htx-*`）→ v2（业务分类两层）已 2026-05-01 完成。SOP 与回滚见 `.claude/runbooks/migration-schema-v2.md`。
 
 【会议纪要自动处理】
 触发：「会议纪要」「meeting notes」或丢 PDF/文本说是纪要。不确定哪个项目先问。
 
-1. 拉取/提取存 `inputs/meeting-YYYY-MM-DD.md`（meeting-autopilot skill 承接拉取流程）
+1. 拉取/提取存 `inputs/meeting-YYYY-MM-DD.md`（用 `scripts/pull_meeting_notes.py` 拉钉钉闪记纪要）
 2. 决策追加第 7 章、变更追加第 9 章（动态章按日期追加，不改不删）
 3. **回写静态章**：第 7 章新增决策中改架构 / 规则 / 术语 / 角色 / 场景的，必须同步更新第 2/3/4/5/6 章
 4. **影响分析**：决策涉及已有产出物（改编号 / 术语 / 加场景 / 砍功能）时主动告知影响范围
@@ -85,14 +99,14 @@ CSS/JS/骨架脚本源码禁止模型主动读取（骨架脚本通过 `open().r
 
 【版本同步规则（强制）】
 context.md 新增或删除场景时，必须同步更新 scene-list.md，并在 scene-list 顶部更新版本号。
-骨架脚本生成前，先 grep 两个文件的版本号，不一致则停止并提示用户先同步。
+骨架脚本生成前两文件版本号一致性由 hook 强阻断（2026-04-29 加 `pre-version-sync-gate`）。
 
 【逻辑链】场景→需求→方案→商业指标→技术可行性，竞品参照行业头部平台。缺上下文直接问。
 
 【70% 先行】产出物先出 70% 版本确认方向，再补细节。大返工成本远高于两轮迭代。
 
 【人读产出物讲人话（强制）】
-适用：PRD / PPT / SOP / 数据周报 / 会议纪要 / 交互大图 / 原型 / 架构图 / 流程图。不适用：bspec / pspec / scene-list / context.md / requirement-framework。
+适用：PRD / PPT / SOP / 数据周报 / 会议纪要 / 交互大图 / 原型 / 架构图 / 流程图。不适用：bspec / pspec / scene-list / context.md。
 
 原则：编号在锚点（scene_table 左列、IMAP `.st h2` / `.phone-label`、跨 skill id）保留 `B-1 · 业务白话` 格式；正文（PRD 段落、`.flow-note` / `.ann-text` / PPT 正文）禁裸 `A-1 / B-2 / 决策 N`，一律业务白话。判定：抽段给研发看要回查文档才懂 = 违规。
 
@@ -109,7 +123,7 @@ context.md 新增或删除场景时，必须同步更新 scene-list.md，并在 
 【批量变更流程（强制）】
 触发：变更涉及 ≥ 2 文件且影响跨文件一致性（删/新增场景、改术语/编号、改业务规则、升版、改流程节点）。单文件文案修改不触发。
 
-流程：① 列变更清单给用户确认 → ② `bash scripts/impact-check.sh {项目名}` 测覆盖 → ③ 按 pipeline 顺序改（context → scene-list → 需求框架 → imap → 原型 → PRD → bspec/pspec）→ ④ 收尾 cross-check（再跑 impact-check + grep 旧术语/编号无残留 + grep 新术语已同步）→ ⑤ 不通过则修复后再交付，禁止跳过。
+流程：① 列变更清单给用户确认 → ② `bash scripts/impact-check.sh {项目名}` 测覆盖 → ③ 按 pipeline 顺序改（context → scene-list → imap → 原型 → PRD → bspec/pspec）→ ④ 收尾 cross-check（再跑 impact-check + grep 旧术语/编号无残留 + grep 新术语已同步）→ ⑤ 不通过则修复后再交付，禁止跳过。
 
 【版本管理与升级流程】
 方案变更/评审结构性改动 → 升版（`bash scripts/version-bump.sh {项目名}` 自动完成归档/改名/内部版本号/context.md 更新）。小修 → 不升版直接覆盖。变更记录在产出物内部体现（PRD 1.3 章、imap `（变更）` 标注）+ context.md 末尾追加一行。
@@ -120,10 +134,10 @@ context.md 新增或删除场景时，必须同步更新 scene-list.md，并在 
 HTML 产出物 > 200 行：禁用 Write 直接写，必须脚本生成；Step B 填充必须用 fill 脚本，禁用 Edit 逐个替换。小幅文案/字段修改（不涉及结构）允许 Edit 直接改 HTML。
 
 【大文档源码拆分（> 1500 行或 Tab ≥ 10）】
-PPT/SOP 手册类产出物按「每页一个源文件 + orchestrator」拆分，不塞进单脚本。参考实现 `projects/htx-workflow-pre/scripts/sop-src/`（20 page 文件 + 9 数据/壳文件 + `gen_sop_v1.js`）。
+PPT/SOP 手册类产出物按「每页一个源文件 + orchestrator」拆分，不塞进单脚本。典型结构：`scripts/sop-src/pages/{id}.js`（每 Tab 一个源文件）+ `scripts/sop-src/data.js`（数据层）+ `gen_sop_v1.js`（orchestrator）。
 
 【已脚本化产出物的修改纪律】
-一旦产出物已有 gen 脚本，HTML 即为只读产物：禁止直接 Edit/Write 生成出来的 HTML，改动只进源文件（pages/{id}.js / nav.js / styles.css 等），改完 `node gen_{主题}_v{N}.js` 重新生成。违反此规则下次迭代会被脚本覆盖。
+一旦产出物已有 gen 脚本，HTML 即为只读产物：改动只进源文件（pages/{id}.js / fill_*.py / scenes_*.py / patch_*.py），改完重生 HTML。已 hook 强阻断（2026-04-29 加 `pre-deliverable-source-gate`），真要小幅文案改且不重生 → `SKIP_DELIVERABLE_GATE=1` 临时绕过。
 
 【脚本复用】
 生成产出物前先检查 `projects/{项目名}/scripts/` 下有无同类脚本，有则复用修改，无则新写并保存为 `gen_{类型}_v{N}.py`（PPT 用 `.js`）。版本迭代复制旧脚本改名，不从头写。
@@ -140,13 +154,9 @@ PPT/SOP 手册类产出物按「每页一个源文件 + orchestrator」拆分，
 
 执行任何 pipeline skill 前，如果发现 context.md 中缺少当前 skill 必需的决策信息（如页面层级、空状态处理、多端差异等），停下来向用户提问，优先给 A/B/C 选项，不要自行假设后继续执行。
 
-### 演讲叙事顺序（所有 pipeline Skill 强制）
+### 演讲叙事顺序 / HTML 分步生成 / Fill 质量 / 美学硬底线
 
-所有 pipeline 产出物（scene-list / imap / prototype / PRD / bspec）的 PART / Scene / 章节顺序按**演讲叙事逻辑**组织，不按"页面归属/功能模块"机械堆砌。判定：当幻灯片讲一遍，听众听到的顺序是什么，章节就那么排。
-
-设计前先写一句「这个产出物讲的故事是 X → Y → Z」，再排序。常见叙事骨架：触达型 = 入口 → 落点 → 转化 → 留存 → 异常；配置型 = 列表 → 创建 → 配置 → 审核 → 监控；闭环型 = 发起方 → 跨团队衔接 → 接收方 → 反向回流；个人空间型 = 入口 → 核心承载 → 关键转化 → 自管理 → 资源位。
-
-**PART / 章节用户故事陈述（IMAP + PRD 强制）**：每个 PART（IMAP）/ 一级功能章（PRD 第 3 章+）起头必须有一句用户故事（≤ 30 字，讲谁、做什么、为什么）。技术骨架章免。骨架脚本 `story` 字段缺则报错（imap `gen_imap_skeleton._validate_part_stories`，prd `chapter_story()`）。
+详见 `.claude/rules/html-pipeline.md`。imap / prototype / arch / ppt 在 SKILL.md Step 1 必须 Read 该文件。其他 pipeline Skill（scene-list / prd / bspec）按需引用其中「演讲叙事顺序」一节。
 
 ### 逻辑拼图（方案变更自动推演）
 
@@ -162,56 +172,9 @@ PPT/SOP 手册类产出物按「每页一个源文件 + orchestrator」拆分，
 
 **推演三维度**（简洁输出，附在回复末尾）：用户触达 / 转化漏斗 / 风控边界。
 
-### 填充过程中间检查
-
-填充脚本每完成 3 个 Scene 后，用 grep 检查已填充内容的术语/编号一致性：
-- 场景编号是否和 scene-list.md 一致
-- 术语是否和 context.md 第 5 章一致
-不通过则停下来修正后再继续，不要填完全部再回头改。
-
 ### commit 规范 + 防腐 hook
 
 commit 前缀：`feat / fix / refactor / docs / chore`。`.githooks/pre-commit` 在 Skill / 规则文件变更时自动跑 `audit.sh`，不通过则拦截。禁止 `--no-verify` 绕过。激活一次：`git config core.hooksPath .githooks`。
-
-### HTML 分步生成通用规则
-
-适用 imap / proto / arch / ppt（> 200 行）。必须 Step A 骨架 → B 填充 → C 自检，A 后等用户确认，B 每次填充前 grep 回读、每 3 Scene 后 grep 检查术语/编号。快速模式（用户说「快速生成/不用确认」）：A/B/C 仍分轮，但 A 完成后不停。
-
-**Fill 脚本**：必须用 `re.sub` 块替换，禁止 Edit 逐个替换（小幅文案除外）。
-**自检**：`audit-fast.sh` hook 自动检查编号/FILL 残留/字体/差量标签。全量自检走 `check_html.sh`。脚本存 scripts/ 命名 `gen_{类型}_v{N}.py`（PPT 用 `.js`）且成对交付。
-
-**Fill 内容边界契约（跨 Skill 通用）**：每个 Skill 在 SKILL.md 声明「Fill 内容契约」，明确骨架 vs fill 各提供什么。**禁止同时在骨架和 fill 中生成设备壳**（.phone / .webframe / .app-mock）。两种合法模式：① 骨架生成壳，fill 写内部内容（prototype 模式）；② 骨架只生成空容器，fill 生成壳+内容（interaction-map 模式）。新建 HTML Skill 必须先定义 Fill 契约再写骨架。
-
-**Fill 质量强制规则（所有模型）**：
-
-- fill 函数单个 ≤ 80 行 HTML，单文件 ≤ 150 行，超过则拆分
-- 禁止用 heredoc 传入含 HTML 的 Python 代码（引号冲突），必须先 Write 文件再 python3 执行
-- 每次只填充 1 个 Scene，执行验证通过后再写下一个
-- Write 工具连续失败 2 次 → 停下来，将当前函数拆为 2 个更小的函数，不要重试相同内容
-- 禁止在修复 SyntaxError 时凭记忆改代码，必须先 `python3 -c "import ast; ..."` 定位具体行号
-- **组件完整性**：交互大图 fill 函数必须包含全部 9 类组件（见 interaction-map SKILL.md「Fill 必需组件清单」），每 Scene 至少 1 个 `.aw` + 1 个 `.anno` + 1 个 `.ann-tag` + 1 个 `.flow-note`
-- **排版三级层次**：font-weight 至少使用 3 级（900 标题/PART 头 → 700 卡片标题/按钮 → 400 正文说明），禁止全文只用 700
-- **填充后逐 Scene 自检**：每完成一个 Scene 后必须 grep 验证 `.aw` / `.anno` / `.ann-tag` / `.flow-note` 计数，任一为 0 则返工后再继续下一个 Scene
-
-**美学硬底线（HTML 产出物通用，本段即权威，与 skill references 冲突以本段为准）**：
-
-- 反 AI slop 六禁：
-  1. 全屏渐变背景（rainbow / mesh gradient）
-  2. Emoji 装饰标题或列表（🚀⚡️✨🎯💡✅），例外见 anti-ai-slop.md「UI mock 内部图标」条款
-  3. 圆角卡片 + **任一方向 ≥ 2px 的 accent color border**（左 / 右 / 上 / 下都禁，从 left 换 top 不算规避。想分区用背景色对比、标题前小色点、字重对比、全边均匀 hairline）
-  4. SVG 画人物 / 场景 / 插画（用 `.cd-placeholder` 灰底 + mono 文字缩写代替）
-  5. 烂大街字体作 CJK 主字体（禁 Inter / Roboto / Space Grotesk / Fraunces 作正文）
-  6. 每个 card / feature 都带 icon
-- 字号：标题 ≥ 正文 2.5 倍（正文 16px → 标题 ≥ 48px）
-- line-height 按内容分档（CJK 字形填满 em box，英文下降部会粘下一行中文顶）：
-  - 纯英文 display heading：1.05 – 1.1
-  - 含 CJK 的 display heading（中文产出物 99% 情况）：1.25 – 1.35
-  - 正文 / 段落：1.6 – 1.8
-- 颜色：最多 1 主 + 1 辅 + 1 强调 + 灰阶，禁凭空调色；Claude Design 系用 `--cd-accent: #D97757`（Anthropic terra cotta）
-- 留白 ≥ 40% 总面积；间距只用 8pt 网格（8 / 16 / 24 / 32 / 48 / 64px）
-- 字体栈见 §三 设备规范（CJK 优先铁律）。实际用到哪种才在 `<link>` 里引，不照抄完整 CDN URL
-- CSS 变量源头唯一：生成脚本里必须 `fs.readFileSync('.claude/skills/_shared/claude-design/tokens.css')` 拼进 CSS 模板；**禁止手抄 `:root { --cd-bg:... }` 整块定义**。项目级扩展 token（如 `--cd-surface2` / `--cd-ok`）在 tokens.css 后追加一个小 `:root {}` 块即可
-- 无真数据用 `.cd-placeholder`，禁编造 stats / quote / metric cards
 
 ---
 
@@ -250,7 +213,7 @@ commit 前缀：`feat / fix / refactor / docs / chore`。`.githooks/pre-commit` 
 - 纯文案/策略 → 直接文档
 
 **复杂链路**（每步等确认再进下一步）：
-① scene-list → ②* req-framework → ③ imap → ④* prototype → ⑤ prd → ⑥* bspec / pspec → ⑦* test-cases → ⑧ cross-check
+① scene-list → ② imap → ③* prototype → ④ prd → ⑤* bspec / pspec → ⑥* test-cases → ⑦ cross-check
 （* = 可选。bspec 需切分给研发 AI 时用，pspec 需切分给设计/前端 AI 时用，test-cases 依赖 prd，bspec 可选增强）
 
 **超复杂链路**（多系统/资金/架构）：在 ② 和 ③ 之间插入 arch-diagrams（pipeline 2.5），其余同上。
@@ -335,4 +298,3 @@ commit 前缀：`feat / fix / refactor / docs / chore`。`.githooks/pre-commit` 
 - 语义色（跨主题通用，单独使用不构成主题）：成功 `#00B42A` / 失败 `#F53F3F`（Arco Design，用于状态标「已上线/下线」、审批节点「通过/拒绝」、必填星号、删除按钮）
 - 各 skill ref CSS 按定位选主题，语义色作为附加层叠加，不需要整套色板统一
 
-<!-- pm-ws-canary-236a5364 -->

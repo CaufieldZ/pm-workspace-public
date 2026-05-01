@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════
    flowchart-core.js · AntV X6 流程图核心
-   节点类型:terminal/process/decision/success/fail
-   路由: 同行相邻 → normal(直线), 其他 → manhattan(圆角折线)
+   节点类型：terminal / process / decision / success / fail
+   路由：同行相邻 → normal（直线），其他 → manhattan（圆角折线）
    ═══════════════════════════════════════════════════════════ */
 
 const { Graph } = window.X6;

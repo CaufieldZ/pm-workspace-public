@@ -1,10 +1,8 @@
-/* PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 */
-/* pm-ws-canary-236a5364 */
 /* ═══════════════════════════════════════
    GLOBAL RESET & GNAV（全局导航）
 ═══════════════════════════════════════ */
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:#f0f2f5;font-family:'Noto Sans SC','Poppins',system-ui,-apple-system,sans-serif;font-size:13px;color:#1e293b;min-height:100vh;}
+body{background:#f0f2f5;font-family:'HarmonyOS Sans SC','Noto Sans SC','Poppins',system-ui,-apple-system,sans-serif;font-size:13px;color:#1e293b;min-height:100vh;}
 
 /* gnav = 全局 chrome（PM 评审"包装"层，HTX 真实产品里没这条），走 Anthropic 暖近黑 + terra cotta */
 .gnav{position:fixed;top:0;left:0;right:0;z-index:9999;background:#1F1F1E;border-bottom:1px solid rgba(217,119,87,.15);display:flex;align-items:center;padding:0 32px;height:52px;gap:20px;box-shadow:0 2px 12px rgba(0,0,0,.3);}
@@ -253,30 +251,36 @@ body{background:#f0f2f5;font-family:'Noto Sans SC','Poppins',system-ui,-apple-sy
 
 /* ═══════════════════════════════════════
    App Mockup 手机壳（device: "phone" 时启用）
-   升级至精细设备数值（iPhone 15 Pro 规格）：
-   · 圆角 48px · 状态栏高 54px · Dynamic Island 124×36
-   · Home Indicator 140×5 · 内容左右 padding 12px
+   升级至精细设备数值（iPhone 15 Pro Dynamic Island 规格 + Figma 真品对齐）：
+   · 圆角 48px · Dynamic Island 124×36（top:10）
+   · 状态栏内容 padding-top 21px（与 Dynamic Island 中心 y=28 对齐）
+   · Home Indicator 134×5（Figma node 12547-22326 真品）
+   · 字体栈：'HarmonyOS Sans SC'（HTX 钦定）→ Noto Sans SC → Poppins
+   · 内容左右 padding 12px
 ═══════════════════════════════════════ */
 .app-mock{width:375px;height:812px;margin:24px auto;border-radius:48px;border:3px solid #2B3139;background:#181A20;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06);display:flex;flex-direction:column;}
 
 /* Dynamic Island 刘海岛 */
 .app-mock::before{content:'';position:absolute;top:10px;left:50%;transform:translateX(-50%);width:124px;height:36px;background:#000;border-radius:20px;z-index:10;pointer-events:none;}
 
-/* 状态栏：高度升级到 54px 以腾出 Dynamic Island 空间 */
-.app-mock .ph-status{display:flex;justify-content:space-between;padding:54px 28px 6px;font-size:12px;color:#848E9C;flex-shrink:0;}
+/* 状态栏：内容 top-padding 21px 让 time/icon 与 Dynamic Island（top:10 + height:36 → 中心 y=28）垂直居中对齐
+   Figma 真品 ios-statusbar (node 282-5797 / 1116-25679) 状态栏整体高度 44px，本布局适配 iPhone 15 Pro Dynamic Island 配置 */
+.app-mock .ph-status{display:flex;justify-content:space-between;padding:21px 28px 6px;font-size:12px;color:#848E9C;flex-shrink:0;font-family:'HarmonyOS Sans SC','SF Pro Display',-apple-system,sans-serif;}
 .app-mock .p-nav{position:relative;top:auto;flex-shrink:0;padding:0 12px;height:40px;border-radius:0;}
 .app-mock .p-nav-logo b{font-size:14px;}
 .app-mock .p-btn-out,.app-mock .p-btn-blue{font-size:11px;padding:4px 10px;}
 .app-mock .p-page{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 
-/* Home Indicator：升级至 140×5 */
-.app-mock .home-ind{width:140px;height:5px;background:rgba(255,255,255,0.3);border-radius:3px;margin:8px auto 10px;flex-shrink:0;}
+/* Home Indicator：134×5 (Figma 真品 node 12547-22326 抽出 spec.txt 第 80 行) */
+.app-mock .home-ind{width:134px;height:5px;background:rgba(255,255,255,0.3);border-radius:3px;margin:8px auto 10px;flex-shrink:0;}
 
 /* App 内抽屉——底部上推 */
 .app-mock .p-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:500;display:none;}
 .app-mock .p-overlay.show{display:block;}
 .app-mock .p-drawer{position:absolute;bottom:0;left:0;right:0;max-height:80%;background:#1B1D22;border-radius:16px 16px 0 0;z-index:501;transform:translateY(100%);transition:transform .3s ease;overflow-y:auto;box-shadow:0 -4px 20px rgba(0,0,0,.4);}
 .app-mock .p-drawer.show{transform:translateY(0);}
+/* E3 视觉铁律：抽屉非 show 状态 visibility:hidden — z-index:501 即使 transform 离屏也会 paint 盖住底部 nav，导致 click 失效 */
+.app-mock .p-drawer:not(.show){visibility:hidden;pointer-events:none;}
 .app-mock .p-drawer-bar{background:#1B1D22;border-bottom:1px solid #2B3139;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:16px 16px 0 0;}
 .app-mock .p-drawer-bar h3{font-size:14px;}
 
@@ -285,6 +289,25 @@ body{background:#f0f2f5;font-family:'Noto Sans SC','Poppins',system-ui,-apple-sy
 .app-mock .p-card{padding:12px;}
 .app-mock .p-header{padding:12px 12px 10px;flex-direction:column;gap:8px;}
 .app-mock .p-carousel{width:100%;}
+
+/* ───────────────────────────────────────
+   E2 视觉铁律：滚动条双引擎隐藏（Chrome/Safari webkit + Firefox + 老 Edge）
+   v2 第二轮翻车点：单引擎只盖 webkit，Firefox 仍出滚动条
+─────────────────────────────────────── */
+.app-mock *::-webkit-scrollbar{display:none;width:0;height:0;}
+.app-mock *{scrollbar-width:none;-ms-overflow-style:none;}
+
+/* ───────────────────────────────────────
+   E5 视觉铁律：sticky CTA bar（订阅按钮 + 铃铛副位）
+   摆放铁律：必须在 .app-mock 直接子级，不能在 .p-page 内（overflow:auto 会裁掉）
+   E1 视觉铁律：toggle state 用 .cta-blue.cta-grey 复合选择器，JS 不 remove cta-blue 保留 flex:1
+─────────────────────────────────────── */
+.app-mock .cta-bar{position:absolute;left:0;right:0;bottom:24px;background:#0B0E11;border-top:1px solid #2B2F36;padding:10px 14px;display:flex;align-items:center;gap:8px;z-index:30;}
+.app-mock .cta-blue{flex:1;background:#2979FF;color:#fff;border:none;padding:9px 0;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;line-height:1.2;}
+.app-mock .cta-blue.cta-grey{background:#2B2F36;color:#848E9C;}
+.app-mock .cta-sub{font-size:9px;font-weight:400;opacity:.85;margin-top:2px;}
+.app-mock .bell-btn{background:#1B1D22;border:1px solid #2B2F36;color:#FCD535;width:42px;height:42px;border-radius:8px;font-size:16px;cursor:pointer;flex-shrink:0;}
+.app-mock .bell-btn.muted{color:#5E6673;}
 
 /* ═══════════════════════════════════════
    Web 后台 Claude Design 深色主题（.theme-cd 作用域）

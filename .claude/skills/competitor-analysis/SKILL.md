@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: competitor-analysis
 description: >
@@ -12,7 +11,6 @@ optional_inputs: [context.md]
 consumed_by: []
 scripts: []
 ---
-<!-- pm-ws-canary-236a5364 -->
 
 # 竞品分析 Skill（Competitor Analysis）
 

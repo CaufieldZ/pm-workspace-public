@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 """Confluence REST API 共享模块。
 
 从 .mcp.json / .mcp-disabled.json 读取凭据，提供 urllib 版 REST 封装。

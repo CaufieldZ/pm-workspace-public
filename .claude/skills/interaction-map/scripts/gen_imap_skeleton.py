@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
-# pm-ws-canary-236a5364
 """
 交互大图骨架生成器
 输入：项目信息 + PART/Scene 结构 → 输出：骨架 HTML（CSS + JS + 侧导航 + PART + Scene 占位）
@@ -22,8 +20,10 @@ import sys
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
 sys.path.insert(0, os.path.join(_ROOT, 'scripts'))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from lib.html_builder import expand_css_imports, write_html
+from _validators import validate_part_stories
 
 _ASSETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'assets')
 
@@ -56,7 +56,7 @@ def generate_skeleton(project: dict, legends: list, parts: list, output_path: st
         }, ...]
         output_path: 输出文件路径
     """
-    _validate_part_stories(parts)
+    validate_part_stories(parts)
 
     css = _read_file('interaction-map.css')
     js = _read_file('interaction-map.js')
@@ -152,18 +152,6 @@ THEME_MAP = {
     'admin': 'gd host',
     'cross-end': 'gd cross',
 }
-
-def _validate_part_stories(parts):
-    """每个 PART 必须填 story 字段（pm-workflow.md「PART/章节用户故事陈述」强制）。
-    技术骨架/数据流类 PART 可填 '—' 显式跳过；缺字段直接报错，不静默放空。"""
-    missing = [p.get('id', '?') for p in parts if not p.get('story')]
-    if missing:
-        raise ValueError(
-            f'❌ 以下 PART 缺 story 字段（用户故事一句话，≤30 字）：{missing}\n'
-            '   pm-workflow.md「演讲叙事顺序」要求每个 PART 起头一句用户故事陈述。\n'
-            '   技术骨架/数据流 PART 可填 "—" 显式跳过。'
-        )
-
 
 def _story_html(story):
     if not story or story == '—':

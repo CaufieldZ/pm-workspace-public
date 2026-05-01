@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 """HTML 产出物 patch 工具包。
 
 等价于 PRD 的 update_prd_base.py——提供字符串替换、正则替换、版本号升级等

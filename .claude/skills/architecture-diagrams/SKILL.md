@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: architecture-diagrams
 description: >
@@ -13,7 +12,6 @@ consumed_by: [interaction-map]
 scripts:
   js-template.js: "运行时 JS 模板 — 骨架脚本自动内联，不手动读"
 ---
-<!-- pm-ws-canary-236a5364 -->
 
 # 架构图集 Skill（Architecture Diagrams）
 
@@ -93,6 +91,12 @@ scripts:
 ## 如何使用
 
 ### Step 1：读取模板
+
+**必读规则**（HTML pipeline 通用，含演讲叙事 / 分步生成 / Fill 质量 / 美学硬底线）：
+
+```
+view .claude/rules/html-pipeline.md
+```
 
 ```
 view .claude/skills/architecture-diagrams/assets/css-template.css

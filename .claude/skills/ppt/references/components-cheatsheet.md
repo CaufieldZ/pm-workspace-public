@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # PPT 组件速查表（Claude Design 编辑范式）
 
 `ppt-template.html` 已内联全部组件类。本文档按「**Claude Design 推荐组件**」「通用结构组件」「工具类」「高级组合」「JS 工具函数」分区。

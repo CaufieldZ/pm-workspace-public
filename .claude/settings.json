@@ -20,6 +20,9 @@
       "Bash(python3 scripts/read_context_section.py *)",
       "Bash(python3 scripts/check_cjk_punct.py *)",
       "Bash(python3 scripts/pull_meeting_notes.py *)",
+      "Bash(python3 scripts/call_mcp.py *)",
+      "Bash(bash scripts/check_html.sh *)",
+      "Bash(bash .claude/skills/interaction-map/scripts/check_imap.sh *)",
       "Bash(python3 .claude/skills/prd/scripts/prd_screenshots.py *)",
       "Bash(node --check *)",
       "mcp__confluence__confluence_create_page",
@@ -35,6 +38,8 @@
       "mcp__figma__get_screenshot",
       "mcp__figma__get_metadata",
       "mcp__figma__get_design_context",
+      "mcp__figma__get_figma_data",
+      "mcp__figma__download_figma_images",
       "mcp__sensors__query_segmentation_report",
       "mcp__sensors__query_funnel_report",
       "mcp__sensors__query_retention_report",
@@ -45,12 +50,68 @@
       "Skill(update-config:*)",
       "WebSearch",
       "WebFetch",
-      "Read(//Users/felix.zhi/**)"
+      "Read(//Users/felix.zhi/**)",
+      "Edit(/.claude/skills/prd/**)",
+      "Edit(/.claude/skills/flowchart/**)",
+      "Bash(mkdir -p projects/sensors-metrics/.probe-cache)",
+      "Bash(python3 ../../../scripts/call_mcp.py call sensors list_events_all '{}')",
+      "Edit(/.claude/skills/interaction-map/**)",
+      "Bash(SKIP_WIKI_PUSH_GATE=1 bash .claude/hooks/pre-wiki-push-gate.sh)",
+      "Bash(SKIP_DELIVERABLE_GATE=1 bash .claude/hooks/pre-deliverable-source-gate.sh)",
+      "Edit(/.claude/skills/cross-check/**)",
+      "Edit(/.claude/skills/scene-list/**)",
+      "Edit(/.claude/skills/skill-creator/**)",
+      "Edit(/.claude/skills/workspace-audit/**)",
+      "Bash(set -e)",
+      "Bash(git mv *)",
+      "Bash(mv .claude/rules/half-life.md .claude/runbooks/half-life.md)",
+      "Bash(mv .claude/rules/migration-sop.md .claude/runbooks/migration-schema-v2.md)",
+      "Edit(/.claude/skills/prototype/**)",
+      "Edit(/.claude/skills/ops-handbook/**)",
+      "Bash(FORCE_SYNC=1 bash sync_public.sh /Users/felix.zhi/pm-workspace-public/examples)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public/examples log --oneline -3)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public/examples log --oneline -5)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public/examples status -sb)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public/examples show 4bda9e9 --stat)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public/examples push)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public/examples branch -vv)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public/examples push -u origin main)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public/examples log --oneline -2)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public log --oneline -2)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public/examples remote -v)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public/examples push origin main)",
+      "Bash(git ls-remote *)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public/examples log --oneline origin/main -3)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public/examples log --oneline 89907a8 -5)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public/examples log --oneline origin/main -10)",
+      "Bash(git fetch *)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace ls-remote origin main)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public/examples ls-remote origin main)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace add -A)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace commit -m ' *)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace push origin main)",
+      "Bash(rm .claude/logs/skip-gates.log .claude/logs/usage.jsonl)",
+      "Bash(rmdir .claude/logs)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public/examples rm -r _demos)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public/examples commit -m 'chore\\(public\\): 移除 _demos/（含 HTX 工作流展示材料） *)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace status -s)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace add sync_public.sh)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace commit -m \"chore\\(sync\\): exclude /_demos/ from public sync\")",
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public/examples log --oneline -6)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public/examples show e5bec6f --stat)"
     ],
     "additionalDirectories": [
       "/Users/felix.zhi/pm-workspace-public/examples",
       "/Users/felix.zhi/.browser-use",
-      "/Users/felix.zhi/pm-workspace/.claude/commands"
+      "/Users/felix.zhi/pm-workspace/.claude/commands",
+      "/Users/felix.zhi/pm-workspace/projects/growth/activity-center/screenshots/prd/flowchart",
+      "/Users/felix.zhi/pm-workspace/.claude/logs",
+      "/Users/felix.zhi/pm-workspace/.claude/skills/prd/scripts",
+      "/Users/felix.zhi/pm-workspace/.claude/skills/data-report/scripts",
+      "/Users/felix.zhi/pm-workspace/.claude/skills/scene-list",
+      "/Users/felix.zhi/pm-workspace/.claude/chat-templates",
+      "/Users/felix.zhi/pm-workspace/.claude/hooks",
+      "/Users/felix.zhi/pm-workspace/.claude"
     ],
     "allowedTools": [
       "Read",
@@ -92,6 +153,36 @@
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-scripts-first.sh"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-proxy-check.sh"
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-prototype-paradigm-gate.sh"
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-version-sync-gate.sh"
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-wiki-push-gate.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-deliverable-source-gate.sh"
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -110,6 +201,37 @@
           {
             "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-audit-fast.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-docx-screenshot-check.sh"
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-script-rebuild-cjk.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-prototype-audit.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-skill-load.sh"
           }
         ]
       }

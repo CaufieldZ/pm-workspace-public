@@ -28,6 +28,23 @@ package-lock.json
 # 工作素材（竞品截图、数据源、报告等，非框架代码）
 /references/
 
+# 历史归档（升版后的旧 docx/HTML，本地保留可回滚，远端 GitHub 不需要）
+# Schema v2：projects/{产品线}/{项目}/ 两层 + projects/{顶级}/ 一层
+projects/*/deliverables/archive/
+projects/*/scripts/archive/
+projects/*/*/deliverables/archive/
+projects/*/*/scripts/archive/
+
+# _demos/ 默认 tracked（工作区对外演示材料，需分发给同事）
+# 若放敏感/本地-only 内容，在此取消注释：
+# _demos/
+
 # 采集日志
 references/competitors/_logs/
 .mcp-servers/
+
+# Hook 后门日志（SKIP_*_GATE 使用记录,本地审计用,不跟踪）
+.claude/logs/
+
+# Skill 导出包（给 AI 中台/外部团队的一次性交付件，源文件在 .claude/skills/）
+/exports/

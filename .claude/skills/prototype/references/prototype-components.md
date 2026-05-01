@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # 可交互原型 · 通用组件库
 
 > 所有组件不绑定具体业务，`<!-- [FILL] -->` 处按实际产品填充。
@@ -488,3 +487,119 @@ renderList();
 - [ ] 统计数字（`itemCount`）在 `renderList()` 内更新
 - [ ] 删除有 `confirm()` 二次确认
 - [ ] 多个编辑按钮都传了 `i` 索引参数
+
+---
+
+## E. Fill 视觉质量铁律（v2 踩坑沉淀）
+
+> v2 第二轮 6 条 bug 全在 Fill 视觉层（不是结构层）— 单元素逻辑没错但跨浏览器 paint / 状态切换 layout / 可见性切换出问题。本节把每个 bug 的修法钉死，下次写之前先扫一眼。
+>
+> Step C `audit_against_baseline.py` grep 检查全部 6 条，违反即 fail。
+
+### E1. Toggle state 不 remove layout class
+
+**错**：
+
+```js
+btn.classList.remove('cta-blue')  // → flex:1 丢失，按钮缩窄到内容宽度
+btn.classList.add('cta-grey')
+```
+
+**对**：
+
+```js
+btn.classList.add('cta-grey','subscribed')  // 保留 cta-blue，CSS 用更具体选择器覆盖颜色
+```
+
+CSS：`.cta-blue.cta-grey{background:var(--bg3);color:var(--text2);}`（同时持有两 class 时灰色生效；layout 属性 flex:1 永远不丢）
+
+### E2. 全局滚动条隐藏 · 双引擎覆盖
+
+**错**：只写 webkit（Firefox 仍出滚动条）
+
+**对**：
+
+```css
+.phone *::-webkit-scrollbar{display:none;width:0;height:0;}
+.phone *{scrollbar-width:none;-ms-overflow-style:none;}
+```
+
+需双引擎：webkit（Chrome/Safari）+ Firefox `scrollbar-width: none` + 老 Edge `-ms-overflow-style`。`.phone *` 通配确保所有内嵌 `overflow:auto` 子元素都覆盖到。
+
+### E3. 抽屉默认 visibility:hidden 防 paint 盖底部 nav
+
+**错**：抽屉只用 `.show` class 切换 transform，z-index:501 即使不 show 也 paint，盖住底部 nav 导致点不到。
+
+**对**：
+
+```css
+.app-mock .p-drawer:not(.show){visibility:hidden;pointer-events:none;}
+.app-mock .p-drawer.show{visibility:visible;pointer-events:auto;transform:translateY(0);}
+```
+
+`display:none` 太重（动画失效），`visibility:hidden` 既不渲染又保留 transform 动画。
+
+### E4. 可见性切换不用 :has()
+
+**错**：
+
+```css
+.p-page:has(.tabs2 .on[data-tab="x"]) .target{display:flex}  /* Safari 旧版 / Firefox 不稳 */
+```
+
+**对**：
+
+```js
+// click handler 里
+document.querySelector('.p-page').setAttribute('data-active', 'x');
+```
+
+```css
+.p-page[data-active="x"] .target{display:flex;}
+.p-page[data-active="y"] .target{display:none;}
+```
+
+属性选择器跨浏览器全支持，Safari 14- 也工作。`:has()` 截至 2026-04 仍有部分浏览器不稳，禁用。
+
+### E5. 底部 sticky CTA / nav 摆放
+
+**错**：放 `.p-page` 内 → `.p-page{overflow:auto}` 把 absolute 子元素裁掉
+
+**对**：放 `.app-mock` 直接子级（`.p-page` 同级），不进入 `.p-page` 的 overflow context
+
+```html
+<div class="app-mock">
+  <div class="p-page">...内容...</div>
+  <div class="cta-bar">...粘底按钮...</div>  <!-- ← 这里，与 p-page 同级 -->
+  <div class="hind"><div></div></div>
+</div>
+```
+
+```css
+.cta-bar{position:absolute;left:0;right:0;bottom:24px;z-index:30;}
+```
+
+底部 nav 同理。
+
+### E6. 铃铛与订阅 CTA 联动语义
+
+订阅 / 铃铛交互语义易写反。正确语义（决策 04-28 晚定）：
+
+| 状态 | UI | 语义 |
+|------|----|----|
+| 未订阅 | 按钮「订阅」蓝色 + 铃铛 hidden | 默认 |
+| 订阅成功 | 按钮「已订阅」灰色 + 铃铛 🔔 显示 | 推送默认开 |
+| 铃铛 click | 铃铛变 🔕 muted + toast「已关闭该交易员的实盘推送」 | 推送关 |
+| 再次 click 铃铛 | 铃铛回 🔔 + toast「已开启实盘推送」 | 推送回开 |
+| 取消订阅 | 按钮回「订阅」蓝色 + 铃铛 hidden | 推送清空 |
+
+参考实现 [proto_v2/js_helpers.py `_subscribe` / `_toggleBell`](../../../../projects/community/leaderboard/scripts/proto_v2/js_helpers.py)。
+
+### E 节自检（Step C 必跑）
+
+- [ ] grep 无 `:has(` CSS 选择器
+- [ ] grep `::-webkit-scrollbar` 同时存在 `scrollbar-width:none`
+- [ ] grep `:not(.show)` 配套 `visibility:hidden`
+- [ ] grep 所有 `.cta-bar` 都在 `.app-mock` / `.phone` 直接子级（不在 `.p-page` / `.body` 内）
+- [ ] grep toggle state CSS 用复合选择器（`.cta-blue.cta-grey{...}`）不是单 class
+- [ ] 含订阅按钮的场景必有铃铛元素配套

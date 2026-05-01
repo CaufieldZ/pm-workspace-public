@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: workspace-audit
 description: >
@@ -11,7 +10,6 @@ consumed_by: []
 scripts:
   audit.sh: "全局审计 — bash .claude/skills/workspace-audit/scripts/audit.sh [类别号]"
 ---
-<!-- pm-ws-canary-236a5364 -->
 
 # Workspace Audit
 

@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # Skill Creator 参考：PM-WORKSPACE 约定速查
 
 > skill-creator 生成新 skill 时必须遵守的现有约定。
@@ -110,7 +109,6 @@ PM-WORKSPACE/
 
 | 已有前缀 | 类型 |
 |----------|------|
-| rf- | 需求框架 |
 | arch- | 架构图集 |
 | imap- | 交互大图 |
 | proto- | 原型 |
@@ -126,7 +124,6 @@ PM-WORKSPACE/
 | Skill | 触发词关键字 | 类型 |
 |-------|-------------|------|
 | scene-list | 场景清单、场景梳理 | 链路型 |
-| requirement-framework | 需求框架、需求拆解 | 链路型 |
 | architecture-diagrams | 架构图、系统设计 | 链路型 |
 | interaction-map | 交互大图、交互地图 | 链路型 |
 | prototype | 原型、可交互原型 | 链路型 |

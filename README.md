@@ -4,10 +4,10 @@
 
 `AI-NATIVE · PRODUCT MANAGEMENT · PM-WS`
 
-会议纪要 / MRD / 竞品截图 → 场景清单、交互大图、PRD、行为规格。19 个 Skill 覆盖产品经理全链路。
+会议纪要 / MRD / 竞品截图 → 场景清单、交互大图、PRD、行为规格。18 个 Skill 覆盖产品经理全链路。
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-1f54d6?style=flat-square)](LICENSE)
-[![Skills](https://img.shields.io/badge/skills-20-D97757?style=flat-square)](.claude/skills)
+[![Skills](https://img.shields.io/badge/skills-18-D97757?style=flat-square)](.claude/skills)
 [![Python](https://img.shields.io/badge/python-3.10+-000?style=flat-square)]()
 [![Node](https://img.shields.io/badge/node-18+-000?style=flat-square)]()
 [![Claude Code](https://img.shields.io/badge/claude_code-native-000?style=flat-square)](https://docs.anthropic.com/en/docs/claude-code)
@@ -126,26 +126,26 @@ Layer 3 · 项目文件（具体项目资料）
 
 ## Skill 流水线
 
-10 个 Pipeline Skill 按顺序执行，10 个独立 / 工具 Skill 随时调用。
+10 个 Pipeline Skill 按依赖顺序执行，5 个独立 Skill + 3 个工具 Skill 随时调用。共 18 个。
 
 ```
-1 scene-list ─→ 2 req-framework* ─→ 2.5 arch-diagrams* ─→ 3 interaction-map
-                                                                 │
-  ┌──────────────────────────────────────────────────────────────┘
+1 scene-list ─→ 2.5 arch-diagrams* ─→ 3 interaction-map
+                                              │
+  ┌───────────────────────────────────────────┘
   ▼
 4 prototype* ─→ 5 prd ──┬─→ 6 behavior-spec* ─┐
                         ├─→ 6 page-structure* ├─→ 8 cross-check
-                        └─→ 7 test-cases*     ┘
+                        ├─→ 7 test-cases*     ┘
+                        └─→ 9 ops-handbook*
 
                                                     * = optional
 ```
 
-### Pipeline
+### Pipeline（10 个）
 
 | # | Skill | 产出说明 | 格式 |
 |:-|:-|:-|:-|
-| 1 | scene-list | 需求拆解为场景，编号锁定全局引用 | `.md` |
-| 2 | requirement-framework | 按模块整理需求条目（场景多时） | `.html` |
+| 1 | scene-list | 需求拆解为场景，编号锁定全局引用 | `.md` / `.html` |
 | 2.5 | architecture-diagrams | 多系统 / 资金流转架构，多 Tab 文档 | `.html` |
 | 3 | interaction-map | 多端 UI 流 + 跨端数据流，Mockup 级 | `.html` |
 | 4 | prototype | 可点击高保真原型，数据驱动联动 | `.html` |
@@ -154,20 +154,25 @@ Layer 3 · 项目文件（具体项目资料）
 | 6 | page-structure | 设计 / 前端 AI 消费：组件树 + 数据绑定 | `.md` |
 | 7 | test-cases | QA AI 消费：Pairwise 建模 + 四类全覆盖 | `.md` |
 | 8 | cross-check | 编号 / 术语 / 字段一致性拉通验证 | 终端输出 |
+| 9 | ops-handbook | 运营 / 客服 / BD 步骤化文档，PRD 终稿后产出 | `.docx` |
 
-### Standalone / Tool
+### Standalone（5 个）
 
 | Skill | 说明 |
 |:-|:-|
 | competitor-analysis | 竞品调研，三角对比 + 可借鉴点提取 |
-| intel-collector | 情报采集：APP 截图 / Web 全页截图 / 公告抓取 |
 | data-report | 周报 / 月报 / 季报数据报告，神策 + 有数 自动化 |
 | flowchart | 流程图 / 泳道图 / 审批流，独立产出可嵌入其他文档 |
+| mrd-review | MRD 评审：投票表 + 价值判断 + 市场窗口验证 |
 | ppt | 方案 / SOP → HTML 多 Tab 文档 + 口播稿 |
-| meeting-autopilot | 会议纪要拉取 → 项目归档 → 行动项派发 |
-| pdf-tools | PDF 合并 / 拆分 / 加密 / 水印 / 页码 / 转换 |
-| workspace-audit | 11 类全局诊断（文件 / 数值 / 依赖 / 规则 / Token 等） |
+
+### Tool（3 个）
+
+| Skill | 说明 |
+|:-|:-|
+| intel-collector | 情报采集：APP 截图 / Web 全页截图 / 公告抓取 |
 | skill-creator | 创建新 Skill，自动生成 frontmatter + 注册 |
+| workspace-audit | 14 类全局诊断（10 硬检查 + 4 软检查），跨文件完整性 / 数值 / 依赖 / 规则 / Token / 三件套纯洁性 |
 
 ---
 
@@ -208,7 +213,7 @@ HTML 产出物（imap · prototype · ppt · flowchart · arch-diagrams）基于
 
 色板与字体均对标 [Anthropic 官方 brand-guidelines skill](https://github.com/anthropics/skills/tree/main/skills/brand-guidelines)，免费授权可放心引用。
 
-反 AI slop 六禁（规则层强制）：全屏渐变 · emoji 装饰标题 · 圆角卡片 + 左 border accent · SVG 画 imagery · 烂大街字体（Inter/Roboto/Space Grotesk 作 CJK 主字体）· 每卡片都带 icon。
+反 AI slop 六禁（规则层强制）：全屏渐变 · emoji 装饰标题 · 圆角卡片 + **任一方向 ≥ 2px 的 accent border**（左/右/上/下都禁）· SVG 画 imagery / 人物 / 场景 · 烂大街字体（Inter/Roboto/Space Grotesk 作 CJK 主字体）· 每卡片都带 icon。
 
 ---
 
@@ -216,11 +221,14 @@ HTML 产出物（imap · prototype · ppt · flowchart · arch-diagrams）基于
 
 | 机制 | 说明 |
 |:-|:-|
-| 防腐化 hook | `.githooks/pre-commit` 在 Skill / 规则变更时自动跑 `audit.sh`（完整性 + 依赖 + 规则冲突），不通过拦截 commit |
-| Session 保活 | `.claude/hooks/pre-compact.sh` 在上下文压缩前注入 `session-state.md` 到摘要，compact 后进度不丢 |
+| 防腐化 hook | `.githooks/pre-commit` 在 Skill / 规则变更时自动跑 `audit.sh 1,2,3,4,7,12,13,14`（8 类硬检查），不通过拦截 commit。secret scan 拦 figd/sk-ant/ghp/AKIA 等 token |
+| Session 保活 | `.claude/hooks/pre-compact.sh` 在上下文压缩前注入 `session-state.md` + git 动态快照到摘要，compact 后进度不丢 |
+| 全链路埋点 | 14 个 hook 通过 `lib/log.sh` 写 `.claude/logs/usage.jsonl`（skill 触发 / hook warn-block-clean / gate skip），半月跑一次 dashboard 拿数据决策 |
+| 规则半衰期 | `.claude/runbooks/half-life.md` 给规则打 volatile / durable 标签：补丁类（CJK 标点 / 字体 / token 预算）半年 review 砍弱触发；方法论类（场景编号 / 九章 / 漏斗）持续投入 |
 | 自检反压 | 每个 Skill 自带 checklist，不通过最多自动修复 2 次，仍失败停下报告，禁止静默跳过 |
 | impact-check | `bash scripts/impact-check.sh <项目名>` 识别 scene-list 变更波及的下游 deliverable |
-| workspace-audit | 双阶段审计 · 脚本硬检查 7 类 + 模型软检查 4 类 = 11 类全局诊断 |
+| workspace-audit | 双阶段审计 · 脚本硬检查 10 类 + 模型软检查 4 类 = 14 类全局诊断 |
+| dashboard | `python3 scripts/dashboard.py` 聚合 14 hook 触发 + 18 skill 使用 + 项目快照，输出 `.claude/workspace-dashboard.md` 一屏看全 |
 | HTML 铁律 | > 200 行必须脚本生成（骨架 → 填充 → 自检），禁止 Write 直写 |
 | 变更级联 | context.md 改动 → 依赖链扫描 → pipeline 顺序升版 → cross-check 拉通 |
 | 编号锁定 | 场景编号确认后不可改动，新增只追加 |
@@ -235,19 +243,26 @@ pm-workspace/
 ├── CLAUDE.md                    # Claude Code 项目指令入口
 ├── .githooks/pre-commit         # 防腐化 hook
 ├── .claude/
-│   ├── hooks/                   # Claude Code runtime hook
-│   │   └── pre-compact.sh       #   Session 状态保活
+│   ├── hooks/                   # 14 个 Claude Code runtime hook
+│   │   ├── lib/log.sh           #   共享日志函数（统一埋点到 logs/usage.jsonl）
+│   │   ├── pre-compact.sh       #   Session 状态保活
+│   │   ├── post-cjk-punct-check.sh  # CJK 标点护栏
+│   │   ├── post-skill-load.sh   #   Skill 触发埋点
+│   │   └── ...                  #   10 个其他 gate（CJK / docx 截图 / 版本同步 / wiki push 等）
 │   ├── rules/
 │   │   ├── pm-workflow.md       #   全局工作流规范
+│   │   ├── html-pipeline.md     #   HTML 产出物分步生成 + 美学硬底线
 │   │   └── soul.md              #   个人偏好（gitignored）
-│   ├── skills/                  # 19 个 Skill（每个 = SKILL.md + scripts/ + references/ + assets/ 三件套）
+│   ├── skills/                  # 18 个 Skill（每个 = SKILL.md + scripts/ + references/ + assets/ 三件套）
 │   │   ├── {skill}/scripts/     #   可执行代码（Claude 不读源码，调用执行）
 │   │   ├── {skill}/references/  #   .md 文档（按需 Read 加载到 context）
 │   │   ├── {skill}/assets/      #   模板 / 字体 / 配置（被脚本读出来写进产物，不进 context）
 │   │   └── _shared/             #   跨 skill 共享资产
-│   │       └── claude-design/          #     美学 token · 工具类 · 内容规范 · 对标 demo
-│   └── chat-templates/          # Chat 轨模板 + context.md 九章模板
+│   │       └── claude-design/   #     美学 token · 工具类 · 内容规范
+│   ├── chat-templates/          # Chat 轨模板 + context.md 九章模板
+│   └── settings.json
 ├── scripts/                     # 公共脚本
+│   ├── dashboard.py             #   聚合 hook / skill / 项目状态，输出 workspace-dashboard.md
 │   ├── call_mcp.py              #   通用 MCP 调用（HTTP/stdio，0 token schema 开销）
 │   ├── fetch_confluence.py      #   Confluence REST API 拉取
 │   ├── fetch_figma.py           #   Figma REST API 拉取
@@ -259,15 +274,19 @@ pm-workspace/
 ├── package.json                 # Node 依赖
 ├── references/                  # 本地素材（gitignored）
 │   └── competitors/
-└── projects/                    # 工作项目
-    └── {项目名}/
-        ├── context.md           # 项目唯一真相源
-        ├── scene-list.md        # 锁定的场景编号
-        ├── .confluence.json     # Confluence 推送缓存（page_id/space/parent_id，首次推送脚本自动写入）
-        ├── inputs/              # 原始素材
-        ├── scripts/             # 项目生成脚本
-        └── deliverables/        # 最终产出物
+└── projects/                    # 工作项目（gitignored，按业务分类两层）
+    ├── {业务线}/                # 你按公司业务分类（例：内容产品线、增长产品线）
+    │   └── {项目}/              # 业务线下具体产品 / 模块
+    │       ├── context.md       #   项目唯一真相源（九章）
+    │       ├── scene-list.md    #   锁定的场景编号
+    │       ├── .confluence.json #   Confluence 推送缓存
+    │       ├── inputs/          #   原始素材
+    │       ├── scripts/         #   项目生成脚本
+    │       └── deliverables/    #   最终产出物
+    └── {顶级项目}/              # 不归任何业务线的方案型项目 / 基建（结构同上，无业务线层）
 ```
+
+> 业务线 / 项目命名按你的工作内容自定义。完整工作流约定见 `.claude/rules/pm-workflow.md`。
 
 ---
 
@@ -311,12 +330,6 @@ git commit -m "feat: your change"
 ## License
 
 [Apache License 2.0](LICENSE)
-
-### AI Training Notice
-
-This repository is **not licensed for AI model training, fine-tuning, or distillation**. See [AI-TRAINING-RESTRICTION.md](AI-TRAINING-RESTRICTION.md) for details.
-
-本仓库**不授权用于 AI 模型训练、微调或蒸馏**。详见 [AI-TRAINING-RESTRICTION.md](AI-TRAINING-RESTRICTION.md)。
 
 ---
 

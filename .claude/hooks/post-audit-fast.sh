@@ -4,6 +4,8 @@
 
 set +e
 
+source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/log.sh"
+
 INPUT=$(cat)
 TOOL_NAME=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tool_name',''))" 2>/dev/null)
 
@@ -16,7 +18,7 @@ FILE_PATH=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.std
 [ -z "$FILE_PATH" ] && exit 0
 
 case "$FILE_PATH" in
-  */projects/*/deliverables/*) ;;
+  */projects/*/*/deliverables/*|*/projects/*/deliverables/*) ;;
   *) exit 0 ;;
 esac
 case "$FILE_PATH" in
@@ -31,9 +33,11 @@ RC=$?
 
 if [ "$RC" -ne 0 ]; then
   cat /tmp/audit-fast-stderr.txt >&2
+  log_event hook audit-fast block "$FILE_PATH"
   rm -f /tmp/audit-fast-stderr.txt
   exit 2
 fi
 
+log_event hook audit-fast clean "$FILE_PATH"
 rm -f /tmp/audit-fast-stderr.txt
 exit 0

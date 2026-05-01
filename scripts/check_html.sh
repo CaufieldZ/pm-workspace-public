@@ -49,7 +49,8 @@ if [ -z "$SCENE_IDS" ]; then
   SCENE_IDS=$(sed -n 's/^|[[:space:]]*\([A-Z]-\{0,1\}[0-9]*\)[[:space:]].*/\1/p' "$SCENE_LIST" 2>/dev/null | sort -u)
 fi
 if [ -z "$SCENE_IDS" ]; then
-  echo "⚠️ 无法从 scene-list.md 提取编号，跳过"
+  echo "❌ 无法从 scene-list.md 提取编号（格式坏了，或 scene-list 未走 pipeline）"
+  FAIL=1
 else
   MISSING=""
   for sid in $SCENE_IDS; do
@@ -113,6 +114,10 @@ if [ "$TYPE" = "imap" ]; then
   echo "注释条目 .ann-item: $ANN_ITEM_COUNT | 优先级标签 .ann-tag: $ANN_TAG_COUNT"
   echo "屏幕说明 .flow-note: $FLOW_NOTE_COUNT | 信息框 .info-box: $INFO_BOX_COUNT"
 
+  if [ "$SCENE_COUNT" -eq 0 ]; then
+    echo "❌ imap 模式下无 id=\"scene-*\" 标记（HTML 结构错了，组件完整性检查无法跑）"
+    FAIL=1
+  fi
   if [ "$SCENE_COUNT" -gt 0 ]; then
     [ "$AW_COUNT" -eq 0 ] && echo "❌ 无任何箭头(.aw)，屏幕间缺流向" && FAIL=1
     [ "$ANNO_COUNT" -eq 0 ] && echo "❌ 无任何标注框(.anno)，注释无法对应屏幕区域" && FAIL=1

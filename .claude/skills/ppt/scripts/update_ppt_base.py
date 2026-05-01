@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 """PPT 信息文档 update 工具包。
 
 PPT HTML 结构：NAV = JSON 数组，内容在 PAGE_RENDERERS = { 'id': function(c){ c.innerHTML = "..."; }, ... }。

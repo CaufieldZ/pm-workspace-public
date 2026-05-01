@@ -1,0 +1,410 @@
+@import url('../../_shared/claude-design/tokens.css');
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--cd-bg);
+  color: var(--cd-ink);
+  font-family: 'Noto Sans SC', 'Noto Serif SC', 'Poppins', 'PingFang SC', -apple-system, system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: var(--sp-8) var(--sp-6) var(--sp-8);
+}
+
+/* Header / 叙事 / Stats 控制为阅读舒适宽度（max 1080），表格区天然继承 .page 全宽 */
+.hd, .note, .stats {
+  max-width: 1080px;
+}
+
+/* ── Header ── */
+.hd {
+  padding-bottom: var(--sp-4);
+  margin-bottom: var(--sp-6);
+  border-bottom: 1px solid var(--cd-hairline);
+}
+.hd .eyebrow {
+  font-family: var(--cd-mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  color: var(--cd-ink-58);
+  text-transform: uppercase;
+  margin-bottom: var(--sp-2);
+}
+.hd h1 {
+  font-family: var(--cd-serif-cn), var(--cd-serif-en);
+  font-weight: 500;
+  font-size: 56px;
+  line-height: 1.2;
+  margin: 0 0 var(--sp-3);
+  color: var(--cd-ink);
+  letter-spacing: -0.015em;
+}
+.hd .meta {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  font-family: var(--cd-mono);
+  font-size: 12px;
+  color: var(--cd-ink-58);
+  letter-spacing: 0.02em;
+}
+.hd .meta span strong {
+  color: var(--cd-ink);
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+/* ── 叙事主线 / Note 块（md 顶部 blockquote） ── */
+.note {
+  border-left: 2px solid var(--cd-accent);
+  padding: var(--sp-2) var(--sp-3);
+  margin: 0 0 var(--sp-6);
+  background: rgba(217, 119, 87, 0.05);
+  font-size: 14.5px;
+  color: var(--cd-ink);
+  line-height: 1.75;
+}
+.note p {
+  margin: 0;
+}
+.note p + p {
+  margin-top: 8px;
+  color: var(--cd-ink-82);
+  font-size: 13.5px;
+}
+
+/* ── Stats 概览（精简为 hairline 横排） ── */
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
+  margin: var(--sp-4) 0 var(--sp-8);
+  padding: var(--sp-3) 0;
+  border-top: 1px solid var(--cd-hairline);
+  border-bottom: 1px solid var(--cd-hairline);
+}
+.stat {
+  min-width: 120px;
+}
+.stat .lbl {
+  font-family: var(--cd-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cd-ink-58);
+  margin-bottom: 8px;
+}
+.stat .val {
+  font-family: var(--cd-serif-cn), var(--cd-serif-en);
+  font-size: 36px;
+  font-weight: 500;
+  color: var(--cd-ink);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+.stat .val .sub {
+  font-family: var(--cd-mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--cd-ink-40);
+  margin-left: 8px;
+  letter-spacing: 0.04em;
+}
+
+/* ── Section ── */
+.sec {
+  margin-bottom: var(--sp-8);
+}
+.sec h2 {
+  font-family: var(--cd-serif-cn), var(--cd-serif-en);
+  font-weight: 500;
+  font-size: 32px;
+  line-height: 1.3;
+  margin: 0 0 var(--sp-3);
+  color: var(--cd-ink);
+  letter-spacing: -0.005em;
+}
+.sec p {
+  font-size: 15px;
+  color: var(--cd-ink-82);
+  margin: 0 0 var(--sp-2);
+  line-height: 1.75;
+  max-width: 76ch;
+}
+
+/* ── 表格 ── */
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14.5px;
+  margin-top: var(--sp-3);
+}
+.tbl thead th {
+  text-align: left;
+  font-weight: 500;
+  font-family: var(--cd-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cd-ink-58);
+  padding: 12px var(--sp-2) 10px;
+  border-bottom: 1px solid var(--cd-hairline);
+  white-space: nowrap;
+}
+.tbl thead th:first-child { padding-left: 0; }
+.tbl thead th:last-child { padding-right: 0; }
+
+.tbl tbody td {
+  padding: 16px var(--sp-2);
+  border-bottom: 1px solid var(--cd-hairline);
+  vertical-align: top;
+  color: var(--cd-ink-82);
+  line-height: 1.65;
+}
+.tbl tbody td:first-child { padding-left: 0; }
+.tbl tbody td:last-child { padding-right: 0; }
+
+/* 防短词断字：编号 / 优先级 / 设备列已 nowrap，模块列 ≤ 6 字也不该断 */
+.tbl td.col-id,
+.tbl td.col-pri,
+.tbl td.col-dev { white-space: nowrap; }
+
+.tbl tbody tr:hover td {
+  background: rgba(195, 194, 183, 0.025);
+}
+
+/* 编号列：等宽 + 强调 */
+.tbl td.col-id {
+  font-family: var(--cd-mono);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--cd-accent);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+/* 场景名列：略加粗 */
+.tbl td.col-name {
+  color: var(--cd-ink);
+  font-weight: 500;
+  font-size: 15px;
+}
+
+/* 优先级 badge */
+.pri {
+  display: inline-block;
+  font-family: var(--cd-mono);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 3px;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.pri-p0  { background: rgba(245, 63, 63, 0.14);  color: #F47272; }
+.pri-p1  { background: rgba(217, 119, 87, 0.18); color: var(--cd-accent); }
+.pri-p2  { background: rgba(195, 194, 183, 0.10); color: var(--cd-ink-58); }
+.pri-v2  { background: rgba(106, 155, 204, 0.18); color: var(--cd-accent-2); }
+.pri-future { background: rgba(120, 140, 93, 0.18); color: var(--cd-accent-3); }
+.pri-skip { background: transparent; color: var(--cd-ink-40); border: 1px dashed var(--cd-hairline); }
+
+/* 设备 chip */
+.dev {
+  display: inline-block;
+  font-family: var(--cd-mono);
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  background: rgba(195, 194, 183, 0.06);
+  color: var(--cd-ink-82);
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+}
+.dev-mob { color: var(--cd-accent-2); }
+.dev-web { color: var(--cd-accent-3); }
+
+/* ── 紧凑表（≤ 3 行的辅助表，如 View 划分 / 统计 / 编号锁定）── */
+.tbl-compact {
+  font-size: 13.5px;
+  margin-top: var(--sp-2);
+  max-width: 720px;
+}
+.tbl-compact thead th {
+  font-size: 10px;
+}
+.tbl-compact tbody td {
+  padding: 10px var(--sp-2);
+  font-size: 13.5px;
+}
+
+/* ── footer ── */
+footer {
+  margin-top: var(--sp-8);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--cd-hairline);
+  font-family: var(--cd-mono);
+  font-size: 11px;
+  color: var(--cd-ink-40);
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+}
+footer code {
+  background: rgba(195, 194, 183, 0.08);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: var(--cd-ink-82);
+  font-size: 11px;
+}
+
+/* 行内 code（md 中的 `xx`） */
+code {
+  font-family: var(--cd-mono);
+  font-size: 0.9em;
+  background: rgba(195, 194, 183, 0.08);
+  padding: 1px 6px;
+  border-radius: 3px;
+  color: var(--cd-ink);
+}
+
+/* 强调（md 中的 **xx**） */
+strong { color: var(--cd-ink); font-weight: 500; }
+
+/* ── 列表 / 有序列表 ── */
+ul, ol {
+  margin: 0 0 var(--sp-3);
+  padding-left: 1.4em;
+  color: var(--cd-ink-82);
+  font-size: 15px;
+  line-height: 1.8;
+}
+li { margin-bottom: 4px; }
+
+/* ── Flow 表（跨端关联，触发端 → 响应端） ── */
+.flow-tbl {
+  margin-top: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.flow-row {
+  padding: var(--sp-2) 0;
+  border-bottom: 1px solid var(--cd-hairline);
+}
+.flow-row:last-child { border-bottom: none; }
+
+.flow-line {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.flow-ep {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+.flow-ep-text {
+  font-size: 14px;
+  color: var(--cd-ink-58);
+  font-style: italic;
+}
+.flow-ep-empty {
+  color: var(--cd-ink-40);
+}
+.flow-multi {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.flow-view {
+  font-family: var(--cd-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cd-ink-40);
+  margin-bottom: 2px;
+}
+.flow-id {
+  display: inline-block;
+  font-family: var(--cd-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cd-accent);
+  background: rgba(217, 119, 87, 0.10);
+  padding: 3px 9px;
+  border-radius: 3px;
+  letter-spacing: 0.04em;
+  margin-right: 4px;
+}
+.flow-name {
+  font-size: 14px;
+  color: var(--cd-ink);
+  font-weight: 500;
+  margin-top: 2px;
+  line-height: 1.5;
+}
+
+.flow-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  padding: 0 var(--sp-1);
+  position: relative;
+}
+.flow-arrow::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--cd-ink-18);
+  z-index: 0;
+}
+.flow-arrow::after {
+  content: "▸";
+  position: absolute;
+  right: -2px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--cd-ink-40);
+  font-size: 14px;
+  z-index: 0;
+}
+.flow-action {
+  position: relative;
+  z-index: 1;
+  background: var(--cd-bg);
+  padding: 2px 12px;
+  font-size: 13px;
+  color: var(--cd-ink);
+  font-weight: 500;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.flow-extra {
+  margin-top: 8px;
+  margin-left: 0;
+  padding: 6px var(--sp-2);
+  background: rgba(195, 194, 183, 0.04);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--cd-ink-58);
+  line-height: 1.65;
+}

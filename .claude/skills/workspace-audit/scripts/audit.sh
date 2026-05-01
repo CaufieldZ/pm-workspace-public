@@ -385,7 +385,7 @@ if not overlap:
     fi
   done
   # 来源 2：pm-workflow 中定义的核心术语
-  for term in "交互大图" "可交互原型" "行为规格" "页面结构" "场景清单" "需求框架" "拉通自检" "架构图"; do
+  for term in "交互大图" "可交互原型" "行为规格" "页面结构" "场景清单" "拉通自检" "架构图"; do
     echo "$term" >> "$TERMS_FILE"
   done
   sort -u "$TERMS_FILE" -o "$TERMS_FILE"
@@ -425,6 +425,7 @@ if run_cat 5; then
   echo ""
   for d in .claude/skills/*/; do
     skill=$(basename "$d")
+    [ "$skill" = "_shared" ] && continue
     skill_file="$d/SKILL.md"
     skill_bytes=$(wc -c < "$skill_file" 2>/dev/null | tr -d ' ')
     skill_tokens=$((skill_bytes / 2))
@@ -491,7 +492,9 @@ if run_cat 5; then
   CTX_TOKENS=0
   CTX_FULL=0
   SL_TOKENS=0
-  for proj_dir in projects/*/; do
+  for ctx in projects/*/context.md projects/*/*/context.md; do
+    [ -f "$ctx" ] || continue
+    proj_dir="$(dirname "$ctx")/"
     [ -d "$proj_dir" ] || continue
     if [ -f "${proj_dir}context.md" ]; then
       b=$(wc -c < "${proj_dir}context.md" | tr -d ' ')
@@ -551,7 +554,9 @@ if run_cat 6; then
 
   # 6.0 context.md 九章结构验证
   EXPECTED_CHAPTERS="1 2 3 4 5 6 7 8 9"
-  for proj_dir in projects/*/; do
+  for ctx in projects/*/context.md projects/*/*/context.md; do
+    [ -f "$ctx" ] || continue
+    proj_dir="$(dirname "$ctx")/"
     [ -d "$proj_dir" ] || continue
     ctx="${proj_dir}context.md"
     [ -f "$ctx" ] || continue
@@ -567,7 +572,9 @@ if run_cat 6; then
   echo ""
 
   HAS_PROJECT=false
-  for proj_dir in projects/*/; do
+  for ctx in projects/*/context.md projects/*/*/context.md; do
+    [ -f "$ctx" ] || continue
+    proj_dir="$(dirname "$ctx")/"
     [ -d "${proj_dir}deliverables" ] || continue
     HAS_PROJECT=true
     proj=$(basename "$proj_dir")
@@ -732,13 +739,14 @@ if run_cat 12; then
       # 按优先级查找：
       # 1) 按原样（处理形如 scripts/xxx.py 或 assets/xxx.css 这种已带路径的）
       # 2) skill references / skill scripts / skill assets / 项目根 scripts
+      # 用 -e 同时接受文件和目录（Python 子包形式如 humanize/ 也算合法 script）
       found=false
       for path in "${script_name}" \
                   "${skill_dir}/references/${script_name}" \
                   "${skill_dir}/scripts/${script_name}" \
                   "${skill_dir}/assets/${script_name}" \
                   "scripts/${script_name}"; do
-        [ -f "$path" ] && { found=true; break; }
+        [ -e "$path" ] && { found=true; break; }
       done
 
       if $found; then

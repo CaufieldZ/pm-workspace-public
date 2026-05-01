@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 """HTML 骨架生成共享工具。
 
 提供 CSS @import 展开、skill 资源文件读取、HTML 文件写出等通用函数，

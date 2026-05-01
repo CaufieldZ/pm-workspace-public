@@ -1,8 +1,7 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: flowchart
 description: >
-  当用户提到「流程图」「泳道图」「审批流」时触发。独立产出,可被 IMAP / PRD / PPT / 架构图消费(截图或嵌入)。
+  当用户提到「流程图」「泳道图」「审批流」时触发。独立产出,可被 IMAP / PPT / 架构图消费(截图或嵌入横屏 HTML)。**PRD docx 嵌图请走 PRD skill 内部 mermaid_screenshots renderer**(参 `.claude/skills/prd/scripts/mermaid_screenshots.py`)——X6/dagre 渲染嵌入 docx 时字号偏小留白巨大,不适合 15.5cm 紧凑嵌图场景。
 argument-hint: [主题 或 data 文件]
 type: standalone
 output_format: .html
@@ -19,7 +18,7 @@ scripts:
 
 ## 定位
 
-独立产出型 Skill。把业务流程/审批流/判定链路可视化,输出浅色白板嵌入深色画布的 HTML 流程图。
+独立产出型 Skill。把业务流程 / 审批流 / 判定链路可视化,输出浅色白板嵌入深色画布的 HTML 流程图,**仅服务横屏 HTML 嵌入场景**(IMAP / arch / PPT)。
 
 渲染引擎 AntV X6 + dagre:
 - 分支图走 dagre 自动布局,声明 nodes/edges 即可
@@ -27,10 +26,16 @@ scripts:
 - 连线走 manhattan + rounded connector(同行相邻自动降级 normal 避免绕圈)
 - 内置自检:边不穿节点(菱形内切 + rect bbox 4px buffer)
 
-与相邻 Skill 的边界:
-- **interaction-map** 画页面跳转(UI flow),流程图画业务流程(谁在做什么+状态怎么转),不混用
-- **architecture-diagrams** 画系统架构+资金流,流程图画单一业务过程,粒度不同
-- **prd** 消费流程图截图,自己不生产
+### 适用场景
+
+✅ IMAP / architecture-diagrams / PPT 等横屏 HTML 容器嵌入(视觉空间 1200px+,X6 渲染字号 / 留白合适)
+❌ **PRD docx 嵌图不在本 skill 范围**——docx 宽度 15.5cm 是紧凑嵌图场景,X6/dagre 默认 .whiteboard padding 会让节点字号缩到无法阅读。PRD 走 `.claude/skills/prd/scripts/mermaid_screenshots.py`(mermaid LR 横排 + Claude Design 主题,docx 嵌图视觉适配)。
+
+### 与相邻 Skill 的边界
+
+- **interaction-map** 画页面跳转(UI flow),流程图画业务流程(谁在做什么 + 状态怎么转),不混用
+- **architecture-diagrams** 画系统架构 + 资金流,流程图画单一业务过程,粒度不同
+- **prd** 走 mermaid_screenshots 自己渲染 docx 嵌图,不消费本 skill
 
 用途:
 - 复杂判定链路(如 KYC 校验、合规校验、资格认证)

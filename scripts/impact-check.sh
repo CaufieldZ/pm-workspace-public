@@ -102,7 +102,6 @@ infer_skill() {
   if echo "$f" | grep -qiE 'imap|interaction|交互大图'; then echo "3:interaction-map"
   elif echo "$f" | grep -qiE 'proto|原型'; then echo "4:prototype"
   elif echo "$f" | grep -qiE 'prd|PRD'; then echo "5:prd"
-  elif echo "$f" | grep -qiE '^rf-|需求框架|requirement'; then echo "2:requirement-framework"
   elif echo "$f" | grep -qiE 'arch|diagrams|架构'; then echo "2.5:architecture-diagrams"
   elif echo "$f" | grep -qiE 'bspec|行为规格'; then echo "6:behavior-spec"
   elif echo "$f" | grep -qiE 'pspec|页面结构'; then echo "6:page-structure"

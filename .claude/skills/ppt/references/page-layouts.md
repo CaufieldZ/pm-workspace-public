@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # PPT 整页骨架速查（10 种）
 
 改造自歸藏 layouts.md，换成 Claude Design 暗色 token + 现有组件库。

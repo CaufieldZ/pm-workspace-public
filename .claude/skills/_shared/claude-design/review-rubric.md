@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: review-rubric
 description: PRD / 交互大图 / 原型产出物 PM 5 维度评审框架——场景覆盖 / 信息层级 / 规则完备 / 端能力 / 风险

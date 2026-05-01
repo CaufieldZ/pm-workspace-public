@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 使用 ppt skill（HTML 多 Tab 文档 + Node.js 脚本）生成。
 
 #### 深色主题配色

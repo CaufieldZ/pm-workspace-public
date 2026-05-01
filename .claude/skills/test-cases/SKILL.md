@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: test-cases
 description: >
@@ -13,7 +12,6 @@ consumed_by: [cross-check]
 scripts:
   pairwise_gen.py: "配对组合生成 — python3 pairwise_gen.py <参数>"
 ---
-<!-- pm-ws-canary-236a5364 -->
 
 # 测试用例集生成器 Skill（Test Cases）
 

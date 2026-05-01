@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
-# pm-ws-canary-236a5364
 """竞品 APP 截图自动采集 — 录屏 + 抽帧模式，绕过 APP 截屏检测弹窗。
 
 原理：iOS APP 通过 UIApplicationUserDidTakeScreenshotNotification 检测截屏并弹窗，

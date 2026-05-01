@@ -11,6 +11,8 @@
 
 set +e
 
+source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/log.sh"
+
 STATE_FILE="${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/session-state.md"
 STALE_SECONDS=600  # 10 分钟
 
@@ -63,6 +65,9 @@ if [ "$AGE" -gt "$STALE_SECONDS" ]; then
   echo "⚠️  高风险操作($risky_reason)前 session-state.md 已 ${MINS} 分钟未更新" >&2
   echo "   建议先 Write .claude/session-state.md 保存当前进度" >&2
   echo "   理由:Playwright/大文件操作一旦 tool output 超 50K 或 API 挂住,无 compact 触发,状态会丢" >&2
+  log_event hook risky-op warn "$risky_reason"
+else
+  log_event hook risky-op triggered "$risky_reason"
 fi
 
 exit 0

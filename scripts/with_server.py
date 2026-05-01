@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 # Source: https://github.com/anthropics/skills/blob/main/skills/webapp-testing/scripts/with_server.py
 # License: Apache 2.0 (see NOTICE for full terms)
 """

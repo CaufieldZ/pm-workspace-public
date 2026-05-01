@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 """原型 update 工具包 — prototype 版 update_prd_base.py。
 
 在 HtmlPatcher 之上封装 prototype DOM 结构感知操作。

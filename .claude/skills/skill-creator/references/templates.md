@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # Skill Creator 模板库
 
 > skill-creator 的详细参考：三种内置模板骨架 + 改造模式 diff 格式。

@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: ppt
 description: >
@@ -17,7 +16,6 @@ scripts:
   presenter-mode.js: "运行时演讲模式 JS — 骨架脚本自动内联，不手动读"
   scripts/lib/html_patcher.py: "HtmlPatcher 基类 — update_ppt_base.py 的底层依赖"
 ---
-<!-- pm-ws-canary-236a5364 -->
 
 # PPT 信息文档
 
@@ -77,24 +75,83 @@ grep -nE '决策\s*[0-9]+|[A-G]-[0-9]+\s*(/\s*[A-G]-[0-9]+)*' deliverables/ppt-*
 
 ### Step 0：需求澄清门（动手前必做）
 
-如果用户已给完整大纲 + 图片素材，跳过直接进 Step 1。
-如果用户只给了主题或模糊想法，5 问对齐后才进 Step 1：
-
-| # | 问题 | 决定什么 |
-|---|------|----------|
-| 1 | 受众场景？（内部汇报 / 对外发布 / 分享会 / SOP 手册） | 语言风格 + 视觉浓度 |
-| 2 | 形态？（Doc 文档型 / Deck 演讲型 / 双形态） | 是否启用 Deck 模式 + chrome/foot 元数据 |
-| 3 | 时长 + 页数？（15 分钟 ≈ 10 页 / 30 分钟 ≈ 20 页 / SOP 不限） | 节奏密度 + Tab 数量 |
-| 4 | 主题色？（fintech-dark / ink-classic / paper-zen / 9 套选 1） | 见 `_shared/claude-design/themes/README.md` |
-| 5 | 硬约束？（必须含 X / 不能出现 Y / 给谁看） | 避免返工 |
+PPT 用法分四类（SOP 手册 / 演讲材料 / 对外宣讲 / 方法论沉淀），用法差极大，门按用途分流走子门。流程：Step 0.1 用途识别 → 0.2 主题色推荐 → 0.3 子门对齐 → 进 Step 1。
 
 跳过条件（满足任一即跳过）：
+
 - 用户说「跳过澄清」「快速模式」「按 context 执行」「直接做」
-- 已有 context.md 含明确目标指标
-- 极小改动（≤ 1 个 Tab）
-- 用户直接提供了完整大纲
+- 已有 context.md 含明确用途 + 受众
+- 极小改动（≤ 1 个 Tab 的修改 / 补充）
+
+注：用户「直接提供完整大纲」**不再算跳过条件** —— 大纲不能替代用途 / 论点判定，仍要走 0.1 / 0.2。
+
+### Step 0.1：用途识别（10 秒判定，决定走哪个子门）
+
+第 0 问：这份 PPT 主要场景？
+
+| 选项 | 说明 | 走的子门 |
+|---|---|---|
+| A · SOP 手册 / 工作流文档 | 读者自查、长期维护 | 文档型门 |
+| B · 演讲材料 / 内部汇报 / 评审 | 台上现场讲 | 演讲型门 |
+| C · 对外宣讲 / 营销物料 | 外部受众、品牌物料 | 演讲型门（外部分支） |
+| D · 方法论沉淀 / 培训复盘 | 自看 + 培训 | 文档型门 |
+
+### Step 0.2：主题色推荐（按用途自动推 1 主 + 1 备选 + 一句理由）
+
+模型主动给推荐，**不让 PM 在 9 套裸选**：
+
+| 用途 | 主推 | 一句理由 | 备选 |
+|---|---|---|---|
+| A SOP / D 方法论 | **claude-native**（默认 tokens.css，#1F1F1E + #D97757） | 暖近黑长读不刺眼、品牌一致、Felix 钦定典范 | ink-classic（怕暗底累就切纸感亮底） |
+| B 演讲（金融 / 交易主题） | **fintech-dark** | 暗底 + 涨绿跌红，金融语义 + Deck 视觉冲击 | claude-native（非金融场景更克制） |
+| B 演讲（非金融） | **claude-native** | 暖近黑 + terra cotta，克制有品牌温度 | ink-classic |
+| C 对外宣讲 | **paper-zen** | 国风暖色，品牌温度 + 一图流 / 海报场景 | indigo-porcelain（青花瓷克制） |
+
+**「claude-native」定义** = 不 import 任何 `themes/*.css`，只用 `_shared/claude-design/tokens.css` 默认值（暖近黑 `#1F1F1E` + terra cotta `#D97757` + Lora + Poppins + Noto SC + JetBrains Mono）。
+
+PM 看主推 OK 就过；要换备选 / 上其他 5 套（cyber-noir / kraft-paper / swiss-grid / muji-minimal / book-architecture）说一声再调。
+
+**主题落地说明（实事求是）**：
+
+`assets/ppt-template.html` 的 `:root` 默认 `--bg: #1F1F1E` —— **fillTemplate 跑出来天然就是 claude-native**，Step 0.2 选 claude-native 时 Step 3 脚本无需任何额外动作。
+
+选其他主题（fintech-dark / paper-zen 等）时注意：ppt-template 用自己的变量系统（`--bg` / `--bg2` / `--t1`），不是 ClaudeDesign 的 `--cd-*`。当前实现下两种落地路径任选 ——
+
+- **手工调色**（推荐）：模型按所选主题，在 PAGE_RENDERERS 的 inline style 和 ppt-template `:root` 替换处使用对应主题的色值（fintech-dark = `#0f0f11` + `#2F6CF2`，paper-zen = `#FAF6EC` + `#1B3A2F` + `#A8804A`）
+- **后处理替换**：`fillTemplate` 调用后再对产物 HTML 做一次 `:root` 块的色值替换（参考 `_shared/claude-design/themes/{name}.css` 的 `--cd-*` 取值）
+
+未来增强（不在门改造范围）：fill-template.js 加 `theme` 参数自动映射 / ppt-template.html 引入 `--cd-*` 别名 —— 待主题切换需求高频后再做。
+
+### Step 0.3：子门对齐（按 Step 0.1 走文档型 或 演讲型）
+
+#### 文档型门（A SOP / D 方法论）4 问
+
+| # | 问题 | 决定什么 |
+|---|---|---|
+| 1 | 读者岗位职级？（运营 / 产品 / 研发 / leader / 跨部门） | 术语深度 + 是否需要术语表页 |
+| 2 | 章节切分逻辑？（按工作流阶段 / 按角色 / 按工具 / 按项目） | NAV 分组结构 |
+| 3 | 要不要 prompt / 模板展示页？ | 是否启用 modal 弹窗 + prompt-block |
+| 4 | 硬约束？（必含 X / 不出现 Y） | 避免返工 |
+
+文档型**不问**：核心论点、时长、谁讲、要不要演讲稿（自查文档无演讲场景）。
+
+#### 演讲型门（B 内部 / C 对外）5 问，论点必答
+
+| # | 问题 | 决定什么 |
+|---|---|---|
+| 1 | **核心论点**（讲完听众带走的一句话，**必答不可跳**） | 全文骨架 + 反 AI slop 收尾 |
+| 2 | 受众 + 时长 → 模型推算页数（不让 PM 自己算） | Tab 数量 + 节奏密度 |
+| 3 | 谁在台上讲？（自讲 / leader 讲 / 录屏自看） | 语气 + chrome/foot 字段密度 + data-step 用量 |
+| 4 | 要不要演讲稿 docx？（提前定，避免 Step 6 才补） | 是否预留 NOTES 字段 |
+| 5 | 硬约束？（C 对外场景必加问法务 / 品牌色限制） | 避免返工 |
 
 ### Step 1：读取参考文件
+
+**必读规则**（HTML pipeline 通用，含演讲叙事 / 分步生成 / Fill 质量 / 美学硬底线）：
+
+```
+view .claude/rules/html-pipeline.md
+```
 
 > **核心原则**：Step 1 只加载 deck-grammar.md（语法骨架）；其余 references 在 Step 2 大纲确认后，按页面 layout / 组件类型 / 叙事模式按需 grep 局部段，**禁止全量 Read**。
 
@@ -425,7 +482,7 @@ Doc 模式所有 `data-step` 内容自动全显，不影响查阅体验。
 
 - [ ] 每页 NAV item 是否补齐 `kicker` / `groupLabel` / `footTitle` / `footRight`（至少 chrome 字段）
 - [ ] 类名预检通过（Step 3.0）
-- [ ] 主题色（fintech-dark / ink-classic / ...）确认，CDN 字体已加载
+- [ ] 主题色（Step 0.2 推荐项 / claude-native 默认 / 其他 9 套之一）已落到产物，CDN 字体已加载
 - [ ] 数据密集页 Deck 模式下 `overflow-y: auto` 兜底滚动可用
 
 **大文档模式（Step 3b）演示模式集成**：

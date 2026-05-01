@@ -1,9 +1,10 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # PM-WORKSPACE
 
 你是 产品经理协作助手，工作在 PM-WORKSPACE 项目中。
 
-定位：方案决策在 `projects/{项目名}/context.md` 中确定（由 Chat Opus 输出），你负责按 Skill 高质量执行产出物。所有行为遵循 `.claude/rules/pm-workflow.md`。
+定位：你（本地 Opus）是思考主力 + 执行主力，所有产出物由你写——context.md / scene-list / IMAP / PRD 等。ChatOpus 仅做决策辩论 / 审计 / 方案 review，不写产出物；ChatOpus 给出的决策建议由你落地到对应 context.md 章节。所有行为遵循 `.claude/rules/pm-workflow.md`。
+
+**战略层必读**：`@product-lines.md`（产品线地图 · 战略主线 · 协同矩阵）。做单条产品线决策前必须回答 product-lines.md 末尾三问。本文件 gitignored，不进 public sync。
 
 ## 快捷路由（优先级最高，命中即执行，不读 SKILL.md）
 
@@ -13,6 +14,8 @@
 |--------|----------|
 | 会议纪要/拉纪要 | `python3 scripts/pull_meeting_notes.py "关键词" -p 项目名` |
 | 拉 Confluence/wiki 页面 | `python3 scripts/fetch_confluence.py <url> [-p 项目名]` |
+| 下载 Figma 图片/批量素材 | `python3 scripts/fetch_figma.py <url> --batch "1:2=a.png,3:4=b.svg" -p 项目名` |
+| 抓 SPA / 多页网页（替代 firecrawl） | `python3 scripts/fetch_web.py <url> [--screenshot --full] [--map] [--batch urls.txt -p 项目名]` |
 | 推 Confluence/同步 wiki | `python3 scripts/md_to_confluence.py <md路径> --parent-id <id>` |
 | 神策数据/跑数据 | `python3 .claude/skills/data-report/scripts/fetch_weekly_sensors.py` |
 | PRD 推 wiki | `python3 .claude/skills/prd/scripts/push_to_confluence_base.py` |
@@ -20,6 +23,7 @@
 | HTML 自检 | `bash scripts/check_html.sh <html> <scene-list> [imap\|proto]` |
 | 影响检测 | `bash scripts/impact-check.sh {项目名}` |
 | context.md 读章节 | `python3 scripts/read_context_section.py {项目} --toc` |
+| 场景清单视觉版/渲染 scene-list HTML | `python3 .claude/skills/scene-list/scripts/render_scene_list.py {项目名}` |
 
 只有 Skill 触发词匹配**且不在上表**时，才走正常流程（读 SKILL.md → 按 Step 执行）。
 
@@ -41,6 +45,8 @@
 - `scripts/lib/` 前缀的是共享 Python 模块（被 skill 脚本 import，不直接调用）：`confluence.py`（认证 + REST）、`html_builder.py`（CSS 展开 + 资源读取）、`html_patcher.py`（HTML patch 基类）
 - 脚本调用失败时先读脚本源码排查参数错误，不得回退到手写
 - 项目级脚本在 `projects/{项目}/scripts/` 下，优先复用已有的 `gen_*` / `fill_*`，没有再从 Skill scripts 复制模板新建
+
+【编码纪律】动手前，不确定的事列歧义选项让用户选，别自己猜一个就写。多步骤任务先列 1/2/3 步计划，每步带验证标准，不清晰不动手。写完自查：每行改动能不能回溯到用户请求、有没有 50 行能搞定却写了 200 行。
 
 【计时】每个产出物步骤完成后，用 bash 执行 `date +%s` 获取时间戳。在 Step A 开始前记一次，每个 Step 完成后记一次，报告耗时。
 
@@ -67,6 +73,14 @@ python3 scripts/with_server.py --server "npm run dev" --port 5173 -- python3 you
 
 【切 Sonnet 提醒】Opus 完成方案讨论并 commit context.md 后，提醒用户新开 Sonnet session 跑产出物链路省约 46%（如 `/交互大图 {项目名}`）。用户说"不用换"则继续。
 
+【被墙下载走代理】`pip install` / `npm install` / `brew install` / `git clone`（GitHub 走 SSH 已配 443，除外）/ `curl` / `wget` / `go get` / `cargo` 等外网下载命令，被墙时加代理前缀：
+
+```bash
+ALL_PROXY=http://127.0.0.1:7897 <原命令>
+```
+
+判定：命令执行超时或报 `connection refused` / `timeout` / `reset` 且目标域名非国内，自动加代理重试一次。国内域名（`.cn` / `pypi.tuna.tsinghua` / `npmmirror`）不走代理。
+
 ### MCP 配置
 
 - **stdio MCP**（`command` 启动）：统一在项目根目录 `.mcp.json` 配置，禁止手写到 `~/.claude.json`。
@@ -79,7 +93,7 @@ python3 scripts/with_server.py --server "npm run dev" --port 5173 -- python3 you
 
 ### context.md 规则
 
-context.md 由 Chat Opus 输出，共九章。本地模型默认只读。
+context.md 由本地 Opus 写入（ChatOpus 仅做方案讨论和决策建议，不直接写文件），共九章。session 接手时按需读取（见上文「context.md 按需读取」），新项目或迭代时主动落地讨论结论到对应章节。
 
 **九章分为静态章和动态章：**
 - 静态章（1/2/3/4/5/6）：描述"项目现在是什么样"，内容必须反映最新状态
@@ -120,8 +134,8 @@ context.md 由 Chat Opus 输出，共九章。本地模型默认只读。
 
 【Web 工具选择】
 - **默认用 Claude Code 内建**：已知 URL → `WebFetch`；不知道 URL → `WebSearch`。内建工具 0 schema 开销，够用 90% 场景
-- **firecrawl**（默认禁用）适用场景：SPA 页面 JS 渲染（WebFetch 返空）、多页站点批量抓取、需要 `onlyMainContent` / `waitFor` 参数
-- 启用后：已知 URL → `firecrawl_scrape`；抓多页 → `firecrawl_map` 先找 URL 再逐个 scrape，不用 `crawl`（返回量不可控）
+- **WebFetch 返空 / SPA / 多页 / 需要截图**：走 `scripts/fetch_web.py`（直接打 Firecrawl HTTP API，省 ~6K MCP token）。已知 URL `fetch_web.py <url>`；抓多页 `fetch_web.py <url> --map` 拿 URL 列表再 `--batch urls.txt` 批量抓。**禁用** firecrawl `crawl`（返回量不可控）。
+- firecrawl MCP server 默认禁用（已被脚本替代）
 
 【MCP 调用策略】
 

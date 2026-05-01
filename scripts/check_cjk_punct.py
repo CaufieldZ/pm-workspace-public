@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 r"""
 扫描文件中「CJK 旁半角标点」违规。用于 hook / 自检 / CI。
 
@@ -35,7 +34,7 @@ PATTERNS = [
 SKIP_LINE_PATTERNS = [
     re.compile(r"https?://"),
     re.compile(r"^\s*```"),  # 代码块栅栏
-    re.compile(r"^\s*[#/]"),  # 注释行(虽然可能也有中文)
+    re.compile(r"^\s*//"),  # C 系单行注释（markdown # 标题不跳，让 PATTERNS 自己判）
 ]
 
 # 跳过的文件扩展 / 目录

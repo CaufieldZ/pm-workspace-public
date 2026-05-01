@@ -1,4 +1,3 @@
-// pm-ws-canary-236a5364
 // ── 进度条 ──
 const progressBar = document.getElementById('progressBar');
 window.addEventListener('scroll', () => {

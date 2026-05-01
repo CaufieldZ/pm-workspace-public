@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # PPT 满分产物片段库（叙事模式 × Claude Design 视觉）
 
 > ⚠️ **CSS 变量纪律**（所有生成脚本必读）

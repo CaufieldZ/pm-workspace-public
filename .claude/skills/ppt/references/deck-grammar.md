@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: deck-grammar
 description: PPT / SOP 每页四层结构 + 样式约定 + 视觉主角差异化规则（改自 Claude Design slide-decks.md）

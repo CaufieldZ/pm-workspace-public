@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: cross-check
 description: >
@@ -10,9 +9,9 @@ pipeline_position: 8
 depends_on: [scene-list]
 optional_inputs: [interaction-map, prototype, prd, behavior-spec, page-structure, test-cases]
 consumed_by: []
-scripts: []
+scripts:
+  cross-check-auto.sh: "7 维自动对账(场景编号 / 术语 / View / 业务规则 / 跳转目标 / 编号格式 / 必填字段)— bash .claude/skills/cross-check/scripts/cross-check-auto.sh <项目名>"
 ---
-<!-- pm-ws-canary-236a5364 -->
 
 # 跨产出物拉通自检 Skill（Cross Check）
 
@@ -147,7 +146,6 @@ done
 - [ ] 1.3 条目不含 PM 内部迭代标签 — 禁止出现 `[v4.6]` `(V2.5)` `(V2.7)` `(vs 上一版)` 之类按 PRD 版本分段的标签
 - [ ] 1.3 条目不含 `(2026-04-22)` `(反转决策 #N)` 之类会议讨论日期标签（讨论流水归 context.md 第 7 章）
 - [ ] 1.3 条目数量与 PRD 场景表 `(变更)` `(新增)` 标签数量量级一致（差距 > 3× 时 warning，不是等号，允许 1.3 做主题合并）
-- [ ] req-framework 若存在，其 `.tag-new` / `.tag-v2` 标注范围与 PRD 1.3 条目覆盖范围语义一致（都是 vs 线上基线）
 
 检测脚本示例：
 

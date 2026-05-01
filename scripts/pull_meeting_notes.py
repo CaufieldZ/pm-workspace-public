@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 """从钉钉闪记拉取会议纪要到项目 inputs/ 目录。
 
 用法:

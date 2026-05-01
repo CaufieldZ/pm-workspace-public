@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 # -*- coding: utf-8 -*-
 """
 pairwise_gen.py — 纯 Python 成对覆盖（Pairwise / 2-way）测试组合生成器

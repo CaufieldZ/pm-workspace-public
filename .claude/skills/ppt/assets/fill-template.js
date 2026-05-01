@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// pm-ws-canary-236a5364
 /**
  * PPT Skill 填充脚本 (Node.js 版)
  * 用途：读取骨架模板，填充 NAV 和 PAGE_RENDERERS，生成最终 HTML

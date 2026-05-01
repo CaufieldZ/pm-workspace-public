@@ -12,6 +12,8 @@
 
 set +e
 
+source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/log.sh"
+
 INPUT=$(cat)
 TOOL_NAME=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tool_name',''))" 2>/dev/null)
 
@@ -48,9 +50,10 @@ CHECKER="${CLAUDE_PROJECT_DIR:-$(pwd)}/scripts/check_cjk_punct.py"
 [ ! -f "$CHECKER" ] && exit 0
 
 # deliverables（非 archive）用 --strict：checker exit 2 → hook exit 2 阻断
+# 适配 schema v2：projects/{产品线}/{项目}/deliverables/ 两层 + projects/{顶级}/deliverables/ 一层
 IS_DELIVERABLE=0
 case "$FILE_PATH" in
-  */projects/*/deliverables/*)
+  */projects/*/*/deliverables/*|*/projects/*/deliverables/*)
     case "$FILE_PATH" in
       */archive/*) ;;
       *) IS_DELIVERABLE=1 ;;
@@ -64,11 +67,21 @@ if [ "$IS_DELIVERABLE" -eq 1 ]; then
   RC=$?
   if [ "$RC" -ne 0 ]; then
     head -3 "$TMPOUT" >&2
+    log_event hook cjk-punct block "$FILE_PATH"
     rm -f "$TMPOUT"
     exit 2
   fi
+  log_event hook cjk-punct clean "$FILE_PATH"
   rm -f "$TMPOUT"
 else
-  python3 "$CHECKER" "$FILE_PATH"
+  # 用 --strict 拿 RC 做埋点判断，但 hook 不阻断（只 warn）
+  STDERR=$(python3 "$CHECKER" "$FILE_PATH" --strict 2>&1 >/dev/null)
+  RC=$?
+  [ -n "$STDERR" ] && echo "$STDERR" >&2
+  if [ "$RC" -ne 0 ]; then
+    log_event hook cjk-punct warn "$FILE_PATH"
+  else
+    log_event hook cjk-punct clean "$FILE_PATH"
+  fi
 fi
 exit 0

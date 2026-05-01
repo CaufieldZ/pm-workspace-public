@@ -1,9 +1,0 @@
-# ai.txt - AI Training Opt-Out
-# https://site.spawning.ai/spawning-ai-txt
-
-User-Agent: *
-Disallow: AI-Training
-Disallow: AI-Scraping
-
-# This repository is licensed under Apache 2.0 with a supplementary
-# AI Training Restriction. See AI-TRAINING-RESTRICTION.md for details.

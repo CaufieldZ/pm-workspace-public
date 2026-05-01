@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: prototype
 description: >
@@ -11,17 +10,25 @@ depends_on: [scene-list]
 optional_inputs: [interaction-map]
 consumed_by: [prd]
 scripts:
+  check_paradigm.py: "Step 0 范式门 — python3 .claude/skills/prototype/scripts/check_paradigm.py {项目名}"
   gen_proto_skeleton.py: "Step A 骨架 — from gen_proto_skeleton import generate_skeleton"
   update_proto_base.py: "Step D 升版 — from update_proto_base import ProtoUpdater"
+  audit_against_baseline.py: "Step C 标杆对照 — python3 .claude/skills/prototype/scripts/audit_against_baseline.py <html> [--baseline <baseline.html>]"
+  imap_phone_shots.py: "IMAP 硬看 — python3 .claude/skills/prototype/scripts/imap_phone_shots.py <imap.html> -o <out_dir>"
   prototype.js: "运行时 JS — 骨架脚本自动内联，不手动读"
   scripts/check_html.sh: "Step C 自检 — bash scripts/check_html.sh <html> <scene-list> proto"
   scripts/lib/html_patcher.py: "HtmlPatcher 基类 — update_proto_base.py 的底层依赖"
 ---
-<!-- pm-ws-canary-236a5364 -->
 
 # 可交互原型 Skill（Interactive Prototype）
 
 ## 硬规则（优先级最高）
+
+### 反凭印象三红线（v1/v2 翻车沉淀，违反任一视为未交付）
+
+- **凭印象画 = 红线**：任何 Crypto APP 元素（feed 卡片 / trader 卡 / 战绩组件 / 订阅 CTA / 抽屉 / 状态栏 / 底部导航）必须先查 [`references/crypto-app-vocabulary.md`](references/crypto-app-vocabulary.md) 对应词条 + Figma 真品 PNG（`assets/figma-anchors/`）+ interaction-map references（`biz-trading.md` / `biz-social.md` / `biz-livestream.md` / `components-core.md`）。三类源头任一缺失 → 必须先补再画
+- **IMAP 硬看强制**：上游有 IMAP 时，Step A 前必须用 `imap_phone_shots.py` 单独截每张 phone（每张独立文件），Read 多模态确认元素细节后再骨架。详见 [`references/prototype-source-discipline.md § B`](references/prototype-source-discipline.md)
+- **标杆对照强制**：Step C 必须跑 `audit_against_baseline.py` 对照范式标杆 HTML，关键组件计数 + Fill 视觉铁律 + 反 AI slop 六禁全过才允许声明完成
 
 ### 数据驱动
 
@@ -42,6 +49,22 @@ scripts:
 ## 如何使用
 
 ### Step 1：读取 Reference
+
+**必读规则**（HTML pipeline 通用，含演讲叙事 / 分步生成 / Fill 质量 / 美学硬底线）：
+
+```
+view .claude/rules/html-pipeline.md
+```
+
+**Crypto 认知 ground truth + 视觉锚点**（凭印象画 = 红线，本 Skill 强制）：
+
+```
+view .claude/skills/prototype/references/crypto-app-vocabulary.md           # 真品组件 + 路由表 + Figma anchors
+view .claude/skills/prototype/references/baseline-pattern-card.md           # 3 标杆 × 5 场景对照
+view .claude/skills/prototype/references/prototype-source-discipline.md     # 有/无 IMAP 双流程纪律
+```
+
+按 `check_paradigm.py` 输出的「必读 references」清单加载 imap references（biz-social / biz-trading / biz-livestream / components-core），不全量。
 
 **Step A 不读模板** — 骨架脚本只需下方 API 速查表，CSS/JS 由 `open().read()` 自动拼接。
 
@@ -79,6 +102,73 @@ grep -A 20 "决策速查" .claude/skills/_shared/claude-design/anti-ai-slop.md
 - View 是 Web 端（浏览器全宽）→ 不设 device，默认全宽
 - View 是 CMS 管理台 → 用 `theme: "light"`（自带侧边栏布局）
 - 如果不确定，问用户
+
+## Step 0：范式选择门 + 竞品截图收集（强制）
+
+prototype 触发后**禁止直接跑 generate_skeleton**。必须先完成本步：
+
+### 0.1 范式推断
+
+```bash
+python3 .claude/skills/prototype/scripts/check_paradigm.py {项目名}
+```
+
+脚本读 context.md 第 2 章 + scene-list.md，推断端构成，给出 4 选 1 推荐 + 标杆 HTML 路径 + 必读 references 清单。模型必须向用户**口头确认**范式正确，确认后才进 Step A。
+
+4 个范式 × 标杆映射：
+
+| 端构成 | 范式 | 标杆 |
+|--------|------|------|
+| 纯 App + 多场景（≥ 5）| 单 phone + scene chips | V8 / community v3 |
+| 纯 App + 简单流（≤ 3）| 单 phone 无 nav | （小型项目）|
+| Web 前台 + Web 后台共建 | 多 view 切换 (gnav) | activity-center v5.1 |
+| 纯 Web 后台 / CMS | 单 view + sidebar | activity-center mgt-view |
+
+脚本推断不出范式时（端类型混合 / 场景数模糊）→ 模型必须向用户问 4 选 1，禁止自行假设。
+
+### 0.2 竞品截图 / Figma 真品收集（Crypto 认知 ground truth）
+
+范式确认后，模型主动问用户：
+
+> 这个项目对标哪些真品？请给 1-3 个来源（任选其一）：
+> 1. **Figma 真品链接**（HTX 项目优先 — 直接 fetch_figma 入档最高权威）
+> 2. **竞品截图**（Binance / OKX / Bitget / Gate / HTX 实际页面截图）
+> 3. **已有 IMAP**（上游 IMAP 已存在则直接用）
+
+收集动作：
+
+- Figma 链接 → `python3 scripts/fetch_figma.py <url> --batch ... --out-dir .claude/skills/prototype/assets/figma-anchors/`（持久 anchor，下次复用）
+- 竞品截图 → 存 `projects/{项目}/inputs/competitors/`
+- 模型 Read 多模态读每张图，写 1 段「视觉提炼」追加到 context.md 第 5 章末尾（配色 / 字号层级 / 关键组件 / 交互模式）
+
+**只有用户明确说「不需要竞品 / 直接做 / 已有 IMAP 看就够」时才允许跳过**；模型不可主动跳过。v1 翻车就翻在没竞品 anchor 凭印象 — 这是硬底线。
+
+### 0.3 上游分支判定
+
+详见 [references/prototype-source-discipline.md § A0](references/prototype-source-discipline.md)。有 IMAP 走硬看流程，无 IMAP 走双 anchor 替代流程。
+
+## 美学规范（前台 App 主题 + 通用底线）
+
+prototype HTML 的两层美学约束：
+
+### 主题层（按范式选）
+
+- **前台 App / 交易所视觉**（单 phone + scene chips / 单 phone 无 nav）：Binance 深色系合法主题 — `--bg:#0B0E11` + 涨绿 `#0ECB81` + 跌红 `#F6465D` + 金 `#FCD535`，金融语义保留。HTX 项目字体栈 `'HarmonyOS Sans SC','Noto Sans SC',...`（CJK 优先 + HTX 钦定）
+- **Web 后台 / CMS**（单 view + sidebar）：Claude Design 系暖近黑 — `--cd-bg:#1F1F1E` + accent `#D97757`，token 来自 `.claude/skills/_shared/claude-design/tokens.css`
+- **多 view（gnav 共建）**：前台 App 走 Binance、后台 view 走 Claude Design，两套主题在同一 HTML 共存合法（参考 activity-center v5.1）
+
+### 通用底线（所有范式必吃）
+
+引 `.claude/rules/html-pipeline.md` § 三：
+
+- 反 AI slop 六禁（全屏渐变 / emoji 装饰标题 / accent border / SVG 画人 / 烂大街字体作 CJK / 每卡都带 icon）
+- 字号比：标题 ≥ 正文 2.5 倍，line-height 含 CJK display 1.25-1.35 / 正文 1.6-1.8
+- 颜色克制：≤ 1 主 + 1 辅 + 1 强调 + 灰阶
+- 留白 ≥ 40%，间距 8pt 网格
+- 字重三级层次：900 display / 700 标题/CTA / 400 正文（禁全文只 700）
+- CSS 变量源头唯一：tokens.css 拼入，禁手抄 :root 整块
+
+Step C `audit_against_baseline.py` grep 验证以上六禁 + 字重三级，违规即 fail。fail 必须修，不允许跳过。
 
 ## ★ 分步生成策略
 
@@ -270,8 +360,8 @@ u.save()
 
 **真实样本参考**：
 
-- [projects/htx-activity-center/scripts/patch_proto_v48.py](../../projects/htx-activity-center/scripts/patch_proto_v48.py) — 19-delta 大规模案例
-- [projects/htx-activity-center/scripts/patch_proto_v49.py](../../projects/htx-activity-center/scripts/patch_proto_v49.py) — 4-delta 精简案例，`MATCH` 已验证
+- [projects/growth/activity-center/scripts/patch_proto_v48.py](../../projects/growth/activity-center/scripts/patch_proto_v48.py) — 19-delta 大规模案例
+- [projects/growth/activity-center/scripts/patch_proto_v49.py](../../projects/growth/activity-center/scripts/patch_proto_v49.py) — 4-delta 精简案例，`MATCH` 已验证
 
 ### 骨架占位模板
 
@@ -341,13 +431,47 @@ u.save()
 - [ ] 抽屉在手机壳内底部上推，不脱出手机框
 - [ ] 后台 CRUD 数据驱动：列表数据 = 弹窗数据 = render 输出
 - [ ] 弹窗/抽屉有遮罩 + ✕ + 遮罩点击关闭
-- [ ] **浏览器验证**：页面跳转 → 抽屉 → Tab → CRUD 增删改
 
-**强制验证脚本**（自检最后一步，不可跳过）：
+### 强制验证脚本（自检三件套，不可跳过）
+
 ```bash
+# 1) 通用 HTML 自检（编号 / FILL 残留 / 字体 / 差量标签）
 bash scripts/check_html.sh projects/{项目}/deliverables/XXX.html projects/{项目}/scene-list.md proto
+
+# 2) 标杆对照（必备组件 + Fill 视觉铁律 E1-E6 + 反 AI slop 六禁 + 字重三级）
+python3 .claude/skills/prototype/scripts/audit_against_baseline.py \
+  projects/{项目}/deliverables/XXX.html \
+  --baseline {check_paradigm 输出的标杆 HTML 路径}
 ```
-检查全部通过后才视为自检通过。
+
+### Playwright click 强制验证（替换原「浏览器验证」软建议）
+
+单纯 screenshot self-check **不算**通过，必须 playwright assertion 验证 DOM 状态：
+
+```bash
+python3 scripts/with_server.py --server "python3 -m http.server 5173" --port 5173 -- \
+  python3 -c "
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+    page = p.chromium.launch(headless=True).new_page()
+    page.goto('http://localhost:5173/projects/{项目}/deliverables/XXX.html')
+    page.wait_for_load_state('networkidle')
+    # ... 写下方最小 click 集 assertions
+"
+```
+
+**最小 click 集**（含相关组件的场景全跑过，无 console error / 视觉无错位才算通过）：
+
+1. 每个 scene chip 点击 → `.scr.on` 切换正确（assertion：`page.locator('.scr.on').count() == 1`）
+2. 含订阅 CTA 的场景：click 后文案变「已订阅」+ 宽度不变（保留 flex:1）+ 铃铛出现
+3. 含铃铛的场景：click → 🔔 ↔ 🔕 toggle + toast 文案对应
+4. 含 toggle 的场景：click → on/off 状态切换 + 跨场景同 toggle 联动（如设置页 + 抽屉同一 toggle）
+5. 含抽屉 / sheet 的场景：scrim click + ✕ click 都能关
+6. 含 TAB 的场景：每个 TAB 切换 .on 类正确
+
+screenshot 仅用于：① 视觉 bug 复现 ② 标杆对照（zoom 局部）③ 最终交付截图。
+
+三件套全过 + Playwright click 全 pass 才视为自检通过 → 才允许声明完成。任一 fail → 必须修，禁止跳过（v1 / v2 翻车都翻在「自检通过 → 交付 → 用户挑出 bug」的循环）。
 
 ## 业务组件引用规则
 

@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
-# pm-ws-canary-236a5364
 """
 可交互原型骨架生成器
 输入：项目信息 + View/页面结构 → 输出：骨架 HTML（CSS + JS + 全局导航 + 页面占位）

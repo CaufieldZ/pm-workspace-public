@@ -5,6 +5,9 @@
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 STATE_FILE="$PROJECT_DIR/.claude/session-state.md"
 
+source "$PROJECT_DIR/.claude/hooks/lib/log.sh"
+log_event hook pre-compact triggered
+
 echo "═══ Session State 快照（PreCompact Hook 注入）═══"
 echo ""
 

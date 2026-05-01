@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: asset-quality-rubric
 description: 竞品 / 情报采集素材质量门槛——5-10-2-8 规则，competitor-analysis 和 intel-collector 共用

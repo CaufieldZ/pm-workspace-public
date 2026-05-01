@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 # 竞品分析 · Markdown 输出结构示例
 
 > 以下为深度版（CRBE）的标准输出结构。快速版只保留第 1/2/3/8/9 节。

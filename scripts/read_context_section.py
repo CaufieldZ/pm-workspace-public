@@ -1,4 +1,3 @@
-# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 """
 context.md 按需读取工具——生成富目录 / 按章节选读 / 关键词定位。
 

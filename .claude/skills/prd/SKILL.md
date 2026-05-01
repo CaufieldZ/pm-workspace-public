@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: prd
 description: >
@@ -9,547 +8,215 @@ output_prefix: prd-
 pipeline_position: 5
 depends_on: [scene-list]
 optional_inputs: [interaction-map, prototype]
-consumed_by: [behavior-spec, page-structure, test-cases, cross-check]
+consumed_by: [behavior-spec, page-structure, test-cases, cross-check, ops-handbook]
 scripts:
   gen_prd_base.py: "新建 PRD — from gen_prd_base import *"
   update_prd_base.py: "升版/更新已有 PRD — from update_prd_base import *"
-  check_prd.sh: "自检 — bash .claude/skills/prd/scripts/check_prd.sh <docx>"
-  push_to_confluence_base.py: "推 Confluence — python3 push_to_confluence_base.py <docx> --page-id <id>"
-  prd_screenshots.py: "截图回填 — python3 .claude/skills/prd/scripts/prd_screenshots.py --project {项目名} [--shot-only|--insert-only] [--scenes A-1,B-1]"
+  check_prd.sh: "自检 — bash .claude/skills/prd/scripts/check_prd.sh <docx> <scene-list>"
+  push_to_confluence_base.py: "推 Confluence — python3 push_to_confluence_base.py <docx> [--page-id <id>]"
+  prd_screenshots.py: "截图回填 — python3 prd_screenshots.py --project {项目名} [--shot-only|--insert-only] [--scenes A-1,B-1]"
+  humanize/: "讲人话扫描 + 修复 + CLI 子包（被 check_prd.sh / push gate 共享）— python3 -m humanize <docx>"
+  sections.py: "5 个产品思维章节 helper（north_star / non_goals / open_questions / risks / alternatives / assumptions_validation）+ 第 2 章三节 helper（journey_main / end_role_split / cross_end_sequence）+ 档位感知体检"
+  mermaid_screenshots.py: "mermaid LR 横排 → PNG（PRD docx 嵌图专用，由 sections.py 第 2 章 helper 内部默认调用；flowchart skill 不服务 PRD docx 场景，参 flowchart/SKILL.md 边界）"
+  active_decisions.py: "context.md 第 7 章 ADR 决策派生（兼容 6 列表格 + list 格式）"
 ---
-<!-- pm-ws-canary-236a5364 -->
 
 # PRD Skill（产品需求文档）
 
-## 硬规则（优先级最高）
+PRD 是 context.md 决策的投影，不是重新发明。docx 的产品思维由 `sections.py` 强制（北极星 / Non-goals / Open Questions / Risks），文风由 `humanize/` + `check_prd.sh` 三道闸守住。
 
-### docx 版（复杂/超复杂链路产出）
+## 何时用 / 路由
 
-- **Landscape 横版** docx-js
-- 左 35% 截图占位 + 右 65% 完整需求
-- 内容量不因加图缩减
-- 九章：封面→目录→1 背景目标→2 场景地图→3 端A需求→4 端B需求→5 业务规则→6 非功能→7 技术架构→8 埋点监控→9 排期
-- 格式：Arial 11pt，蓝色表头白字，页眉机密，H1 章 / H2 场景 / H3 子模块
-- 编号全局一致，术语+字段与大图/原型对齐，跳转双向标注，异常不省
+- **复杂链路**（≥ 2 端 / ≥ 5 场景 / 含跨场景跳转）→ 走 docx 标准档或完整档（本 skill）
+- **简单链路**（单页面、纯文案、配置项调整）→ 走极简档 Markdown（本 skill 内置）
+- **方案型项目**（跨系统 / 资金流转 / 多团队共建）→ 不走 pipeline，PM 自定 inputs/ 共建 PRD（见末尾「方案型项目」一节）
+- 已有 docx 升版 → Step B「升版 / patch」，不重生
+- 不要先读 SKILL 再绕回脚本：CLAUDE.md 快捷路由表里命中的命令直接跑
 
-### 纯文字 PRD（简单链路产出）
+## 5 条核心硬规则（FAIL 即拦）
 
-- Markdown + mermaid 代码块（flowchart 优先）+ Markdown table
-- **禁 HTML**，兼容飞书/钉钉文档原生渲染
+> 完整 13 条 + 速查表见 [`references/prd-rules.md`](references/prd-rules.md)。这里只挂最致命的 5 条，`check_prd.sh` + `pre-wiki-push-gate` hook 自动拦截。
 
-### 方案型项目（不走标准 pipeline）
+1. **PRD 必须讲人话** — 正文禁出现 ① 流水账 / 版本痕迹（`(YYYY-MM-DD)` / `(变更)` / `决策 #N` / `反转说明：`）② snake_case 字段名（除字段表 / 枚举值 / 埋点表豁免）③ UI 设计参数（px / hex / ms，第 7 章性能契约保留）。命中 FAIL：`save_prd()` 自动 humanize；本地 `python3 -m humanize <docx>` 扫；推 wiki 前 `gate_check_quality` 同源拒推。完整规范：[`references/prd-human-voice.md`](references/prd-human-voice.md)。
+2. **字体三件套不能省** — 老 docx 升版必跑 `normalize_punctuation` + `normalize_headings` + `normalize_fonts` + `ensure_theme`。缺 theme1.xml → docDefaults themed 引用悬空 → Word 强制 Arial。`check_prd.sh` 自动扫。
+3. **项目脚本禁硬编码 BASE 路径** — 用 `BASE = Path(__file__).resolve().parents[3]`，硬编码 `/Users/xxx/pm-workspace` 换机器立炸 + `sys.path` 错指 → `from gen_prd_base import *` 无声失败 → docx 全 Normal style。
+4. **升版 patch 路线必调 `assert_screenshots_fresh`** — 改完文字保存 docx 后立即断言截图 mtime ≥ 原型 mtime，过期 raise。配套 `post-docx-screenshot-check` hook 兜底。
+5. **禁重定义框架函数** — `set_cell_text` / `set_cell_blocks` / `replace_para_text` / `fill_cell_blocks` / `fix_dpi` / `h1` / `h2` / `scene_table` 全部来自 `gen_prd_base` / `update_prd_base`，必须 `import *`。自定义会导致 cell 塌成无层次纯文本（`set_cell_text` 多行裸塞段落是最高频踩坑）。
 
-满足以下任一条件时为方案型项目：
-- 跨两个或以上独立系统（不是前后端分离，是真的两个系统对接）
-- 涉及资金流转 / 结算 / 授信
-- 需要多团队共建（PRD 有"🔲 待填"占位）
-- 没有用户界面改动（纯后端/架构方案）
+## PRD 三档判定
 
-方案型项目**不走标准 pipeline**（scene-list → imap → proto → PRD），产出物由 PM 按实际需要决定。context.md 章节结构按项目特点自定义（建议对标共建 PRD 章节），不强制九章模板。
+| 档位 | 触发 | 章节 | 推 wiki |
+|------|------|------|---------|
+| **极简 One-pager** | ≤ 3 场景 / 单端 / 纯文案 / 配置项 | 4 节 Markdown（背景目标 + 场景方案 + 业务规则 + 度量含反向指标） | `scripts/md_to_confluence.py`（CLAUDE.md 快捷路由） |
+| **标准** | 4-10 场景 / 2-3 端 | 九章 + 1.5 Non-goals + 6.x Open Questions（必填） | `push_to_confluence_base.py` |
+| **完整** | 10+ 场景 / 多系统 / 跨团队 / 资金流转 | 标准 + 1.6 方案选型 + 7.x Risks & Mitigations | 同标准 |
 
-文档分工：
+判定原则：**没拿准往上一档**（保守优于事后补章节）。模板与判档示例：[`references/prd-template.md`](references/prd-template.md)。
 
-| 文档 | 定位 | 谁维护 | 体量 |
-|------|------|--------|------|
-| context.md | Claude Code 工作上下文：当前状态+关键决策+术语+待办 | PM + Claude Code | 300-500 行 |
-| 共建 PRD（inputs/） | 完整方案自包含，各组填空 | PM（骨架）+ 各组（填空）| 1000+ 行 |
-| 机制说明等深度推演 | Chat 讨论产出，归档到 inputs/ | Chat Opus | 归档后不单独维护 |
+## 任务模式
 
-## 输出格式
+### A. 新建 PRD（`gen_prd_v{N}.py` 路径）
 
-**输出 .docx 文件**，使用 `python-docx` 库生成。框架函数已封装在 `scripts/gen_prd_base.py` 中，直接 `from gen_prd_base import *` 调用，无需了解 docx 底层 API。
+**Step 1 · Read**：`scene-list.md` + `context.md` 第 4/5/6 章（场景/术语/业务规则）+ [`prd-template.md`](references/prd-template.md) + [`prd-human-voice.md`](references/prd-human-voice.md) + [`prd-storytelling.md`](references/prd-storytelling.md)（叙事投影：context 主线 → PRD 各章串起来）+ [`metrics-framework.md`](references/metrics-framework.md)（1.2 节四件套方法论：北极星 / 配套 / Guardrail / 非目标）。
 
-## PRD 标准结构
+**Step 2 · 收集** + 档位判定 + 迭代模式判定（改已有功能时强制做规则冲突检测 + 存量数据处理 + 1.3 基线收集，发现「冲突」立即停问用户）。
 
-详细结构见 `references/prd-template.md`（完整的章节定义 + 填充规范）。
+**Step 3 · 边写边审**（PRD 质量内建）：每完成一个核心区块（背景目标 / 各 View / 业务规则 / NFR）暂停一次，按 5 个维度抛预审问题（边界 / 异常 / 歧义 / 研发-QC 一致性 / 现存冲突），用户答完写入对应位置再继续。`快速模式` 跳过暂停一气写完，最后统一给问题清单。
 
-概览：封面元信息 → 1 背景目标 → 2 场景地图 → 3-5 各 View 详细需求（两列表格：左截图右说明）→ 6 业务规则 → 7 非功能性需求 → 8 埋点监控 → 9 里程碑排期。
+**Step 4 · 分步生成 docx**（标准 / 完整档；极简档跳到 4D 直推）：脚本路径 `projects/{项目}/scripts/gen_prd_v{N}.py`。
 
-## 如何使用
+| 步 | 内容 | 行上限 |
+|----|------|--------|
+| 4a 骨架 | `init_doc` + `cover_page` + 第 1-2 章 + 各 H1 占位 + `doc.save()` | ≤ 80 行 |
+| 4b 按 View 填 scene_table | 每个 View 一次 Write 追加，全 `scene_table(doc, scene_id, name, [(title, [lines])])` | ≤ 300 行/次 |
+| 4c 收尾 | 第 6-9 章（业务规则 + NFR + 埋点 + 里程碑） | ≤ 200 行 |
 
-### Step 1：读取 Reference
+每次 Write 后 `python3 gen_prd_v{N}.py` 跑通 + grep 确认 scene 数对齐 scene-list。骨架完成必停问用户（除非「快速模式」）。
 
-**必读**（产出前加载）：
-
-SKILL 层规则：
-- `.claude/skills/prd/scripts/prd-template.md` — PRD 章节结构 + 填充规范（唯一的结构定义来源）
-- `.claude/skills/_shared/claude-design/content-slop-ban.md` — 禁写清单：禁编造数据、禁 filler content、印刷 Scale 规范
-
-项目层真相源：
-- `projects/{项目名}/scene-list.md` — 场景编号锁定，PRD 必须复用
-- `projects/{项目名}/context.md` — 第 4/5/6 章提取场景/术语/业务规则
-
-> PRD 是 context.md 决策的投影，不是重新发明。
-
-**按需**（满足条件才读）：
-- `references/prd-example.md` — 用户说「参考例子」或 template 不足以支撑当前结构时读
-- `references/prd-docx-styles.md` — 需修改默认样式时读（gen_prd_base.py 已内置默认）
-
-**执行类**（模型不读，脚本调用）：
-- `scripts/gen_prd_base.py` — 新建 PRD 框架函数库，项目脚本 `from gen_prd_base import *` 即可（API 速查见下方）
-- `scripts/update_prd_base.py` — 升版辅助函数（replace_para_text / set_cell_text / replace_cell_image / fix_dpi）
-- `scripts/push_to_confluence_base.py` — Confluence 推送脚本
-- `scripts/check_prd.sh` — PRD 自检脚本
-
-### gen_prd_base.py API 速查（新建 PRD）
-
-项目脚本开头写 `from gen_prd_base import *` 即可使用以下全部函数和常量，**不需要读源码**：
+**4 项产品思维 helper**（来自 `sections.py`，按档位选用）：
 
 ```python
-# 导入方式（从 projects/{项目}/scripts/ 执行，向上 3 层到工作区根目录）
-import sys, os
-_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..'))
-sys.path.insert(0, os.path.join(_ROOT, '.claude/skills/prd/scripts'))
-from gen_prd_base import *
+from sections import (
+    north_star_section,             # 1.2 北极星 + 配套 + 反向指标 + 非目标（全档位必填）
+    non_goals_section,              # 1.5 Non-goals（标准 + 完整必填）
+    alternatives_table,             # 1.6 方案选型（仅完整档）
+    open_questions_table,           # 6.x Open Questions（全档位选填，无未决项写「无」）
+    assumptions_validation_table,   # 6.x 关键假设清单 6 列（项目级假设追踪，源 context 第 6 章）
+    risks_table,                    # 7.x Risks & Mitigations（完整必填，标准选填）
+    scan_completeness, report_completeness,  # save_prd 内调用，warn 不阻断
+)
 ```
 
-| 函数 | 签名 | 用途 |
-|------|------|------|
-| `init_doc` | `(landscape=True) → Document` | 创建 Landscape 横版文档 |
-| `cover_page` | `(doc, title, subtitle="产品需求文档（PRD）", scope="", meta_rows=[[label,val],...])` | 封面页（标题+副标题+属性表） |
-| `h1` | `(doc, text)` | 一级标题（16pt 深色 + 蓝色底线） |
-| `h2` | `(doc, text)` | 二级标题（13pt 蓝色） |
-| `h3` | `(doc, text)` | 三级标题（11pt 深色） |
-| `chapter_story` | `(doc, text)` | 章节用户故事引言（紧跟 h1，斜体浅灰一句话）。功能章 3/4/5 必填，技术骨架章可省。详见 prd-template.md |
-| `add_p` | `(doc, text="", size_pt=10, bold=False, color=None, italic=False, align=LEFT, before=0, after=4)` | 普通段落 |
-| `bullet` | `(doc, text, size_pt=10)` | 列表项（• 前缀） |
-| `make_table` | `(doc, headers: list[str], rows_data: list[list[str]], col_widths_cm: list[float], row_height_cm=None) → Table` | 通用表格（深底白字表头 + 隔行灰底） |
-| `scene_table` | `(doc, scene_id, scene_name, right_blocks: list[tuple[str, list[str]]])` | 两列 Scene 表格（左截图占位 + 右说明） |
-| `cell_text` | `(cell, text, size_pt=9, bold=False, color=None, italic=False, align=LEFT)` | 填充单元格文字 |
-| `set_cell_bg` | `(cell, hex_color)` | 设置单元格背景色 |
-| `set_cell_border` | `(cell, bottom={...}, top={...}, ...)` | 设置单元格边框 |
-| `para_run` | `(para, text, font="Arial", size_pt=10, bold=False, color=None, italic=False) → Run` | 底层：给段落加 run |
-| `C` | `dict` | 颜色常量（对齐 Anthropic brand-guidelines）：`C["textHeading"]="141413"`（官方 Dark）, `C["tableHeaderBg"]="141413"`, `C["accentBlue"]="D97757"`（terra cotta，键名保留是历史 alias）, `C["tagChange"]="D97757"` 等 |
+**Step 5 · 截图**（见 C）+ **Step 6 · 自检**（`check_prd.sh`）+ **Step 7 · 推 wiki**（见 D）。
 
-### update_prd_base.py API 速查（升版/更新已有 PRD）
+### B. 升版 / patch（不重生 docx，原地改文字 + 截图）
 
-升版脚本写 `from update_prd_base import *` 即可使用以下函数，**不需要读源码**：
+**强制顺序**（缺一不可，违反 hook 拦截）：
+
+1. **改文字**：`update_prd_v{N}.py` 用 `replace_para_text` / `set_cell_blocks` / `insert_*` helper patch 原 docx
+2. **重拍截图**：`screenshot_prd_v{N}.py` 基于新原型重拍受影响截图
+3. **回填截图**：`screenshot_prd_v{N}.py.insert_into_prd()` 把新 PNG 写入 docx 内嵌位
+4. **断言新鲜**：`assert_screenshots_fresh(TARGET, PROTOTYPE_HTML, SHOT_DIR)`，过期 raise（参 R7a）
+5. **字体三件套**（升旧 docx 必做）：`normalize_punctuation` → `normalize_headings` → `normalize_fonts` → `doc.save` → `ensure_theme(path)`（参 R12）
+6. 推 wiki
+
+**patch 安全姿势**（参 R8）：
+
+- 插新章节 → `insert_heading_before(anchor, '6.4 归因漏斗', level=2)`
+- 插描述段 → `insert_description_after(doc, '2.2 View 2', '描述...')`
+- 改单元格多段 → `set_cell_blocks(cell, [(title, lines)])`
+- 删空 2 列 scene_table → `insert_scene_blocks` + `remove_table`（参 R9）
+
+**python-docx 陷阱**：`table.add_row()` 不继承 cell 级 bold / size / color，必须照同表已有数据行手动逐 cell 设格式。
+
+### C. 截图回填（`prd_screenshots.py`）
+
+来源优先级：**可交互原型 > 交互大图（降级）**。有原型必须用原型，交互大图截图仅在「无原型 / 原型未覆盖」时降级。
+
+```bash
+python3 .claude/skills/prd/scripts/prd_screenshots.py --project {项目名} \
+    [--shot-only | --insert-only] [--scenes A-1,B-1]
+```
+
+**截图规范**：viewport 1440×900 + deviceScaleFactor 2 + 必须 PNG。Phone 类（aspect < 0.7）截 `.app-shell` + `round_phone_corners` 圆角透明化（参 R5）。交互大图降级时只截 `.phone` / `.webframe`，先 `dismissAllOverlays()` + 隐藏 `.anno / .anno-n / .ann-card / .ann-tag / .aw / .flow-note / .side-nav`。截图存放：新建 `screenshots/prd/`，升版 `screenshots/prd_v{N}/`。
+
+**插入规范**：`replace_cell_image` 内置 `fix_dpi(144)` 防止虚化。前端 7.0 cm，App 5.0 cm。
+
+### D. 推 Confluence
+
+**极简档（Markdown）** → 走根目录 `scripts/md_to_confluence.py`（CLAUDE.md 快捷路由覆盖），`pre-wiki-push-gate` hook 给 md 路径走 warn 模式。
+
+**标准 / 完整档（docx）** → `push_to_confluence_base.py`，三种用法：
+
+```bash
+# 路径 0：已推送过（项目级 .confluence.json 缓存 page_id，零参数）
+python3 .claude/skills/prd/scripts/push_to_confluence_base.py "<docx>"
+
+# 路径 A：新建页面 / 按标题 upsert
+python3 .claude/skills/prd/scripts/push_to_confluence_base.py "<docx>" \
+    --title "HTX · {项目名} · v{N}" --space jituankejizhongxin --parent-id "<id>"
+
+# 路径 B：已知 pageId 直接覆盖
+python3 .claude/skills/prd/scripts/push_to_confluence_base.py "<docx>" --page-id 155652375
+```
+
+`gate_check_quality` 默认拒推（圈数字 / 裸场景编号 / 决策编号 / 1.3 流水账启发式），误报加 `--skip-self-check` 强推。图片宽度按宽高比自动选（phone 300px / web 600px）。
+
+## 关联 Hook 矩阵
+
+| hook | 拦什么 | 触发 |
+|------|--------|------|
+| `pre-wiki-push-gate.sh` | 推 wiki 前 docx 未过 `check_prd.sh` / md 路径走 warn | Bash 含 `push_to_confluence_base.py` 或 `md_to_confluence.py` |
+| `post-docx-screenshot-check.sh` | docx 改完截图过期 | Bash 跑 `update_*.py` / `patch_proto_*.py` |
+| `pre-deliverable-source-gate.sh` | 直接 Edit/Write 已脚本化的 docx | Edit/Write 命中 `deliverables/*.docx` |
+| `pre-version-sync-gate.sh` | scene-list 与 context.md 版本不一致 | 骨架脚本生成前 |
+| `post-cjk-punct-check.sh` | 中文旁半角 `, : ( )` | Write/Edit 任何中文 md |
+| `pre-commit` | Skill / 规则文件变更跑防腐审计 | git commit |
+
+## API 速查表
+
+项目脚本开头：
 
 ```python
-# 导入方式（同 gen_prd_base）
-import sys, os
-_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..'))
-sys.path.insert(0, os.path.join(_ROOT, '.claude/skills/prd/scripts'))
-from update_prd_base import *
+import sys
+from pathlib import Path
+BASE = Path(__file__).resolve().parents[3]                       # pm-workspace 根
+sys.path.insert(0, str(BASE / '.claude/skills/prd/scripts'))
+from gen_prd_base import *      # 新建：C / FONT / h1/h2/h3 / scene_table / make_table / save_prd / ...
+from update_prd_base import *   # 升版：replace_para_text / set_cell_blocks / replace_cell_image / normalize_* / humanize_* / assert_screenshots_fresh / ...
+from sections import (
+    north_star_section, non_goals_section, alternatives_table,
+    open_questions_table, risks_table,
+)
 ```
 
-| 函数 | 签名 | 用途 |
-|------|------|------|
-| `replace_para_text` | `(para, new_text: str)` | 整体替换段落文字，保留首 run 格式 |
-| `search_replace_para` | `(para, old: str, new: str) → bool` | 段落内搜索替换（跨 run 拼接匹配），命中返回 True |
-| `set_cell_text` | `(cell, text: str)` | 清空单元格全部内容，写入纯文本（仅限短字符串，多行用 set_cell_blocks） |
-| `set_cell_blocks` | `(cell, blocks: list[tuple[str, list[str]]], numbered=True)` | 清空单元格，按结构化 blocks 重建（title 粗体 + 子条目自动加 `1./2./3.` 编号），视觉与 scene_table 右列一致。**升版 Scene/后台 table 时优先用它**。lines 已含 `N. ` 前缀或以 `  - ` 开头的二级缩进行不会被重复编号；纯序号数据（如 P0 同步"Launch Pool / 现货充值赛"列表）传 `numbered=False` |
-| `replace_cell_image` | `(cell, img_path, width_cm=7.0)` | 清空单元格旧图，插入新截图（**内部自动调 fix_dpi，无需手动调**） |
-| `fix_dpi` | `(png_path, dpi=144) → str` | 修正 @2x 截图 DPI 元数据，防止 docx 里虚化（replace_cell_image 已内置，单独调用于调试） |
-| `normalize_headings` | `(doc) → (h1_count, h2_count)` | 旧 docx 修缮专用:补 Heading 1/2 的 run 级字色字号粗体 + H1 段落下边框 #D97757（Anthropic terra cotta）。幂等。老脚本常用 `add_paragraph(style='Heading N')` 直接产段落,run 级属性缺失,渲染成黑色无下划线,视觉与 `gen_prd_base.h1()/h2()` 产出不一致——升版前调此函数归一化 |
-| `insert_heading_before` | `(anchor, text, level=2) → Paragraph` | 在 anchor 段前插入 H1/H2/H3 段落,run 级样式和 `h1()/h2()/h3()` 对齐。patch 脚本给 PRD 新增章节(6.4 / 8.3 之类)时用。**禁止** `anchor.insert_paragraph_before(text)` 裸调用 — 默认产 Normal style,Confluence 大纲树失效 |
-| `insert_paragraph_before` | `(anchor, text, size_pt=10, bold=False, color=None) → Paragraph` | 在 anchor 前插入 Normal 段落,run 级字号/粗体/颜色可控。纯插入不覆盖已有段 text |
-| `insert_description_after` | `(doc, anchor_keyword, text, size_pt=10) → Paragraph` | 按 `text.startswith(anchor_keyword)` 定位 anchor,在其后插入描述段。**锚点未命中抛异常**,不静默失败(patch 脚本最忌锚点错位) |
-| `insert_scene_blocks` | `(anchor, blocks: list[tuple[str, list[str]]], heading_level=3)` | 在 anchor 前批量插入「H3 小节 + numbered list」,body 级 Scene 展开(纯后台/CMS/无截图降级模式,替代 scene_table)。视觉与 `fill_cell_blocks` 对齐:lines 自动编号、支持内联 `**bold**` 标签、两空格加 dash 前缀作二级缩进 |
-| `remove_table` | `(table)` | 从 body 删除整张 table。配合 `insert_scene_blocks` 做「去 scene_table、改 H3 + numbered list」重构,典型场景:CMS 管理端本次无 UI 改动,去掉空截图占位的 2 列表格 |
-| `normalize_fonts` | `(doc) → (run_changed, defaults_changed)` | 老 docx 升版字体迁移:Arial/Calibri/Microsoft YaHei/Source Serif 4/Plus Jakarta Sans/HarmonyOS Sans SC → Lora/Poppins/Noto Sans SC;rFonts 缺失也补 design 字体;docDefaults → themed。配合 ensure_theme 是「字体三件套」的核心 |
-| `ensure_theme` | `(docx_path) → bool` | 注入标准 word/theme/theme1.xml(python-docx 老模板漏)。`doc.save()` **后**调用,传文件路径不传 Document 对象。docDefaults themed 引用必须有此文件才能解析 |
-| `humanize_doc` | `(doc, scene_to_human=None)` | 去 PM 内部场景编号 + 圈数字归一。scene_to_human 是 `[(code, human), ...]` 长前缀优先排序的映射表(每个项目自定义)。三步处理:① 多编号括号整删 ② 编号紧跟中文只删编号(避免重复词) ③ 孤立编号查表换白话。跳过 Heading 段 + scene_table cell[0] anchor + 场景地图编号列 |
-| `fix_scene_cell_numbering` | `(doc)` | 扫所有 scene_table 右列(以 📱/🖥/🔧 开头),≥4 段时用 `cell_paragraphs_to_blocks` 拆分后 `set_cell_blocks` 重写,统一 11pt title + 9pt 缩进编号。兼容 V2.7-era 两种 cell 模式(bold-no-blank / blank-separated) |
-| `cell_paragraphs_to_blocks` | `(cell) → list[tuple[str, list[str]]]` | 识别 cell 内 (title, lines) 块。规则:空段或 bold 段 = 强分隔符,分隔符之间首段是 title 其余是 lines。直接喂 set_cell_blocks |
+**`gen_prd_base`（新建专用，~30 个）**：
 
-**⚠️ set_cell_text vs set_cell_blocks 选择**：升版 Scene 表格右列、后台 table 这种"多段落+层次"的单元格，**必须**用 `set_cell_blocks` 结构化填充。用 `set_cell_text` 塞多行含 `\n` 的字符串会被渲染成**单段落无层次纯文本**（历史项目已有此类问题，如 htx-activity-center v4.7）。
+`init_doc` / `cover_page(doc, title, subtitle, scope, meta_rows)` / `h1` / `h2` / `h3` / `chapter_story(doc, text)`（功能章 3-5 必填，斜体浅灰） / `add_p` / `bullet` / `make_table(doc, headers, rows_data, col_widths_cm)` / `scene_table(doc, scene_id, name, right_blocks)` / `cell_text` / `set_cell_bg` / `set_cell_border` / `para_run` / `C`（颜色 dict，`textHeading=141413` Anthropic Dark / `accentBlue=D97757` terra cotta） / `FONT`（Lora+Noto Serif SC / Poppins+Noto Sans SC / JetBrains Mono） / `save_prd(doc, path, tier='standard'|'mini'|'full', extra_jargon=...)`（一键保存 + humanize + 标点 + 字体 + theme + 体检）
 
-**⛔ 禁止在项目脚本里重新定义这些函数。** 已有实现处理了 python-docx 的段落/run 边界、多余段落清理、DPI 修正等细节，手写容易遗漏导致行为漂移。
+**`update_prd_base`（升版专用，~33 个）**：
 
-### Step 1.5：迭代已有 docx 的操作顺序（升版时必读）
+`replace_para_text` / `search_replace_para` / `set_cell_text` / **`set_cell_blocks(cell, blocks, numbered=True)`** ← 多段层次单元格必用 / `replace_cell_image(cell, img_path, width_cm)`（内置 `fix_dpi`） / `normalize_headings` / `normalize_fonts` / `normalize_punctuation` / `ensure_theme(path)` / `insert_heading_before(anchor, text, level)` / `insert_paragraph_before` / `insert_description_after(doc, anchor_keyword, text)`（锚点未命中抛异常） / `insert_scene_blocks(anchor, blocks, heading_level=3)`（无截图 Scene 降级 body 级） / `remove_table(table)` / `humanize_doc(doc, scene_to_human=[(code, human)...])` / `humanize_prd_voice(doc, extra_jargon=[...])` / `fix_scene_cell_numbering` / `cell_paragraphs_to_blocks(cell)` / `assert_screenshots_fresh(docx_path, prototype_html, shot_dir)`
 
-当任务是「更新已有 PRD docx」（而非从头生成）时，严格按此顺序：
+**`sections`（产品思维章节，5 个 helper + 体检）**：见 Step 4 helper 列表。
 
-1. **先改内容**：更新文字、表格、章节标题等文本变更
-2. **再插截图**：内容定稿后再截图插入左列
-3. **最后推送**：Confluence / 归档
-
-反过来（先截图再改内容）会导致截图与内容不匹配，或插入的截图被内容变更覆盖。
-
-**python-docx `table.add_row()` 格式陷阱**：新增行只继承表级属性（边框/列宽），**不继承** cell 级格式（bold / font.size / font.color / shading）。新增行后必须手动对齐格式——参照同表已有数据行的 bold、size、color 逐 cell 设置，否则新行会和旧行视觉不一致。
-
-**改 PRD 后五步口诀**（任何文字修改后必跑，缺一不可）：
-
-1. 改源码 `gen_prd_v{N}.py`
-2. 跑 `python3 gen_prd_v{N}.py` 重新生成 docx（**会清空截图**）
-3. 跑 `python3 screenshot_for_prd.py` 重新插图（步骤 2 必须配步骤 3）
-4. 跑 `bash check_prd.sh xxx.docx scene-list.md` 验证占位符 0 处
-5. 推 Confluence
-
-⚠️ 跳过步骤 3 → docx 0 截图，推上去页面空白。Felix 实测踩坑（memory `feedback_prd_iter_screenshot_pitfalls.md`）。
-
-### ⛔ 升版硬规则（违反即重来，check_prd.sh 会自动拦截）
-
-1. **禁止在项目脚本里重定义** `set_cell_text` / `set_cell_blocks` / `replace_para_text` / `fill_cell_blocks` / `fix_dpi`。必须 `from update_prd_base import *`。
-   - 旧脚本常见错误：自己写一个 `set_cell_text(cell, text)`，把含 `\n` 的多行字符串塞进单段落——右列会塌成无层次纯文本。
-   - 正确做法：多段落/多层次内容用 `set_cell_blocks(cell, [(title, [lines])...])`，它会渲染粗体模块 title + numbered 子项。
-2. **禁止圈数字 ①②③④⑤⑥⑦⑧⑨⑩**（CLAUDE.md 格式规范）。章节/小节/步骤一律 `1. 2. 3.`。
-3. **Scene 右列 lines 默认被 `fill_cell_blocks` 自动加 `1./2./3.` 编号**（`numbered=True`）。lines 里写白话即可：
-   - 已含 `N. ` 前缀的行保持原样（不重复编号）
-   - 以 `  - ` 开头的二级缩进行跳过编号
-   - 需要关闭自动编号时显式传 `numbered=False`（如纯序号列表"1. Launch Pool / 2. 现货充值赛"这种本来就是数据枚举）
-4. **docx 已有 PNG 截图 DPI 默认 72（Playwright deviceScaleFactor=2 产物）**，需遍历 `doc.part.rels` 用 PIL 重写 `dpi=(144, 144)`。`replace_cell_image` 会自动 `fix_dpi`；批量修旧 docx 时自己写 loop。
-5. **Phone 比例截图（aspect < 0.7）必须圆角透明化**，否则深色主题里 4 角残留白方块。用 `PIL.ImageDraw.rounded_rectangle` 生成 alpha mask。
-6. **所有 docx 产出必调 `normalize_punctuation(doc)`**（soul.md 硬规则：中文相邻的半角 `,:()` 必须全角 `，：（）`）。gen/update/refine 脚本保存 docx 前调用，check_prd.sh 会扫残留。
-7. **升旧 docx 必调 `normalize_headings(doc)`**：老脚本用 `add_paragraph(style='Heading 1')` 直接产 H1/H2 时不染 run，Word 渲染成黑色无下划线，视觉与新 PRD 不一致。`normalize_headings` 幂等：H1 补 `fg=#141413（Anthropic Dark）+ 下边框#D97757（terra cotta）`，H2 补 `fg=#D97757`。同步处理表头 bg 从旧 `D5E8F0`/`2D81FF` 升到 `141413` + 白字（`set_cell_bg` 已修复旧 shd 残留 bug，可直接调）。
-
-8. **patch 脚本插新段落用 helper,禁止模糊段落覆盖**:
-   - ✅ 插新章节: `insert_heading_before(anchor, '6.4 归因漏斗', level=2)`
-   - ✅ 插描述段: `insert_description_after(doc, '2.2 View 2', 'CMS 管理后台...')`
-   - ✅ 插普通段: `insert_paragraph_before(anchor, '补充说明', size_pt=9)`
-   - ⛔ `anchor.insert_paragraph_before(text)` 裸调用 — 默认 Normal style,Confluence 大纲树失效(memory #2)
-   - ⛔ `for j in range(i+1, i+5): if not doc.paragraphs[j].text.startswith('2.'): 覆盖 text` 这种"查下一段落覆盖"模糊定位 — 跳过条件容易咬错咬到下一级大标题,H1 text 被覆盖(memory #6:patch_prd_v3_3.py 把第 3 章 H1 text 覆盖成描述段)
-   - 正确姿势:任何"在 XX 位置插入新段"都用 helper;任何"覆盖已有段 text"先判断 `p.style.name.startswith('Heading')` 跳过,只覆盖 Normal 段
-
-9. **无截图 Scene 禁止用 2 列 scene_table**(CMS / 纯后台 / 本次 UI 不改只改后端的场景):
-   - ⛔ 留「← 此处粘贴原型截图」空占位的 2 列表格 — 左列永远是空,右列被压窄,视觉冗余
-   - ✅ 用 `insert_scene_blocks(anchor, blocks, heading_level=3)`(body 级 H3 + numbered list)
-   - 判断准则:Scene 改动范围内**没有任何 UI 可以截图** → 降级 body 级;有任何 UI 改动 → 走 scene_table 配截图
-   - 迭代模式下常见场景:CMS 保留现状仅后端改字段响应、纯规则说明章节、功能已完整不改只做文档化
-   - 参考 prd-template.md「两种 Scene 展开模式」 + patch 示例 `htx-live-streaming-updateQ2/scripts/patch_prd_v27_ch7.py`
-
-10. **项目脚本禁止硬编码 `BASE = '/Users/xxx/pm-workspace'`**(check_prd.sh 会拦):
-   统一用相对定位,脚本从 `projects/{项目}/scripts/` 执行,向上 3 层到工作区根:
-   ```python
-   from pathlib import Path
-   BASE = Path(__file__).resolve().parents[3]  # pm-workspace 根
-   sys.path.insert(0, str(BASE / '.claude/skills/prd/scripts'))
-   ```
-   硬编码的坑(memory #1):① 换用户名/换机器立即炸 ② `sys.path.insert` 到不存在目录导致 `from gen_prd_base import *` 无声失败 → h1/h2 函数全失效 → docx 全 Normal style → Confluence 推上去大纲树失效。
-
-11. **正文禁用一切 PM 内部编号**(memory `feedback_prd_no_scene_id_in_body.md`):场景编号(A-1/B-2/C-1)/ 决策编号(决策 1/决策 12)/ context.md 内部条目编号,全部禁出现在 scene_table 右列、第 5/6 章业务规则、bullet 等正文位置。
-   - 仅允许出现在:第 2 章场景地图映射表、scene_table 第二参数(标题 anchor,如 `📱 B-1 · 我看自己的个人主页`)
-   - 反例:`决策 1:订阅未来付费`、`TAB 切换 → C-1 / C-2 / C-4` — 研发/运营都看不懂"决策 1"是什么、"C-1"对应哪个页面
-   - 正例:`订阅功能未来可能付费(本期免费)`、`切换"内容/交易战绩/带单战绩"TAB`
-   - check_prd.sh 已加扫描:扫 docx 正文(排除第 0 列场景标题 anchor)中的「决策 N」、「A-N/B-N/...」编号,命中即 fail
-   - 批量修复:`from update_prd_base import humanize_doc; humanize_doc(doc, scene_to_human=[('A-3b','红包弹窗'),('A-1','直播间主页'),...])`。三步处理:删多编号括号 → 编号紧跟中文只删编号(避免重复词)→ 孤立编号查表换白话
-   - **重复词陷阱**:映射表写 `('F-1','CMS 主播认证')` 时,原文「F-1 主播认证管理」会变「CMS 主播认证 主播认证管理」 — humanize_doc 内置「编号紧跟中文 → 仅删编号」步骤已处理,孤立编号才查表
-
-12. **老 docx 升版必跑字体三件套**(framework 美学切到 Anthropic brand-guidelines 后,字体规范从 Source Serif 4/Plus Jakarta Sans/HarmonyOS Sans SC 升到 Lora/Poppins/Noto Sans SC,老 docx 升版漏跑会残留旧字体风):
-   ```python
-   from update_prd_base import normalize_punctuation, normalize_headings, normalize_fonts, ensure_theme
-   normalize_punctuation(doc)
-   normalize_headings(doc)
-   normalize_fonts(doc)         # 老 ascii=Arial/Source Serif 4/Plus Jakarta Sans → Poppins;rFonts 缺失也补 design 字体
-   doc.save(path)
-   ensure_theme(path)            # 注入 word/theme/theme1.xml(python-docx 老模板漏)
-   ```
-   - 三个层级缺一不可:**docDefaults themed**(走主题 fallback 链)+ **run 级写 design 字体名**(Word for Mac 走系统 substitute → SF Pro/PingFang)+ **theme1.xml 文件**(themed 引用解析依赖它)
-   - 缺 theme1.xml 的症状:docDefaults `<rFonts asciiTheme="minorHAnsi"/>` 引用悬空 → Word 无 fallback → 强制 Arial
-   - run 级 rFonts 缺失的症状:走 docDefaults themed → 解析 theme1.xml minorFont(Cambria + 宋体)→ Mac 渲染 Cambria/STSong(衬线 Arial-classic 风)
-   - check_prd.sh 已自动扫:缺 theme1.xml / 残留老字体 run → fail
-   - **错觉警告**:docx 没 CSS fallback chain,只有 Word/Mac 系统级 substitute。Lora/Poppins 没装时 Mac/Win 走系统衬线/sans 替代,样式会偏离设计稿但可读
-
-### Step 2：收集产品信息
-
-向用户确认：
-1. **产品名称和版本**
-2. **涉及哪些端/View**
-3. **有几个核心场景**
-4. **是否有会议纪要/方案变更需要体现**
-5. **是否需要埋点/非功能性需求章节**
-
-### Step 2.1：迭代模式判定（改已有功能时必做）
-
-context.md 标注为「迭代现有功能」或用户说「改 XX 功能」时，自动进入迭代模式。迭代 PRD 和新建 PRD 的核心区别：
-
-**原则**：PRD 只写本次增量的业务行为变化，不写历史规则全文。
-
-**前置：规则冲突检测**
-
-逐条对照新需求与现有系统规则，输出冲突表：
-
-| 规则/场景 | 状态 | 现有内容 | 本次变更 | 影响的用户感知 |
-|-----------|------|---------|---------|--------------|
-| [规则A] | 沿用 | [原规则] | — | — |
-| [规则B] | 修改 | [原规则] | [变更后] | [用户看到什么变化] |
-| [规则C] | **冲突** | [原规则] | [本次要求] | 需业务决策 |
-| [规则D] | 新增 | — | [新规则] | [新增感知] |
-
-状态取值：**沿用 / 修改 / 新增 / 冲突**。
-
-**冲突硬停**：发现「冲突」状态的规则后立即暂停，向用户说明冲突和影响范围，等用户给出明确决策后才继续。冲突未解决不得继续写 PRD。
-
-**存量数据处理（迭代模式必填章节）**
-
-判断本次变更上线后，已有数据/用户状态/进行中订单是否受影响：
-
-| 触发条件 | 示例 |
-|---------|------|
-| 规则变更影响进行中的活动/订单 | 活动进行中修改奖励系数 |
-| 用户状态枚举新增或删除 | 新增「已撤回」状态，历史用户如何迁移 |
-| 计算公式变更影响历史结算 | 利率调整，已起息订单是否按新利率 |
-| 门槛/上限变更影响已满足条件的用户 | 降低门槛，原不满足的用户是否自动获得资格 |
-
-- 有存量影响 → 在 PRD 第 6 章业务规则中写明：受影响范围、处理规则、用户是否有感知
-- 无存量影响 → 显式写「本次变更仅影响上线后的新数据，存量不受影响」，不得留空
-
-**1.3 变更范围基线收集（迭代模式必填）**
-
-向用户收集三项信息，用于填充 PRD 1.3 章节（语义：vs 线上基线的一次性 delta，不是 PRD 版本间 diff）：
-
-1. **线上基线版本**：当前线上运行的是哪一版？版本号 + 上线日期
-   - 基线选取规则：第 N 期迭代以「第 N-1 期已发布线上版本」为基线，不以最初版本为基线
-   - 新项目首发 → 1.3 写「本次为新项目首发，无基线变更（后续迭代以 v{当前版本} 上线版本为基线）」即可
-2. **vs 线上的真 delta 清单**：哪些能力是线上没有、本期要新增的？哪些线上有、本期要改/砍的？
-   - ⚠️ 不要把 context.md 第 7 章的讨论流水直接搬来——PM 要从讨论流水中**收敛**出「线上 → 终稿」的一次性 delta
-   - 内部多轮迭代痕迹（如 v4.6→v4.7 只是方案调整，非线上变化）不入此章
-3. **范围边界**：本期明确不做、V3+ 再做的内容（写入 1.3 的「本次不做」分组，方便研发/评审一眼看清楚）
-
-用户未明确给出时，**必须停下来问**，不得自行从 context.md ch7 讨论流水摘录后填充（会污染 PRD 1.3 为版本 diff 流水）。
-
-**新建模式**则跳过规则冲突/存量数据/基线收集，1.3 写一句「新项目首发」即可，直接进 Step 2.5。
-
-### Step 2.5：边写边审（PRD 质量内建）
-
-PRD 不是一口气写完再审。每完成一个核心区块后暂停，以 QC 视角提出边界问题，用户回复后将结论**直接写入 PRD 对应位置**，再继续下一区块。
-
-**节奏**：
-
-| 暂停点 | 完成后暂停的区块 | 重点检查 |
-|--------|----------------|---------|
-| ① | 第 1 章背景目标 + 第 2 章场景地图 | 场景覆盖完整性、View 划分合理性 |
-| ② | 第 3-5 章详细需求（每个 View 写完暂停一次） | 异常场景遗漏、边界定义模糊、研发 QC 可能理解不一致的地方 |
-| ③ | 第 6 章业务规则 | 规则冲突、枚举值完整性、与现有功能冲突 |
-| ④ | 第 7-9 章 | 非功能指标合理性、埋点覆盖度 |
-
-**每次暂停的 5 个检查维度**：
-1. 边界不清晰的描述（列出具体位置）
-2. 缺失的异常场景
-3. 可能产生歧义的表述（原文 + 建议改法）
-4. 研发与 QC 可能理解不一致的地方
-5. 与现有功能/已有产出物可能冲突的地方
-
-**输出格式**：
-```
-我完成了「XXX」区块，在继续之前有以下问题需要确认：
-
-【高优先级】需要明确回答
-1. [问题]——影响：___
-
-【中优先级】建议补充
-2. [场景]——建议：___
-```
-
-**跳过条件**：用户说「快速模式」「不用审直接写完」→ 一气呵成写完，最后在末尾输出完整预审问题清单。
-
-### Step 3：生成 docx（强制分步，违反即重来）
-
-**脚本复用优先**：先检查 `projects/{项目名}/scripts/` 下是否有已有的 `gen_prd_*.py`：
-- 有 → 读取已有脚本，修改数据/参数后重跑
-- 没有 → 按下方 3a/3b/3c 三步分段产出，**禁止单次 Write 写完整脚本**
-
-**⛔ 新建 PRD 硬规则（check_prd.sh 会拦截）**：
-
-1. **禁止单次 Write > 300 行**。骨架一次、每个 View 一次、业务规则+埋点+排期一次，至少 3 次 Write。
-2. **每次 Write 后立即 `python3 gen_prd_v{N}.py` 跑通验证无 SyntaxError / 无异常**，失败先修复再继续。
-3. **3a 骨架完成后必须停下等用户确认结构**，除非用户明确说「快速模式 / 不用暂停」。
-4. **⛔ 禁止重写框架函数**。`set_cell_bg` / `para_run` / `h1` / `h2` / `scene_table` / `make_table` / `bullet` / `fill_cell_blocks` 全部来自 `gen_prd_base`，直接 import 调用。自定义一个立刻被 check_prd.sh 拦截。
-
-**为什么分步**：PRD 15+ scene 的脚本常到 500-700 行，一把梭容易埋 SyntaxError、scene 编号串味、章节漏章。分段写每段 200-300 行好 review、好定位错、弱模型也能照抄骨架补填。
-
-#### Step 3a · 骨架（≤ 80 行）
-
-只写：import + `init_doc` + `cover_page` + 第 1-2 章（背景 / 目标 / 变更范围 / 用户角色 / 场景地图两个 View 的 `make_table`）+ 各 H1 占位（第 3/4/5/6/7/8/9 章用 `h1(doc, "3. ...")` 留题头，不填内容）+ `doc.save()`。
-
-产出后立即 `python3 scripts/gen_prd_v{N}.py` 验证产出 docx 打得开、章节结构对，**停下来告诉用户「骨架完成，章节 X/Y/Z，可以继续填内容吗」**。
-
-#### Step 3b · 按 View 填充 scene_table（每次 ≤ 300 行）
-
-每个 View 一次 Write 追加，内容为该 View 全部 `scene_table(doc, scene_id, name, [(title, [lines]), ...])` 调用。典型节奏：
-- View 1（H5 主场景 + 组件）一次
-- View 2（后台 / 第二端）一次
-- 场景 ≥ 10 个的 View 继续拆（先主场景、再组件弹窗）
-
-每次追加后立即 python3 跑通 + grep 确认 scene 数量对齐 `scene-list.md`。scene 编号错、内容塌成扁平字符串、忘记 `[(title, lines)]` 结构——这些 bug 此时就能发现。
-
-#### Step 3c · 收尾（业务规则 + 非功能 + 埋点 + 里程碑）
-
-一次追加第 6-9 章（`make_table` + `bullet` 为主，内容来自 context.md 第 6 章业务规则表）。
-
-产出后跑 **Step 4 截图** → **check_prd.sh 自检**。
-
-**重复 Scene 抽函数**：相似结构场景（如"结果公示" A-2/B-2/C-2 只是文案换）写一个 `render_result_scene(doc, scene_id, stage_name, next_stage)` 调用 `scene_table`，省 15-20% 行数。
-
-## 写作规范
-
-1. **场景说明要具体**：不写「展示列表」，写「3 列 Grid，卡片含封面图 + 状态角标 + 倒计时 + CTA」
-2. **变更要标注**：迭代项目中相对当前线上版本的变更，在标题后加 `（变更）`，并在 1.3 变更范围中汇总；PM 内部多轮迭代痕迹不入此章
-3. **引用要闭环**：提到其他场景时用 `→ 见 [编号]`，确保编号存在
-4. **枚举要穷举**：所有下拉选项、状态值、业务线等在业务规则章节完整列出
-5. **数值要量化**：目标、阈值、限制都用具体数字，不用「若干」「多个」
-6. **截图自动插入**：左列通过 Playwright 截图 + python-docx 自动插入，不留占位符交付（见 Step 4）
-7. **平台差异要说明**：Web/App/后台有差异时分别描述
-8. **组件复用表**：跨 View 复用的组件在业务规则章节用矩阵表标注
-
-## Step 4：原型截图插入（docx 产出时必做）
-
-PRD 两列表格左列的「← 此处粘贴原型截图」必须替换为真实截图，不允许交付占位符。
-
-**流程**：Playwright 打开原型 HTML → 切换到目标视图/Tab → 元素级截图 → python-docx 插入到对应 Table 左列 cell。
-
-**截图来源优先级（强制）**：可交互原型 > 交互大图（降级）
-- 有原型时，截图必须来自原型，不得从交互大图截
-- 交互大图截图仅在「无原型」或「原型未覆盖该场景」时使用（如 M-7 同步逻辑图等纯流程场景）
-
-**截图脚本**（Python 优先，依赖 `playwright`）：
-```
-projects/{项目}/scripts/screenshot_for_prd.py
-```
-
-**插入脚本**（Python，依赖 `python-docx`）：
-```
-projects/{项目}/scripts/insert_screenshots_to_prd.py
-```
-
-**截图规范**：
-- viewport: 1440x900, deviceScaleFactor: 2（Retina）
-- 格式：**必须 PNG**（`path` 以 `.png` 结尾），禁止 JPEG，避免压缩失真
-- Web/MGT 视图：截对应容器元素（`#acDeviceWeb` / `#czDeviceWeb` / `#mgt-view`）
-- App 视图：只截手机壳（`.app-shell`），不截外层容器
-- **交互大图截图（无原型时的降级方案）**：只截设备框元素（`.phone` / `.webframe`），计算同一 Scene 内所有设备框的 bounding box 合并截取。**禁止截整个 Scene 区域**——右侧标注（`.anno` / `.aw` / `.flow-note`）是大图的阅读辅助，不属于 PRD 截图范围
-- **标注清理（强制，交互大图截图专用）**：截 `.phone` / `.webframe` 前必须隐藏所有标注元素，避免 `.anno-n` 编号圆点、`.anno` 虚线框叠加在设备上被截进：
-  ```js
-  page.evaluate("""
-      document.querySelectorAll(
-        '.anno, .anno-n, .ann-card, .ann-tag, .aw, .flow-note, .side-nav'
-      ).forEach(el => el.style.display = 'none');
-  """)
-  ```
-- **Phone 圆角透明化（强制，仅 `.phone` 截图）**：`.phone` 是圆角矩形（`border-radius: 36px`），Playwright 元素截图的 bounding box 是正矩形，4 个角会残留 imap 画布背景色。PNG 在深色主题下（GitHub README dark mode、docx 以外的任何深色阅读器）呈现为 4 个突兀方块。插入前必须 Pillow 圆角蒙版处理：
-  ```python
-  from PIL import Image, ImageDraw
-  def round_phone_corners(png_path: str, radius_px: int = 72):
-      """CSS border-radius 36px × deviceScaleFactor 2 = 72 像素半径。
-      CSS 改 radius 后此处同步。仅 phone 处理，webframe 本就是矩形。"""
-      img = Image.open(png_path).convert("RGBA")
-      mask = Image.new("L", img.size, 0)
-      ImageDraw.Draw(mask).rounded_rectangle(
-          [(0, 0), img.size], radius=radius_px, fill=255)
-      img.putalpha(mask)
-      img.save(png_path, "PNG")
-  # 调用：device.screenshot(path=out, omit_background=True) 后
-  #       if device_type == "phone": round_phone_corners(out)
-  ```
-- 抽屉/弹窗：先触发 JS 打开，再截父容器
-- MGT 各子页：通过 `swPage()` / `swView()` 切换后截图
-- 截图存放：新建 PRD → `screenshots/prd/`；升版 PRD → `screenshots/prd_v{N}/`（避免覆盖旧截图）
-- **浮层清理（强制）**：每次切换视图前 + 每次截图前，必须调用 `dismissAllOverlays()` 清除所有 `position: fixed` 浮层（drawer / modal / overlay / sheet），用 `el.style.display='none'` 强制隐藏，仅 `classList.remove('show')` 不够（JS 副作用可能重新触发）
-
-**插入规范**：
-- **DPI 修正（必做，否则截图在 docx 里虚化）**：`deviceScaleFactor: 2` 截图的 PNG DPI 元数据默认 72，python-docx 会误判尺寸并强行缩放导致模糊。插入前必须用 Pillow 修正为 144：
-  ```python
-  from PIL import Image
-  def fix_dpi(path: str) -> str:
-      """修正 @2x 截图 DPI 元数据，返回原路径（in-place）"""
-      img = Image.open(path)
-      img.save(path, dpi=(144, 144))
-      return path
-  # 调用：fix_dpi(screenshot_path) 后再 cell.add_picture(...)
-  ```
-- 前端 Scene 截图宽度 7.0cm，App 截图 5.0cm
-- Table 索引与 PRD 结构对应（Table 5 起为 Scene 表格，按章节顺序）
-- M-7 同步逻辑无独立视图时复用 M-1 截图
-
-**已有项目复用**：先检查 `projects/{项目}/scripts/` 下是否已有 `screenshot_for_prd.js` + `insert_screenshots_to_prd.py`，有则复用修改，无则新写。
-
-**依赖安装**：
-```bash
-npm init playwright@latest   # 首次安装
-npx playwright install chromium
-```
-
-## Step 5：推送到 Confluence（可选，每次问用户）
-
-PRD 自检通过后，主动询问：「PRD 已生成，是否推送到 Confluence？」
-
-### 路径 0:已推送过的项目（最常用，零参数）
-
-`projects/{项目}/.confluence.json` 缓存项目级 Confluence 配置（首次推送后脚本自动写入）：
-
-```bash
-python3 .claude/skills/prd/scripts/push_to_confluence_base.py \
-    "projects/{项目}/deliverables/{PRD}.docx"
-```
-
-**配置 schema**:
-
-```json
-// 单 PRD 项目(最常见)
-{ "prd_page_id": "155652375", "title": "...", "space": "jituankejizhongxin" }
-
-// 多 PRD 项目(同项目拆多份):pages 按 docx 文件名匹配
-{
-  "space": "jituankejizhongxin",
-  "pages": {
-    "HTX_直播间Q2升级_PRD_V2.8-Phase1.docx": {"page_id": "164486320", "title": "..."},
-    "HTX_直播间Q2升级_PRD_V3.0-Phase2-连麦.docx": {"page_id": "164486335", "title": "..."}
-  }
-}
-
-// 仅有父页面(还没推过任何 PRD):首次推时只需传 --title
-{ "parent_id": "155660585", "space": "jituankejizhongxin" }
-```
-
-不要再问用户 pageId,有配置直接跑。配置不存在或 docx 没匹配到才走路径 A/B 询问。
-
-### 路径 A:新建页面 / 按标题 upsert
-
-```bash
-python3 .claude/skills/prd/scripts/push_to_confluence_base.py \
-    "projects/{项目}/deliverables/{PRD文件}.docx" \
-    --title "{页面标题}" \
-    --space "{spaceKey}" \
-    --parent-id "{父页面 pageId(可选)}"
-```
-
-- **页面标题格式**:`HTX · {项目名} · {版本号}`(例:HTX · 活动中心 · v4.7)
-- spaceKey / 父页面 pageId 由用户提供,或用 Confluence MCP `confluence_get_page` 查父页面
-- 重复推送自动 upsert
-- **图片宽度按宽高比自动选**:phone 截图(高 > 宽 × 1.3)走 300px,web/横屏走 600px。无需传参
-- 强制覆盖时:`--img-width 600` 所有图统一,`--img-width-phone 240 --img-width-web 720` 分别覆盖
-- 注:Confluence storage format 会 strip 段落 inline style(`padding-left` 失效),push 脚本会把连续 `<p>N. xxx</p>` 段合成 `<ol><li>` 让 Confluence 用原生 list 缩进 + 自动编号。fill_cell_blocks 产出的 numbered cell 在 Confluence 上才能正确显示层次
-
-### 路径 B:已知 pageId 直接覆盖
-
-从 URL `?pageId=XXXXXX` 提取 pageId,脚本自动查当前 version + space 直接更新(跳过 title 搜索):
-
-```bash
-python3 .claude/skills/prd/scripts/push_to_confluence_base.py \
-    "projects/{项目}/deliverables/{PRD}.docx" \
-    --page-id 155652375
-```
-
-可选改标题(不传则保留现有):
-
-```bash
-python3 .claude/skills/prd/scripts/push_to_confluence_base.py \
-    "projects/{项目}/deliverables/{PRD}.docx" \
-    --page-id 155652375 \
-    --title "HTX · 活动中心 · v4.7"
-```
-
-⚠️ 推送前 pre-flight 会扫 docx Heading 1/2 计数,为 0 时 warning(memory #1/#3 踩坑:
-gen 脚本 sys.path 错 → h1/h2 函数无声失败 → docx 全 Normal style → Confluence 大纲树失效)。
-确定要跳过传 `--skip-preflight`。
+> **`set_cell_text` vs `set_cell_blocks` 选择**：升版 Scene 表格右列、后台 table 这种「多段落 + 层次」的单元格，**必须**用 `set_cell_blocks` 结构化填充。`set_cell_text` 塞多行含 `\n` 字符串会被渲染成单段无层次纯文本（活动中心 v4.7 历史踩坑）。
 
 ## 自检清单
 
+**全档位通用**：
+
 - [ ] 编号和 scene-list.md 一致，无遗漏
-- [ ] 生成脚本已保存在 `projects/{项目}/scripts/` 目录，命名 `gen_prd_v{版本}.py`；产出物和脚本成对交付，缺一不可
-- [ ] 术语与交互大图/原型对齐
-- [ ] 所有 `→ 见 [编号]` 跳转编号存在
-- [ ] 枚举值、状态名穷举完整
-- [ ] 变更项已在 1.3 变更范围汇总（迭代项目必查，含基线版本声明）
-- [ ] 两列表格左列全部为真实截图，无「此处粘贴」占位符残留
-- [ ] App 截图为手机壳级别（`.app-shell`），非全屏容器
-- [ ] MGT 截图无浮层/弹窗/遮罩泄露（逐张目视确认）
-- [ ] 所有截图已经过 `fix_dpi()` 修正（DPI=144），在 docx 中无虚化/模糊
+- [ ] 生成脚本已存 `projects/{项目}/scripts/gen_prd_v{N}.py`，产出物和脚本成对交付
+- [ ] 术语与 context.md 第 5 章 / IMAP / 原型对齐
+- [ ] `→ 见 [编号]` 跳转目标编号存在
+- [ ] 通过 `bash .claude/skills/prd/scripts/check_prd.sh <docx> <scene-list>`（不可跳）
 
-**强制验证脚本**（自检最后一步，不可跳过）：
-```bash
-bash scripts/check_prd.sh projects/{项目}/deliverables/XXX.docx projects/{项目}/scene-list.md
-```
+**标准 + 完整档增量**：
 
-**注意**：mammoth 会尽力转换表格结构，但 docx 的复杂排版（合并单元格、多级列表）在 Confluence 中可能有轻微变形，建议推送后目视确认一次。
+- [ ] 1.2 含反向指标 / 非目标关键词
+- [ ] 1.5 Non-goals 章存在（标准 + 完整必填）
+- [ ] 6.x Open Questions 表存在（无未决项也要显式「无」）
+- [ ] 两列表格左列全部为真实截图，无「← 此处粘贴」占位
+- [ ] App 截图为 `.app-shell` 级别，phone 截图已圆角透明化
+- [ ] 所有截图已 `fix_dpi(144)` 修正
+- [ ] 迭代项目 1.3 变更范围已收敛到「vs 线上 delta」一行（不是版本 diff 流水）
+
+**完整档增量**：
+
+- [ ] 7.x Risks & Mitigations 表存在
+- [ ] 1.6 方案选型说明（多方案讨论时必填）
+
+## 方案型项目（不走标准 pipeline）
+
+满足任一条件即为方案型：跨两个或以上独立系统 / 资金流转 / 结算 / 授信 / 多团队共建（含「🔲 待填」占位）/ 无 UI 改动（纯后端架构）。
+
+文档分工：
+
+| 文档 | 定位 | 维护者 | 体量 |
+|------|------|--------|------|
+| `context.md` | Claude Code 工作上下文：当前状态 + 关键决策 + 术语 + 待办 | PM + Claude Code | 300-500 行 |
+| `inputs/共建 PRD` | 完整方案自包含，各组填空 | PM 骨架 + 各组填空 | 1000+ 行 |
+| `inputs/机制说明` 等深度推演 | Chat 讨论产出，归档不再单独维护 | Chat Opus | 一次性 |
+
+context.md 章节按项目特点自定义，不强制九章模板。

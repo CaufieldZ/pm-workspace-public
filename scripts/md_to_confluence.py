@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 """Push a Markdown file to Confluence as a child page, wrapped in the Markdown macro.
 
 Reads Confluence creds from .mcp.json or .mcp-disabled.json (toggle-mcp.sh

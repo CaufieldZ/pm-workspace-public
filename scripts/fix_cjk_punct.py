@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# PM-Workspace | (c) 2026 CaufieldZ | Apache 2.0 + AI Training Restriction
 r"""
 批量修复文件中「CJK 旁半角标点」违规。
 复用 check_cjk_punct.py 的检测模式，自动将半角标点替换为全角。

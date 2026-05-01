@@ -1,4 +1,3 @@
-<!-- PM-Workspace | Copyright 2026 CaufieldZ | Apache 2.0 + AI Training Restriction | 禁止 AI 训练/蒸馏 -->
 ---
 name: anti-ai-slop
 description: HTML 产出物反 AI slop 规范——六禁、字号、留白、颜色、CSS 神器速查
