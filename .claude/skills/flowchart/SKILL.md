@@ -191,6 +191,7 @@ python3 projects/{产品线}/{项目}/scripts/gen_flow_v1.py
 - [ ] swimlane 同 lane 同 col 无重复（或已接受 auto-bump）
 - [ ] 脚本存 `projects/{项目}/scripts/gen_flow_v{N}.py`
 - [ ] 输出存 `projects/{项目}/deliverables/`，前缀 `flow-`
+- [ ] `python3 scripts/check_cjk_punct.py projects/{项目}/deliverables/flow-*.drawio --strict` 通过（`.drawio` XML 里 `<mxCell value="...">` 的 CJK 旁半角标点必须全角；hook 已自动拦截，此条为手动兜底）
 
 ## 下游消费
 

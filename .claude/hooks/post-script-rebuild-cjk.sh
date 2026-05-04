@@ -16,8 +16,8 @@ TOOL_NAME=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.std
 
 CMD=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tool_input',{}).get('command',''))" 2>/dev/null)
 
-# 触发:命令含 gen_/fill_/patch_/update_ 开头的脚本调用
-if ! echo "$CMD" | grep -qE '\b(gen|fill|patch|update)_[a-zA-Z0-9_-]+\.(py|js)\b'; then
+# 触发:命令含 gen_/fill_/patch_/update_/render_ 开头的脚本调用
+if ! echo "$CMD" | grep -qE '\b(gen|fill|patch|update|render)_[a-zA-Z0-9_-]+\.(py|js)\b'; then
   exit 0
 fi
 
@@ -32,7 +32,7 @@ SEARCH_ROOTS=()
 [ ${#SEARCH_ROOTS[@]} -eq 0 ] && exit 0
 
 RECENT=$(find "${SEARCH_ROOTS[@]}" -path '*/deliverables/*' -type f \
-  \( -name '*.html' -o -name '*.md' \) \
+  \( -name '*.html' -o -name '*.md' -o -name '*.drawio' \) \
   -not -path '*/archive/*' \
   -mtime -30s 2>/dev/null)
 
@@ -40,7 +40,7 @@ RECENT=$(find "${SEARCH_ROOTS[@]}" -path '*/deliverables/*' -type f \
 if [ -z "$RECENT" ]; then
   THIRTY_SEC_AGO=$(python3 -c "import time; print(int(time.time()) - 30)")
   RECENT=$(find "${SEARCH_ROOTS[@]}" -path '*/deliverables/*' -type f \
-    \( -name '*.html' -o -name '*.md' \) \
+    \( -name '*.html' -o -name '*.md' -o -name '*.drawio' \) \
     -not -path '*/archive/*' 2>/dev/null \
     | while read -r f; do
         MT=$(stat -f %m "$f" 2>/dev/null || stat -c %Y "$f" 2>/dev/null)

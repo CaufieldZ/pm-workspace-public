@@ -8,7 +8,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-1f54d6?style=flat-square)](LICENSE)
 [![Skills](https://img.shields.io/badge/skills-18-D97757?style=flat-square)](.claude/skills)
-[![Hooks](https://img.shields.io/badge/hooks-14-000?style=flat-square)](.claude/hooks)
+[![Hooks](https://img.shields.io/badge/hooks-17-000?style=flat-square)](.claude/hooks)
 [![Audit](https://img.shields.io/badge/audit-15_categories-000?style=flat-square)](.claude/skills/workspace-audit)
 [![Python](https://img.shields.io/badge/python-3.10+-000?style=flat-square)]()
 [![Node](https://img.shields.io/badge/node-18+-000?style=flat-square)]()
@@ -197,7 +197,7 @@ PRD ─────┼─→ page-structure ─→ Design / Frontend AI
 | 机制 | 说明 |
 |:-|:-|
 | 防腐化 hook | `.githooks/pre-commit` 在 Skill / 规则 / `.claude/hooks/` 变更时跑 `audit.sh 1,2,3,4,7,12,13,14,15`（9 类硬检查），不通过拦截 commit。secret scan 拦 figd/sk-ant/ghp/AKIA 等 token |
-| 14 个 runtime hook | CJK 标点 / 版本同步 / 设备命名 / wiki push 等闸门。stderr warning 看到立改，阻断级的直接拒写 |
+| 17 个 runtime hook | CJK 标点 / 讲人话 / 版本同步 / 设备命名 / wiki push / Dippy 破坏性命令拦截 / Learn-Rule 纠错捕获等闸门。stderr warning 看到立改，阻断级的直接拒写 |
 | 15 类 workspace-audit | 脚本硬检查 10 类（文件 / 数值 / 依赖 / 规则 / Token / 产出物 / SKILL_TABLE / scripts / imports / 三件套纯洁性）+ 软检查 5 类（含 Hooks 健康度） |
 | HTML 铁律 | > 200 行必须脚本生成（Step A 骨架 → B fill → C 自检），禁止 Write 直写 |
 | 自检反压 | 每个 Skill 自带 checklist，不通过最多自动修复 2 次，仍失败停下报告，禁止静默跳过 |
@@ -218,7 +218,7 @@ PRD ─────┼─→ page-structure ─→ Design / Frontend AI
 
 | 机制 | 说明 |
 |:-|:-|
-| 全链路埋点 | 14 个 hook 通过 `lib/log.sh` 写 `.claude/logs/usage.jsonl`（skill 触发 / hook warn-block-clean / gate skip），半月一次 dashboard 决策 |
+| 全链路埋点 | 17 个 hook 通过 `lib/log.sh` 写 `.claude/logs/usage.jsonl`（skill 触发 / hook warn-block-clean / gate skip），半月一次 dashboard 决策 |
 | dashboard | `python3 scripts/dashboard.py` 聚合 hook + skill + 项目快照，输出 `.claude/workspace-dashboard.md` |
 | Session 保活 | `pre-compact.sh` 在上下文压缩前注入 `session-state.md` + git 动态快照到摘要，compact 后进度不丢 |
 | 规则半衰期 | `.claude/runbooks/half-life.md` 给规则打 volatile / durable 标签，半年 review 砍弱触发规则 |
@@ -256,13 +256,15 @@ pm-workspace/
 ├── .public/
 │   └── overrides/               # public sync 替换文件
 ├── .claude/
-│   ├── hooks/                   # 14 个 runtime hook
+│   ├── hooks/                   # 17 个 runtime hook
 │   │   ├── lib/log.sh           #   共享埋点（写 logs/usage.jsonl）
 │   │   ├── pre-compact.sh       #   Session 状态保活
 │   │   ├── post-cjk-punct-check.sh
+│   │   ├── post-plain-language-check.sh  # 讲人话自检（禁内部锚点外泄）
 │   │   ├── pre-version-sync-gate.sh
 │   │   ├── pre-wiki-push-gate.sh
-│   │   └── ...                  #   共 14 个
+│   │   ├── stop-learn-capture.sh         # 从 transcript 提取 [LEARN] 追加 LEARNED.md
+│   │   └── ...                  #   共 17 个
 │   ├── rules/
 │   │   ├── pm-workflow.md       #   工作流层 · 方法论
 │   │   ├── html-pipeline.md     #   工作流层 · HTML 生成 + 美学

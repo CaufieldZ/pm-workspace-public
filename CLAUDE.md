@@ -29,29 +29,23 @@
 
 ## 执行约束（Claude Code 工具层配置，PM 方法论在 pm-workflow.md）
 
-> 分界原则：本文件只放「跟 Claude Code 工具绑定」的操作规则（换 Cursor 就不适用的）。PM 方法论、业务规则、链路定义全部在 pm-workflow.md。唯一例外：context.md 只读规则放在本文件以确保模型启动时第一时间遵守。
+> 本文件只放跟 Claude Code 工具绑定的操作规则（换 Cursor 就不适用）。PM 方法论、业务规则、链路定义全在 pm-workflow.md。例外：context.md 只读规则放这，确保启动第一时间遵守。
 
-【并行读取】收到产出物指令时，先并行：① scene-list.md Read ② SKILL.md Read ③ `read_context_section.py {项目} --toc`。根据 SKILL.md Step 1 + toc 结果选读 context.md 所需章节。references/ 按 Step 1 声明按需加载，未声明的 CSS/JS 不预加载。
+【并行读取】产出物指令：并行 Read scene-list.md + SKILL.md + `read_context_section.py {项目} --toc`，按 SKILL.md Step 1 + toc 选读 context.md 章节。references/ 按 Step 1 声明按需加载。
 
-【context.md 按需读取】context.md > 300 行时禁止全量 Read，用 `scripts/read_context_section.py`：
-1. 首次接触：`--toc` → 必读「方向章节」（标题含 场景/编号/待办/阻塞/已交付 之一）→ 按任务选读其余章节
-2. 追加信息：`--grep` 定位 → `--sections` 取内容
-3. 不确定是否相关 → 读。宁可多读不可漏读
-4. ≤ 300 行 → 直接全量 Read
+【context.md 按需读取】> 300 行禁止全量 Read，走 `scripts/read_context_section.py`：首次 `--toc` → 必读方向章节（场景 / 编号 / 待办 / 阻塞 / 已交付）→ 按任务选读其他；追加信息 `--grep` 定位 → `--sections` 取内容；不确定相关性 → 读。≤ 300 行直接全量 Read。
 
-【脚本优先（强制）】读 SKILL.md 后看 frontmatter `scripts` 字段，列出的脚本对应步骤**必须调用**，不得手写等效逻辑；失败时读源码排错，不回退手写。路径约定：无前缀在 `.claude/skills/{skill}/scripts/`，`scripts/` 前缀在根目录，`scripts/lib/` 是共享 Python 模块（`confluence` / `html_builder` / `html_patcher`，被 import 不直接调）。项目级脚本在 `projects/{项目}/scripts/` 下，优先复用 `gen_*` / `fill_*`。
+【脚本优先（强制）】SKILL.md frontmatter `scripts` 字段列出的脚本对应步骤**必须调用**，不得手写等效逻辑；失败读源码排错不回退手写。路径：无前缀 = `.claude/skills/{skill}/scripts/`，`scripts/` 前缀 = 根目录，`scripts/lib/` = 共享模块（`confluence` / `html_builder` / `html_patcher`，被 import）。项目级脚本 `projects/{项目}/scripts/`，优先复用 `gen_*` / `fill_*`。
 
-【编码纪律】动手前，不确定的事列歧义选项让用户选，别自己猜一个就写。多步骤任务先列 1/2/3 步计划，每步带验证标准，不清晰不动手。写完自查：每行改动能不能回溯到用户请求、有没有 50 行能搞定却写了 200 行。
+【编码纪律】不确定的事列歧义选项让用户选，别猜。多步骤任务先列计划 + 每步验证标准，不清晰不动手。写完自查：每行改动能回溯到请求、有没有 50 行够却写 200 行。
 
-【compact 指引】每完成一个 Skill Step（A/B/C）或切换项目后，用 Write 工具覆盖 `.claude/session-state.md`，更新项目名/Skill/Step/已填 Scene/下一步。PreCompact hook 会在 compact 前自动注入该文件到摘要，防止进度丢失。手动切换项目（非通过 Skill 流程）必须立刻同步，否则残留旧状态会误导后续执行。
+【compact 指引】完成 Skill Step（A/B/C）或切项目后，Write `.claude/session-state.md`（项目 / Skill / Step / 已填 Scene / 下一步）。PreCompact hook 自动注入该文件到摘要。手动切项目必须立即同步，残留旧状态会误导后续。
 
-【高风险操作前强制保存 session-state】以下操作前先 Write `.claude/session-state.md`（当前在做什么 + 下一步），完成后再 Write 更新结果：Playwright / headless 浏览器调用、含 render 的大文件渲染脚本（或生成 > 500 行 HTML 的 node 脚本）、连续 ≥ 3 次 Write/Edit 同一 > 500 行文件、一次预期输出 > 200 行的 bash（日志/诊断/长 grep）。`pre-risky-op.sh` 会在命中时打 stderr warning 兜底，看到 warning 立刻 Write。
+【高风险操作前保存 session-state】以下操作前先 Write `.claude/session-state.md`（做什么 + 下一步）：Playwright / headless、render 类大文件脚本（> 500 行 HTML 生成）、连续 ≥ 3 次 Write/Edit 同一 > 500 行文件、预期输出 > 200 行的 bash。`pre-risky-op.sh` 打 stderr warning 兜底，看到立 Write。
 
-【UI / webapp 验证】跑本地 server 测前端走 `scripts/with_server.py`（托管 server 生命周期，`--help` 有完整用法），别自己起后台进程忘了关。Playwright 统一 `headless=True` + `wait_for_load_state('networkidle')` 再操作 DOM，别立刻截屏。
+【UI / Playwright 纪律】本地 server 走 `scripts/with_server.py`（托管生命周期）。Playwright 统一 `headless=True` + `wait_for_load_state('networkidle')` 后再操作。默认 assertion（`is_visible` / `get_attribute` / `text_content` / `evaluate`）不截图；截图仅用于视觉 bug 确认或最终交付，一次 ≤ 2 张，`full_page` 仅看超视口内容。
 
-【Playwright 验证纪律】默认用 assertion（`is_visible` / `get_attribute` / `text_content` / `evaluate`），不截图。截图 + Read 仅用于：① 视觉 bug 确认（溢出/遮挡/样式错位）② 最终交付给用户看效果。一次 ≤ 2 张，`full_page` 仅在需要看超出视口内容时用。
-
-【被墙下载走代理】外网命令（`pip` / `npm` / `brew` / `curl` / `wget` / `go get` / `cargo`，GitHub SSH 已配 443 除外）超时或 `connection refused` / `timeout` / `reset` 且目标非国内域名时，加前缀 `ALL_PROXY=http://127.0.0.1:7897` 重试一次。国内域名（`.cn` / `pypi.tuna.tsinghua` / `npmmirror`）不走代理。
+【被墙下载走代理】`pip` / `npm` / `brew` / `curl` / `wget` / `go get` / `cargo` 超时或 `connection refused` / `timeout` / `reset` 且非国内域名时，加 `ALL_PROXY=http://127.0.0.1:7897` 重试。国内域名（`.cn` / `pypi.tuna.tsinghua` / `npmmirror`）不走代理。GitHub SSH 已配 443 无需代理。
 
 ### MCP 配置
 
@@ -75,31 +69,26 @@ context.md 由本地 Opus 写入（ChatOpus 不写文件），共九章。sessio
 
 ### 工具调用纪律
 
-【上下文预算】调用前评估返回量：GitHub 用 `gh api` 取 JSON 不用 Firecrawl 抓整页；钉钉先 `list_document_blocks` 看结构按段落取不一次拉全文；Confluence 内部链接走 Confluence MCP 不走 Firecrawl（认证墙）；图片统一 Claude Read（多模态）不走第三方 MCP。
+【上下文预算】调用前评估返回量：GitHub → `gh api` 取 JSON；钉钉 → `list_document_blocks` 看结构按段落取；Confluence 内部链接 → Confluence MCP（认证墙）；图片 → Claude Read（多模态）。
 
-【禁止重复读取】同一 session 内已读过的文件不再整体重读。HTML 产出物允许 grep 局部回读，禁止 Read 全文。需要局部信息时用 Grep 或 Read offset/limit。
+【大文件 / 重复读取】同 session 已读文件不整体重读。Read 前评估体积：> 500 行先 `wc -l` + Grep 定位 + offset/limit；HTML 产出物（> 1000 行）只 Grep 不 Read 全文；assets/ CSS/JS 不主动读（SKILL.md API 表够用）。
 
-【大文件防御】Read 前先评估文件体积：
-- > 500 行文件：先 `wc -l` 确认行数，用 Grep 定位后 Read offset/limit
-- HTML 产出物（通常 > 1000 行）：只用 Grep 取目标片段，绝不 Read 全文
-- assets/ 下 CSS/JS 文件：不主动读取，SKILL.md 的 API 速查表已够用
+【Web 工具选择】已知 URL → `WebFetch`；未知 URL → `WebSearch`。内建不够（返空 / SPA / 多页 / 需截图）走 `scripts/fetch_web.py`（单页 `<url>`，多页 `--map` → `--batch`）。禁 firecrawl `crawl`（返回不可控），MCP 默认禁用。
 
-【Web 工具选择】默认用 Claude Code 内建（0 schema 开销）：已知 URL → `WebFetch`；不知道 URL → `WebSearch`。内建不够用（返空 / SPA / 多页 / 需要截图）走 `scripts/fetch_web.py`：单页 `fetch_web.py <url>`，多页 `--map` 拿 URL 列表再 `--batch`。禁用 firecrawl `crawl`（返回量不可控），MCP server 默认禁用。
+【MCP 调用策略】MCP server 默认全关（figma ~15K、dingtalk-doc ~12K tok）。优先级：① 快捷路由脚本 → ② `scripts/call_mcp.py call <server> <tool> '{}'` → ③ `./scripts/toggle-mcp.sh on <server>`（仅高频交互式）。调用克制：神策确认事件名再 query（不 `list_events_all`），Confluence 用 `search_pages`，Figma 仅链接给出时调。
 
-【MCP 调用策略】MCP server 默认全关（figma ~15K、dingtalk-doc ~12K token）。优先级：① 快捷路由脚本 → ② `scripts/call_mcp.py call <server> <tool> '{}'` → ③ `./scripts/toggle-mcp.sh on <server>`（仅高频交互式）。调用克制：神策先确认事件名 / 属性名再 query 不走 `list_events_all`；Confluence 用 `search_pages` 不用 `execute_cql_search`；Figma 仅在链接给出时调。
+【子 Agent 调度】子 Agent = Haiku。派三同时：中间输出 ≫ 结论 + 主线程不需要过程 + 有客观对错。
 
-【子 Agent 调度】子 Agent 跑 Haiku。派的三同时条件：中间输出 ≫ 最终结论 + 主线程不需要过程 + 任务有客观对错标准。
-- **必须派**（机械活）：审计脚本执行（`workspace-audit` / `impact-check.sh`，收红绿表）、HTML/md grep 校验（`.aw` / `.anno` / `FILL_START` 计数 pass/fail）、> 200 行日志判断（找 ERROR/FAIL）、git 考古事实（commit hash + 日期）、结构化批量提取（10 页面的 H1/按钮文案）。
-- **压窄后派**（抓原料，主线程判断/选型）：竞品采集、大文档提取、精确事件名查询、并行多路探索。
-- **禁止派**：Skill 主流程产出 Step A/B/C（上下文连续性是硬依赖）、context.md / scene-list.md 读写（状态必须在主线程）、跨项目方法论总结（Haiku 出套话）、方案选型 / 权衡 / 推荐（含判断）。
-- **prompt 规则**：指定 `subagent_type` + 末尾加长度限制 + 只收事实（列表/表格/计数/pass-fail），不收自然语言结论段。
+- 派：脚本审计（收红绿表）、grep 计数 pass/fail、> 200 行日志判断、git 考古、结构化批量提取；竞品采集 / 大文档提取 / 并行探索**压窄后派**。
+- 不派：Skill Step A/B/C 产出（上下文连续性）、context.md / scene-list.md 读写（状态在主线程）、选型 / 权衡 / 推荐（含判断）、跨项目方法论总结（套话）。
+- prompt：指定 `subagent_type` + 末尾加长度限制 + 只收事实（列表 / 表格 / 计数 / pass-fail）。
 
 【格式规范】
 
 - Markdown：标题前后留一个空行，禁止连续多个空行（markdownlint 合规）
 - 编号：产出物不用圈数字（①②③），统一用 1. 2. 3.
 
-【数据结构变更】修改上游数据结构时，必须一次想完整个链路（上游产出 → 下游消费 → 老数据降级），一个 commit 搞定，不分多次。
+【数据结构变更】改上游数据结构时，一次想完整链路（上游产出 → 下游消费 → 老数据降级），一个 commit 搞定，不分多次。
 
 ### Public Repo 脱敏同步
 
@@ -107,13 +96,7 @@ context.md 由本地 Opus 写入（ChatOpus 不写文件），共九章。sessio
 
 ### 项目状态获取
 
-不依赖 context.md 中的状态描述。每次 session 开始时直接查看文件系统：
-
-```bash
-ls projects/{项目名}/inputs/
-ls projects/{项目名}/deliverables/
-ls projects/{项目名}/scene-list.md 2>/dev/null
-```
+不信 context.md 状态描述，session 开始直接查文件系统：`ls projects/{项目}/inputs/ deliverables/ scene-list.md 2>/dev/null`。
 
 ### Learn-Rule 系统
 

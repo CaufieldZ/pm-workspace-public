@@ -118,7 +118,8 @@
       "Edit(/.claude/session-state.md)",
       "Bash(git -C /Users/felix.zhi/pm-workspace-public status)",
       "Bash(brew tap *)",
-      "Bash(brew install *)"
+      "Bash(brew install *)",
+      "Edit(/.claude/skills/data-report/**)"
     ],
     "additionalDirectories": [
       "/Users/felix.zhi/pm-workspace-public/examples",
@@ -224,6 +225,15 @@
         "hooks": [
           {
             "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-plain-language-check.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-audit-fast.sh"
           }
         ]
@@ -242,6 +252,10 @@
           {
             "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-prd-check.sh"
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-plain-language-check.sh"
           }
         ]
       },
