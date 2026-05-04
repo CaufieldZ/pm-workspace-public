@@ -4,6 +4,8 @@
 
 `AI-NATIVE · PRODUCT MANAGEMENT · PM-WS`
 
+**中文** · [English](README-EN.md)
+
 会议纪要 / MRD / 竞品截图 → 场景清单、交互大图、PRD、行为规格。18 个 Skill 覆盖产品经理全链路。
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-1f54d6?style=flat-square)](LICENSE)
