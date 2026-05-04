@@ -90,6 +90,8 @@ CSS/JS/骨架脚本源码禁止模型主动读取（骨架脚本通过 `open().r
 - 集团规划/竞品工作流里看到的机会点，按角色过滤一遍再决定
 - 跨角色的活可以提一句「这是设计/QA 的活，不在 PM 工区做」，但不主动建对应 skill
 
+【不留一次性 fixture / 半成品脚本】PM-WORKSPACE 无 CI runner（pre-commit hook 只跑 audit.sh），`test_*.py` / `inject-canary.sh` / 一次性验证脚本一律跑完就删，不入库。理由：无人复跑 + 后续读代码困惑。清理类任务（防蒸馏 / 工程瘦身）主动 `find .claude -name 'test_*.py' -o -name '*_test.py'` 一遍。豁免：主路径长期依赖工具（humanize / CLI / sync 脚本），有明确再次调用的理由。
+
 ### 批量变更与 cross-check
 
 【批量变更流程（强制）】触发：≥ 2 文件跨文件一致性变更（删/新增场景、改术语/编号、改业务规则、升版、改流程节点）；单文件文案改不触发。流程：① 列变更清单给用户确认 → ② `bash scripts/impact-check.sh {项目名}` 测覆盖 → ③ 按 pipeline 顺序改（context → scene-list → imap → 原型 → PRD → bspec/pspec）→ ④ 收尾 cross-check（再跑 impact-check + grep 旧 term 无残留 + 新 term 已同步）→ ⑤ 不通过修复后再交付，禁止跳过。
