@@ -25,16 +25,21 @@ PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 CHECKER="$PROJECT_DIR/scripts/check_cjk_punct.py"
 [ ! -f "$CHECKER" ] && exit 0
 
-# 找最近 30s 内修改过的 deliverables（HTML / md）
-RECENT=$(find "$PROJECT_DIR/projects" -path '*/deliverables/*' -type f \
+# 找最近 30s 内修改过的 deliverables（HTML / md）— 覆盖 projects/ + examples/
+SEARCH_ROOTS=()
+[ -d "$PROJECT_DIR/projects" ] && SEARCH_ROOTS+=("$PROJECT_DIR/projects")
+[ -d "$PROJECT_DIR/examples" ] && SEARCH_ROOTS+=("$PROJECT_DIR/examples")
+[ ${#SEARCH_ROOTS[@]} -eq 0 ] && exit 0
+
+RECENT=$(find "${SEARCH_ROOTS[@]}" -path '*/deliverables/*' -type f \
   \( -name '*.html' -o -name '*.md' \) \
   -not -path '*/archive/*' \
   -mtime -30s 2>/dev/null)
 
-# macOS find 不支持 -mtime -30s,改用 -newermt
+# macOS find 不支持 -mtime -30s,改用 stat 自滤
 if [ -z "$RECENT" ]; then
   THIRTY_SEC_AGO=$(python3 -c "import time; print(int(time.time()) - 30)")
-  RECENT=$(find "$PROJECT_DIR/projects" -path '*/deliverables/*' -type f \
+  RECENT=$(find "${SEARCH_ROOTS[@]}" -path '*/deliverables/*' -type f \
     \( -name '*.html' -o -name '*.md' \) \
     -not -path '*/archive/*' 2>/dev/null \
     | while read -r f; do
@@ -58,6 +63,17 @@ if [ "$RC" -ne 0 ]; then
   log_event hook script-rebuild-cjk block "$(echo "$RECENT" | head -1)"
   rm -f "$TMPOUT"
   exit 2
+fi
+
+# RC == 0 但仍有 warn 级违规（中英文间漏空格 / 全角标点旁多余空格 等）→ 提示不阻断
+# pm-workflow.md「warn: stderr 提示不阻断」契约要求脚本生成路径同样可见
+if grep -q '⚠️' "$TMPOUT" 2>/dev/null; then
+  echo "[script-rebuild-cjk] 脚本重生的 deliverable 含 CJK 排版 warn（不阻断，建议改源脚本字符串）：" >&2
+  head -30 "$TMPOUT" >&2
+  echo "" >&2
+  log_event hook script-rebuild-cjk warn "$(echo "$RECENT" | head -1)"
+  rm -f "$TMPOUT"
+  exit 0
 fi
 
 log_event hook script-rebuild-cjk clean "$(echo "$RECENT" | head -1)"

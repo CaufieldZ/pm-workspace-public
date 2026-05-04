@@ -114,3 +114,9 @@ ls projects/{项目名}/inputs/
 ls projects/{项目名}/deliverables/
 ls projects/{项目名}/scene-list.md 2>/dev/null
 ```
+
+### Learn-Rule 系统
+
+纠错或收到「记住：xxx」指令时，在回复末尾附 `[LEARN] <规则内容>`（一行一条）。Stop hook 自动从 transcript 提取并追加到 `LEARNED.md`。
+
+每次 session 开始时读取 `LEARNED.md`（如果存在且非空）。

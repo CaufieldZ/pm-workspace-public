@@ -195,8 +195,8 @@ def docx_min_paragraphs(scene_count: int) -> int:
 def docx_min_tables(scene_count: int) -> int:
     return scene_count
 
-# 中文相邻半角标点(soul.md 禁止)
-CJK_HALF_PUNCT_RE = re.compile(r'[一-鿿][,:()]|[,:()][一-鿿]')
+# 中文相邻半角标点(soul.md 禁止 · 与 scripts/check_cjk_punct.py 规则同源)
+CJK_HALF_PUNCT_RE = re.compile(r'[㐀-䶿一-鿿豈-﫿][,:;()]|[,:;()][㐀-䶿一-鿿豈-﫿]')
 
 # 圈数字残留(CLAUDE.md 禁止 ①②③)
 CIRCLE_NUM_RE = re.compile(r'[①-⑳⓫-⓿]')

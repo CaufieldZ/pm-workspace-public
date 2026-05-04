@@ -118,6 +118,27 @@ CSS/JS/骨架脚本源码禁止模型主动读取（骨架脚本通过 `open().r
 
 详见 `.claude/rules/html-pipeline.md`。imap / prototype / arch / ppt 在 SKILL.md Step 1 必须 Read 该文件。其他 pipeline Skill（scene-list / prd / bspec）按需引用其中「演讲叙事顺序」一节。
 
+### 中文排版规范（全产出物唯一规则源）
+
+所有中文产出物（.md / .html / .docx / .pptx 抽 full_text）共用 `scripts/check_cjk_punct.py`，规则参考 [pangu.js](https://github.com/vinta/pangu.js) + [heti](https://github.com/sivan/heti) + chinese-copywriting-guidelines。
+
+**分级**：
+- **strict**（必改，deliverable 阻断）：CJK 旁半角 `, : ; ( )` / 重复标点 `！！` `？？` `？！？！`
+- **warn**（建议改，stderr 提示不阻断）：中英文间漏空格 / 中数字间漏空格 / 全角标点旁多余空格
+- **full**（风格层，`--full` 开启）：英文整句内部应用半角
+
+**调用入口**：
+- 文件：`python3 scripts/check_cjk_punct.py <file> [--strict] [--full]`
+- 文本：`echo "..." | python3 scripts/check_cjk_punct.py --stdin [--strict]`（docx / pptx 抽 full_text 后调）
+
+**接入点**：
+- `.md` / `.html` Write/Edit → `post-cjk-punct-check.sh` hook 自动跑（deliverable 路径 `--strict` 阻断，其他 warn）
+- docx 自检（PRD `check_prd.sh` / ops-handbook `check_handbook.sh` / mrd-review `check_mrd.sh`）→ 抽 full_text 喂 `--stdin`
+- 脚本生成的 HTML（PPT、IMAP fill 等）hook 触发不到 → SKILL.md Step C 必显式调
+- docx 写时自动改写 → `prd/scripts/core/normalize.py::normalize_punctuation`（与 checker 同源规则，幂等）
+
+新建 Skill 涉及中文产出物 → 必复用此 checker，禁止重写正则。
+
 ### 逻辑拼图（方案变更自动推演）
 
 用户在方案讨论中提出以下类型的变更时，自动触发影响推演，不需要用户主动要求：
@@ -145,10 +166,12 @@ commit 前缀：`feat / fix / refactor / docs / chore`。`.githooks/pre-commit` 
 <PM-GATE>
 收到模糊或新发起的需求时，先完成需求澄清，再判定复杂度。
 
-**必答三问**（逐个问，不合并）：
+**必答三问**（一次只问一个，每问带 AI 推荐答案 + 一句理由，PM 答完再问下一个）：
 1. 解决谁的什么具体痛点？（要有场景，不接受「优化体验」）
 2. 核心指标是什么？（具体数字：留存率/转化率/DAU/客单价）
 3. 怎么判断成功？（量化标准，非「用户反馈好」）
+
+提问纪律：① 不合并三问 ② 每问基于已读 context.md / inputs / 竞品资料给出推荐答案，PM 直接「确认/改 X」即可，不强迫从零作答 ③ 推荐答案能从代码 / context.md / 已有资料查到的，自己查不要问。
 
 基于回答提出 2-3 个方向，每个说明：核心差异、涉及端/模块、预计规模、推荐理由。PM 选定后进入复杂度判定。
 

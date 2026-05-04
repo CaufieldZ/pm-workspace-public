@@ -1,14 +1,16 @@
 #!/bin/bash
-# PostToolUse hook: 对刚写入的中文产物扫 CJK 旁半角标点,命中打 stderr warning(不拦截)
+# PostToolUse hook: 对刚写入的中文产物扫排版规范，命中打 stderr warning（不拦截 / deliverable 阻断）。
 #
-# 覆盖范围:
-#   - *.md (context/scene-list/inputs/deliverables/skill/rule)
-#   - *.html (deliverables)
-#   - *.py / *.js 当文件含中文字符串时(gen/patch 脚本)
+# 规则源：scripts/check_cjk_punct.py（pangu.js + heti + chinese-copywriting-guidelines）
+#         分级 strict（必改）/ warn（建议改）/ full（风格层）
+#         详见 .claude/rules/pm-workflow.md「中文排版规范」
 #
-# 跳过:archive/ / __pycache__/ / node_modules/ / .git/
+# 覆盖：*.md / *.html / *.py *.js（含中文字符串）
+# 跳过：archive/ / __pycache__/ / node_modules/ / .git/
 #
-# 设计:warn 不 block,stderr 输出给 Claude 看到,失败成本 0 误报成本低
+# 行为：
+#   - deliverables/ 路径 → --strict，strict 命中 exit 2 阻断 Write/Edit
+#   - 其他路径 → warn / strict 都 stderr 提示，exit 0
 
 set +e
 
@@ -51,9 +53,10 @@ CHECKER="${CLAUDE_PROJECT_DIR:-$(pwd)}/scripts/check_cjk_punct.py"
 
 # deliverables（非 archive）用 --strict：checker exit 2 → hook exit 2 阻断
 # 适配 schema v2：projects/{产品线}/{项目}/deliverables/ 两层 + projects/{顶级}/deliverables/ 一层
+# examples/{demo}/deliverables/ 走同一份 strict 规则（public gallery，公共可见，质量等同 projects/）
 IS_DELIVERABLE=0
 case "$FILE_PATH" in
-  */projects/*/*/deliverables/*|*/projects/*/deliverables/*)
+  */projects/*/*/deliverables/*|*/projects/*/deliverables/*|*/examples/*/deliverables/*)
     case "$FILE_PATH" in
       */archive/*) ;;
       *) IS_DELIVERABLE=1 ;;
@@ -71,7 +74,13 @@ if [ "$IS_DELIVERABLE" -eq 1 ]; then
     rm -f "$TMPOUT"
     exit 2
   fi
-  log_event hook cjk-punct clean "$FILE_PATH"
+  # RC == 0 且有 warn → 提示不阻断（pm-workflow.md「warn 建议改 stderr 提示」契约）
+  if grep -q '⚠️' "$TMPOUT" 2>/dev/null; then
+    head -10 "$TMPOUT" >&2
+    log_event hook cjk-punct warn "$FILE_PATH"
+  else
+    log_event hook cjk-punct clean "$FILE_PATH"
+  fi
   rm -f "$TMPOUT"
 else
   # 用 --strict 拿 RC 做埋点判断，但 hook 不阻断（只 warn）

@@ -18,7 +18,7 @@ FILE_PATH=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.std
 [ -z "$FILE_PATH" ] && exit 0
 
 case "$FILE_PATH" in
-  */projects/*/*/deliverables/*|*/projects/*/deliverables/*) ;;
+  */projects/*/*/deliverables/*|*/projects/*/deliverables/*|*/examples/*/deliverables/*) ;;
   *) exit 0 ;;
 esac
 case "$FILE_PATH" in

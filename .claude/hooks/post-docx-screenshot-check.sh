@@ -52,13 +52,20 @@ WARN=""
 FAIL=""
 
 # Schema v2 项目路径可能是 projects/{产品线}/{项目}/ 或 projects/{顶级}/
-# 用 deliverables/ 作为项目根锚点，一次性收齐两种布局
-PROJECT_DIRS=$(find "$CLAUDE_PROJECT_DIR/projects" -maxdepth 3 -type d -name deliverables 2>/dev/null \
-  | sed -E 's#/deliverables$##')
+# 用 deliverables/ 作为项目根锚点，一次性收齐两种布局；examples/{demo}/ 同步纳入
+SEARCH_ROOTS=()
+[ -d "$CLAUDE_PROJECT_DIR/projects" ] && SEARCH_ROOTS+=("$CLAUDE_PROJECT_DIR/projects")
+[ -d "$CLAUDE_PROJECT_DIR/examples" ] && SEARCH_ROOTS+=("$CLAUDE_PROJECT_DIR/examples")
+if [ ${#SEARCH_ROOTS[@]} -eq 0 ]; then
+  PROJECT_DIRS=""
+else
+  PROJECT_DIRS=$(find "${SEARCH_ROOTS[@]}" -maxdepth 3 -type d -name deliverables 2>/dev/null \
+    | sed -E 's#/deliverables$##')
+fi
 
 for project_dir in $PROJECT_DIRS; do
   [ -d "$project_dir" ] || continue
-  proj=${project_dir#"$CLAUDE_PROJECT_DIR/projects/"}
+  proj=${project_dir#"$CLAUDE_PROJECT_DIR/"}
 
   # 跳过 archive
   proto_dir="$project_dir/deliverables"

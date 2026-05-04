@@ -14,20 +14,21 @@ from docx.oxml import OxmlElement
 
 
 def normalize_punctuation(doc):
-    """中文标点规范化：中文相邻的半角 , : ( ) 改为全角 ，：（）。
-    遵循 soul.md「中文里禁止混半角逗号冒号括号」。
+    """中文标点规范化：中文相邻的半角 , : ; ( ) 改为全角 ，：；（）。
+    遵循 soul.md「中文里禁止混半角逗号冒号括号」+ pangu/heti 排版规范。
     幂等；保留 run 级样式（bold / color 不变）。
 
     段落级判定：拼接段落所有 run 的文字后做上下文判断，避免 run 边界把
     「中文<run1 end>:<run2 start>英文」这种场景看成孤立冒号漏改。
 
     判定规则：
-      - 半角 , : ( ) 只要左右任一是中文字符 → 替换全角
+      - 半角 , : ; ( ) 只要左右任一是中文字符 → 替换全角
       - 排除 URL 场景：前 6 字符含 http / ftp
+      - 重复标点 ！！/ ？？/ ?? / !! → 单个全角
     代码 / URL / 纯英文上下文不触发（两侧都没中文）。
     """
-    CJK_RE = re.compile(r'[一-鿿]')
-    MAP = {',': '，', ':': '：', '(': '（', ')': '）'}
+    CJK_RE = re.compile(r'[㐀-䶿一-鿿豈-﫿]')
+    MAP = {',': '，', ':': '：', ';': '；', '(': '（', ')': '）'}
 
     def process_paragraph(p):
         runs = p.runs

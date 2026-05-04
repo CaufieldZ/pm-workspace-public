@@ -24,13 +24,6 @@ print_prd_warning() {
   echo "" >&2
 }
 
-print_html_regen_warning() {
-  local file="$1"
-  local project_dir="$2"
-  local gen_scripts="$3"
-  echo "❌ 已脚本化产出物禁止直接 Write/Edit: $file — 改动应进源脚本后重跑 ($gen_scripts)" >&2
-}
-
 # 白名单: 在维护 helper 本身 / 已经在用 helper
 is_whitelisted() {
   echo "$1" | grep -qE 'update_prd_base|gen_prd_base|\.claude/skills/prd/scripts/'
@@ -59,32 +52,21 @@ case "$TOOL_NAME" in
       print_prd_warning
       log_event hook scripts-first warn "raw docx import in Write/Edit: $FILE_PATH"
     fi
-    # HTML/docx 产出物脚本化检查: 命中 projects/{产品线}/{项目}/ 或 projects/{顶级}/ 下，排除 archive/inputs/screenshots/scripts/sop-src
-    if echo "$FILE_PATH" | grep -qE 'projects/[^/]+/.*\.(html|docx)$' && \
+    # 首次大 HTML 拦截：projects/ 下 .html 直接 Write > 200 行 → 必须先写 gen 脚本
+    # 注：「已脚本化 HTML 拦截」由 pre-deliverable-source-gate 唯一负责（按 type 精准匹配 + 认 SKIP_DELIVERABLE_GATE=1 出口），本 hook 不再重复
+    if [ "$TOOL_NAME" = "Write" ] && \
+       echo "$FILE_PATH" | grep -qE 'projects/[^/]+/.*\.html$' && \
        ! echo "$FILE_PATH" | grep -qE '/(archive|inputs|screenshots|scripts|sop-src)/'; then
-      # 项目目录：先试两层（产品线/项目），失败回落到一层（顶级项目）
-      # 注：BSD sed `-E` 下 `|` 做 delimiter 会跟 alternation 的 `|` 打架，换 `#`
-      PROJECT_DIR=$(echo "$FILE_PATH" | sed -nE 's#(.*projects/[^/]+/[^/]+)/(deliverables|scripts|inputs|screenshots).*#\1#p')
-      [ -z "$PROJECT_DIR" ] && PROJECT_DIR=$(echo "$FILE_PATH" | sed -nE 's#(.*projects/[^/]+)/(deliverables|scripts|inputs|screenshots).*#\1#p')
-      [ -z "$PROJECT_DIR" ] && PROJECT_DIR=$(echo "$FILE_PATH" | sed -E 's#(.*projects/[^/]+)/.*#\1#')
-      GEN_FILES=$(ls "$PROJECT_DIR/scripts/"gen_*.py "$PROJECT_DIR/scripts/"gen_*.js \
-                    "$PROJECT_DIR/scripts/"patch_*.py "$PROJECT_DIR/scripts/"patch_*.js \
-                    "$PROJECT_DIR/scripts/"update_*.py "$PROJECT_DIR/scripts/"update_*.js 2>/dev/null)
-      if [ -n "$GEN_FILES" ]; then
-        GEN_LIST=$(echo "$GEN_FILES" | xargs -n1 basename | tr '\n' ' ')
-        print_html_regen_warning "$FILE_PATH" "$PROJECT_DIR" "$GEN_LIST"
-        log_event hook scripts-first block "scripted html: $FILE_PATH"
+      LINE_COUNT=$(echo "$CONTENT" | wc -l | tr -d ' ')
+      if [ "$LINE_COUNT" -gt 200 ]; then
+        # 抽项目目录：两层（产品线/项目）→ 一层（顶级）
+        PROJECT_DIR=$(echo "$FILE_PATH" | sed -nE 's#(.*projects/[^/]+/[^/]+)/(deliverables|scripts|inputs|screenshots).*#\1#p')
+        [ -z "$PROJECT_DIR" ] && PROJECT_DIR=$(echo "$FILE_PATH" | sed -nE 's#(.*projects/[^/]+)/(deliverables|scripts|inputs|screenshots).*#\1#p')
+        [ -z "$PROJECT_DIR" ] && PROJECT_DIR=$(echo "$FILE_PATH" | sed -E 's#(.*projects/[^/]+)/.*#\1#')
+        echo "❌ 首次生成 >200 行 HTML 禁止直接 Write（${LINE_COUNT} 行）" >&2
+        echo "   应先写 gen 脚本到 ${PROJECT_DIR}/scripts/gen_*.py，再 python3 执行生成" >&2
+        log_event hook scripts-first block "large first-gen html: $FILE_PATH $LINE_COUNT lines"
         exit 2
-      fi
-      # 首次生成大 HTML 拦截：deliverables/ 下无 gen 脚本，但 Write 内容 > 200 行
-      if [ "$TOOL_NAME" = "Write" ] && echo "$FILE_PATH" | grep -qE '\.html$'; then
-        LINE_COUNT=$(echo "$CONTENT" | wc -l | tr -d ' ')
-        if [ "$LINE_COUNT" -gt 200 ]; then
-          echo "❌ 首次生成 >200 行 HTML 禁止直接 Write（${LINE_COUNT} 行）" >&2
-          echo "   应先写 gen 脚本到 ${PROJECT_DIR}/scripts/gen_*.py，再 python3 执行生成" >&2
-          log_event hook scripts-first block "large first-gen html: $FILE_PATH $LINE_COUNT lines"
-          exit 2
-        fi
       fi
     fi
     ;;

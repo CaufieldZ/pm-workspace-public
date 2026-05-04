@@ -486,25 +486,63 @@ def report_completeness(result: dict, file=sys.stderr) -> int:
 CROSS_END_PLACEHOLDER = '本项目仅 1 端，无跨端时序'
 
 
-def _embed_mermaid(doc, mermaid_src, shot_dir, png_name,
-                   picture_width_cm=15.5):
-    """内部 helper：渲染 mermaid 源码到 PNG 嵌入当前 doc。
+def _embed_flowchart_chart(doc, chart, shot_dir, png_name,
+                           picture_width_cm=15.5):
+    """渲染 flowchart skill chart dict 到 PNG 嵌入当前 doc.
 
-    替代原 _embed_flowchart（X6/dagre）。v5.3 视觉反馈：X6 嵌入 docx 字号偏小、
-    留白巨大无法阅读 → 改 mermaid LR 横排 + Claude Design 主题。flowchart skill
-    退回非 PRD 场景专用（IMAP / arch / PPT 横屏 HTML），PRD 嵌图全走本路径。
+    chart 结构同 flowchart skill 数据格式 (type=branch/swimlane, nodes, edges).
+    走 gen_flow_base.render_flowchart → drawio CLI → PNG.
 
     Args:
         doc: python-docx Document
-        mermaid_src: mermaid 源码字符串（含 flowchart LR + classDef + 节点 + 边）
+        chart: flowchart skill chart dict
         shot_dir: PNG 输出目录
-        png_name: PNG 文件名（不含扩展名）。helper 一对一独立 PNG，避免 v5.2/v5.1
-                  scope='first' 写死导致 cross_end 嵌错图的 bug
-        picture_width_cm: docx 嵌图宽度，默认 15.5 cm
+        png_name: PNG 文件名 (不含扩展名)
+        picture_width_cm: docx 嵌图宽度, 默认 15.5 cm
 
     Returns:
         bool 是否成功嵌入
     """
+    if not chart:
+        return False
+    from docx.shared import Cm as _Cm
+    from pathlib import Path as _Path
+    import sys as _sys
+    import os as _os
+
+    _ROOT = _os.path.abspath(_os.path.join(
+        _os.path.dirname(__file__), '..', '..', '..', '..'))
+    _FLOW_SCRIPTS = _os.path.join(_ROOT, '.claude/skills/flowchart/scripts')
+    if _FLOW_SCRIPTS not in _sys.path:
+        _sys.path.insert(0, _FLOW_SCRIPTS)
+    from gen_flow_base import render_flowchart
+
+    if shot_dir is None:
+        shot_dir = _Path('.')
+    shot_dir = _Path(shot_dir)
+    base_path = shot_dir / png_name
+    try:
+        render_flowchart(
+            output_path=str(base_path),
+            title=chart.get('title', png_name),
+            subtitle=chart.get('subtitle', ''),
+            charts=[chart],
+        )
+    except Exception as e:
+        import sys as _s
+        print(f'⚠️  flowchart 渲染失败 ({png_name}): {e}', file=_s.stderr)
+        return False
+
+    png_path = shot_dir / f'{png_name}.drawio.png'
+    if not png_path.exists():
+        return False
+    doc.add_picture(str(png_path), width=_Cm(picture_width_cm))
+    return True
+
+
+def _embed_mermaid(doc, mermaid_src, shot_dir, png_name,
+                   picture_width_cm=15.5):
+    """[已弃用] mermaid 路径, 仅向后兼容. 新代码用 _embed_flowchart_chart."""
     if not mermaid_src:
         return False
     from docx.shared import Cm as _Cm
@@ -530,8 +568,8 @@ def _embed_mermaid(doc, mermaid_src, shot_dir, png_name,
     return True
 
 
-def journey_main_section(doc, *, narrative: str, mermaid_src=None,
-                         shot_dir=None):
+def journey_main_section(doc, *, narrative: str, chart=None,
+                         mermaid_src=None, shot_dir=None):
     """生成 2.1 用户旅程主线（一段话 + 主线图）。
 
     narrative 跟 context.md 第 4 章「场景叙事顺序」逐字对齐。涉及 ≥ 2 端项目时
@@ -559,7 +597,10 @@ def journey_main_section(doc, *, narrative: str, mermaid_src=None,
     h2(doc, '2.1 用户旅程主线')
     add_p(doc, narrative)
 
-    embedded = _embed_mermaid(doc, mermaid_src, shot_dir, png_name='journey-main')
+    if chart:
+        embedded = _embed_flowchart_chart(doc, chart, shot_dir, png_name='journey-main')
+    else:
+        embedded = _embed_mermaid(doc, mermaid_src, shot_dir, png_name='journey-main')
     if not embedded and mermaid_src:
         add_p(doc, '⚠️ 主线图渲染失败，详见 stderr',
               size_pt=10, italic=True, color=C['textMuted'])
@@ -670,24 +711,29 @@ def cross_end_sequence_section(doc, *, sequences=None, shot_dir=None):
         return
 
     for idx, item in enumerate(sequences):
+        # 元素结构:
+        #   (title, chart_dict, note?)  推荐: chart 是 flowchart skill 数据 dict
+        #   (title, mermaid_src_str, note?)  legacy: 字符串 → 走 mermaid 后向兼容
         if len(item) == 3:
-            title, mermaid_src, note = item
+            title, src, note = item
         elif len(item) == 2:
-            title, mermaid_src = item
+            title, src = item
             note = ''
         else:
             raise ValueError(
                 f'cross_end_sequence_section: sequences 元素需 '
-                f'(title, mermaid_src, note?) 2 或 3 元组，收到 {item}'
+                f'(title, chart|mermaid_src, note?) 2 或 3 元组，收到 {item}'
             )
 
         h3(doc, title)
         if note:
             add_p(doc, note)
-        # 一对一独立 PNG：用 idx + 标题 slug 命名，避免 v5.1/v5.2 嵌错图 bug
         slug = _re.sub(r'[^\w一-鿿]+', '-', title).strip('-')[:30]
         png_name = f'cross-end-{idx:02d}-{slug}'
-        embedded = _embed_mermaid(doc, mermaid_src, shot_dir, png_name=png_name)
-        if not embedded and mermaid_src:
+        if isinstance(src, dict):
+            embedded = _embed_flowchart_chart(doc, src, shot_dir, png_name=png_name)
+        else:
+            embedded = _embed_mermaid(doc, src, shot_dir, png_name=png_name)
+        if not embedded and src:
             add_p(doc, f'⚠️ 跨端时序图渲染失败：{title}',
                   size_pt=10, italic=True, color=C['textMuted'])

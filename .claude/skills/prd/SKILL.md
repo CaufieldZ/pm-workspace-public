@@ -17,7 +17,7 @@ scripts:
   prd_screenshots.py: "截图回填 — python3 prd_screenshots.py --project {项目名} [--shot-only|--insert-only] [--scenes A-1,B-1]"
   humanize/: "讲人话扫描 + 修复 + CLI 子包（被 check_prd.sh / push gate 共享）— python3 -m humanize <docx>"
   sections.py: "5 个产品思维章节 helper（north_star / non_goals / open_questions / risks / alternatives / assumptions_validation）+ 第 2 章三节 helper（journey_main / end_role_split / cross_end_sequence）+ 档位感知体检"
-  mermaid_screenshots.py: "mermaid LR 横排 → PNG（PRD docx 嵌图专用，由 sections.py 第 2 章 helper 内部默认调用；flowchart skill 不服务 PRD docx 场景，参 flowchart/SKILL.md 边界）"
+  mermaid_screenshots.py: "[已弃用] mermaid LR → PNG，仅向后兼容旧 v53 等历史代码。新 PRD 用 flowchart skill：journey_main_section(chart=...)、cross_end_sequence_section sequences 元组里第二位传 chart dict 即走 drawio 路径"
   active_decisions.py: "context.md 第 7 章 ADR 决策派生（兼容 6 列表格 + list 格式）"
 ---
 

@@ -23,7 +23,6 @@
       "Bash(cut:*)",
       "Bash(column:*)",
       "Bash(diff:*)",
-
       "Bash(python3 -c *)",
       "Bash(python3 -m *)",
       "Bash(python3 scripts/*)",
@@ -32,11 +31,9 @@
       "Bash(python3 projects/*/*/scripts/*)",
       "Bash(node --check *)",
       "Bash(node scripts/*)",
-
       "Bash(bash .claude/skills/*/scripts/*.sh *)",
       "Bash(bash .claude/hooks/*.sh)",
       "Bash(bash scripts/*.sh *)",
-
       "Bash(git log:*)",
       "Bash(git diff:*)",
       "Bash(git show:*)",
@@ -57,7 +54,6 @@
       "Bash(git push origin:*)",
       "Bash(git push -u:*)",
       "Bash(git push --force-with-lease:*)",
-
       "Bash(git -C * log *)",
       "Bash(git -C * diff *)",
       "Bash(git -C * show *)",
@@ -71,16 +67,13 @@
       "Bash(git -C * push *)",
       "Bash(git -C * rm *)",
       "Bash(git -C * mv *)",
-
       "Bash(mkdir -p *)",
       "Bash(rmdir:*)",
       "Bash(touch:*)",
-
       "Bash(set -e)",
       "Bash(source *)",
       "Bash(export *)",
       "Bash(ALL_PROXY=* *)",
-
       "Bash(browser-use:*)",
       "Bash(bu:*)",
       "Bash(BROWSER_USE_DISABLE_EXTENSIONS=1 browser-use:*)",
@@ -88,11 +81,9 @@
       "Bash(claude mcp *)",
       "Bash(claude plugin *)",
       "Bash(uv tool *)",
-
       "Bash(SKIP_WIKI_PUSH_GATE=1 bash .claude/hooks/pre-wiki-push-gate.sh)",
       "Bash(SKIP_DELIVERABLE_GATE=1 bash .claude/hooks/pre-deliverable-source-gate.sh)",
       "Bash(FORCE_SYNC=1 bash sync_public.sh *)",
-
       "mcp__confluence__confluence_create_page",
       "mcp__confluence__confluence_get_page",
       "mcp__confluence__confluence_search_pages",
@@ -114,7 +105,6 @@
       "mcp__sensors__query_sql",
       "mcp__sensors__get_event_properties",
       "mcp__sensors__list_funnels",
-
       "Skill(update-config)",
       "Skill(update-config:*)",
       "WebSearch",
@@ -125,7 +115,10 @@
       "Edit(/.claude/commands/**)",
       "Edit(/.claude/chat-templates/**)",
       "Edit(/.claude/runbooks/**)",
-      "Edit(/.claude/session-state.md)"
+      "Edit(/.claude/session-state.md)",
+      "Bash(git -C /Users/felix.zhi/pm-workspace-public status)",
+      "Bash(brew tap *)",
+      "Bash(brew install *)"
     ],
     "additionalDirectories": [
       "/Users/felix.zhi/pm-workspace-public/examples",
@@ -190,6 +183,10 @@
           },
           {
             "type": "command",
+            "command": "dippy"
+          },
+          {
+            "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-prototype-paradigm-gate.sh"
           },
           {
@@ -241,6 +238,10 @@
           {
             "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-script-rebuild-cjk.sh"
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-prd-check.sh"
           }
         ]
       },
@@ -259,6 +260,17 @@
           {
             "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-skill-load.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/stop-learn-capture.sh"
           }
         ]
       }

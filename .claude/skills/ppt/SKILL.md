@@ -522,6 +522,11 @@ grep -c 'class="page active"' {产出物}
 
 # 6. 行数统计
 wc -l {产出物}
+
+# 7. 中文排版（pangu / heti 规范，全工程唯一规则源）
+#    PPT HTML 是 node 脚本生成的，不过 Write/Edit，hook 触发不到，必须显式调
+python3 scripts/check_cjk_punct.py {产出物} --strict
+# RC=2 阻断；warn 级（中英文间空格 / 全角标点旁空格）只 stderr 提示，不阻断
 ```
 
 全部通过后交付 HTML 产出物，然后进入 Step 6。

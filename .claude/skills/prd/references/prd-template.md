@@ -318,11 +318,12 @@ non_goals_section(doc, items=[])
 [嵌入图：deliverables/flow-{项目}-cross-end-{N}.html 截图，可多张]
 ```
 
-**生成方式**（PR4 + 任务 1/2 mermaid 化后）：
+**生成方式**（v5.4 切到 flowchart skill drawio）：
 
-- 项目脚本里定义 mermaid 源码常量（`MERMAID_M7_CROSS_END = """flowchart LR\\n  ..."""`），按场景选 `flowchart LR + subgraph` / `sequenceDiagram` / `stateDiagram-v2`
-- 写 PRD 时调 `cross_end_sequence_section(doc, sequences=[(标题, mermaid_src, note), ...])` 一对一独立渲染嵌入
-- 渲染由 PRD skill 内部 `mermaid_screenshots.render_mermaid` 完成（DPI 200 + sha1 缓存），flowchart skill 不服务 PRD docx 场景
+- 项目脚本里定义 chart dict 常量（`JOURNEY_CHART = {"type": "branch", "title": "...", "nodes": [...], "edges": [...]}`），数据格式参 `flowchart skill SKILL.md`
+- 写 PRD 时调 `journey_main_section(doc, narrative=..., chart=JOURNEY_CHART, shot_dir=...)` 或 `cross_end_sequence_section(doc, sequences=[(标题, chart_dict, note), ...])`
+- PRD helper 内部走 flowchart skill `gen_flow_base.render_flowchart` → drawio CLI → PNG 嵌入 docx
+- 旧 mermaid_src 字符串路径仍兼容（sequences 第二位传 str 自动走 mermaid），但新代码全切 chart dict
 
 ---
 

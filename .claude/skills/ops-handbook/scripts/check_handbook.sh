@@ -71,12 +71,20 @@ if CIRCLE.search(full_text):
     print(f'❌ 圈数字残留（CLAUDE.md 禁止 ①②③，统一 1./2./3.）: {"".join(uniq)}')
     fail = 1
 
-CJK = r'[一-鿿]'
-half_punct = re.findall(rf'{CJK}[,:()]|[,:()]{CJK}', full_text)
-if half_punct:
-    samples = list(set(half_punct))[:5]
-    print(f'❌ 中文相邻半角标点（{len(half_punct)} 处，调 normalize_punctuation）: 样例 {samples}')
-    fail = 1
+# 标点 / 排版扫描下沉到 scripts/check_cjk_punct.py（pangu/heti 全集 · 全工程唯一规则源）
+import subprocess as _sp, os as _os
+_root = _os.environ.get('CLAUDE_PROJECT_DIR') or _os.getcwd()
+_checker = f'{_root}/scripts/check_cjk_punct.py'
+if _os.path.exists(_checker):
+    _r = _sp.run(['python3', _checker, '--stdin', '--strict'],
+                 input=full_text, capture_output=True, text=True)
+    if _r.returncode == 2:
+        print(_r.stderr.rstrip())
+        print('   修复: from core.normalize import normalize_punctuation; normalize_punctuation(doc)')
+        fail = 1
+    elif _r.stderr.strip():
+        # warn 级（pangu 风格：中英文间空格 / 全角标点旁空格），不阻断
+        print(_r.stderr.rstrip())
 
 for kw in ['待填充', 'TBD', 'TODO', 'FIXME', '← 此处粘贴']:
     if kw in full_text:

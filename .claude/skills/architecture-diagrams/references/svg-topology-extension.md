@@ -227,3 +227,53 @@
 1. **坐标精确**：节点和 SVG 箭头共享坐标系，箭头起终点要对准节点边缘
 2. **容器高度**：`.dia` 的 `height` 要大于最底部节点的 `top + height`
 3. **虚线箭头**：`stroke-dasharray="4 3"` 用于监控/间接/虚线连接
+
+## 三条踩坑规则（纯 SVG 拓扑图必看）
+
+> 来源：Cocoon-AI/architecture-diagram-generator 的实战提炼。我们的卡片式方案文档不踩这些坑，但**走 `.dia` + SVG 节点连线**模式时会全中。
+
+### 坑一：半透明 fill 下箭头穿透组件框
+
+节点 fill 用 `rgba(..., 0.3-0.5)` 半透明色时，从节点背后穿过的箭头会透出来——看着像箭头扎进了组件中央。
+
+**修法**：彩色 rect 之前先画一层不透明 mask 矩形（同位置同 rx，背景色 `#0f172a` 或与 `.dia` 容器底色一致），再叠半透明彩色 rect。
+
+```html
+<!-- 不透明 mask -->
+<rect x="X" y="Y" width="W" height="H" rx="6" fill="#0f172a"/>
+<!-- 半透明上层 -->
+<rect x="X" y="Y" width="W" height="H" rx="6" fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+```
+
+适用范围：仅暗色主题 SVG 拓扑（slate-950 底）。我们浅色卡片文档用实色 fill，不踩。
+
+### 坑二：Legend 必须放在所有 boundary 框外
+
+Legend 嵌进 region / cluster / security group 的 dashed boundary 里，读图者会以为它是该集群的组件。
+
+**修法**：
+1. 先算清最低 boundary 底边 `y_max = top + height`
+2. Legend 起点 `y >= y_max + 20`
+3. SVG `viewBox` 高度同步扩到能容纳 legend
+
+错例：cluster boundary 在 `y=30, height=460`（底边 490），legend 放 `y=470` —— 视觉上属于集群内部
+正例：legend 放 `y=510`，viewBox 高度 ≥ 560
+
+### 坑三：垂直堆叠最小 gap 40px，连接器居中放 gap 中间
+
+Message bus / event bus / 小连接器叠在组件边缘上是最常见的 SVG 排版错误。
+
+**修法**：
+- 标准服务节点高度 60px，大组件 80-120px
+- 任意两节点间垂直 gap ≥ 40px
+- 中间连接器（20px 高的 bus）放 gap 中央，**不挨任何一侧节点边缘**
+
+```
+组件 A: y=70,  height=60  → 底边 y=130
+gap   : y=130 → y=170    → 40px
+bus   : y=140, height=20  → 居中（上下各 10px 留白）
+组件 B: y=170, height=60
+```
+
+错例：组件 B 在 `y=170`，bus 放 `y=160` —— 压住组件上沿
+正例：bus 放 `y=140` —— 上下都有 10px 呼吸
