@@ -1,0 +1,727 @@
+# 可交互原型 · 通用组件库
+
+> 所有组件不绑定具体业务，`<!-- [FILL] -->` 处按实际产品填充。
+> 前台组件用深色 Token，后台组件用浅色 Token。
+> 遇到本库没有的业务组件（直播间、K线图、聊天室等），按对应 Token 自行构建。
+
+---
+
+## A. 前台深色组件
+
+### A1. 标准卡片（三态）
+```html
+<!-- 正常态 -->
+<div style="background:#161A1E;border:1px solid #2B3139;border-radius:10px;padding:14px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;min-height:120px;" onmouseover="this.style.borderColor='#2F6CF2'" onmouseout="this.style.borderColor='#2B3139'">
+  <div style="font-size:9px;padding:2px 6px;border-radius:3px;display:inline-block;width:fit-content;font-weight:600;color:#0ECB81;background:rgba(14,203,129,.1);"><!-- [FILL] 状态文字 --></div>
+  <div style="font-size:13px;font-weight:700;margin-top:6px;line-height:1.4;"><!-- [FILL] 标题 --></div>
+  <div style="font-size:11px;color:#848E9C;margin-top:4px;"><!-- [FILL] 描述 --></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:10px;">
+    <span style="font-size:11px;color:#5E6673;"><!-- [FILL] 时间/标签 --></span>
+    <button style="background:#2F6CF2;color:#fff;padding:4px 12px;border-radius:5px;font-size:11px;font-weight:600;border:none;cursor:pointer;"><!-- [FILL] CTA --></button>
+  </div>
+</div>
+
+<!-- 待处理态（橙色标记） -->
+<!-- 把状态色改为 color:#FF8C00;background:rgba(255,140,0,.1) -->
+
+<!-- 禁用/结束态（半透明） -->
+<!-- 加 opacity:.55; 且 hover 不变色 -->
+```
+
+### A2. 封面图卡片
+```html
+<div style="background:#161A1E;border:1px solid #2B3139;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .2s;" onmouseover="this.style.borderColor='#2F6CF2'" onmouseout="this.style.borderColor='#2B3139'">
+  <!-- 封面图区域 -->
+  <div style="height:100px;background:#0a1a3a;display:flex;align-items:center;justify-content:center;position:relative;">
+    <div style="font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.32);"><!-- [FILL] COVER / 或真实图 --></div>
+    <div style="position:absolute;top:8px;left:8px;font-size:8px;color:#0ECB81;background:rgba(14,203,129,.15);padding:2px 6px;border-radius:3px;font-weight:700;"><!-- [FILL] 状态 --></div>
+    <div style="position:absolute;top:8px;right:8px;font-size:9px;color:#F6465D;font-weight:800;font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace;"><!-- [FILL] 倒计时 --></div>
+  </div>
+  <!-- 信息区域 -->
+  <div style="padding:10px 14px;">
+    <div style="font-size:13px;font-weight:700;color:#EAECEF;"><!-- [FILL] --></div>
+    <div style="font-size:11px;color:#848E9C;margin-top:4px;"><!-- [FILL] --></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
+      <span style="font-size:10px;color:#5E6673;"><!-- [FILL] --></span>
+      <button style="background:#2F6CF2;color:#fff;padding:4px 12px;border-radius:5px;font-size:11px;font-weight:600;border:none;cursor:pointer;"><!-- [FILL] --></button>
+    </div>
+  </div>
+</div>
+```
+
+### A3. Wide Card（跨栏大卡）
+```html
+<div style="grid-column:1/-1;background:#091626;border:1px solid rgba(47,108,242,.3);border-radius:10px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:.15s;" onmouseover="this.style.borderColor='#2F6CF2'" onmouseout="this.style.borderColor='rgba(47,108,242,.3)'">
+  <div>
+    <div style="font-size:9px;color:#FFD740;background:rgba(255,215,64,.12);padding:2px 8px;border-radius:4px;font-weight:700;display:inline-block;margin-bottom:4px;"><!-- [FILL] 标签 --></div>
+    <h3 style="font-size:16px;font-weight:800;color:#EAECEF;"><!-- [FILL] 标题 --></h3>
+    <div style="font-size:12px;color:#848E9C;margin-top:4px;"><!-- [FILL] 描述 --></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px;flex-shrink:0;">
+    <div style="font-size:18px;font-weight:800;color:#F6465D;font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace;"><!-- [FILL] 数据 --></div>
+    <button style="background:#2F6CF2;color:#fff;padding:6px 18px;border-radius:5px;font-size:12px;font-weight:600;border:none;cursor:pointer;"><!-- [FILL] CTA --></button>
+  </div>
+</div>
+```
+
+### A4. 列表项（Feed 流/帖子/通知）
+```html
+<div style="background:#161A1E;border-bottom:1px solid #2B3139;padding:14px 16px;display:flex;gap:12px;cursor:pointer;transition:.15s;" onmouseover="this.style.background='#1E2329'" onmouseout="this.style.background='#161A1E'">
+  <!-- 头像 -->
+  <div style="width:40px;height:40px;border-radius:20px;background:#222730;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;"><!-- [FILL] avatar --></div>
+  <!-- 内容 -->
+  <div style="flex:1;min-width:0;">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:13px;font-weight:600;color:#EAECEF;"><!-- [FILL] 用户名 --></span>
+      <span style="font-size:10px;color:#5E6673;"><!-- [FILL] 时间 --></span>
+    </div>
+    <div style="font-size:12px;color:#848E9C;margin-top:4px;line-height:1.5;"><!-- [FILL] 内容摘要 --></div>
+    <!-- 操作栏（可选） -->
+    <div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:#5E6673;">
+      <span style="cursor:pointer;">💬 <!-- [FILL] 数 --></span>
+      <span style="cursor:pointer;">❤️ <!-- [FILL] --></span>
+      <span style="cursor:pointer;">🔄 <!-- [FILL] --></span>
+    </div>
+  </div>
+</div>
+```
+
+### A5. 图文卡片（社区/资讯）
+```html
+<div style="background:#161A1E;border:1px solid #2B3139;border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .2s;" onmouseover="this.style.borderColor='#2F6CF2'" onmouseout="this.style.borderColor='#2B3139'">
+  <div style="display:flex;gap:12px;padding:14px;">
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:13px;font-weight:700;color:#EAECEF;line-height:1.4;"><!-- [FILL] 标题 --></div>
+      <div style="font-size:11px;color:#848E9C;margin-top:6px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"><!-- [FILL] 摘要 --></div>
+      <div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:#5E6673;">
+        <span><!-- [FILL] 作者 --></span><span><!-- [FILL] 时间 --></span><span>👁 <!-- [FILL] --></span>
+      </div>
+    </div>
+    <div style="width:80px;height:80px;border-radius:6px;background:#222730;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:24px;"><!-- [FILL] 封面 --></div>
+  </div>
+</div>
+```
+
+### A6. 专题/分组容器
+```html
+<div style="padding:0 24px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 0 10px;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;background:rgba(47,108,242,.1);"><!-- [FILL] icon --></div>
+      <h3 style="font-size:14px;font-weight:700;color:#EAECEF;"><!-- [FILL] 分组名 --></h3>
+      <span style="font-size:11px;color:#5E6673;margin-left:4px;"><!-- [FILL] 计数 --></span>
+    </div>
+    <div style="font-size:12px;color:#2F6CF2;font-weight:600;cursor:pointer;">查看全部 ›</div><!-- 不需要则删除 -->
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding-bottom:8px;">
+    <!-- [FILL] 内部放卡片组件 -->
+  </div>
+</div>
+```
+
+### A7. Hero / Banner 区
+```html
+<div style="background:#060e1f;border-bottom:1px solid rgba(47,108,242,.18);padding:24px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <div>
+      <div style="font-size:20px;font-weight:800;color:#EAECEF;display:flex;align-items:center;gap:8px;">
+        <!-- [FILL] ⚡ 标题 -->
+        <span style="font-size:10px;background:#2F6CF2;color:#fff;padding:2px 8px;border-radius:4px;font-weight:700;"><!-- [FILL] 标签 --></span>
+      </div>
+      <div style="font-size:12px;color:#848E9C;margin-top:4px;"><!-- [FILL] 副标题 --></div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <!-- [FILL] 右侧内容（广告位/操作按钮/数据等） -->
+    </div>
+  </div>
+</div>
+```
+
+### A8. 轮播卡片
+```html
+<div style="width:280px;flex-shrink:0;background:#161A1E;border:1px solid #2B3139;border-radius:10px;padding:14px;cursor:pointer;transition:.15s;" onmouseover="this.style.borderColor='#2F6CF2'" onmouseout="this.style.borderColor='#2B3139'">
+  <div style="font-size:9px;color:#2F6CF2;background:rgba(47,108,242,.1);padding:2px 8px;border-radius:4px;display:inline-block;font-weight:700;margin-bottom:6px;"><!-- [FILL] 标签 --></div>
+  <h3 style="font-size:14px;font-weight:700;color:#EAECEF;"><!-- [FILL] --></h3>
+  <div style="font-size:11px;color:#848E9C;margin-top:4px;"><!-- [FILL] --></div>
+  <div style="display:flex;gap:4px;margin-top:8px;">
+    <div style="width:14px;height:5px;border-radius:3px;background:#2F6CF2;"></div>
+    <div style="width:5px;height:5px;border-radius:3px;background:#363C45;"></div>
+    <div style="width:5px;height:5px;border-radius:3px;background:#363C45;"></div>
+  </div>
+</div>
+```
+
+### A9. App 手机 Mockup
+```html
+<div style="width:375px;background:#0B0E11;border-radius:28px;border:3px solid #2B2F36;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.3);">
+  <!-- 状态栏 -->
+  <div style="display:flex;justify-content:space-between;padding:6px 20px 4px;font-size:11px;color:#848E9C;font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace;"><span>9:41</span><span>5G ▁▂▃▅ 🔋</span></div>
+  <!-- 顶栏 -->
+  <div style="background:#0D1117;padding:0 12px;height:36px;display:flex;align-items:center;gap:4px;border-bottom:1px solid #2B3139;">
+    <span style="font-size:14px;color:#848E9C;">←</span>
+    <b style="font-size:12px;color:#EAECEF;"><!-- [FILL] 页面标题 --></b>
+  </div>
+  <!-- 内容区 -->
+  <div style="padding:10px 12px;min-height:400px;">
+    <!-- [FILL] 页面内容 -->
+  </div>
+  <!-- 底部 Tab：单一信息源见 components-core.md §1.5，本处为 Mockup 完整示例内嵌 -->
+  <div style="display:flex;background:#0D1117;border-top:1px solid #2B3139;height:42px;">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:7px;color:#5E6673;"><span style="font-size:14px;">🏠</span><!-- [FILL] --></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:7px;color:#2F6CF2;"><span style="font-size:14px;">🎯</span><!-- [FILL] 当前 --></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:7px;color:#5E6673;"><span style="font-size:14px;">👤</span><!-- [FILL] --></div>
+  </div>
+</div>
+```
+
+### A10. 设备切换器
+```html
+<div style="display:flex;background:#1E2329;border-radius:6px;overflow:hidden;">
+  <div onclick="switchDevice('webView','appView',[this,this.nextElementSibling],0)" style="padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;color:#EAECEF;background:#2F6CF2;border-radius:6px;">🖥 Web</div>
+  <div onclick="switchDevice('webView','appView',[this.previousElementSibling,this],1)" style="padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;color:#5E6673;">📱 App</div>
+</div>
+```
+
+### A11. 空态
+
+→ 见 `interaction-map/references/components-core.md` §1.3 空态（共享单一信息源，含深色 token）。本文件不再维护重复副本。
+
+### A12. 卡片内横滑轮播（多卡同容器 + dots + 拖拽）
+
+来源：livestream 2.4 原型（策略卡三形态横滑）。容器内多张卡轮播：translateX 轨道 + pointer 拖拽 + dots 指示 + 高度自适应。
+
+```html
+<!-- viewport 包裹 track，track 内每张 slide 占 100% 宽 -->
+<div class="vp" id="[FILL]-vp">
+  <div class="vp-track" id="[FILL]-track">
+    <div class="vp-slide" id="[FILL]-card0"><!-- [FILL] 卡 1 --></div>
+    <div class="vp-slide" id="[FILL]-card1"><!-- [FILL] 卡 2 --></div>
+    <div class="vp-slide" id="[FILL]-card2"><!-- [FILL] 卡 3 --></div>
+  </div>
+  <div class="vp-dots" id="[FILL]-dots"></div>
+</div>
+```
+
+```css
+.vp{overflow:hidden;transition:height .26s cubic-bezier(.22,.61,.36,1);touch-action:pan-y;cursor:grab;}
+.vp:active{cursor:grabbing;}
+.vp-track{display:flex;width:100%;transition:transform .28s cubic-bezier(.22,.61,.36,1);}
+.vp-slide{flex:0 0 100%;align-self:flex-start;}
+.vp-dots{display:flex;justify-content:center;gap:5px;margin-top:10px;}
+.vp-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.22);cursor:pointer;transition:.18s;}
+.vp-dot.on{width:14px;border-radius:3px;background:#EAECEF;}  /* active 圆点拉长成胶囊 */
+.vp-dot.live{background:rgba(246,70,93,.5);}  /* 该卡「进行中」的呼吸色，可省 */
+```
+
+```js
+var CARDS = [{el:'[FILL]-card0'},{el:'[FILL]-card1'},{el:'[FILL]-card2'}];
+var open = 0;
+function renderVp(){
+  var track = document.getElementById('[FILL]-track');
+  track.style.transform = 'translateX(-' + (open * 100) + '%)';
+  // 高度自适应：容器高 = 当前卡 offsetHeight（卡高不同时防跳变）
+  var vp = document.getElementById('[FILL]-vp');
+  var cur = document.getElementById(CARDS[open].el);
+  if (vp && cur && cur.offsetHeight > 0) vp.style.height = cur.offsetHeight + 'px';
+  document.getElementById('[FILL]-dots').innerHTML = CARDS.map(function(c,i){
+    return '<span class="vp-dot' + (i === open ? ' on' : '') + '" onclick="showVp(' + i + ')"></span>';
+  }).join('');
+}
+function showVp(i){ open = i; renderVp(); }
+// 拖拽：6px 阈值才判定拖动（区分点击），拖过 22% 宽度翻页，首尾边缘 0.3 阻尼
+(function initSwipe(){
+  var vp = document.getElementById('[FILL]-vp'); if (!vp) return;
+  var track = document.getElementById('[FILL]-track');
+  var x0 = null, dx = 0, w = 1, pid = null, dragging = false;
+  vp.addEventListener('pointerdown', function(e){
+    x0 = e.clientX; dx = 0; dragging = false; pid = e.pointerId; w = vp.offsetWidth || 1;
+  });
+  vp.addEventListener('pointermove', function(e){
+    if (x0 === null) return;
+    dx = e.clientX - x0;
+    if (!dragging) {
+      if (Math.abs(dx) < 6) return;
+      dragging = true; track.style.transition = 'none'; vp.setPointerCapture(pid);
+    }
+    var d = dx;
+    if ((open === 0 && d > 0) || (open === CARDS.length - 1 && d < 0)) d *= .3;
+    track.style.transform = 'translateX(calc(-' + (open * 100) + '% + ' + d + 'px))';
+  });
+  vp.addEventListener('pointerup', function(){
+    if (x0 === null) return;
+    if (!dragging) { x0 = null; return; }
+    track.style.transition = '';
+    if (dx < -w * .22 && open < CARDS.length - 1) open++;
+    else if (dx > w * .22 && open > 0) open--;
+    renderVp(); x0 = null; dragging = false;
+  });
+  vp.addEventListener('pointercancel', function(){
+    x0 = null; dragging = false; track.style.transition = ''; renderVp();
+  });
+})();
+renderVp();
+```
+
+**坑（必踩）**：页面未显示时 `offsetHeight` 读到 0 → 容器塌成最高那张卡的高度。切页后必须补一次重算——包 goPage 在 `requestAnimationFrame` 里补调 renderVp。
+
+### A13. 状态徽章 / 多空方向标签色系
+
+来源：livestream 2.4 原型（审核状态 + 策略卡方向标签）。深色底徽章公式：`rgba(色,.12-.18)` 底 + 同系前景色，**不加独立 border**（背景色分层足够，视觉底线 15）。
+
+| 语义 | 公式 |
+|------|------|
+| 涨 / 做多 | `color:#0ECB81;background:rgba(14,203,129,.15);` |
+| 跌 / 做空 | `color:#F6465D;background:rgba(246,70,93,.15);` |
+| 中性 / 停用 / 已结束 | `color:#848E9C;background:rgba(255,255,255,.08);` |
+| 审核中 / 预警 | `color:#F0B90B;background:rgba(240,185,11,.14);` |
+| 强提示实底（LIVE 角标） | `background:#F6465D;color:#fff;` |
+
+规格：`font-size:9-10px;font-weight:700;padding:2px 8px;border-radius:10px`（胶囊，SKILL 视觉底线 18）；贴标签小字可降 `border-radius:3-5px`。带点的状态（讲解中 / 直播中）用 `display:inline-flex;align-items:center;gap:4-5px` + 7px 色点。
+
+---
+
+## B. 管理台浅色组件
+
+### B1. 筛选栏
+```html
+<div style="background:#FFF;border-radius:8px;border:1px solid #E4E7ED;padding:16px 20px;margin-bottom:16px;">
+  <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+    <div style="display:flex;align-items:center;gap:4px;">
+      <span style="font-size:12px;color:#4E5969;white-space:nowrap;"><!-- [FILL] 字段名 -->：</span>
+      <select style="padding:5px 28px 5px 8px;border:1px solid #E4E7ED;border-radius:4px;font-size:12px;"><option>全部</option><option><!-- [FILL] --></option></select>
+    </div>
+    <button style="padding:6px 16px;border-radius:4px;font-size:12px;font-weight:500;background:#2F6CF2;color:#fff;border:1px solid #2F6CF2;cursor:pointer;">🔍 查询</button>
+    <button style="padding:6px 16px;border-radius:4px;font-size:12px;font-weight:500;background:transparent;color:#4E5969;border:1px solid #E4E7ED;cursor:pointer;">重置</button>
+  </div>
+</div>
+```
+
+### B2. 数据表格
+```html
+<div style="background:#FFF;border-radius:8px;border:1px solid #E4E7ED;overflow:hidden;">
+  <table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <thead><tr>
+      <th style="background:#FAFBFC;padding:10px 8px;text-align:left;font-weight:600;color:#4E5969;border-bottom:1px solid #E4E7ED;"><!-- [FILL] --></th>
+      <th style="background:#FAFBFC;padding:10px 8px;text-align:left;font-weight:600;color:#4E5969;border-bottom:1px solid #E4E7ED;">状态</th>
+      <th style="background:#FAFBFC;padding:10px 8px;text-align:left;font-weight:600;color:#4E5969;border-bottom:1px solid #E4E7ED;">操作</th>
+    </tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #E4E7ED;">
+        <td style="padding:10px 8px;"><b><!-- [FILL] --></b></td>
+        <td style="padding:10px 8px;"><span style="color:#00B42A;font-weight:600;">● 已上线</span></td>
+        <td style="padding:10px 8px;">
+          <div style="display:flex;gap:4px;">
+            <span style="font-size:11px;cursor:pointer;padding:2px 8px;border-radius:3px;color:#FF7D00;background:#FFF3E0;">下线</span>
+            <span style="font-size:11px;cursor:pointer;padding:2px 8px;border-radius:3px;color:#2F6CF2;background:#EEF2FF;">编辑</span>
+            <span style="font-size:11px;cursor:pointer;padding:2px 8px;border-radius:3px;color:#F53F3F;background:#FFEBEE;">删除</span>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+```
+
+### B3. 表单区块
+```html
+<div style="margin-bottom:24px;">
+  <div style="font-size:14px;font-weight:700;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #E4E7ED;display:flex;align-items:center;gap:6px;">📝 <!-- [FILL] 区块标题 --></div>
+  <!-- 文本输入 -->
+  <div style="display:flex;align-items:flex-start;margin-bottom:14px;">
+    <div style="width:110px;text-align:right;padding-right:12px;padding-top:7px;font-size:12px;color:#4E5969;flex-shrink:0;"><span style="color:#F53F3F;">*</span> <!-- [FILL] --></div>
+    <div style="flex:1;"><input style="width:100%;max-width:400px;padding:7px 10px;border:1px solid #E4E7ED;border-radius:4px;font-size:13px;" value="<!-- [FILL] -->"></div>
+  </div>
+  <!-- 下拉选择 -->
+  <div style="display:flex;align-items:flex-start;margin-bottom:14px;">
+    <div style="width:110px;text-align:right;padding-right:12px;padding-top:7px;font-size:12px;color:#4E5969;flex-shrink:0;"><!-- [FILL] --></div>
+    <div style="flex:1;"><select style="padding:7px 10px;border:1px solid #E4E7ED;border-radius:4px;font-size:13px;min-width:200px;"><option><!-- [FILL] --></option></select></div>
+  </div>
+  <!-- 图片上传 -->
+  <div style="display:flex;align-items:flex-start;margin-bottom:14px;">
+    <div style="width:110px;text-align:right;padding-right:12px;padding-top:7px;font-size:12px;color:#4E5969;flex-shrink:0;"><!-- [FILL] --></div>
+    <div style="flex:1;"><div style="width:120px;height:80px;background:#F5F6FA;border:1px dashed #E4E7ED;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#86909C;cursor:pointer;">📷 上传</div></div>
+  </div>
+</div>
+```
+
+### B4. 配置卡片（拖拽排序 + 开关）
+```html
+<div style="background:#FFF;border:1px solid #E4E7ED;border-radius:8px;padding:16px;display:flex;align-items:center;gap:16px;transition:.15s;margin-bottom:12px;" onmouseover="this.style.borderColor='#2F6CF2'" onmouseout="this.style.borderColor='#E4E7ED'">
+  <div style="cursor:grab;color:#C9CDD4;font-size:18px;">⠿</div>
+  <div style="width:28px;height:28px;background:#EEF2FF;color:#2F6CF2;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;"><!-- [FILL] 序号 --></div>
+  <div style="flex:1;min-width:0;">
+    <div style="font-size:15px;font-weight:700;color:#1D2129;"><!-- [FILL] 名称 --></div>
+    <div style="font-size:12px;color:#86909C;margin-top:3px;"><!-- [FILL] 规则描述 --></div>
+  </div>
+  <div style="width:40px;height:22px;border-radius:11px;background:#2F6CF2;position:relative;cursor:pointer;flex-shrink:0;" onclick="this.classList.toggle('off');this.style.background=this.classList.contains('off')?'#C9CDD4':'#2F6CF2';this.querySelector('i').style.left=this.classList.contains('off')?'2px':'20px';">
+    <i style="position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:2px;left:20px;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.15);"></i>
+  </div>
+  <div style="display:flex;gap:6px;">
+    <button style="padding:4px 10px;font-size:11px;border-radius:4px;background:transparent;color:#4E5969;border:1px solid #E4E7ED;cursor:pointer;">编辑</button>
+    <button style="padding:4px 10px;font-size:11px;border-radius:4px;background:transparent;color:#F53F3F;border:1px solid #F53F3F;cursor:pointer;">删除</button>
+  </div>
+</div>
+```
+
+### B5. 弹窗
+```html
+<!-- 遮罩 + 弹窗 -->
+<div id="myModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:95;align-items:center;justify-content:center;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:#FFF;border-radius:10px;width:600px;max-width:92vw;max-height:85vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.15);">
+    <!-- 头部 -->
+    <div style="padding:16px 20px;border-bottom:1px solid #E4E7ED;font-size:15px;font-weight:700;display:flex;justify-content:space-between;align-items:center;">
+      <span><!-- [FILL] 标题 --></span>
+      <span style="cursor:pointer;font-size:18px;color:#86909C;" onclick="this.closest('[id]').style.display='none'">✕</span>
+    </div>
+    <!-- 内容 -->
+    <div style="padding:20px;">
+      <!-- [FILL] 表单/内容 -->
+    </div>
+    <!-- 底部 -->
+    <div style="padding:12px 20px;border-top:1px solid #E4E7ED;display:flex;justify-content:flex-end;gap:8px;">
+      <button style="padding:6px 16px;border-radius:4px;font-size:12px;background:transparent;color:#4E5969;border:1px solid #E4E7ED;cursor:pointer;" onclick="this.closest('[id]').style.display='none'">取消</button>
+      <button style="padding:6px 16px;border-radius:4px;font-size:12px;background:#2F6CF2;color:#fff;border:1px solid #2F6CF2;cursor:pointer;">保存</button>
+    </div>
+  </div>
+</div>
+<!-- 触发：document.getElementById('myModal').style.display='flex' -->
+```
+
+### B6. Banner/媒体管理卡片
+```html
+<div style="background:#FFF;border:1px solid #E4E7ED;border-radius:8px;overflow:hidden;">
+  <div style="height:140px;background:#0a1a3a;display:flex;align-items:center;justify-content:center;position:relative;">
+    <div style="position:absolute;top:8px;left:8px;background:#2F6CF2;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;"><!-- [FILL] 序号 --></div>
+    <div style="position:absolute;top:8px;right:8px;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#E8F5E9;color:#2E7D32;"><!-- [FILL] 状态 --></div>
+    <div style="font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.32);">IMG</div>
+  </div>
+  <div style="padding:10px 12px;">
+    <div style="font-size:13px;font-weight:600;margin-bottom:4px;"><!-- [FILL] 标题 --></div>
+    <div style="font-size:11px;color:#86909C;"><!-- [FILL] 描述 --></div>
+  </div>
+  <div style="padding:8px 12px;border-top:1px solid #E4E7ED;display:flex;gap:6px;justify-content:flex-end;">
+    <button style="padding:4px 10px;font-size:11px;border-radius:4px;background:transparent;color:#4E5969;border:1px solid #E4E7ED;cursor:pointer;">编辑</button>
+    <button style="padding:4px 10px;font-size:11px;border-radius:4px;background:transparent;color:#F53F3F;border:1px solid #F53F3F;cursor:pointer;">删除</button>
+  </div>
+</div>
+```
+
+### B7. 信息提示框
+```html
+<div style="font-size:11px;color:#86909C;padding:10px 14px;background:#FAFBFC;border-radius:6px;margin-top:12px;line-height:1.8;border:1px solid #E4E7ED;">
+  <b style="color:#4E5969;"><!-- [FILL] 标题：--></b><!-- [FILL] 说明内容 -->
+</div>
+```
+
+---
+
+## C. 通用交互组件
+
+### C1. 抽屉（深色，前台用）
+```html
+<!-- 遮罩 -->
+<div id="overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;" onclick="closeDrawer()"></div>
+<!-- 抽屉面板 -->
+<div id="drawer" style="position:fixed;top:52px;right:-440px;width:440px;bottom:0;background:#0B0E11;border-left:1px solid #2B3139;z-index:501;transition:right .3s ease;overflow-y:auto;">
+  <div style="background:#161A1E;border-bottom:1px solid #2B3139;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;">
+    <h3 style="font-size:15px;font-weight:700;color:#EAECEF;"><!-- [FILL] 标题 --></h3>
+    <span style="color:#5E6673;font-size:20px;cursor:pointer;" onclick="closeDrawer()">✕</span>
+  </div>
+  <div style="padding:16px 20px;">
+    <!-- [FILL] 内容 -->
+  </div>
+</div>
+```
+
+### C2. 段落分隔标题
+```html
+<!-- 带颜色圆点的段落分隔 -->
+<div style="font-size:11px;font-weight:700;color:#0ECB81;margin-bottom:8px;display:flex;align-items:center;gap:5px;">
+  <span style="width:6px;height:6px;border-radius:50%;background:#0ECB81;"></span> <!-- [FILL] 段落标题（N） -->
+</div>
+<!-- 带分隔线的段落分隔 -->
+<div style="font-size:11px;font-weight:700;color:#5E6673;margin:14px 0 8px;display:flex;align-items:center;gap:5px;border-top:1px solid #2B3139;padding-top:12px;">
+  <span style="width:6px;height:6px;border-radius:50%;background:#5E6673;"></span> <!-- [FILL] -->
+</div>
+```
+
+### C3. 语种/多标签 Tab
+
+→ 见 `interaction-map/references/components-core.md` §1.3 列表页 Tab 栏（共享单一信息源）。本文件不再维护重复副本。
+
+---
+
+## D. 数据驱动 CRUD 模式（后台管理必用）
+
+> **硬规则**：后台涉及列表+编辑的页面，必须用此模式。禁止列表写死 HTML 而弹窗另一套数据。
+
+### D1. 完整 CRUD 骨架
+
+```html
+<!-- ── 列表区域 ── -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+  <span id="itemCount" style="font-size:11px;color:#86909C;">共 0 条</span>
+  <button onclick="openAdd()" style="padding:6px 16px;border-radius:4px;font-size:12px;background:#00B42A;color:#fff;border:1px solid #00B42A;cursor:pointer;">＋ 新增</button>
+</div>
+<div style="background:#FFF;border-radius:8px;border:1px solid #E4E7ED;overflow:hidden;">
+  <table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <thead><tr>
+      <th style="background:#FAFBFC;padding:10px 8px;text-align:left;font-weight:600;color:#4E5969;border-bottom:1px solid #E4E7ED;">名称</th>
+      <th style="background:#FAFBFC;padding:10px 8px;text-align:left;font-weight:600;color:#4E5969;border-bottom:1px solid #E4E7ED;">状态</th>
+      <th style="background:#FAFBFC;padding:10px 8px;text-align:left;font-weight:600;color:#4E5969;border-bottom:1px solid #E4E7ED;">操作</th>
+    </tr></thead>
+    <tbody id="listContainer"><!-- JS render --></tbody>
+  </table>
+</div>
+
+<!-- ── 编辑弹窗（新增/编辑共用） ── -->
+<div id="editModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:95;align-items:center;justify-content:center;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:#FFF;border-radius:10px;width:600px;max-width:92vw;max-height:85vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.15);">
+    <div style="padding:16px 20px;border-bottom:1px solid #E4E7ED;font-size:15px;font-weight:700;display:flex;justify-content:space-between;align-items:center;">
+      <span id="modalTitle">新增</span>
+      <span style="cursor:pointer;font-size:18px;color:#86909C;" onclick="document.getElementById('editModal').style.display='none'">✕</span>
+    </div>
+    <div style="padding:20px;">
+      <div style="display:flex;align-items:flex-start;margin-bottom:14px;">
+        <div style="width:80px;text-align:right;padding-right:12px;padding-top:7px;font-size:12px;color:#4E5969;"><span style="color:#F53F3F;">*</span> 名称</div>
+        <div style="flex:1;"><input id="f-name" style="width:100%;max-width:400px;padding:7px 10px;border:1px solid #E4E7ED;border-radius:4px;font-size:13px;"></div>
+      </div>
+      <!-- [FILL] 更多字段 -->
+    </div>
+    <div style="padding:12px 20px;border-top:1px solid #E4E7ED;display:flex;justify-content:flex-end;gap:8px;">
+      <button onclick="document.getElementById('editModal').style.display='none'" style="padding:6px 16px;border-radius:4px;font-size:12px;background:transparent;color:#4E5969;border:1px solid #E4E7ED;cursor:pointer;">取消</button>
+      <button onclick="saveItem()" style="padding:6px 16px;border-radius:4px;font-size:12px;background:#2F6CF2;color:#fff;border:1px solid #2F6CF2;cursor:pointer;">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── 数据源 ──
+var items = [
+  { name: '项目A', status: '已上线' },
+  { name: '项目B', status: '未上线' },
+];
+var currentIdx = -1; // -1=新增, >=0=编辑
+
+// ── 渲染（列表+统计全部从数组生成） ──
+function renderList() {
+  var html = '';
+  items.forEach(function(d, i) {
+    html += '<tr style="border-bottom:1px solid #E4E7ED;">'
+      + '<td style="padding:10px 8px;"><b>' + d.name + '</b></td>'
+      + '<td style="padding:10px 8px;">' + d.status + '</td>'
+      + '<td style="padding:10px 8px;">'
+      +   '<span onclick="openEdit(' + i + ')" style="cursor:pointer;padding:2px 8px;border-radius:3px;font-size:11px;color:#2F6CF2;background:#EEF2FF;">编辑</span> '
+      +   '<span onclick="deleteItem(' + i + ')" style="cursor:pointer;padding:2px 8px;border-radius:3px;font-size:11px;color:#F53F3F;background:#FFEBEE;">删除</span>'
+      + '</td></tr>';
+  });
+  document.getElementById('listContainer').innerHTML = html;
+  document.getElementById('itemCount').textContent = '共 ' + items.length + ' 条';
+}
+
+// ── 新增（空表单+默认值） ──
+function openAdd() {
+  currentIdx = -1;
+  document.getElementById('modalTitle').textContent = '新增';
+  document.getElementById('f-name').value = '';
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+// ── 编辑（按索引读数据） ──
+function openEdit(idx) {
+  currentIdx = idx;
+  document.getElementById('modalTitle').textContent = '编辑';
+  document.getElementById('f-name').value = items[idx].name;
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+// ── 保存 = 写数据 + render + 关弹窗 ──
+function saveItem() {
+  var name = document.getElementById('f-name').value.trim();
+  if (!name) { alert('请填写名称'); return; }
+  if (currentIdx >= 0) {
+    items[currentIdx].name = name;
+  } else {
+    items.push({ name: name, status: '未上线' });
+  }
+  renderList();
+  document.getElementById('editModal').style.display = 'none';
+}
+
+// ── 删除（二次确认） ──
+function deleteItem(idx) {
+  if (!confirm('确定删除「' + items[idx].name + '」？')) return;
+  items.splice(idx, 1);
+  renderList();
+}
+
+renderList();
+</script>
+```
+
+### D2. 自检清单
+
+用此模式后交付前检查：
+- [ ] 列表 HTML 全部由 `renderList()` 生成，无手写静态行
+- [ ] 新增和编辑共用同一个弹窗，靠 `currentIdx` 区分
+- [ ] `saveItem()` 内三步：写数组 → `renderList()` → 关弹窗
+- [ ] 列表摘要 = 弹窗内数据（因为都从 `items[i]` 读）
+- [ ] 统计数字（`itemCount`）在 `renderList()` 内更新
+- [ ] 删除有 `confirm()` 二次确认
+- [ ] 多个编辑按钮都传了 `i` 索引参数
+
+---
+
+## E. Fill 视觉质量铁律（踩坑沉淀）
+
+> 各轮 bug 全在 Fill 视觉层（不是结构层）— 单元素逻辑没错但跨浏览器 paint / 状态切换 layout / 可见性切换出问题。本节把每个 bug 的修法钉死，下次写之前先扫一眼。
+>
+> Step C `audit_against_baseline.py` grep 检查 E1-E6，违反即 fail。E7-E8 暂未接 audit，靠下方自检清单自扫。
+
+### E1. Toggle state 不 remove layout class
+
+**错**：
+
+```js
+btn.classList.remove('cta-blue')  // → flex:1 丢失，按钮缩窄到内容宽度
+btn.classList.add('cta-grey')
+```
+
+**对**：
+
+```js
+btn.classList.add('cta-grey','subscribed')  // 保留 cta-blue，CSS 用更具体选择器覆盖颜色
+```
+
+CSS：`.cta-blue.cta-grey{background:var(--bg3);color:var(--text2);}`（同时持有两 class 时灰色生效；layout 属性 flex:1 永远不丢）
+
+### E2. 全局滚动条隐藏 · 双引擎覆盖
+
+**错**：只写 webkit（Firefox 仍出滚动条）
+
+**对**：
+
+```css
+.phone *::-webkit-scrollbar{display:none;width:0;height:0;}
+.phone *{scrollbar-width:none;-ms-overflow-style:none;}
+```
+
+需双引擎：webkit（Chrome/Safari）+ Firefox `scrollbar-width: none` + 老 Edge `-ms-overflow-style`。`.phone *` 通配确保所有内嵌 `overflow:auto` 子元素都覆盖到。
+
+### E3. 抽屉默认 visibility:hidden 防 paint 盖底部 nav
+
+**错**：抽屉只用 `.show` class 切换 transform，z-index:501 即使不 show 也 paint，盖住底部 nav 导致点不到。
+
+**对**：
+
+```css
+.app-mock .p-drawer:not(.show){visibility:hidden;pointer-events:none;}
+.app-mock .p-drawer.show{visibility:visible;pointer-events:auto;transform:translateY(0);}
+```
+
+`display:none` 太重（动画失效），`visibility:hidden` 既不渲染又保留 transform 动画。
+
+### E4. 可见性切换不用 :has()
+
+**错**：
+
+```css
+.p-page:has(.tabs2 .on[data-tab="x"]) .target{display:flex}  /* Safari 旧版 / Firefox 不稳 */
+```
+
+**对**：
+
+```js
+// click handler 里
+document.querySelector('.p-page').setAttribute('data-active', 'x');
+```
+
+```css
+.p-page[data-active="x"] .target{display:flex;}
+.p-page[data-active="y"] .target{display:none;}
+```
+
+属性选择器跨浏览器全支持，Safari 14- 也工作。`:has()` 截至 2026-04 仍有部分浏览器不稳，禁用。
+
+### E5. 底部 sticky CTA / nav 摆放
+
+**错**：放 `.p-page` 内 → `.p-page{overflow:auto}` 把 absolute 子元素裁掉
+
+**对**：放 `.app-mock` 直接子级（`.p-page` 同级），不进入 `.p-page` 的 overflow context
+
+```html
+<div class="app-mock">
+  <div class="p-page">...内容...</div>
+  <div class="cta-bar">...粘底按钮...</div>  <!-- ← 这里，与 p-page 同级 -->
+  <div class="hind"><div></div></div>
+</div>
+```
+
+```css
+.cta-bar{position:absolute;left:0;right:0;bottom:24px;z-index:30;}
+```
+
+底部 nav 同理。
+
+### E6. 铃铛与订阅 CTA 联动语义
+
+订阅 / 铃铛交互语义易写反。正确语义（决策 04-28 晚定）：
+
+| 状态 | UI | 语义 |
+|------|----|----|
+| 未订阅 | 按钮「订阅」蓝色 + 铃铛 hidden | 默认 |
+| 订阅成功 | 按钮「已订阅」灰色 + 铃铛 🔔 显示 | 推送默认开 |
+| 铃铛 click | 铃铛变 🔕 muted + toast「已关闭该交易员的实盘推送」 | 推送关 |
+| 再次 click 铃铛 | 铃铛回 🔔 + toast「已开启实盘推送」 | 推送回开 |
+| 取消订阅 | 按钮回「订阅」蓝色 + 铃铛 hidden | 推送清空 |
+
+参考实现 [proto_v2/js_helpers.py `_subscribe` / `_toggleBell`](../../../../projects/community/leaderboard/scripts/proto_v2/js_helpers.py)。
+
+### E7. 深色 Web 页细暗滚动条（来源：livestream 2.4）
+
+E2 是 phone 壳「隐藏」滚动条；web-front 深色页相反——滚动条要**可见但细暗**。默认亮灰宽条直接毁深色 UI。
+
+**错**：不写任何滚动条样式，浏览器默认滚动条（亮灰、宽 15px+）横在深色面板上。
+
+**对**：
+
+```css
+.scroll-box{scrollbar-width:thin;scrollbar-color:#2B3139 transparent;}
+.scroll-box::-webkit-scrollbar{width:4px;height:4px;}
+.scroll-box::-webkit-scrollbar-track{background:transparent;}
+.scroll-box::-webkit-scrollbar-thumb{background:#2B3139;border-radius:2px;}
+.scroll-box::-webkit-scrollbar-thumb:hover{background:#3C434D;}
+```
+
+双引擎：Firefox 走 `scrollbar-width:thin + scrollbar-color`，Chrome/Safari 走 webkit 4px 细条。把所有内嵌滚动区（聊天区 / 列表面板 / 选币列表）都列进选择器。
+
+### E8. 浮层 max-height 封顶必须配 overflow-y:auto（来源：livestream 2.4）
+
+浮层内容可能超一屏时（选币列表 / 表单弹窗），`max-height:80vh` 封顶 + `overflow:hidden` 会把底部按钮裁掉——flex 布局下子项全 `flex-shrink:0` 时溢出方向是向下，最后一个元素直接不可达。
+
+**错**：
+
+```css
+.modal{max-height:80vh;overflow:hidden;display:flex;flex-direction:column;}
+.modal > *{flex-shrink:0;}  /* 内容超 80vh 时底部按钮被裁，且无滚动条可救 */
+```
+
+**对**：
+
+```css
+.modal{max-height:80vh;overflow-y:auto;display:flex;flex-direction:column;}
+.modal > *{flex-shrink:0;}  /* 封顶时整弹窗滚动，内容不被压缩、按钮滚动可达 */
+```
+
+两个要点：① 封顶必须配 `overflow-y:auto`（`hidden` = 裁掉不可达）；② 内容区内可独立滚动的选择器（如币对列表）加 `flex-shrink:0` 保持完整高度，别让 flex 把它压成一条。底部主按钮保持文档流原位即可（用户填完参数才点，无需吸底）。
+
+### E 节自检（Step C 必跑）
+
+- [ ] grep 无 `:has(` CSS 选择器
+- [ ] grep `::-webkit-scrollbar` 同时存在 `scrollbar-width:none`
+- [ ] grep `:not(.show)` 配套 `visibility:hidden`
+- [ ] grep 所有 `.cta-bar` 都在 `.app-mock` / `.phone` 直接子级（不在 `.p-page` / `.body` 内）
+- [ ] grep toggle state CSS 用复合选择器（`.cta-blue.cta-grey{...}`）不是单 class
+- [ ] 含订阅按钮的场景必有铃铛元素配套
+- [ ] grep 深色 web 滚动区有 `scrollbar-width:thin` 配套（E7）
+- [ ] grep `max-height:80vh` 浮层同时有 `overflow-y:auto`（E8）

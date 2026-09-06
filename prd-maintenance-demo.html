@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRD 协作飞轮 · 内部演示</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1d212b; --ink:#e8eaed;
+    --muted:#9aa3b2; --line:#2a2f3a; --accent:#4f86f7; --accent2:#34d399;
+    --warn:#f5a623; --danger:#f87171; --code:#11141a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",Segoe UI,sans-serif;
+    line-height:1.65; font-size:15px;}
+  .wrap{max-width:960px; margin:0 auto; padding:48px 28px 70px}
+  header.hero{text-align:center; margin-bottom:30px}
+  header.hero h1{font-size:32px; margin:0 0 8px; letter-spacing:.5px}
+  header.hero .sub{color:var(--muted); font-size:15px}
+  section.block{background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    padding:28px 30px; margin:22px 0;}
+  .block-tag{display:inline-block; font-size:12px; letter-spacing:2px; color:var(--accent);
+    border:1px solid var(--accent); padding:3px 10px; border-radius:6px; margin-bottom:12px;}
+  h2{font-size:23px; margin:4px 0 4px}
+  h3{font-size:17px; margin:24px 0 10px; color:#fff}
+  .lead{color:var(--muted); margin:0 0 6px}
+  code{background:var(--code); color:#cfe0ff; padding:2px 7px; border-radius:5px;
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; font-size:13px;}
+
+  /* ---- 飞轮 ---- */
+  .flywheel{display:flex; gap:24px; align-items:center; margin:24px 0; flex-wrap:wrap}
+  .wheel{position:relative; width:300px; height:300px; flex:none; margin:0 auto}
+  .wheel svg{width:100%; height:100%; transform:rotate(-90deg)}
+  .wheel .hub{position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center}
+  .wheel .hub b{font-size:17px; color:#fff}
+  .wheel .hub small{color:var(--muted); font-size:12px; margin-top:4px}
+  .spokes{flex:1; min-width:300px; counter-reset:s; list-style:none; padding:0; margin:0}
+  .spokes li{position:relative; padding:12px 14px 12px 50px; margin:0 0 10px;
+    background:var(--panel2); border:1px solid var(--line); border-radius:10px;}
+  .spokes li::before{counter-increment:s; content:counter(s);
+    position:absolute; left:12px; top:50%; transform:translateY(-50%);
+    background:var(--accent); color:#fff; width:26px; height:26px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700;}
+  .spokes li b{color:#fff} .spokes li small{color:var(--muted); display:block; font-size:12.5px}
+  .spokes li:last-child{border-left:3px solid var(--accent2)}
+
+  .triad{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:18px 0}
+  .card{background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:16px}
+  .card .role{font-size:11.5px; color:var(--accent2); letter-spacing:1px}
+  .card h4{margin:4px 0 6px; font-size:16px}
+  .card p{font-size:13px; color:var(--muted); margin:0}
+  .card.base{border-top:3px solid var(--accent2)}
+  .card.delta{border-top:3px solid var(--accent)}
+  .card.log{border-top:3px solid var(--warn)}
+
+  .callout{border-radius:12px; padding:14px 18px; margin:18px 0; font-size:14px;
+    border:1px solid var(--line); background:var(--panel2);}
+  .callout.key{border-left:4px solid var(--warn)} .callout.key b{color:var(--warn)}
+
+  table{width:100%; border-collapse:collapse; margin:12px 0; font-size:13.5px}
+  th,td{border:1px solid var(--line); padding:9px 12px; text-align:left; vertical-align:top}
+  th{background:var(--panel2); color:#fff; font-weight:600}
+  .chip{display:inline-block; padding:2px 8px; border-radius:6px; font-size:12px; font-weight:600}
+  .chip.r{background:rgba(248,113,113,.15); color:var(--danger); border:1px solid rgba(248,113,113,.4)}
+  .chip.y{background:rgba(245,166,35,.15); color:var(--warn); border:1px solid rgba(245,166,35,.4)}
+
+  /* ---- 两栏 PRD 章节 ---- */
+  .chapters{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:16px 0}
+  .col{background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:18px}
+  .col.base{border-top:3px solid var(--accent2)}
+  .col.delta{border-top:3px solid var(--accent)}
+  .col .ttl{display:flex; align-items:baseline; gap:8px; margin-bottom:4px}
+  .col .ttl b{font-size:16px; color:#fff} .col .ttl span{font-size:12px; color:var(--muted)}
+  .col .org{font-size:12.5px; color:var(--accent2); margin:0 0 12px}
+  .col.delta .org{color:var(--accent)}
+  ol.ch{list-style:none; counter-reset:c; padding:0; margin:0}
+  ol.ch li{position:relative; padding:7px 0 7px 30px; border-bottom:1px dashed var(--line); font-size:13px}
+  ol.ch li:last-child{border-bottom:none}
+  ol.ch li::before{counter-increment:c; content:counter(c);
+    position:absolute; left:0; top:7px; color:var(--muted); font-size:12px;
+    font-family:"SF Mono",ui-monospace,monospace}
+  ol.ch li b{color:var(--ink)} ol.ch li small{color:var(--muted); display:block; font-size:12px}
+  ol.ch.alpha{counter-reset:c}
+  ol.ch.alpha li::before{content:counter(c,upper-alpha)}
+
+  .why{margin:14px 0 0; padding:0; list-style:none}
+  .why li{position:relative; padding:9px 0 9px 26px; font-size:13.5px; color:var(--muted);
+    border-bottom:1px solid var(--line)}
+  .why li:last-child{border-bottom:none}
+  .why li::before{content:"▸"; position:absolute; left:4px; top:9px; color:var(--accent)}
+  .why li b{color:var(--ink)}
+
+  .cmd{background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--accent);
+    border-radius:10px; padding:11px 14px; display:grid; grid-template-columns:auto 1fr; gap:14px;
+    align-items:center; margin:9px 0;}
+  .cmd .k{font-family:"SF Mono",ui-monospace,Menlo,monospace; font-size:12.5px; color:#cfe0ff; white-space:nowrap}
+  .cmd .d{color:var(--muted); font-size:13px}
+
+  footer{text-align:center; color:var(--muted); font-size:12px; margin-top:34px}
+  @media (max-width:720px){
+    .triad{grid-template-columns:1fr} .chapters{grid-template-columns:1fr}
+    .cmd{grid-template-columns:1fr; gap:4px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <h1>PRD 协作飞轮</h1>
+    <div class="sub">一份真相，越转越准 · 内部演示</div>
+  </header>
+
+  <!-- ===== 飞轮：主角 ===== -->
+  <section class="block">
+    <span class="block-tag">核心</span>
+    <h2>飞轮：每转一圈，baseline 更准</h2>
+    <p class="lead">真相只有一份 living 文档。每轮迭代不重写它，而是写增量、上线、合并回去——下一轮从更准的起点出发。</p>
+
+    <div class="flywheel">
+      <div class="wheel">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="42" fill="none" stroke="#2a2f3a" stroke-width="6"/>
+          <circle cx="50" cy="50" r="42" fill="none" stroke="#4f86f7" stroke-width="6"
+            stroke-dasharray="210 264" stroke-linecap="round"/>
+        </svg>
+        <div class="hub"><b>baseline</b><small>线上当前态真相</small></div>
+      </div>
+      <ol class="spokes">
+        <li><b>写 delta</b><small>本轮需求 + 决策 + 埋点，落季度/版本目录</small></li>
+        <li><b>上线</b><small>研发按 delta 实现并发布</small></li>
+        <li><b>补 changelog</b><small>登记索引行，推进到「已合并」</small></li>
+        <li><b>反向合并</b><small>手动改进 baseline 模块章，不重跑骨架</small></li>
+        <li><b>归档 delta</b><small>整包归档，真相回到 baseline，进入下一圈</small></li>
+      </ol>
+    </div>
+
+    <div class="callout key">
+      <b>承重不变量</b> · 改 baseline 前先写 changelog 索引行，推进到「已合并」才动正文。<b>日志权威，正文是可重建的缓存</b>——脚本校验增量章是否真落进 baseline，整段漏搬亮红灯。
+    </div>
+  </section>
+
+  <!-- ===== 三件套 ===== -->
+  <section class="block">
+    <span class="block-tag">三件套</span>
+    <h2>谁负责什么</h2>
+    <div class="triad">
+      <div class="card base">
+        <div class="role">LIVING · 真相源</div>
+        <h4>baseline PRD</h4>
+        <p>线上全量真相（WHAT），按模块树组织，直接喂研发做 spec。无版本号。</p>
+      </div>
+      <div class="card delta">
+        <div class="role">本轮 · 增量</div>
+        <h4>delta PRD</h4>
+        <p>本轮需求 + WHY/决策 + 埋点 + 排期。引用 baseline 只锚场景编号。</p>
+      </div>
+      <div class="card log">
+        <div class="role">索引 · 回链</div>
+        <h4>changelog</h4>
+        <p>日期｜模块｜delta 链接｜状态。每次现状改动的权威台账。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 两种 PRD 各装什么 ===== -->
+  <section class="block">
+    <span class="block-tag">章节</span>
+    <h2>两种 PRD 各装什么</h2>
+    <p class="lead">同样追求「能直接喂研发做 spec」，但组织方式完全不同——一个按<b>模块</b>铺全量，一个按<b>本轮变更</b>写增量。</p>
+
+    <div class="chapters">
+      <div class="col base">
+        <div class="ttl"><b>baseline</b><span>按模块树 · 全量 · living</span></div>
+        <p class="org">模块 = 主场景 A–F，子模块 A-1/A-2，每模块自带各端段</p>
+        <ol class="ch alpha">
+          <li><b>产品概览 + 术语词典</b><small>是什么 / 黑话对齐</small></li>
+          <li><b>模块树 + 业务对象 + 状态机全集</b><small>四支柱之三：编号 of record / 字段契约 / 迁移表</small></li>
+          <li><b>全局业务规则</b><small>跨场景速查表 + 具名锚点</small></li>
+          <li><b>各模块章（Feed / 发布器 / 详情 …）</b><small>每个 A-N 子场景的完整规则 + 字段 + 状态</small></li>
+          <li><b>埋点契约</b><small>四支柱之四：事件表 + 归因</small></li>
+          <li><b>变更记录</b><small>append-only changelog，承重不变量入口</small></li>
+        </ol>
+      </div>
+
+      <div class="col delta">
+        <div class="ttl"><b>delta</b><span>9 章树 · 增量 · 单轮快照</span></div>
+        <p class="org">按「本轮 N 需求 + 四支柱增量」组织，上线即合并归档</p>
+        <ol class="ch">
+          <li><b>背景与价值论证</b><small>WHY · 1.4 核心变更（vs 线上基线）</small></li>
+          <li><b>本轮需求</b><small>只写真有改动的场景，未动场景整章删</small></li>
+          <li><b>业务对象增量 / 状态机增量 / 全局规则增量</b><small>独立 H1 章，与 baseline 同构，反向合并直接搬章</small></li>
+          <li><b>决策记录</b><small>多轮决策的来龙去脉</small></li>
+          <li><b>埋点</b><small>本轮新增事件</small></li>
+          <li><b>排期 + 反向合并指引</b><small>Phase / 依赖 / 合回哪些模块章</small></li>
+        </ol>
+      </div>
+    </div>
+
+    <h3>为什么这么切？好处是什么？</h3>
+    <ul class="why">
+      <li><b>baseline 按模块、delta 按变更</b> — 研发看 baseline 一眼定位「这块功能现在长啥样」；看 delta 只关心「这轮要改啥」，不被未动场景的噪声干扰。</li>
+      <li><b>delta 只写真有改动的场景</b> — 「本轮不动 / 同上一版」这类占位句一律禁。PRD 是给研发对照实现的，未改章是噪声，让研发猜「这章在不在 scope」。</li>
+      <li><b>delta 的增量章与 baseline 同构</b> — 同套表头表行，上线后反向合并直接搬章，不用手工翻格式、不会翻错。</li>
+      <li><b>delta 引用 baseline 只锚场景编号 / 规则 ID</b> — baseline 是 living 的，章节号会随合并漂移，编号才是稳定锚点，跨文档引用不会变死链。</li>
+      <li><b>四支柱两边对齐</b>（业务对象 / 状态机 / 全局规则 / 埋点）— 用业务语义精度而非技术黑话达到 spec coding，研发 AI 能反推 key 与 SQL。</li>
+    </ul>
+  </section>
+
+  <!-- ===== 状态与防线 ===== -->
+  <section class="block">
+    <span class="block-tag">受控</span>
+    <h2>状态词表 + 两层防线</h2>
+    <p class="lead">状态取值是机械校验的依据，不能自由发挥。</p>
+    <table>
+      <tr><th>delta 头部</th><th>changelog 列</th><th>含义</th></tr>
+      <tr><td><code>待排期 / 开发中</code></td><td><code>规划中</code></td><td>未上线，豁免合并检查</td></tr>
+      <tr><td><code>已上线</code></td><td><code>已登记</code></td><td>上线未合并 — 红灯窗口</td></tr>
+      <tr><td><code>已合并</code></td><td><code>已合并</code></td><td>反向合并完成</td></tr>
+    </table>
+    <p style="margin-top:14px">
+      <span class="chip r">红灯</span> 流程新鲜度：已上线 delta 必须合并，脚本 + hook + dashboard 三重兜底。&nbsp;
+      <span class="chip y">黄灯</span> 内容新鲜度：模块章超 60 天未核对线上则提醒。
+    </p>
+  </section>
+
+  <!-- ===== 工程附注 ===== -->
+  <section class="block">
+    <span class="block-tag">工程附注</span>
+    <h2>大文件怎么读</h2>
+    <p class="lead">baseline 上百行，全量加载浪费。<code>read_prd_section.py</code> 按章节切片，只取需要的几章。</p>
+    <div class="cmd"><div class="k">--toc</div><div class="d">列章节目录（含静态/动态标注），先拿地图</div></div>
+    <div class="cmd"><div class="k">-s 5.1</div><div class="d">精取某章某节</div></div>
+    <div class="cmd"><div class="k">--grep "关键词"</div><div class="d">定位落在哪章，再 -s 取</div></div>
+  </section>
+
+  <footer>真相源：<code>artifact-conventions.md §六</code> · <code>prd-chapter-rules.md</code> · <code>read_prd_section.py</code></footer>
+
+</div>
+</body>
+</html>

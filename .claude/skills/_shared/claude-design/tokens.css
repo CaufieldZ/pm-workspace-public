@@ -1,0 +1,149 @@
+/* Claude Design tokens — pm-workspace 共享 CSS 变量
+ * Anthropic 官方品牌色板 + claude.ai chat UI 实测色 + Lora / Poppins 字体（Anthropic 官方 brand-guidelines skill 同款）
+ *
+ * 色板来源：
+ * - 官方 brand-guidelines skill：github.com/anthropics/skills/skills/brand-guidelines
+ * - claude.ai chat UI 实测 ink：#C3C2B7（chat 短文本场景，PM-WORKSPACE 静态产出物用偏灰，已废弃）
+ * 默认 ink #E4E2D6（在 bg #1F1F1E 上对比度 14:1，比 chat 实测亮一档但比官方品牌 #FAF9F5 柔），PPT / SOP / 架构图扫读场景适用；需要营销级最高对比切 .theme-cd-brand 拿 #141413/#faf9f5
+ *
+ * 字体引入（推荐）：
+ * - CSS 内：@import url('../../_shared/fonts/claude-design.css');
+ * - HTML head（脱离 skill 目录时用直接 CDN URL，与 _shared/fonts/claude-design.css 保持一致，改字体同步改两处）：
+ * <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@300;400;500;600;900&family=Lora:ital,wght@0,400..700;1,400..700&family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+ *
+ * ─────────────────────────────────────────────────────
+ * 设计哲学（2026-04-28 起整套切换）
+ * 衬线 + terra cotta = 反 OpenAI/Gemini 蓝 + 反无衬线主流，显 scholarly。
+ * 底层：暖色温 / 衬线主导 / 反工业 accent / 反 emoji / 反 SVG 插画。
+ *
+ * 字体授权背景：
+ * - 品牌规范：标题 Galaxie Copernicus（Klim）/ 正文 Tiempos Text（Klim）/ Styrene B（Commercial Type）/ Anthropic Sans（自有）
+ * - claude.ai 实测：标题加载定制 webfont `__copernicus_669e4a`，正文走系统栈 `ui-serif, Georgia, ...`（Mac 落到 New York）
+ * - 付费方案：Klim / Commercial Type 各约 $50/字重
+ * - 零成本替代（已落地）：Lora 替 Source Serif 4 / Poppins 替 Inter（出处：github.com/anthropics/skills/brand-guidelines，Apache 2.0）
+ *
+ * 故意保留蓝色的位置（看到别误删）—— 金融语义保留，UI chrome 切 cd-accent：
+ * - _shared/claude-design/themes/fintech-dark.css：theme 文件就叫 fintech-dark，蓝色是 theme 定义
+ * - prototype/ 整个 skill：金融业务移动端视觉（Binance 蓝系沿用）
+ * - interaction-map/：99% 在金融业务场景用
+ * - data-report/：图表 4 色板（绿/蓝/金/红）的蓝是 chart palette
+ * - 业务项目目录：业务交付物保留品牌蓝
+ * - 项目 SOP 脚手架 CSS：项目级 SOP 源
+ *
+ * 旧 token 迁移映射（遇老代码按此查）：
+ * - Source Serif 4    → Lora（同 Transitional serif，DNA 接近 Tiempos/Copernicus）
+ * - Inter / Jakarta   → Poppins（brand-guidelines 钦定）
+ * - #262624（旧估值）  → #1F1F1E（实测官方底色）
+ * - #FFF（纯白）       → #C3C2B7（暖灰白，跟 #1F1F1E 底搭柔和高级感）
+ */
+
+:root {
+  /* ── 深色底色（默认主题）── */
+  --cd-bg:      #1F1F1E;
+  --cd-ink:     #E4E2D6;
+  --cd-ink-82:  rgba(228, 226, 214, 0.82);
+  --cd-ink-58:  rgba(228, 226, 214, 0.58);
+  --cd-ink-40:  rgba(228, 226, 214, 0.40);
+  --cd-ink-18:  rgba(228, 226, 214, 0.18);
+  --cd-hairline: rgba(228, 226, 214, 0.10);
+
+  /* ── Anthropic 官方 accent ── */
+  --cd-accent:      #D97757;  /* terra cotta，主 accent，logo 同款 */
+  --cd-accent-deep: #B45A3D;  /* 主 accent 加深 */
+  --cd-accent-glow: rgba(217, 119, 87, 0.22);
+  --cd-accent-2:    #6A9BCC;  /* 次 accent，蓝 */
+  --cd-accent-3:    #788C5D;  /* 三 accent，绿 */
+
+  /* ── 浅色模式（cream 背景，用于后台 / PPT 浅色版）── */
+  --cd-light-bg:   #FAF9F5;   /* Anthropic 官方 Light */
+  --cd-light-ink:  #141413;   /* Anthropic 官方 Dark */
+  --cd-light-dim:  #B0AEA5;   /* 官方 Mid Gray */
+  --cd-light-soft: #E8E6DC;   /* 官方 Light Gray，柔和分区背景 */
+  --cd-light-hair: rgba(20, 20, 19, 0.10);
+
+  /* ── 字体 ──
+   * 字体三分工：标题 serif（衬线主角，跟 claude.ai chat UI 那个 "What shall we think through?" 一脉相承）
+   *           正文 sans（CJK 优先 + Anthropic 官方 Poppins）
+   *           代码 mono（信息节奏层）
+   * CJK 优先铁律：中文字体必须排在英文字体前
+   * Lora ≈ Tiempos（claude.ai 实际用的 marketing serif）—— Klim Type Foundry 同设计师 DNA，Anthropic brand-guidelines 钦定的免费替代
+   * Poppins ≈ Styrene B（claude.ai 实际用的 UI sans）—— Anthropic brand-guidelines 钦定的免费替代
+   */
+  --cd-serif-cn: "Noto Serif SC", "Source Han Serif SC", serif;
+  --cd-serif-en: "Lora", Georgia, "Times New Roman", serif;
+  --cd-sans:     "Noto Sans SC", "Poppins", "PingFang SC", -apple-system, system-ui, sans-serif;
+  --cd-mono:     "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+
+  /* ── 间距系统（8pt 网格）── */
+  --sp-1: 8px;
+  --sp-2: 16px;
+  --sp-3: 24px;
+  --sp-4: 32px;
+  --sp-6: 48px;
+  --sp-8: 64px;
+
+  /* ── 圆角 ── */
+  --radius-sm:  4px;
+  --radius-md:  8px;
+  --radius-lg: 16px;
+
+  /* ── 设备规格（移动 mockup 标准）── */
+  --device-mobile-w:      375px;
+  --device-mobile-h:      812px;
+  --device-mobile-radius: 44px;
+
+  /* ─────────────────────────────────────────────
+   * Exchange 前台主题（imap / 移动端原型）
+   * 深色系金融视觉。--ex-* 命名独立于 --cd-*
+   * ───────────────────────────────────────────── */
+  --ex-bg:        #0B0E11;
+  --ex-surface:   #1E2329;
+  --ex-up:        #0ECB81;
+  --ex-down:      #F6465D;
+  --ex-text:      #EAECEF;
+  --ex-text-dim:  #848E9C;
+
+  /* ─────────────────────────────────────────────
+   * Arco 语义色 + 品牌主色（后台 / 配置型 UI）
+   * 跨主题通用（深色 / 浅色都用同套语义色）
+   * ───────────────────────────────────────────── */
+  --arco-success: #00B42A;
+  --arco-error:   #F53F3F;
+  --brand-blue:   #007FFF;
+}
+
+/* @audit-spec
+ * 机器可解析规范源（audit.sh 数据源，禁手抄）。改设备 / 字体 / 色板同步改此段。
+ *
+ * mobile-device: 375x812
+ * mobile-radius: 44
+ * font-body: "Noto Sans SC"
+ * font-mono: "JetBrains Mono"
+ * font-serif-cn: "Noto Serif SC"
+ * theme-cd: bg=#1F1F1E accent=#D97757 accent-2=#6A9BCC ink=#E4E2D6 accent-3=#788C5D
+ * theme-ex: bg=#0B0E11 up=#0ECB81 down=#F6465D surface=#1E2329
+ * theme-semantic: ok=#00B42A err=#F53F3F brand-blue=#007FFF
+ * dual-theme-files: .claude/skills/prototype/assets/prototype.css
+ */
+
+/* 浅色模式作用域，套在 .theme-cd-light 或 body.light 上 */
+.theme-cd-light {
+  --cd-bg:      var(--cd-light-bg);
+  --cd-ink:     var(--cd-light-ink);
+  --cd-ink-82:  rgba(20, 20, 19, 0.82);
+  --cd-ink-58:  rgba(20, 20, 19, 0.58);
+  --cd-ink-40:  rgba(20, 20, 19, 0.40);
+  --cd-ink-18:  rgba(20, 20, 19, 0.18);
+  --cd-hairline: rgba(20, 20, 19, 0.10);
+}
+
+/* 营销级高对比作用域（Anthropic 官方品牌色 #141413 / #faf9f5），套在 hero / 印刷物 / 高反差封面 */
+.theme-cd-brand {
+  --cd-bg:      #141413;
+  --cd-ink:     #FAF9F5;
+  --cd-ink-82:  rgba(250, 249, 245, 0.82);
+  --cd-ink-58:  rgba(250, 249, 245, 0.58);
+  --cd-ink-40:  rgba(250, 249, 245, 0.40);
+  --cd-ink-18:  rgba(250, 249, 245, 0.18);
+  --cd-hairline: rgba(250, 249, 245, 0.10);
+}

@@ -1,0 +1,143 @@
+# Conference Web 平台 slice 索引
+# search.py 的 slices 模式在 platform=web 时优先读取此文件
+# 文件路径格式：相对于 knowledge-base/ 根目录
+
+slices:
+
+  # ---- 接入主线 ----
+
+  - id: conference/login-auth
+    name: 登录与鉴权
+    tags: [login, auth, SDKAppID, UserID, UserSig, session, multi-device]
+    keywords: [6206, UserSig过期, login-failed, 进房失败, kicked-offline, 被踢下线]
+    file: slices/conference/web/login-auth.md
+    description: 统一登录态、SDKAppID/UserID/UserSig 鉴权、登录失效/会话过期/多端顶替处理
+
+  - id: conference/prejoin-check
+    name: 入会前设备检查
+    tags: [prejoin, device-check, camera, microphone, speaker, preview, selftest]
+    keywords: [MediaPermissionCheck, getUserMedia, DeviceDetector, 两套设备检测, stopSpeakerTest]
+    file: slices/conference/web/prejoin-check.md
+    description: 摄像头/麦克风/扬声器的会前检测与本地预览，完成设备自检与降级准备
+
+  - id: conference/room-lifecycle
+    name: 房间创建、加入、离开与结束
+    tags: [room, lifecycle, create, join, leave, end]
+    keywords: [100211, take-seat, 100006, live-room-only, 进房失败, join-failed, createAndJoinRoom]
+    file: slices/conference/web/room-lifecycle.md
+    description: 会议从创建、加入、离开到结束的主链路，统一承接即时会议发起、加入已有会议与退场收口
+
+  # ---- 会议骨架 ----
+
+  - id: conference/video-layout
+    name: 视频布局
+    tags: [layout, RoomView, layoutTemplate, participantViewUI, grid, sidebar, mobile-layout, screen-share]
+    file: slices/conference/web/video-layout.md
+    description: 视频区域渲染、布局模板切换、主画面选择、共享突出展示、挂件扩展与移动端布局适配
+
+  - id: conference/room-schedule
+    name: 预约会议
+    tags: [schedule, reservation, future-meeting, reminder, list]
+    file: slices/conference/web/room-schedule.md
+    description: 未来会议的创建、更新、取消、列表查询与到点提醒；到点入会由 room-lifecycle 接管
+
+  - id: conference/room-call
+    name: 会中呼叫
+    tags: [call, signaling, accept, reject, timeout, multi-device]
+    file: slices/conference/web/room-call.md
+    description: 会议进行中向房外在线用户发起实时呼叫，处理接受/拒绝/超时/多设备收口等呼叫信令流程
+
+  # ---- 治理与互动 ----
+
+  - id: conference/participant-list
+    name: 参会人列表与状态
+    tags: [participant, list, role, speaking, pagination, sync]
+    file: slices/conference/web/participant-list.md
+    description: 参会人列表展示与同步，包括角色、发言态、音视频状态、业务扩展字段与分页加载
+
+  - id: conference/participant-management
+    name: 参会人管理与角色治理
+    tags: [kick, admin, role, transfer, invite-permission]
+    keywords: [举手审批, 设备申请审批, raise-hand-approval, device-approval, mute-all]
+    file: slices/conference/web/participant-management.md
+    description: >
+      角色治理（设/撤管理员、转移房主、移出成员、改名片）+
+      房间级会控（全员禁麦/禁画/禁言、单成员关设备、设备申请审批与邀请）
+
+  - id: conference/room-chat
+    name: 会中聊天
+    tags: [chat, message, group, history, unread, disable-chat]
+    keywords: [会中聊天, in-meeting-chat, 消息, 群聊]
+    file: slices/conference/web/room-chat.md
+    description: 会议与群组会话绑定、消息收发、历史分页、未读状态、禁聊联动
+
+  # ---- 设备、媒体与体验增强 ----
+
+  - id: conference/device-control
+    name: 设备控制
+    tags: [camera, microphone, speaker, device, permission, switch, recovery]
+    file: slices/conference/web/device-control.md
+    description: 会中摄像头/麦克风/扬声器的开关、切换、权限处理与异常恢复
+
+  - id: conference/network-quality
+    name: 网络质量
+    tags: [network, quality, rtt, packet-loss, reconnect, weak-network]
+    file: slices/conference/web/network-quality.md
+    description: 会中网络状态感知、弱网提示、重连状态与超时告警
+
+  - id: conference/screen-share
+    name: 屏幕分享
+    tags: [screen-share, desktop, system-audio, state, event]
+    file: slices/conference/web/screen-share.md
+    description: 桌面端共享屏幕、共享系统音频、共享状态监听、共享权限控制与共享相关事件
+
+  - id: conference/beauty-effects
+    name: 美颜效果
+    tags: [beauty, smooth, whiten, ruddy, preview, two-phase]
+    file: slices/conference/web/beauty-effects.md
+    description: 本地视频的磨皮/美白/红润等基础美颜，本地预览与保存生效的两阶段流程
+
+  - id: conference/virtual-background
+    name: 虚拟背景
+    tags: [virtual-background, blur, replace, assetsPath, browser-support]
+    file: slices/conference/web/virtual-background.md
+    description: 背景虚化/替换、模型资源与 assetsPath 配置、浏览器支持性检测、预览与保存生效链路
+
+  # ---- 官方套件 ----
+
+  - id: conference/official-roomkit-api
+    name: 官方 RoomKit 适配层 API
+    keywords: [roomkit, tuiroomkit, tui-roomkit, conference-api, react, vue3, roomkit-web-react]
+    tags: [official-roomkit, conference-api, conference-object, setWidgetVisible, registerWidget,
+           onWill, setFeatureConfig, createAndJoinRoom, joinRoom, UIKitProvider, React, Vue3]
+    file: slices/conference/web/official-roomkit-api.md
+    description: >
+      官方 RoomKit 集成模式下 Vue3 / React conference 对象的完整 API 签名、枚举定义、调用时序和代码示例
+      （ui_mode=official-roomkit 专用）
+
+  - id: conference/official-roomkit-login-ui
+    name: 官方 RoomKit 登录 UI
+    keywords: [roomkit, login-ui, tuiroomkit, react, vue3]
+    tags: [official-roomkit, login-ui, layout, form, UIKitProvider, LoginPanel, React, Vue3]
+    file: slices/conference/web/official-roomkit-login-ui.md
+    description: 官方 RoomKit 登录页的布局、表单、凭证提示与状态反馈规范，包括 Vue3 / React UIKitProvider 与 LoginPanel 集成约束
+
+  - id: conference/integration-audit
+    name: Conference Web 集成审计
+    tags: [audit, checklist, meta, integration-review, roomkit, online-classroom]
+    file: slices/conference/web/integration-audit.md
+    description: 横切对照官方 Conference Web 接入流程的审计清单；intent F 使用，不进 scenario 集成队列
+
+  # ---- 会议模式扩展 ----
+
+  - id: conference/webinar-interaction
+    name: 研讨会互动
+    tags: [webinar, raise-hand, audience, barrage, participant, requestToOpenDevice, device-approval]
+    file: slices/conference/web/webinar-interaction.md
+    description: 研讨会房型中的观众举手、主持审批、上台发言、设备申请收口与弹幕互动
+
+  - id: conference/ai-tools
+    name: AI 工具集成
+    tags: [ai, asr, transcription, subtitle, translation, realtime]
+    file: slices/conference/web/ai-tools.md
+    description: 会中 AI 实时转写、字幕展示、翻译语言配置、实时消息列表与启停收口

@@ -1,0 +1,22 @@
+# 行文类 lint（plain-language / bullet-density）的产物豁免规则 —— bash + Python 单一真相源。
+#
+# 消费方：
+#   Python — scripts/lib/lint_exempt.py（is_lint_exempt）
+#   bash   — .claude/hooks/lib/guards.sh（is_plain_language_exempt）
+#
+# 格式：<类型>:<模式>，# 起手为注释，空行忽略。
+#   basename:<glob>  对文件名（basename）做 glob 匹配
+#   pathseg:<名>     路径任一目录段等于此名
+#
+# glob 语义取 bash `[[ == ]]` ∩ Python fnmatch 交集：* ? [chars]，不含 ** / {a,b}。
+
+# ── 内部审计文档（PM 自用，不对外）────────────────────────────
+basename:audit-*.md
+basename:fix-plan-*.md
+pathseg:audits
+
+# ── IMAP / 交互大图（走 check_imap.sh 专属校验，不跑行文 lint）──
+basename:imap.html
+basename:imap-*.html
+basename:*-imap.html
+basename:*interaction*.html

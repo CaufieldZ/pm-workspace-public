@@ -1,0 +1,27 @@
+# 交易 / 撮合 / 结算技术词（trading domain）
+# 撮合 / 订单
+OMS
+Matching
+OrderBook
+Settlement
+Funding
+Clearing
+PnL
+# 算法 / 路由
+TWAP
+VWAP
+SmartRouting
+SOR
+# 行情 / K 线
+OHLC
+TickSize
+LotSize
+MarkPrice
+IndexPrice
+Premium
+# 协议 / 接入
+REST API
+Endpoint
+WSS
+Webhook
+FIX

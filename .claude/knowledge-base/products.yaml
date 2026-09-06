@@ -1,0 +1,76 @@
+# TRTC 产品注册表
+# root dispatcher / search.route / docs llms 索引统一读取此文件。
+# 修改此文件会影响产品路由、公开发布矩阵，以及官方文档入口定位。
+
+products:
+  - id: chat
+    name: Chat（即时通信）
+    description: >
+      即时通信 SDK，提供消息收发、会话管理、单聊、群聊、群组、用户资料等能力。
+      IM、消息记录、已读回执、@提醒、撤回消息、推送、离线消息、多端登录。
+    llms_file: https://trtc.io/llms/chat.txt
+    public_release:
+      supported: [web]
+      planned: [ios, android, flutter, electron]
+
+  - id: call
+    name: Call（音视频通话）
+    description: >
+      音视频通话组件，支持 1v1 和群组音视频通话。
+      通话、呼叫、视频电话、语音通话、来电、去电、振铃、接听、挂断、拒接、通话记录、忙线。
+    llms_file: https://trtc.io/llms/call.txt
+    public_release:
+      supported: []
+      planned: [web, ios, android, flutter, electron]
+
+  - id: rtc-engine
+    name: RTC Engine（实时音视频引擎）
+    description: >
+      底层实时音视频引擎，提供进房、退房、推流、拉流、混流等核心能力。
+      TRTC、TRTCCloud、实时音视频引擎、低延时、SEI、码率、采集、编码。
+    llms_file: https://trtc.io/llms/rtc-engine.txt
+    public_release:
+      supported: []
+      planned: [web, ios, android, flutter, electron]
+
+  - id: live
+    name: Live（直播）
+    description: >
+      直播互动 Core SDK，支持推流、拉流、连麦互动、弹幕、礼物、美颜等。
+      直播、主播、开播、下播、观众、连麦、弹幕、礼物、打赏、美颜、变声、PK、房管。
+    llms_file: https://trtc.io/llms/live.txt
+    public_release:
+      supported: []
+      planned: [web, ios, android, flutter, electron]
+
+  - id: conference
+    name: Conference（视频会议）
+    description: >
+      视频会议 Core SDK，提供创建会议、入会、成员管理、会中聊天、屏幕分享等能力。
+      会议、视频会议、多人视频、创建会议、加入会议、预约会议、参会人、会控、屏幕共享、
+      举手、录制、等候室、虚拟背景、静音全员。
+    llms_file: https://trtc.io/llms/conference.txt
+    public_release:
+      supported: [web]
+      planned: [ios, android, flutter, electron]
+
+cross_product_scenarios:
+  - id: live-chat-barrage
+    name: 直播弹幕
+    products: [live, chat]
+    description: 直播弹幕依赖 Chat SDK 的直播群（AVChatRoom）消息能力。
+
+  - id: live-rtc-streaming
+    name: 直播推拉流
+    products: [live, rtc-engine]
+    description: Live 的底层实时音视频链路依赖 RTC Engine 的进房与推流能力。
+
+  - id: call-rtc-engine
+    name: 通话底层音视频
+    products: [call, rtc-engine]
+    description: Call 的底层音视频能力建立在 RTC Engine 的进房和推流能力之上。
+
+  - id: call-chat-signaling
+    name: 通话信令
+    products: [call, chat]
+    description: Call 的呼叫与应答信令依赖 Chat SDK 的 signaling 能力。

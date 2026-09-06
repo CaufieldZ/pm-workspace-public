@@ -1,0 +1,21 @@
+{
+  "CLAUDE.md": 9800,
+  ".claude/runbooks/ai-platform-specs.md": 4600,
+  ".claude/runbooks/artifact-conventions.md": 9000,
+  ".claude/runbooks/cli-cheatsheet.md": 2700,
+  ".claude/runbooks/confluence-archaeology.md": 2550,
+  ".claude/runbooks/decision-framework.md": 1300,
+  ".claude/runbooks/git-and-hooks.md": 3550,
+  ".claude/runbooks/html-build-split.md": 4700,
+  ".claude/runbooks/html-pipeline.md": 2500,
+  ".claude/runbooks/human-voice-rules.md": 8700,
+  ".claude/runbooks/hx-create.md": 1200,
+  ".claude/runbooks/info-ownership.md": 2250,
+  ".claude/runbooks/mcp-config.md": 2200,
+  ".claude/runbooks/pm-methodology.md": 5050,
+  ".claude/runbooks/project-mgmt.md": 4050,
+  ".claude/runbooks/proxy-fallback.md": 1650,
+  ".claude/runbooks/skill-conventions.md": 8550,
+  ".claude/runbooks/tech-debt-backlog.md": 8600,
+  ".claude/runbooks/version-bump.md": 1650
+}

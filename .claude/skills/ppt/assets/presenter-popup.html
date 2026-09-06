@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Presenter View · 演讲者视图</title>
+<style>
+/* presenter-popup.html — 独立 popup 提词器窗口
+ * 架构：主窗口（观众视图）按 S 弹本窗口
+ *   - 4 张磁吸卡片：CURRENT / NEXT / SCRIPT / TIMER
+ *   - CURRENT/NEXT 用 iframe + ?preview=tabId 加载主窗口同一 deck，像素级预览
+ *   - BroadcastChannel('ppt-deck') 双向同步翻页（主→popup / popup→主）
+ *   - postMessage 切 iframe 内 tab（不 reload，零闪烁）
+ *   - 卡片 drag header / resize 右下角 + localStorage 持久化位置尺寸
+ */
+:root{
+  --bg: #0d1117;
+  --card-bg: #161b22;
+  --card-border: #30363d;
+  --text-1: #e6edf3;
+  --text-2: #8b949e;
+  --accent-current: #3b82f6;  /* 蓝 */
+  --accent-next:    #a855f7;  /* 紫 */
+  --accent-script:  #f97316;  /* 橙 */
+  --accent-timer:   #22c55e;  /* 绿 */
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--bg);color:var(--text-1);
+  font-family:'Noto Sans SC',system-ui,sans-serif;
+  position:relative;
+}
+
+/* 卡片基础 */
+.card{
+  position:absolute;
+  background:var(--card-bg);
+  border:1px solid var(--card-border);
+  border-radius:12px;
+  overflow:hidden;
+  display:flex;flex-direction:column;
+  box-shadow:0 8px 24px rgba(0,0,0,.4);
+  min-width:200px;min-height:120px;
+}
+.card-header{
+  padding:8px 12px;
+  background:rgba(255,255,255,.03);
+  border-bottom:1px solid var(--card-border);
+  font-size:12px;font-weight:600;letter-spacing:.05em;
+  cursor:move;user-select:none;
+  display:flex;align-items:center;gap:8px;
+}
+.card-header .dot{width:8px;height:8px;border-radius:50%;}
+.card[data-card-id="current"] .dot{background:var(--accent-current)}
+.card[data-card-id="next"]    .dot{background:var(--accent-next)}
+.card[data-card-id="script"]  .dot{background:var(--accent-script)}
+.card[data-card-id="timer"]   .dot{background:var(--accent-timer)}
+.card-body{flex:1;overflow:auto;position:relative}
+.card-resize{
+  position:absolute;right:0;bottom:0;width:16px;height:16px;
+  cursor:nwse-resize;
+  background:linear-gradient(135deg,transparent 50%,var(--text-2) 50%,var(--text-2) 60%,transparent 60%,transparent 70%,var(--text-2) 70%,var(--text-2) 80%,transparent 80%);
+  opacity:.5;
+}
+
+/* iframe 预览容器：用 transform: scale 等比缩 1920×1080 → 卡片尺寸 */
+.iframe-wrap{
+  width:100%;height:100%;overflow:hidden;
+  background:#000;display:flex;align-items:center;justify-content:center;
+}
+.iframe-wrap iframe{
+  border:0;width:1920px;height:1080px;
+  transform-origin:0 0;
+  background:#fff;
+}
+
+/* SCRIPT 卡片样式 */
+.script-body{padding:24px 28px;font-size:18px;line-height:1.7}
+.script-body p{margin-bottom:16px}
+.script-body strong{color:var(--accent-script);font-weight:700}
+.script-body em{color:var(--accent-current);font-style:normal}
+.script-empty{color:var(--text-2);text-align:center;padding:40px;font-style:italic}
+
+/* TIMER 卡片样式 */
+.timer-body{
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  padding:20px;gap:16px;
+}
+.timer-clock{
+  font-size:48px;font-weight:700;
+  font-variant-numeric:tabular-nums;
+  color:var(--accent-timer);
+  letter-spacing:.02em;
+}
+.timer-meta{font-size:14px;color:var(--text-2)}
+.timer-controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.timer-btn{
+  background:transparent;border:1px solid var(--card-border);
+  color:var(--text-1);padding:6px 14px;border-radius:6px;
+  font-size:13px;cursor:pointer;transition:.15s;
+}
+.timer-btn:hover{background:rgba(255,255,255,.05);border-color:var(--text-2)}
+
+/* 工具栏 */
+.toolbar{
+  position:fixed;top:12px;left:12px;z-index:1000;
+  display:flex;gap:8px;
+}
+.tb-btn{
+  background:var(--card-bg);border:1px solid var(--card-border);
+  color:var(--text-1);padding:6px 12px;border-radius:6px;
+  font-size:12px;cursor:pointer;
+}
+.tb-btn:hover{border-color:var(--text-2)}
+.hint{
+  position:fixed;bottom:12px;left:12px;
+  color:var(--text-2);font-size:11px;letter-spacing:.05em;
+}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <button class="tb-btn" id="resetBtn">重置布局</button>
+</div>
+
+<div class="card" data-card-id="current" style="left:20px;top:60px;width:560px;height:340px">
+  <div class="card-header"><span class="dot"></span>CURRENT · 当前页</div>
+  <div class="card-body"><div class="iframe-wrap"><iframe id="iframeCurrent"></iframe></div></div>
+  <div class="card-resize"></div>
+</div>
+
+<div class="card" data-card-id="next" style="left:600px;top:60px;width:460px;height:280px">
+  <div class="card-header"><span class="dot"></span>NEXT · 下一页</div>
+  <div class="card-body"><div class="iframe-wrap"><iframe id="iframeNext"></iframe></div></div>
+  <div class="card-resize"></div>
+</div>
+
+<div class="card" data-card-id="script" style="left:20px;top:420px;width:760px;height:340px">
+  <div class="card-header"><span class="dot"></span>SPEAKER SCRIPT · 逐字稿</div>
+  <div class="card-body"><div class="script-body" id="scriptBody"><p class="script-empty">本页未提供逐字稿</p></div></div>
+  <div class="card-resize"></div>
+</div>
+
+<div class="card" data-card-id="timer" style="left:800px;top:360px;width:300px;height:240px">
+  <div class="card-header"><span class="dot"></span>TIMER · 计时</div>
+  <div class="card-body">
+    <div class="timer-body">
+      <div class="timer-clock" id="timerClock">00:00</div>
+      <div class="timer-meta" id="timerMeta">— / —</div>
+      <div class="timer-controls">
+        <button class="timer-btn" id="btnPrev">← 上一页</button>
+        <button class="timer-btn" id="btnNext">下一页 →</button>
+        <button class="timer-btn" id="btnReset">重置计时</button>
+      </div>
+    </div>
+  </div>
+  <div class="card-resize"></div>
+</div>
+
+<div class="hint">← → 翻页（同步主窗口）· R 重置计时 · ESC 关闭</div>
+
+<script>
+// ============================================================
+// PPT Presenter Popup Runtime
+// ============================================================
+
+const LS_KEY = 'ppt-presenter-layout-v1';
+const CH = new BroadcastChannel('ppt-deck');
+
+// 状态：从主窗口拉取
+let deckURL = '';        // 主 deck HTML URL（无 query）
+let navIds = [];         // 所有 tab id 顺序
+let notes = {};          // { id: '<p>...</p>' }
+let currentId = '';
+let timerStart = Date.now();
+let timerInterval = null;
+
+// ============================================================
+// 卡片 drag / resize / localStorage 持久化
+// ============================================================
+function loadLayout(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+    document.querySelectorAll('.card').forEach(card => {
+      const id = card.dataset.cardId;
+      if(saved[id]){
+        card.style.left = saved[id].left + 'px';
+        card.style.top = saved[id].top + 'px';
+        card.style.width = saved[id].width + 'px';
+        card.style.height = saved[id].height + 'px';
+      }
+    });
+  }catch(e){console.warn('loadLayout failed', e)}
+  fitAllIframes();
+}
+function saveLayout(){
+  const o = {};
+  document.querySelectorAll('.card').forEach(card => {
+    o[card.dataset.cardId] = {
+      left: parseInt(card.style.left) || 0,
+      top: parseInt(card.style.top) || 0,
+      width: card.offsetWidth,
+      height: card.offsetHeight,
+    };
+  });
+  localStorage.setItem(LS_KEY, JSON.stringify(o));
+}
+function resetLayout(){
+  localStorage.removeItem(LS_KEY);
+  location.reload();
+}
+document.getElementById('resetBtn').addEventListener('click', resetLayout);
+
+// 拖拽 header
+document.querySelectorAll('.card-header').forEach(h => {
+  h.addEventListener('mousedown', e => {
+    if(e.button !== 0) return;
+    const card = h.parentElement;
+    const startX = e.clientX, startY = e.clientY;
+    const startL = parseInt(card.style.left) || 0;
+    const startT = parseInt(card.style.top) || 0;
+    const move = ev => {
+      card.style.left = (startL + ev.clientX - startX) + 'px';
+      card.style.top  = (startT + ev.clientY - startY) + 'px';
+    };
+    const up = () => {
+      document.removeEventListener('mousemove', move);
+      document.removeEventListener('mouseup', up);
+      saveLayout();
+    };
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
+    e.preventDefault();
+  });
+});
+
+// 拖拽 resize 右下角
+document.querySelectorAll('.card-resize').forEach(r => {
+  r.addEventListener('mousedown', e => {
+    if(e.button !== 0) return;
+    const card = r.parentElement;
+    const startX = e.clientX, startY = e.clientY;
+    const startW = card.offsetWidth, startH = card.offsetHeight;
+    const move = ev => {
+      card.style.width = Math.max(200, startW + ev.clientX - startX) + 'px';
+      card.style.height = Math.max(120, startH + ev.clientY - startY) + 'px';
+      fitIframeOf(card);
+    };
+    const up = () => {
+      document.removeEventListener('mousemove', move);
+      document.removeEventListener('mouseup', up);
+      saveLayout();
+    };
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
+    e.stopPropagation();
+    e.preventDefault();
+  });
+});
+
+// iframe 等比缩放：transform: scale(W/1920)
+function fitIframeOf(card){
+  const iframe = card.querySelector('iframe');
+  if(!iframe) return;
+  const body = card.querySelector('.card-body');
+  const w = body.clientWidth, h = body.clientHeight;
+  const scale = Math.min(w / 1920, h / 1080);
+  iframe.style.transform = `scale(${scale})`;
+  const wrap = card.querySelector('.iframe-wrap');
+  if(wrap){
+    // 居中 wrap 内 iframe
+    const sw = 1920 * scale, sh = 1080 * scale;
+    iframe.style.position = 'absolute';
+    iframe.style.left = ((w - sw) / 2) + 'px';
+    iframe.style.top  = ((h - sh) / 2) + 'px';
+  }
+}
+function fitAllIframes(){
+  document.querySelectorAll('.card').forEach(c => fitIframeOf(c));
+}
+window.addEventListener('resize', fitAllIframes);
+
+// ============================================================
+// 与主窗口同步
+// ============================================================
+
+// 启动时跟主窗口 handshake：请求 state
+CH.postMessage({type:'presenter-ready'});
+
+CH.onmessage = e => {
+  const msg = e.data;
+  if(msg.type === 'deck-state'){
+    // 主窗口推送：deck URL / NAV / notes / currentId
+    deckURL = msg.deckURL;
+    navIds = msg.navIds;
+    notes = msg.notes || {};
+    setCurrent(msg.currentId);
+    initIframes();
+  } else if(msg.type === 'goto'){
+    setCurrent(msg.id);
+  }
+};
+
+function initIframes(){
+  // 用 ?preview=ID 加载主 deck，iframe 内 runtime 检测参数只渲染单页 + 隐 chrome
+  const iframeCur  = document.getElementById('iframeCurrent');
+  const iframeNxt  = document.getElementById('iframeNext');
+  iframeCur.src = deckURL + (deckURL.includes('?') ? '&' : '?') + 'preview=' + currentId;
+  iframeNxt.src = deckURL + (deckURL.includes('?') ? '&' : '?') + 'preview=' + nextId();
+  iframeCur.onload = () => fitIframeOf(iframeCur.closest('.card'));
+  iframeNxt.onload = () => fitIframeOf(iframeNxt.closest('.card'));
+}
+
+function nextId(){
+  if(!navIds.length) return currentId;
+  const i = navIds.indexOf(currentId);
+  return i >= 0 && i < navIds.length - 1 ? navIds[i+1] : navIds[0];
+}
+function prevId(){
+  if(!navIds.length) return currentId;
+  const i = navIds.indexOf(currentId);
+  return i > 0 ? navIds[i-1] : navIds[navIds.length-1];
+}
+
+function setCurrent(id){
+  if(!id) return;
+  currentId = id;
+  // 切 iframe 内单页：postMessage 通知 iframe，不 reload
+  const iframeCur = document.getElementById('iframeCurrent');
+  const iframeNxt = document.getElementById('iframeNext');
+  iframeCur.contentWindow && iframeCur.contentWindow.postMessage({type:'preview-goto', id:currentId}, '*');
+  iframeNxt.contentWindow && iframeNxt.contentWindow.postMessage({type:'preview-goto', id:nextId()}, '*');
+  // 更新逐字稿
+  const sb = document.getElementById('scriptBody');
+  if(notes[currentId]){
+    sb.innerHTML = notes[currentId];
+  } else {
+    sb.innerHTML = '<p class="script-empty">本页未提供逐字稿</p>';
+  }
+  // 更新计时器 meta
+  updateTimerMeta();
+}
+
+function updateTimerMeta(){
+  const i = navIds.indexOf(currentId);
+  document.getElementById('timerMeta').textContent =
+    (i >= 0 ? (i+1) : '—') + ' / ' + (navIds.length || '—');
+}
+
+// ============================================================
+// 翻页 + 同步主窗口
+// ============================================================
+function go(id){
+  if(!id || id === currentId) return;
+  setCurrent(id);
+  CH.postMessage({type:'goto', id:id});
+}
+document.getElementById('btnPrev').addEventListener('click', () => go(prevId()));
+document.getElementById('btnNext').addEventListener('click', () => go(nextId()));
+document.getElementById('btnReset').addEventListener('click', () => { timerStart = Date.now(); });
+
+document.addEventListener('keydown', e => {
+  if(e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown')      { go(nextId()); e.preventDefault(); }
+  else if(e.key === 'ArrowLeft' || e.key === 'PageUp')                       { go(prevId()); e.preventDefault(); }
+  else if(e.key === 'r' || e.key === 'R')                                    { timerStart = Date.now(); }
+  else if(e.key === 'Escape')                                                { window.close(); }
+});
+
+// ============================================================
+// 计时器
+// ============================================================
+function tickTimer(){
+  const ms = Date.now() - timerStart;
+  const s = Math.floor(ms / 1000);
+  const mm = String(Math.floor(s / 60)).padStart(2, '0');
+  const ss = String(s % 60).padStart(2, '0');
+  document.getElementById('timerClock').textContent = mm + ':' + ss;
+}
+timerInterval = setInterval(tickTimer, 500);
+tickTimer();
+
+// ============================================================
+// INIT
+// ============================================================
+loadLayout();
+</script>
+
+</body>
+</html>

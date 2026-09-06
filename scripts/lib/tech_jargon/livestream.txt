@@ -1,0 +1,37 @@
+# 直播 / 音视频技术词（livestream domain）
+# 一行一词，# 开头是注释。命中即视为「描述当前态」违规
+# 推流 / 拉流 / 协议
+TUILiveKit
+StreamMixer
+MixTranscoding
+LocalStream
+MediaDeviceSetting
+LiveScenePanel
+BarrageList
+BarrageInput
+LiveAudienceList
+CoGuestButton
+LayoutSwitch
+getDisplayMedia
+WebRTC
+SRS
+# 编解码 / 容器
+H264
+H265
+HEVC
+AAC
+VP8
+VP9
+AV1
+Opus Codec
+# 信令 / 实时传输
+RTP
+RTCP
+STUN
+TURN
+ICE
+SFU
+MCU
+SDP
+DTLS
+SRTP

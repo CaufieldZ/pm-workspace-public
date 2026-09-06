@@ -1,0 +1,20 @@
+=== 1116:25679 状态栏 ===
+[FRAME] 状态栏 390×44 fill=#000000
+  [GROUP] 刘海儿 
+  [GROUP] 状态 67×11
+    [GROUP] Battery 24×11
+      [VECTOR] Rectangle 22×11 r=2.6773338317871094 fill=#FFFFFF
+      [VECTOR] Combined Shape 1×4 fill=#FFFFFF
+      [VECTOR] Rectangle 18×7 r=1.3386669158935547 fill=#FFFFFF
+    [BOOLEAN_OPERATION] Wifi 15×11 fill=#FFFFFF
+      [VECTOR] Wifi-path 15×5 fill=#DADADA
+      [VECTOR] Wifi-path 10×4 fill=#DADADA
+      [VECTOR] Wifi-path 5×3 fill=#DADADA
+    [BOOLEAN_OPERATION] Mobile Signal 17×11 fill=#FFFFFF
+      [VECTOR] Cellular_Connection-path 3×4 fill=#DADADA
+      [VECTOR] Cellular_Connection-path 3×6 fill=#DADADA
+      [VECTOR] Cellular_Connection-path 3×8 fill=#DADADA
+      [VECTOR] Cellular_Connection-path 3×11 fill=#DADADA
+  [GROUP] 时间 54×21 r=32.12800598144531
+    [FRAME] Time / Light / Base 54×21 r=32.12800598144531
+      [VECTOR] 9:41 29×11 fill=#FFFFFF

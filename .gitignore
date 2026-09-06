@@ -1,0 +1,187 @@
+node_modules/
+.venv/
+.vscode/
+.DS_Store
+*.bak
+/tmp/
+__pycache__/
+diagnostic-dump.md
+package-lock.json
+.claude/skills/docx/scripts/office/schemas/
+
+# 环境变量（含密钥）
+.env
+
+# 本机配置（含密钥或机器级设置，不跟踪）
+.mcp.json
+.mcp-disabled.json
+.claude/settings.local.json
+
+# Session 进度快照（由 Claude 维护，PreCompact hook 读取注入，不跟踪）
+.claude/session-state.md
+
+# 登录态 cookies（含敏感凭证，不跟踪）
+.claude/skills/intel-collector/assets/auth/
+
+# 个人设备绑定 Skill（DingTalk A1 录音笔，不通用）
+.claude/skills/meeting-autopilot/
+
+# 工作素材（竞品截图、数据源、报告等，非框架代码）
+/references/
+
+# ── projects/ 忽略规则 ──
+# `projects/**/` 匹配产品线 / 项目任意层级（含 archive 子树）；以下均为
+# 「本地缓存 / 可重生 / 可重拉 / 二进制」类目，任何嵌套深度都不入库。
+
+# 历史归档（升版后的旧 docx/HTML，本地保留可回滚，远端 GitHub 不需要）
+projects/**/deliverables/archive/
+projects/**/scripts/archive/
+
+# 产品线根 archive（projects/{产品线}/archive/，整轮退役归档 base/leaderboard/retired-2026Q2 等）
+# 文本档案（md/html/py/svg/json）入库作历史信息；二进制本地保留（与 deliverables/inputs 口径一致）
+projects/**/archive/**/*.png
+projects/**/archive/**/*.jpg
+projects/**/archive/**/*.jpeg
+projects/**/archive/**/*.gif
+projects/**/archive/**/*.webp
+projects/**/archive/**/*.doc
+projects/**/archive/**/*.docx
+projects/**/archive/**/*.ppt
+projects/**/archive/**/*.pptx
+projects/**/archive/**/*.xls
+projects/**/archive/**/*.xlsx
+projects/**/archive/**/*.pdf
+projects/**/archive/**/*.mov
+projects/**/archive/**/*.mp4
+
+# deliverables/ 黑名单：位图 + 流程图 / 架构图源文件不进 git，svg 进
+# （svg 是最终矢量真相源；位图 push Confluence 后以 Confluence 为真相源；mmd/drawio 由 flowchart skill 可重生）
+projects/**/deliverables/**/*.png
+projects/**/deliverables/**/*.jpg
+projects/**/deliverables/**/*.jpeg
+projects/**/deliverables/**/*.gif
+projects/**/deliverables/**/*.webp
+projects/**/deliverables/**/*.mmd
+projects/**/deliverables/**/*.drawio
+
+# 历史 screenshots/ 目录（已废弃，迁完空目录已删；保留规则防新建）
+projects/**/screenshots/
+
+# fetch_confluence.py --with-children 拉取的衍生产物（随时可重新拉，不入库）
+# 含 inputs/docs/ 标准落点 + inputs/ 根历史落点
+projects/**/inputs/docs/confluence-*-full.md
+projects/**/inputs/docs/confluence-*-images/
+projects/**/inputs/confluence-*-full.md
+projects/**/inputs/confluence-*-images/
+
+# inputs/ 下的历史归档（旧原料的本地备份）
+projects/**/inputs/archive/
+
+# inputs/raw/ 临时素材（消化即删，整目录不进）
+projects/**/inputs/raw/
+
+# inputs/figma/ Figma 拉取产物（可重拉）
+projects/**/inputs/figma/
+
+# inputs/ 下的外部原料二进制（PDF / doc / docx / PPT / Excel）
+# 已由 doc_to_md.py 转出 .md 入仓，原文件本地保留备份即可
+projects/**/inputs/*.pdf
+projects/**/inputs/*.doc
+projects/**/inputs/*.docx
+projects/**/inputs/*.ppt
+projects/**/inputs/*.pptx
+projects/**/inputs/*.xls
+projects/**/inputs/*.xlsx
+
+# inputs/ 下的外部截图 / 媒体原料（本地留存，避免仓库膨胀）
+projects/**/inputs/**/*.png
+projects/**/inputs/**/*.jpg
+projects/**/inputs/**/*.jpeg
+projects/**/inputs/**/*.gif
+projects/**/inputs/**/*.webp
+projects/**/inputs/**/*.mov
+projects/**/inputs/**/*.mp4
+
+# 历史 Office/PDF 交付物已转 md/html，本地保留备份即可
+# 递归 **：含 2026QN/x.y/ 版本子目录（与上方位图黑名单口径一致）
+projects/**/deliverables/**/*.pdf
+projects/**/deliverables/**/*.doc
+projects/**/deliverables/**/*.docx
+projects/**/deliverables/**/*.ppt
+projects/**/deliverables/**/*.pptx
+projects/**/deliverables/**/*.xls
+projects/**/deliverables/**/*.xlsx
+# moderation 词库表 xlsx = 易盾/客服导入表交付物本体，入库（项目级豁免）
+!projects/moderation/deliverables/**/*.xlsx
+
+# 超大 html 交付物（内嵌位图 >2MB，超入库上限，本地留存；轻量版另出）
+projects/livestream/deliverables/ppt-competitor-binance-livestream-v1.html
+
+# doc_to_md / 手动导出的重复版本若内嵌 base64 图片，默认本地留存
+projects/**/inputs/*(*).md
+
+# 临时探索缓存
+.probe-cache/
+projects/**/.probe-cache/
+
+# ── 工作区其余 ──
+
+# _demos/ 默认 tracked（工作区对外演示材料，需分发给同事）
+# 若放敏感/本地-only 内容，在此取消注释：
+# _demos/
+# _demos archive（Schema v2 archive 模式未覆盖 _demos 路径）
+_demos/*/deliverables/archive/
+
+# 采集日志
+references/competitors/_logs/
+.mcp-servers/
+
+# Hook 后门日志（SKIP_*_GATE 使用记录,本地审计用,不跟踪）
+.claude/logs/
+
+# Skill 导出包（给 AI 中台/外部团队的一次性交付件，源文件在 .claude/skills/）
+/exports/
+
+# AIHUB 包生产线：源码入库，构建产物与 vendored 二进制不入库
+hub/zips/
+hub/hx-cli-pm/hx-cli-macos
+hub/hx-cli-pm/hx-cli-linux
+# 公司 AI 中台规范全 60 篇：内部 wiki 正文逐字副本（含内网 host），
+# 不入任何 git。重拉：python3 scripts/dig_confluence.py 或 fetch_confluence.py 拉父页 164485093
+hub/AI中台-规范及帮助文档/
+
+# 本地 CLI 工具 binary（源码 main.go / go.mod / go.sum 保留，go build 生成）
+/scripts/opencode-client/opencode-client
+.youshu_token_cache.json
+
+# 空标记文件
+.dippy
+
+# 根级 scripts/archive（已废弃脚本，与 projects/**/scripts/archive 规则对齐）
+/scripts/archive/
+
+# Figma 大截图（本地保留供 reference，远端 GitHub 不需要）
+.claude/skills/interaction-map/assets/screenshots/feed-style-figma.png
+
+# build skeleton demo 产物（脚本 __main__ 自检出物，非交付）
+.claude/skills/interaction-map/scripts/build-imap-demo.html
+.claude/skills/prototype/scripts/build-proto-demo.html
+
+# Hook 自动刷新的衍生状态（dashboard.py 随时可重建）
+.claude/workspace-dashboard.md
+
+# Stop hook 每次 session 追加（同 session-state.md 性质）
+LEARNED.md
+
+# 顶层 Python 字节码（__pycache__/ 已覆盖目录级）
+*.pyc
+
+# pytest-cov 产物（测试覆盖率残留，随时可重跑）
+.coverage
+
+# sync_public 生成目录
+.public/
+
+# hx-cli 二进制（27MB，外部 zip 分发；本地重装可恢复，不入库不进公开镜像）
+.claude/skills/hx-cli/hx-cli-macos
+.claude/skills/hx-cli/hx-cli-linux

@@ -1,0 +1,168 @@
+# Chat Web slice 索引（双 Schema：search.py + slice-loading）
+# search.py slices 模式 + 05-slice-loading.md A.1.5/B.2
+
+slices:
+  - id: chat/detect-integration
+    name: 集成信号探测
+    tags: [detect integration]
+    file: slices/chat/web/detect-integration.md
+    description: 集成信号探测口径（仅看是否依赖 tuikit-atomicx-vue3）
+    layer: _base
+    applies-to: [tuikit-atomicx-vue3]
+    sdk-version: "tuikit-atomicx-vue3 >=6.0.0"
+    depends-on-stores: []
+    trigger-keywords: []
+    prerequisites: []
+  - id: chat/detect-style
+    name: CSS 与 UI 库检测
+    tags: [detect style]
+    file: slices/chat/web/detect-style.md
+    description: 项目 CSS 方案与 UI 库检测（识别已有体系 + 可复用组件）
+    layer: _base
+    applies-to: [tuikit-atomicx-vue3]
+    sdk-version: "tuikit-atomicx-vue3 >=6.0.0"
+    depends-on-stores: []
+    trigger-keywords: []
+    prerequisites: []
+  - id: chat/state-api-skeleton
+    name: State API 集成骨架
+    tags: [state api skeleton]
+    file: slices/chat/web/state-api-skeleton.md
+    description: tuikit-atomicx-vue3 Store 集成通用骨架（兜底分支用）
+    layer: _base
+    applies-to: [tuikit-atomicx-vue3]
+    sdk-version: "tuikit-atomicx-vue3 >=6.0.0"
+    depends-on-stores: []
+    trigger-keywords: []
+    prerequisites: []
+  - id: chat/style-guide
+    name: 样式指南
+    tags: [style guide]
+    file: slices/chat/web/style-guide.md
+    description: 前端 UI 规范（通用 · 所有 slice 必读）
+    layer: _base
+    applies-to: [tuikit-atomicx-vue3]
+    sdk-version: "tuikit-atomicx-vue3 >=6.0.0"
+    depends-on-stores: []
+    trigger-keywords: []
+    prerequisites: []
+  - id: chat/login-auth
+    name: SDK 登录鉴权
+    tags: [登录, login, 鉴权, userSig, 初始化, init, sdkAppID, kickedOffline]
+    keywords: [登录, login, 鉴权, userSig, 初始化, init, sdkAppID, kickedOffline, 被踢下线, logout, 登出, 登录页, login page]
+    file: slices/chat/web/login-auth.md
+    description: SDK 登录鉴权（tuikit-atomicx-vue3 useLoginStore 单例 composable）+ UserSig 来源；路径 A 同时覆盖默认登录页
+    layer: _starter
+    applies-to: [tuikit-atomicx-vue3]
+    sdk-version: "tuikit-atomicx-vue3 >=6.0.0"
+    depends-on-stores: [LoginStore]
+    trigger-keywords: [登录, login, 鉴权, userSig, 初始化, init, sdkAppID, kickedOffline, 被踢下线, logout, 登出, 登录页, login page]
+    prerequisites: []
+  - id: chat/conversation-list
+    name: 会话列表
+    tags: [会话列表, conversation list, 最近联系人, 置顶, pin, 删除会话, 免打扰, mute]
+    keywords: [会话列表, conversation list, 最近联系人, 置顶, pin, 删除会话, 免打扰, mute, do not disturb, 发起单聊, 发起群聊, 创建会话, 创建群组, 冷启动]
+    file: slices/chat/web/conversation-list.md
+    description: 会话列表（加载 / 渲染 + 置顶 / 删除 / 免打扰 基础操作）
+    layer: _starter
+    applies-to: [tuikit-atomicx-vue3]
+    sdk-version: "tuikit-atomicx-vue3 >=6.0.0"
+    depends-on-stores: []
+    trigger-keywords: [会话列表, conversation list, 最近联系人, 置顶, pin, 删除会话, 免打扰, mute, do not disturb, 发起单聊, 发起群聊, 创建会话, 创建群组, 冷启动]
+    prerequisites: [chat/login-auth]
+  - id: chat/message-list
+    name: 消息列表
+    tags: [消息列表, message list, 聊天记录, 消息滚动, 内部滚动, 上滑加载历史, 新消息提示, scroll to bottom]
+    keywords: [消息列表, message list, 聊天记录, 消息滚动, 内部滚动, 上滑加载历史, 新消息提示, scroll to bottom, MessageListStore]
+    file: slices/chat/web/message-list.md
+    description: 消息列表（加载 / 上滑加载历史 / 渲染 + 新消息监听 + 滚动状态机）
+    layer: _starter
+    applies-to: [tuikit-atomicx-vue3]
+    sdk-version: "tuikit-atomicx-vue3 >=6.0.0"
+    depends-on-stores: [MessageListStore]
+    trigger-keywords: [消息列表, message list, 聊天记录, 消息滚动, 内部滚动, 上滑加载历史, 新消息提示, scroll to bottom, MessageListStore]
+    prerequisites: [chat/login-auth, chat/conversation-list]
+  - id: chat/message-input
+    name: 消息输入框
+    tags: [输入框, 消息输入, message input, 工具栏, toolbar, MessageInputStore, sendMessage, 发消息]
+    keywords: [输入框, 消息输入, message input, 工具栏, toolbar, MessageInputStore, sendMessage, 发消息, 发文本]
+    file: slices/chat/web/message-input.md
+    description: 消息输入框（文本输入 + 发送 + toolbar 扩展位 + sending/error 三态；toolbar 不挂业务按钮）
+    layer: _starter
+    applies-to: [tuikit-atomicx-vue3]
+    sdk-version: "tuikit-atomicx-vue3 >=6.0.0"
+    depends-on-stores: [MessageInputStore]
+    trigger-keywords: [输入框, 消息输入, message input, 工具栏, toolbar, MessageInputStore, sendMessage, 发消息, 发文本]
+    prerequisites: [chat/login-auth, chat/message-list]
+  - id: chat/direct-chat-entry
+    name: 直连对话入口
+    tags: [直连对话, direct chat, 客服入口, 在线客服页, 单点对话, 固定会话]
+    keywords: [直连对话, direct chat, 客服入口, 在线客服页, 单点对话, 固定会话]
+    file: slices/chat/web/direct-chat-entry.md
+    description: Direct Chat 入口组件（静默登录 + 固定会话 + 三态管理 + 返回行为 + 集成方式）
+    layer: _starter
+    applies-to: [tuikit-atomicx-vue3]
+    sdk-version: "tuikit-atomicx-vue3 >=6.0.0"
+    depends-on-stores: [LoginStore, MessageListStore, MessageInputStore]
+    trigger-keywords: [直连对话, direct chat, 客服入口, 在线客服页, 单点对话, 固定会话]
+    prerequisites: [chat/login-auth, chat/message-list, chat/message-input]
+  - id: chat/send-custom-message
+    name: 自定义消息
+    tags: [自定义消息, custom message, customMessage, 订单, 订单消息, 商品卡片, 优惠券, 红包]
+    keywords: [自定义消息, custom message, customMessage, 订单, 订单消息, 商品卡片, 优惠券, 红包, 投票, 卡片消息, 业务卡片, meta 消息, 评价, 评分, rating, 五星, 客户评价, 满意度]
+    file: slices/chat/web/send-custom-message.md
+    description: 通用自定义消息（订单/商品/优惠券/投票/红包/评价等业务卡片，自定义 businessID）
+    layer: features
+    applies-to: [tuikit-atomicx-vue3]
+    sdk-version: "tuikit-atomicx-vue3 >=6.0.0"
+    depends-on-stores: [MessageInputStore]
+    trigger-keywords: [自定义消息, custom message, customMessage, 订单, 订单消息, 商品卡片, 优惠券, 红包, 投票, 卡片消息, 业务卡片, meta 消息, 评价, 评分, rating, 五星, 客户评价, 满意度]
+    prerequisites: [chat/login-auth, chat/message-list, chat/message-input]
+  - id: chat/conversation-actions
+    name: 会话增强操作
+    tags: [标星, 收藏, star, 标未读, 标已读, mark unread, mark read, 草稿]
+    keywords: [标星, 收藏, star, 标未读, 标已读, mark unread, mark read, 草稿, draft, 清空消息, clear messages]
+    file: slices/chat/web/conversation-actions.md
+    description: 会话增强操作（标星收藏 / 标已读未读 / 草稿 / 清空消息）
+    layer: features
+    applies-to: [tuikit-atomicx-vue3]
+    sdk-version: "tuikit-atomicx-vue3 >=6.0.0"
+    depends-on-stores: []
+    trigger-keywords: [标星, 收藏, star, 标未读, 标已读, mark unread, mark read, 草稿, draft, 清空消息, clear messages]
+    prerequisites: [chat/conversation-list]
+  - id: chat/send-media
+    name: 发送多媒体
+    tags: [发图片, 发视频, 发文件, 图片消息, 视频消息, 文件消息, send image, send video]
+    keywords: [发图片, 发视频, 发文件, 图片消息, 视频消息, 文件消息, send image, send video, send file, imageMessage, videoMessage, fileMessage, 上传, upload, 多媒体, media]
+    file: slices/chat/web/send-media.md
+    description: 发送图片、视频、文件消息（toolbar 按钮 + 文件选择 + 上传发送）
+    layer: features
+    applies-to: [tuikit-atomicx-vue3]
+    sdk-version: "tuikit-atomicx-vue3 >=6.0.0"
+    depends-on-stores: [MessageInputStore]
+    trigger-keywords: [发图片, 发视频, 发文件, 图片消息, 视频消息, 文件消息, send image, send video, send file, imageMessage, videoMessage, fileMessage, 上传, upload, 多媒体, media]
+    prerequisites: [chat/login-auth, chat/message-list, chat/message-input]
+  - id: chat/at-mention
+    name: 群聊 @ 提及
+    tags: [at, '@', 提及, mention, '@群成员', '@所有人', atUserList, 群成员选择]
+    keywords: [at, '@', 提及, mention, '@群成员', '@所有人', atUserList, 群成员选择]
+    file: slices/chat/web/at-mention.md
+    description: 群聊 @提及成员（成员选择器 + atUserList option + tag 展示）
+    layer: features
+    applies-to: [tuikit-atomicx-vue3]
+    sdk-version: "tuikit-atomicx-vue3 >=6.0.0"
+    depends-on-stores: [MessageInputStore, GroupMemberStore]
+    trigger-keywords: [at, '@', 提及, mention, '@群成员', '@所有人', atUserList, 群成员选择]
+    prerequisites: [chat/login-auth, chat/message-list, chat/message-input]
+  - id: chat/message-base-actions
+    name: 消息基础操作
+    tags: [消息操作, 复制消息, 撤回, 删除消息, 下载, copy, revoke, recall]
+    keywords: [消息操作, 复制消息, 撤回, 删除消息, 下载, copy, revoke, recall, delete message, download, 右键菜单, 长按菜单, context menu, message actions]
+    file: slices/chat/web/message-base-actions.md
+    description: 消息基础操作（复制 / 撤回 / 删除 / 下载媒体）
+    layer: features
+    applies-to: [tuikit-atomicx-vue3]
+    sdk-version: "tuikit-atomicx-vue3 >=6.0.0"
+    depends-on-stores: [MessageActionStore]
+    trigger-keywords: [消息操作, 复制消息, 撤回, 删除消息, 下载, copy, revoke, recall, delete message, download, 右键菜单, 长按菜单, context menu, message actions]
+    prerequisites: [chat/login-auth, chat/message-list]

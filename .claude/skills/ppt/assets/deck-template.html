@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<!-- ⚠ 生成产物，勿直接改此 HTML。由 projects/{产品线}/scripts/ 下同名生成脚本产出（gen_*/build_*，与产物同名：ppt-xxx-v1.html ← gen_ppt_xxx_v1.py/js）——改脚本后重跑重生，直接改会被覆盖。 -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>__TITLE__</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700;900&family=Noto+Sans+SC:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* cd-* + vendor 调色板由 deck-fill.js 注入（tokens.css + vendor-editorial.css 覆盖） */
+/* __TOKENS_CSS__ */
+
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:#0C0E11;overflow:hidden;font-family:"Noto Sans SC",sans-serif}
+body{display:flex;align-items:center;justify-content:center}
+#stage{position:relative;width:1280px;height:720px;transform-origin:center center}
+
+/* ───── 四层骨架 ───── */
+.slide{position:absolute;inset:0;background:var(--paper);color:var(--text);
+  padding:56px 72px 62px;display:flex;flex-direction:column;
+  opacity:0;visibility:hidden;transform:translateY(10px);transition:opacity .5s ease,transform .5s ease}
+.slide.active{opacity:1;visibility:visible;transform:none;z-index:2}
+.slide.dark{background:var(--ink);color:var(--paper-dark-text)}
+
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:13px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--teal);font-weight:500;display:flex;align-items:center;gap:12px}
+.eyebrow::before{content:"";width:26px;height:1px;background:var(--teal);display:inline-block}
+.slide.dark .eyebrow{color:var(--teal-bright)}
+.slide.dark .eyebrow::before{background:var(--teal-bright)}
+
+h1.headline{font-family:"Noto Serif SC",serif;font-weight:700;font-size:38px;line-height:1.24;letter-spacing:-.01em;margin-top:13px}
+.slide.dark h1.headline{color:#fff}
+
+.body-area{flex:1;display:flex;flex-direction:column;justify-content:center;margin-top:20px}
+
+.deck-foot{position:absolute;left:72px;right:72px;bottom:24px;display:flex;justify-content:space-between;align-items:center;
+  font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.1em;color:var(--text-3)}
+.slide.dark .deck-foot{color:#5d646b}
+.deck-foot .pagenum b{color:var(--text);font-weight:600}
+.slide.dark .deck-foot .pagenum b{color:#fff}
+
+.caption{margin-top:26px;font-size:14px;color:var(--text-3);font-family:"IBM Plex Mono",monospace;letter-spacing:.02em}
+
+/* tag */
+.tag{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:500;letter-spacing:.04em;padding:3px 9px;border-radius:3px;white-space:nowrap;display:inline-block}
+.tag.confirm{background:var(--amber-wash);color:var(--amber);border:1px solid #E6D4AE}
+.tag.machine{background:var(--teal-wash);color:var(--teal);border:1px solid #C2DDD8}
+.slide.dark .tag.confirm{background:rgba(216,154,62,.14);color:var(--amber-bright);border-color:rgba(216,154,62,.4)}
+
+/* ───── cover（封面，配 .slide.dark） ───── */
+.cover{justify-content:center}
+.cover .eyebrow{font-size:14px}
+.cover h1{font-family:"Noto Serif SC",serif;font-weight:900;font-size:60px;line-height:1.18;color:#fff;margin-top:30px;letter-spacing:-.02em}
+.cover .lead{margin-top:26px;font-size:19px;line-height:1.65;color:var(--paper-dark-2);font-weight:300;max-width:880px;border-left:2px solid var(--teal-bright);padding-left:20px}
+.cover .lead b{color:var(--teal-bright);font-weight:500}
+.cover-rule{position:absolute;left:72px;right:72px;height:1px;background:#2a2f36;top:52px}
+
+/* 通用 lead 引言 */
+.lead{font-size:17px;line-height:1.7;color:var(--text-2);max-width:980px;font-weight:300}
+.slide.dark .lead{color:var(--paper-dark-2)}
+
+/* ───── card-grid（三栏卡片，原 goal-grid） ───── */
+.card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:8px}
+.card-grid.col2{grid-template-columns:1fr 1fr}
+.card-grid.col4{grid-template-columns:repeat(4,1fr)}
+.card{background:var(--card);border:1px solid var(--hair);border-radius:8px;padding:26px 24px 28px;position:relative;overflow:hidden}
+.card .gn{font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--teal);letter-spacing:.05em}
+.card h3{font-family:"Noto Serif SC",serif;font-size:23px;font-weight:700;margin:14px 0 12px;color:var(--text)}
+.card p{font-size:14.5px;line-height:1.62;color:var(--text-2);font-weight:300}
+.card::after{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--teal)}
+.card.warn::after{background:var(--amber)}
+.card.warn .gn{color:var(--amber)}
+
+/* ───── two-up（双栏大点，原 bigpt） ───── */
+.two-up{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:6px}
+.bigpt{background:var(--card);border:1px solid var(--hair);border-radius:8px;padding:30px 28px}
+.bigpt .lbl{font-family:"IBM Plex Mono",monospace;font-size:34px;font-weight:600;color:var(--teal);line-height:1}
+.bigpt h3{font-family:"Noto Serif SC",serif;font-size:24px;font-weight:700;margin:16px 0 12px;line-height:1.3}
+.bigpt p{font-size:15px;line-height:1.65;color:var(--text-2);font-weight:300}
+.closer{margin-top:26px;font-size:18px;font-weight:500;line-height:1.5;color:var(--text)}
+.closer .hl{color:var(--teal);border-bottom:2px solid var(--teal-bright);padding-bottom:1px}
+
+/* ───── layer-stack（分层栈，原 stack/layer） ───── */
+.layer-stack{display:flex;flex-direction:column-reverse;gap:8px;margin-top:4px}
+.layer{display:grid;grid-template-columns:78px 1fr auto;align-items:center;gap:18px;background:var(--card);border:1px solid var(--hair);border-radius:6px;padding:12px 20px}
+.layer .lc{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px;color:var(--teal)}
+.layer .lt{font-size:15.5px;font-weight:500;color:var(--text)}
+.layer.base{border-color:var(--teal);background:var(--teal-wash)}
+.layer.warn{border-color:var(--amber-bright);background:var(--amber-wash)}
+.layer.warn .lc{color:var(--amber)}
+.layer.vision{border-style:dashed;opacity:.82}
+.layer.vision .lc{color:var(--text-3)}
+.stack-note{margin-top:18px;font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--text-2);letter-spacing:.01em}
+.stack-note b{color:var(--teal)}
+
+/* ───── kv-split（分栏 + 实色面板，原 split/panel/kv） ───── */
+.kv-split{display:grid;grid-template-columns:1.15fr 1fr;gap:26px;margin-top:6px}
+.panel{background:var(--card);border:1px solid var(--hair);border-radius:8px;padding:24px 26px}
+.panel.accent{background:var(--ink);color:#fff;border-color:var(--ink)}
+.panel h4{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:16px;font-weight:600}
+.panel.accent h4{color:var(--teal-bright)}
+.kv{display:flex;gap:14px;padding:11px 0;border-top:1px solid var(--hair-soft)}
+.kv:first-of-type{border-top:none}
+.kv .k{font-family:"Noto Serif SC",serif;font-size:16px;font-weight:700;color:var(--text);min-width:54px}
+.kv .v{font-size:13.5px;line-height:1.55;color:var(--text-2);font-weight:300}
+.panel.accent p{font-size:14.5px;line-height:1.65;color:var(--paper-dark-2);font-weight:300}
+.panel.accent p b{color:var(--teal-bright);font-weight:500}
+
+/* ───── phase-flow（横向阶段卡 + 箭头，原 flow4） ───── */
+.phase-flow{display:flex;align-items:stretch;gap:0;margin-top:6px}
+.phasecard{flex:1;background:var(--card);border:1px solid var(--hair);border-radius:7px;padding:16px 16px 18px}
+.phasecard .ph-h{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:11px;padding-bottom:9px;border-bottom:1px solid var(--hair-soft)}
+.phasecard .ph-h b{font-family:"Noto Serif SC",serif;font-size:16.5px;font-weight:700;color:var(--text)}
+.phasecard .ph-h span{font-family:"IBM Plex Mono",monospace;font-size:9.5px;color:var(--text-3);letter-spacing:.08em;font-weight:600}
+.phasecard ul{list-style:none}
+.phasecard li{font-size:12.5px;line-height:1.35;color:var(--text-2);font-weight:400;padding:5.5px 0 5.5px 16px;position:relative}
+.phasecard li::before{content:"\2192";position:absolute;left:0;color:var(--teal);font-size:11px}
+.phasecard.alt li::before{color:var(--olive)}
+.phasecard.warn li::before{color:var(--amber)}
+.phasecard li b{color:var(--text);font-weight:600}
+.flow-arrow{flex:0 0 26px;display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:17px}
+
+/* ───── track-3（三轨并行，原 method3） ───── */
+.track-3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:6px}
+.mcol{background:var(--card);border:1px solid var(--hair);border-radius:8px;padding:22px 22px 24px;border-top:3px solid var(--teal)}
+.mcol:nth-child(2){border-top-color:var(--olive)}
+.mcol:nth-child(3){border-top-color:var(--amber)}
+.mcol .mc-k{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;color:var(--teal);letter-spacing:.05em}
+.mcol:nth-child(2) .mc-k{color:var(--olive)}
+.mcol:nth-child(3) .mc-k{color:var(--amber)}
+.mcol h3{font-family:"Noto Serif SC",serif;font-size:19px;font-weight:700;margin:8px 0 12px}
+.mcol ul{list-style:none}
+.mcol li{font-size:12.8px;line-height:1.5;color:var(--text-2);font-weight:300;padding:7px 0 7px 16px;position:relative;border-top:1px solid var(--hair-soft)}
+.mcol li:first-child{border-top:none}
+.mcol li::before{content:"\2192";position:absolute;left:0;color:var(--teal);font-size:11px;top:7px}
+.mcol:nth-child(2) li::before{color:var(--olive)}
+.mcol:nth-child(3) li::before{color:var(--amber)}
+.mcol li b{color:var(--text);font-weight:600}
+
+/* ───── bluf-grid（四格结论先行，原 bluf） ───── */
+.bluf-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:2px}
+.bcell{background:var(--card);border:1px solid var(--hair);border-radius:8px;padding:20px 24px;border-left:3px solid var(--teal)}
+.bcell.warn{border-left-color:var(--amber)}
+.bcell .bk{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--teal)}
+.bcell.warn .bk{color:var(--amber)}
+.bcell h3{font-family:"Noto Serif SC",serif;font-size:20px;font-weight:700;margin:9px 0 9px;color:var(--text);line-height:1.3}
+.bcell p{font-size:13.5px;line-height:1.6;color:var(--text-2);font-weight:300}
+.bcell p b{color:var(--text);font-weight:600}
+.bcell ul.blist{list-style:none;display:flex;flex-direction:column;gap:6px;margin-top:2px}
+.bcell ul.blist li{font-size:13px;line-height:1.5;color:var(--text-2);font-weight:300;padding-left:15px;position:relative}
+.bcell ul.blist li::before{content:"\203A";position:absolute;left:0;color:var(--teal);font-weight:600}
+.bcell.warn ul.blist li::before{color:var(--amber)}
+.bcell ul.blist li b{color:var(--text);font-weight:600}
+
+/* ───── item-list（编号步骤清单，原 wstep 通用化） ───── */
+.item-list{display:flex;flex-direction:column}
+.item{display:grid;grid-template-columns:28px 132px 1fr;gap:16px;align-items:start;padding:8px 0;border-top:1px solid var(--hair-soft)}
+.item:first-child{border-top:none}
+.item .it-n{font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--teal)}
+.item .it-stage{font-weight:700;font-size:13.5px;color:var(--text)}
+.item .it-stage small{display:block;font-family:"IBM Plex Mono",monospace;font-size:9px;color:var(--text-3);font-weight:500;letter-spacing:.06em;margin-top:2px}
+.item .it-do{font-size:12.5px;color:var(--text-2);font-weight:300;line-height:1.45}
+.item .it-do b{color:var(--text);font-weight:600}
+.item.warn .it-n{color:var(--amber)}
+
+/* ───── hub（中心节点图，原 model hub） ───── */
+.hub{margin-top:10px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.hub-row{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
+.node{font-size:14px;font-weight:500;padding:11px 18px;border-radius:6px;border:1px solid var(--hair);background:var(--card);color:var(--text);text-align:center;line-height:1.35}
+.node small{display:block;font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--text-3);font-weight:400;margin-top:3px;letter-spacing:.02em}
+.node.truth{background:var(--ink);color:#fff;border-color:var(--ink);padding:14px 26px;font-size:15px}
+.node.truth small{color:var(--teal-bright)}
+.node.proj{background:var(--teal-wash);border-color:#C2DDD8;color:var(--teal)}
+.node.gate{background:var(--amber-wash);border-color:#E6D4AE;color:var(--amber);font-weight:600}
+.arrow-d{color:var(--text-3);font-size:16px;line-height:1}
+
+/* ───── qgate-list（质量门清单，原 qgate） ───── */
+.qgate-list{display:flex;flex-direction:column;gap:9px;margin-top:4px}
+.qgate{display:grid;grid-template-columns:30px 188px 1fr;gap:16px;align-items:center;background:var(--card);
+  border:1px solid var(--hair);border-left:3px solid var(--teal);border-radius:6px;padding:11px 18px}
+.qgate.gate{border-left-color:var(--amber)}
+.qgate .qn{font-family:"IBM Plex Mono",monospace;color:var(--teal);font-weight:600;font-size:12px}
+.qgate.gate .qn{color:var(--amber)}
+.qgate .qt{font-weight:700;font-size:14.5px;color:var(--text)}
+.qgate .qt small{display:block;font-family:"IBM Plex Mono",monospace;font-size:9.5px;color:var(--text-3);font-weight:500;letter-spacing:.06em;margin-top:2px}
+.qgate .qd{font-size:12.5px;color:var(--text-2);font-weight:300;line-height:1.45}
+
+/* ───── tree-list（目录树分层，原 tree） ───── */
+.tree-list{display:flex;flex-direction:column;gap:9px;margin-top:4px}
+.tnode{display:grid;grid-template-columns:128px 1fr;gap:20px;align-items:start;background:var(--card);border:1px solid var(--hair);border-radius:6px;padding:12px 20px;border-left:3px solid var(--teal)}
+.tnode.truth{background:var(--teal-wash);border-color:#C2DDD8}
+.tnode.infra{border-left-color:var(--text-3)}
+.tnode .tlayer{font-family:"IBM Plex Mono",monospace;font-size:12.5px;font-weight:600;color:var(--teal)}
+.tnode.infra .tlayer{color:var(--text-2)}
+.tnode .tlayer small{display:block;font-size:9.5px;color:var(--text-3);font-weight:400;margin-top:2px}
+.tnode .tpath{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--text);font-weight:500}
+.tnode .tdesc{font-size:12.5px;color:var(--text-2);font-weight:300;margin-top:4px;line-height:1.5}
+
+/* ───── integ-split（双栏对比：保留 vs 新增，原 integ） ───── */
+.integ-split{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:6px}
+.integ-split .blk h4{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:14px;font-weight:600}
+.integ-split .blk.keep h4{color:var(--teal)}
+.irow{background:var(--card);border:1px solid var(--hair-soft);border-radius:6px;padding:13px 18px;margin-bottom:11px}
+.irow b{font-size:14.5px;font-weight:700;color:var(--text);display:block}
+.irow span{font-size:13px;color:var(--text-2);font-weight:300;line-height:1.5;display:block;margin-top:3px}
+.integ-split .blk.keep .irow{border-left:3px solid var(--teal)}
+.integ-split .blk.add .irow{border-left:3px solid var(--amber-bright)}
+
+/* ───── kf-2（双栏特性卡，原 killer features） ───── */
+.kf-2{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:6px}
+.kf{background:var(--card);border:1px solid var(--hair);border-radius:8px;padding:24px 26px}
+.kf.build{border-top:3px solid var(--teal)}
+.kf.verify{border-top:3px solid var(--amber)}
+.kf .kf-tag{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--teal)}
+.kf.verify .kf-tag{color:var(--amber)}
+.kf h3{font-family:"Noto Serif SC",serif;font-size:21px;font-weight:700;margin:8px 0 14px;line-height:1.3}
+.kf .kf-row{padding:10px 0;border-top:1px solid var(--hair-soft);font-size:13px;line-height:1.55;color:var(--text-2);font-weight:300}
+.kf .kf-row:first-of-type{border-top:none}
+.kf .kf-row b{font-weight:700;color:var(--text);display:inline-block;min-width:30px}
+.kf .kf-cut{margin-top:14px;background:var(--teal-wash);border:1px solid #C2DDD8;border-radius:6px;padding:10px 14px;font-size:12.5px;line-height:1.5;color:var(--teal)}
+.kf.verify .kf-cut{background:var(--amber-wash);border-color:#E6D4AE;color:var(--amber)}
+
+/* ───── role-table（角色对照表，原 roletab） ───── */
+.role-table{width:100%;border-collapse:collapse;margin-top:4px;font-size:12.5px}
+.role-table th{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);text-align:left;padding:0 14px 8px;font-weight:600;border-bottom:1.5px solid var(--hair)}
+.role-table td{padding:7px 14px;border-bottom:1px solid var(--hair-soft);vertical-align:top;line-height:1.38}
+.role-table td.role{font-weight:700;color:var(--text);font-size:13px;white-space:nowrap}
+.role-table td.now{color:var(--text-3);font-weight:300}
+.role-table td.fut{color:var(--text);font-weight:400}
+.role-table td.hook{color:var(--teal);font-weight:400}
+.role-table tr:last-child td{border-bottom:none}
+
+/* ───── principles（三联原则带，原 prin） ───── */
+.principles{margin-top:16px;display:flex;gap:14px}
+.prin{flex:1;background:var(--teal-wash);border:1px solid #C2DDD8;border-radius:6px;padding:10px 16px;font-size:13.5px;font-weight:500;color:var(--teal);text-align:center}
+.prin span{font-family:"IBM Plex Mono",monospace;font-size:11px;display:block;color:var(--teal-bright);margin-bottom:3px}
+
+/* ───── map-stack（行业分层图，原 industry map） ───── */
+.map-stack{display:flex;flex-direction:column;gap:5px;margin-top:2px}
+.mlayer{display:grid;grid-template-columns:60px 1fr;gap:16px;align-items:center;background:var(--card);border:1px solid var(--hair);border-radius:6px;padding:7px 18px;border-left:3px solid var(--hair)}
+.mlayer.hi-teal{border-left-color:var(--teal);background:var(--teal-wash)}
+.mlayer.hi-amber{border-left-color:var(--amber);background:var(--amber-wash)}
+.mlayer .ml-c{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px;color:var(--text-3)}
+.mlayer.hi-teal .ml-c{color:var(--teal)}
+.mlayer.hi-amber .ml-c{color:var(--amber)}
+.mlayer .ml-t{font-size:14.5px;font-weight:600;color:var(--text);display:flex;align-items:baseline;gap:8px}
+.mlayer .ml-t small{font-family:"IBM Plex Mono",monospace;font-size:9.5px;color:var(--text-3);font-weight:500;letter-spacing:.06em}
+.mlayer .pri{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:500;letter-spacing:.03em;color:var(--text-3);white-space:nowrap}
+.mlayer .pri.pri-bet{font-weight:600;color:var(--amber)}
+.mlayer .pri.pri-teal{color:var(--teal)}
+
+/* ───── bet-band（双格投注/方向带，原 bet） ───── */
+.bet-band{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:11px}
+.bet{border-radius:6px;padding:12px 18px;font-size:13px;line-height:1.55;font-weight:300}
+.bet b{font-weight:600}
+.bet .bet-h{display:block;font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;letter-spacing:.06em;margin-bottom:5px}
+.bet.teal{background:var(--teal-wash);border:1px solid #C2DDD8;color:#0b5650}
+.bet.teal .bet-h{color:var(--teal)}
+.bet.amber{background:var(--amber-wash);border:1px solid #E6D4AE;color:var(--amber)}
+.bet.amber .bet-h{color:var(--amber)}
+
+/* ───── 三种强调条：callout / loopbar / amber-bar ───── */
+.callout{margin-top:14px;background:var(--ink);color:#fff;border-radius:6px;padding:13px 20px;font-size:14px;line-height:1.55;font-weight:300}
+.callout b{color:var(--teal-bright);font-weight:500}
+.loopbar{margin-top:18px;background:var(--teal-wash);border:1px solid #C2DDD8;border-radius:6px;padding:13px 20px;font-size:14px;line-height:1.55;color:var(--teal);display:flex;gap:13px;align-items:center}
+.loopbar .lp{font-family:"IBM Plex Mono",monospace;font-size:18px}
+.loopbar b{color:#0b5650;font-weight:600}
+.amber-bar{margin-top:22px;background:var(--amber-wash);border:1px solid #E6D4AE;border-radius:6px;padding:13px 18px;font-size:13.5px;line-height:1.55;color:var(--amber);display:flex;gap:12px;align-items:center}
+.amber-bar b{font-weight:600}
+
+/* ───── firststep（渐变首步块，深底强调） ───── */
+.firststep{margin-top:24px;background:linear-gradient(100deg,#10312e,#15181C);border:1px solid #1f4a45;border-radius:8px;padding:22px 28px}
+.firststep .fs-lbl{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--teal-bright);letter-spacing:.08em}
+.firststep p{font-size:16.5px;line-height:1.55;color:#fff;font-weight:500;margin-top:8px}
+.firststep p b{color:var(--teal-bright)}
+
+/* ───── code-block（代码/终端块系统，来自 storyboard） ───── */
+.code-block{margin-top:22px;border-radius:8px;overflow:hidden;border:1px solid var(--hair);max-width:980px}
+.code-block .cb-head{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.04em;padding:7px 16px;color:#fff;background:var(--ink)}
+.code-block pre{font-family:"IBM Plex Mono",monospace;font-size:14.5px;line-height:1.7;padding:16px 18px;white-space:pre-wrap;background:var(--card);color:#26303a}
+.code-block.term .cb-head{background:#000}
+.code-block.term pre{background:#11151a;color:#cfe8e3}
+.code-block.md .cb-head{background:var(--teal)}
+.code-block.java .cb-head,.code-block.code .cb-head{background:var(--amber)}
+.code-block.pts pre{background:var(--teal-wash);color:#1c3d39;border-left:3px solid var(--teal)}
+
+/* ───── deck chrome（进度 / 章节胶囊 / 页码 / 翻页） ───── */
+#acts{position:fixed;top:16px;left:50%;transform:translateX(-50%);display:flex;gap:0;z-index:55;
+  font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.05em;
+  background:rgba(20,24,28,.7);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:5px 6px;backdrop-filter:blur(6px)}
+#acts .act{padding:3px 12px;border-radius:14px;color:rgba(255,255,255,.42);transition:all .3s;white-space:nowrap}
+#acts .act.on{background:var(--teal-bright);color:#fff;font-weight:500}
+#nav{position:fixed;bottom:20px;right:24px;display:flex;align-items:center;gap:6px;z-index:50}
+#nav button{width:34px;height:34px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#fff;border-radius:6px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:background .2s}
+#nav button:hover{background:rgba(255,255,255,.16)}
+#counter{position:fixed;bottom:24px;left:24px;font-family:"IBM Plex Mono",monospace;font-size:12px;color:rgba(255,255,255,.5);letter-spacing:.08em;z-index:50}
+#counter b{color:#fff}
+#progress{position:fixed;top:0;left:0;height:3px;background:var(--teal-bright);z-index:60;transition:width .4s ease}
+.edge{position:fixed;top:0;bottom:0;width:14%;z-index:40;cursor:pointer}
+.edge.l{left:0}.edge.r{right:0}
+.hint{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);font-family:"IBM Plex Mono",monospace;font-size:11px;color:rgba(255,255,255,.32);z-index:50;letter-spacing:.05em}
+@media (prefers-reduced-motion:reduce){.slide{transition:none}#progress{transition:none}}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div id="acts"></div>
+<div class="edge l" onclick="prev()"></div>
+<div class="edge r" onclick="next()"></div>
+
+<div id="stage">
+<!-- __SLIDES__ -->
+</div>
+
+<div id="counter"><b id="cur">01</b> / <span id="tot"></span></div>
+<div id="nav"><button onclick="prev()" aria-label="上一页">‹</button><button onclick="next()" aria-label="下一页">›</button></div>
+<div class="hint">← → 翻页 · 点击两侧边缘</div>
+
+<script>
+/* __ACTS__ */
+/* __RUNTIME_JS__ */
+</script>
+</body>
+</html>

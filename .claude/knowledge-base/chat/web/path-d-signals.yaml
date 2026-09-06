@@ -1,0 +1,4 @@
+# Path D / Step 0 信号词 — Root §A 与 trtc-chat Step 0 共同 Read
+
+im_consult: [计费, 价格, 免费额度, 套餐, 购买, 开通, 产品能力, 群人数上限, 消息保存时长, UserSig 生成方法, 多端登录配置, 服务端错误码, IM 内网代理配置, UserID 限制, 命名规则, 账号限制, 服务端, 管理员, 后台接口, REST, REST API, 导入账号, 服务端发消息, 回调, Webhook, 发消息前回调, 发消息后回调, 第三方回调, 回调配置, TUIKit, UIKit, Search, ContactList, ConversationList, ChatSetting, im-uikit, 组件集成, Compose UIKit, SwiftUI UIKit, Vue3 UIKit, React UIKit, uniapp uikit, UI 组件, 集成指南, 初始化, SDK API, createXXXMessage, sendMessage, login, UserSig, Client, 错误码, API 用法, 版本迁移]
+symptom_in_integration: [白屏, 连不上, 登录失败, 报错, 编译失败]

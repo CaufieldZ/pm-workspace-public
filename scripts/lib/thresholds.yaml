@@ -1,0 +1,105 @@
+# 工作区数字阈值权威来源。
+# Python 调用：from lib.thresholds import T; T['checker']['max_lines']
+#
+# 分组（按演进风险）：
+#   A. 物理约束 — 永不变 · Python 直接读取 · 改 yaml = 立即生效
+#   B. 工程经验 — 稳定 · 硬编码在 bash hook · 改 yaml 须同步 hook 注释
+#   C. 项目惯例 — 中等稳定 · 文档登记 · 改时同步 html-pipeline.md / artifact-conventions.md
+#   D. 读取规则 — 多模型兼容 + Token 节省 · 改时同步 CLAUDE.md / artifact-conventions.md
+#   E. Python 脚本硬编码 — 文档登记 · 改时同步对应 .py 常量（见各条注释）
+#
+# 不在此 yaml：主观代码质量软建议（如「单函数 ≤ 80 行」）—— 归 html-pipeline.md 文档化。
+# 也不在此 yaml：规则层逐文件体积上限（19 个文件各一个数，是名册不是标量）——
+#   见 scripts/rule-budgets.manifest.json，消费者 scripts/check_rule_volume.py。
+
+# ═══════════════════════════════════════════════════════════════
+# A. 物理约束（被 Python 读 · 改 = 立即生效）
+# ═══════════════════════════════════════════════════════════════
+
+checker:
+  # check_*.py 单文件扫描上限。> 此值跳过（防 OOM）。
+  # 由 scripts/check_plain_language.py / check_cjk_punct.py 通过 thresholds.py 读取
+  max_lines: 5000
+
+voice_check:
+  # run_voice_checks.py HTML 行数下限。< 此值报 FAIL。
+  # 理由：500 行是完整 HTML 产出物的经验下限，低于此通常意味着内容缺失 / 生成中断
+  html_min_lines: 500
+
+bullet_density:
+  # check_bullet_density.py：单行 bullet/段落 挤话判定（hook block · diff-based 只拦新增行）
+  # period_limit：中文句号 ≥ 此值即命中（3 是分水岭——2 误伤合理子项串、4 漏 3 句挤话段）
+  # semicolon_limit：单行分号（；/ ;）≥ 此值即命中。正文分号串该拆嵌套 bullet
+  #   （父 bullet 冒号领起 + 子 bullet），不是合法豁免。表格 cell 内 ; 是 md_to_confluence
+  #   切 <li> 的约定分隔符，表格行豁免；无整章豁免（决策/埋点章 3 句焊一行照样 block，
+  #   唯一 WARN 层放过的只有「长句 ≥100 字」论证句那一维）。
+  #   diff-based 只拦本次新增/修改行，存量不卡（存量 living 文档渐进消化）。
+  period_limit: 3
+  semicolon_limit: 2
+
+# ═══════════════════════════════════════════════════════════════
+# B. 工程经验（hook 硬编码 · 改时同步 .claude/hooks/*.sh）
+# ═══════════════════════════════════════════════════════════════
+
+risky_op:
+  # 单文件「大写」门槛。> 此行数的 Write/Edit 算大操作。
+  # 理由：500 行是经验阈值，超此规模手改易残留 / 易冲突，应脚本生成
+  large_file_lines: 500
+  # 连续同文件大写次数。≥ 此次数触发 pre-risky-op session-state checkpoint
+  # 理由：3 是「三次踩坑可回滚」经验值
+  consecutive_writes: 3
+  # bash 命令预期输出 > 此值触发 checkpoint
+  # 理由：200 行 bash 输出约 4-6K Token，超此规模污染上下文需先 checkpoint
+  bash_output_lines: 200
+
+write_tool:
+  # HTML > 此行数禁 Write 工具直写、必须脚本生成
+  # 理由：Write 直写大 HTML 易丢内容 / 难重现；脚本生成可复跑
+  # hook：pre-deliverable-source-gate.sh
+  html_max_lines: 200
+
+# ═══════════════════════════════════════════════════════════════
+# C. 项目惯例（文档登记 · 改时同步 .claude/skills/_shared/rules/html-pipeline.md）
+# ═══════════════════════════════════════════════════════════════
+
+html_split:
+  # HTML 超此行数拆三层架构（host + 内容函数 + 数据）
+  # 理由：1500 行单文件维护痛苦，但小于此值拆反而过度工程
+  file_lines: 1500
+  # Tab 数 ≥ 此值另触发拆分（无论行数）
+  # 理由：10 Tab 单文件渲染卡顿明显，UI 维护复杂度跳跃式上升
+  tab_count: 10
+
+# ═══════════════════════════════════════════════════════════════
+# D. 读取规则（多模型兼容 + Token 节省 · 改时同步 CLAUDE.md / artifact-conventions.md）
+# ═══════════════════════════════════════════════════════════════
+
+read_discipline:
+  # baseline / PRD md 全读上限。> 此行数走 read_prd_section.py（--toc / -s / --grep）
+  # 理由：① Sonnet 4.6 / Haiku 仍 200K context，全读大文件占比高
+  #       ② 即使 1M 模型，全读 = 噪音多 / 缓存击穿成本（每次 cache miss ~30K token）
+  #       ③ baseline 章节结构清晰，按需读 > 全读
+  baseline_md_full_read: 300
+  # 一般大文件先 grep -n 定位再 Read offset/limit 的门槛
+  # 理由：同上 · 与 baseline_md_full_read 同源，但允许独立调整
+  grep_then_read: 300
+
+# ═══════════════════════════════════════════════════════════════
+# E. Python 脚本硬编码（文档登记 · 改时同步对应 .py 常量）
+# ═══════════════════════════════════════════════════════════════
+
+prd_checks:
+  # 长句 run-on 判定字数（WARN）。
+  # 消费者：.claude/skills/prd/scripts/humanize/patterns.py LONG_SENTENCE_THRESHOLD
+  long_sentence_chars: 100
+  # 场景级业务故事字数上限（超限 raise）。
+  # 消费者：.claude/skills/prd/scripts/core/md_renderer.py chapter_story
+  story_chars: 30
+  # 场景数模式判定阈值（≥ 此值走 split 分文件）。
+  # 消费者：.claude/skills/prd/scripts/gen_prd_skeleton.py _SCENE_COUNT_THRESHOLD
+  scene_split_count: 10
+
+baseline:
+  # 模块章内容新鲜度过期天数（提醒不卡）。
+  # 消费者：scripts/check_baseline_fresh.py --stale-days 默认值
+  stale_days: 60

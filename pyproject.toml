@@ -1,0 +1,17 @@
+# 仅配置工具（pytest / ruff），不做打包 —— 无 [build-system]，非 Python 包。
+
+[tool.pytest.ini_options]
+testpaths = ["scripts/tests"]
+python_files = ["test_*.py"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+exclude = [".venv", "dist", "hub", "projects/*/archive"]
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "I"]  # pyflakes + isort + bugbear
+ignore = ["E501"]              # 长行手动维护，不强制
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/tests/*" = ["S101"]  # assert 在测试里合法

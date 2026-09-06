@@ -1,0 +1,194 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   crypto-dark · 交易所深色组件原语层
+
+   由 build_proto_skeleton 按 project['css_packs'] 拼入，拼在 prototype.css 之后、
+   项目 extra_css 之前。项目 CSS 可覆盖本层任意规则。
+
+   用法：page_fns 里直接写 class，不自己写卡片 / 标签 / Tab / 浮层的 CSS。
+   本层没有的业务组件才进项目 crud.py。
+   可抄的整页示例与常见失分点见 references/visual-rework-atlas.md。
+
+   命名一律 cx- 前缀，与项目既有类名不冲突。
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Token ──────────────────────────────────────────────────────────────────
+   自带取值不复用 :root —— generate_single 产的文件里 :root 是后台浅色档，
+   var(--text) 在深色壳内会解析成深色文字。 */
+.app-mock, .phone, .web-front, .cx-scope {
+  --cx-bg:      #0B0E11;   /* 页面底 */
+  --cx-card:    #161A1E;   /* 卡片 / 列表容器 */
+  --cx-card-2:  #1E2329;   /* 卡片内再分层 / 输入框 */
+  --cx-fill:    #2B3139;   /* 次级按钮 / 中性填充 */
+  --cx-line:    #1E2329;   /* 分割线（低对比，用于同底色分区）*/
+  --cx-hair:    #2B3139;   /* hairline 定界（密集面板专用，见 .cx-panel）*/
+  --cx-text:    #EAECEF;
+  --cx-text-2:  #848E9C;
+  --cx-text-3:  #5E6673;
+  --cx-up:      #0ECB81;   /* 涨 */
+  --cx-dn:      #F6465D;   /* 跌 */
+  --cx-gold:    #F0B90B;
+  --cx-brand:   #007FFF;   /* Platform C 蓝 */
+  --cx-glass:   #1C2636;   /* 深色 UI 上的浮层底（不用纯白）*/
+}
+
+/* ── 数字排版 ───────────────────────────────────────────────────────────────
+   交易所页面主体是数字。等宽数字让上下行的位数对齐；数值提亮加粗、单位留灰，
+   两者拉开层级。凡是价格 / 金额 / 数量 / 百分比 / 计数都套 .cx-num。 */
+.cx-num       { font-variant-numeric:tabular-nums; font-weight:600; color:var(--cx-text); letter-spacing:-.2px; }
+.cx-num.lg    { font-size:19px; font-weight:800; letter-spacing:-.5px; }
+.cx-num.xl    { font-size:26px; font-weight:800; letter-spacing:-1px; }
+.cx-unit      { color:var(--cx-text-2); font-weight:400; font-size:.82em; margin-left:3px; }
+.cx-up        { color:var(--cx-up); }
+.cx-dn        { color:var(--cx-dn); }
+.cx-dsh       { border-bottom:1px dashed rgba(94,102,115,.9); padding-bottom:1px; } /* 可解释字段 */
+
+/* ── 标签 / 徽标（全胶囊）──────────────────────────────────────────────────
+   浅色底 + 涨跌色文字，不用饱和色铺满整块。 */
+.cx-tag       { display:inline-flex; align-items:center; gap:3px; font-size:10px; line-height:1.3;
+                padding:2.5px 7px; border-radius:10px; font-weight:600; white-space:nowrap; }
+.cx-tag.up    { background:rgba(14,203,129,.14); color:var(--cx-up); }
+.cx-tag.dn    { background:rgba(246,70,93,.14);  color:var(--cx-dn); }
+.cx-tag.mut   { background:rgba(255,255,255,.07); color:var(--cx-text-2); }
+.cx-tag.gold  { background:rgba(240,185,11,.14); color:var(--cx-gold); }
+.cx-tag.brand { background:rgba(0,127,255,.16);  color:#4DA6FF; }
+
+.cx-badge-live{ display:inline-flex; align-items:center; gap:4px; background:var(--cx-dn); color:#fff;
+                font-size:10px; font-weight:700; padding:3px 9px; border-radius:10px; }
+.cx-badge-live::before{ content:''; width:5px; height:5px; border-radius:50%; background:#fff; }
+.cx-badge-cnt { background:rgba(0,0,0,.6); color:var(--cx-text); font-size:10px;
+                padding:3px 8px; border-radius:10px; }
+
+/* ── Tab / 胶囊筛选 ─────────────────────────────────────────────────────────
+   选中态：Tab 走 2px 下划线，pill 走填充底。两者都不靠边框变色表达选中。 */
+.cx-tabs      { display:flex; gap:20px; padding:0 16px; flex-shrink:0; box-shadow:inset 0 -1px 0 var(--cx-line); }
+.cx-tab       { position:relative; padding:9px 0 10px; font-size:13px; color:var(--cx-text-2);
+                cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:3px; }
+.cx-tab.on    { color:var(--cx-text); font-weight:700; }
+.cx-tab.on::after { content:''; position:absolute; left:0; right:0; bottom:0; height:2px;
+                border-radius:1px; background:var(--cx-brand); }
+
+.cx-pills     { display:flex; gap:6px; padding:10px 16px 2px; flex-shrink:0; }
+.cx-pill      { padding:5px 12px; border-radius:10px; color:var(--cx-text-2); font-size:11.5px;
+                font-weight:600; cursor:pointer; white-space:nowrap; transition:.15s ease; }
+.cx-pill.on   { background:var(--cx-fill); color:var(--cx-text); }
+
+/* ── 卡片 ───────────────────────────────────────────────────────────────────
+   靠底色亮度差分层（#161A1E on #0B0E11），不描边。hover 用抬升 + 投影，
+   不用边框变色。密集堆叠的后台面板是例外，见 .cx-panel。 */
+.cx-card      { background:var(--cx-card); border-radius:16px; padding:12px 16px;
+                transition:transform .18s ease, box-shadow .18s ease, background .15s ease; }
+.cx-card.tap  { cursor:pointer; }
+.cx-card.tap:hover  { transform:translateY(-2px); box-shadow:0 10px 28px rgba(0,0,0,.36); }
+.cx-card.tap:active { transform:scale(.985); opacity:.9; }
+.cx-card.flat { border-radius:12px; padding:9px 12px; }
+
+/* 封面：饱和蓝调渐变，不用灰蓝 */
+.cx-cover     { position:relative; background:linear-gradient(135deg,#1a3a5c,#0d2035);
+                border-radius:16px 16px 0 0; overflow:hidden; display:flex;
+                align-items:center; justify-content:center; }
+.cx-cover.sm  { border-radius:8px; }
+.cx-cover > .cx-badge-live,
+.cx-cover > .cx-badge-cnt { position:absolute; top:8px; }
+.cx-cover > .cx-badge-live{ left:8px; }
+.cx-cover > .cx-badge-cnt { right:8px; }
+
+/* ── 字段网格 ───────────────────────────────────────────────────────────────
+   一行 N 列、末列右对齐；k 小灰 label，v 数值，vb 主数值，sub 补充说明。
+   交易页把字段铺满是常态，不要为了留白删字段。 */
+.cx-grid      { display:flex; margin-top:11px; }
+.cx-grid > div        { flex:1; min-width:0; }
+.cx-grid > div:last-child { text-align:right; }
+.cx-grid .k   { display:block; color:var(--cx-text-3); font-size:10px; margin-bottom:3px; }
+.cx-grid .v   { color:var(--cx-text); font-size:12.5px; font-weight:600; font-variant-numeric:tabular-nums; }
+.cx-grid .v.up{ color:var(--cx-up); }
+.cx-grid .v.dn{ color:var(--cx-dn); }
+.cx-grid .vb  { font-size:18px; font-weight:800; letter-spacing:-.5px; font-variant-numeric:tabular-nums; }
+.cx-grid .sub { display:block; color:var(--cx-text-3); font-size:10.5px; margin-top:2px; }
+.cx-grid.wrap { flex-wrap:wrap; }
+.cx-grid.wrap > div { width:50%; flex:none; margin-bottom:12px; }
+.cx-grid.wrap > div:last-child { text-align:left; }
+
+/* ── 列表行 ─────────────────────────────────────────────────────────────────
+   选中态走左缘 accent 条，不整行染色也不描边。 */
+.cx-row       { display:flex; align-items:center; gap:10px; padding:11px 16px;
+                border-bottom:1px solid var(--cx-line); position:relative; cursor:pointer;
+                transition:background .15s ease; }
+.cx-row:hover { background:rgba(255,255,255,.03); }
+.cx-row.on    { background:rgba(0,127,255,.07); }
+.cx-row.on::before { content:''; position:absolute; left:0; top:0; bottom:0; width:2px; background:var(--cx-brand); }
+.cx-row .mid  { flex:1; min-width:0; }
+.cx-row .sym  { font-size:14.5px; font-weight:700; color:var(--cx-text); }
+.cx-row .full { font-size:11px; color:var(--cx-text-3); margin-top:2px; }
+
+/* 待填充 / 待加入的位置用虚线框，不用实心灰块 */
+.cx-slot-empty{ border:1px dashed var(--cx-hair); border-radius:12px; color:var(--cx-text-3);
+                display:flex; align-items:center; justify-content:center; font-size:11px; }
+
+/* ── 浮层 / 玻璃 ────────────────────────────────────────────────────────────
+   深色 UI 上的浮层用暗玻璃，不用纯白。backdrop-filter 只在浮层背后有真实画面
+   时才看得出来；近黑纯色底上等于没写，此时靠 --cx-glass 底色本身分层。 */
+.cx-glass     { background:var(--cx-glass); border:1px solid rgba(255,255,255,.08);
+                border-radius:16px; padding:13px; backdrop-filter:blur(12px);
+                -webkit-backdrop-filter:blur(12px); }
+
+/* 遮罩 + 底部上推 sheet（手机壳内绝对定位，不脱出机框）*/
+.cx-scrim     { position:absolute; inset:0; background:rgba(0,0,0,.6); z-index:60;
+                animation:cxFade .22s ease; }
+/* 默认收起：写 <div class="cx-sheet" id="x"> 即为关闭态，cxSheet(id,true) 打开。
+   max-height 封顶必须配 overflow-y:auto，否则底部主按钮被裁掉点不到。 */
+.cx-sheet     { display:none; position:absolute; left:0; right:0; bottom:0; background:var(--cx-card);
+                border-radius:16px 16px 0 0; padding:6px 16px 22px; max-height:80%;
+                overflow-y:auto; animation:cxUp .3s cubic-bezier(.22,.61,.36,1); z-index:61; }
+.cx-sheet.show{ display:block; }
+.cx-sheet .grip { width:36px; height:4px; border-radius:2px; background:#3a4149; margin:6px auto 10px; }
+.cx-sheet .cap  { font-size:11px; color:var(--cx-text-2); text-align:center; margin-bottom:10px; }
+@keyframes cxFade { from{opacity:0;} to{opacity:1;} }
+@keyframes cxUp   { from{transform:translateY(102%);} to{transform:none;} }
+
+/* ── 按钮 ───────────────────────────────────────────────────────────────────
+   卡内 / 行内 / 页面级共用底色 · 字号 · 圆角，只差竖向 padding。 */
+.cx-btns      { display:flex; gap:8px; }
+.cx-btn       { flex:1; background:var(--cx-fill); color:var(--cx-text); border:none; border-radius:10px;
+                padding:9px 0; font-size:12.5px; font-weight:700; font-family:'Noto Sans SC',-apple-system,'SF Pro Text',system-ui,sans-serif; cursor:pointer;
+                white-space:nowrap; transition:transform .12s ease, opacity .12s ease, background .15s ease; }
+.cx-btn:active{ transform:scale(.965); opacity:.86; }
+.cx-btn.pri   { background:var(--cx-brand); color:#fff; }
+.cx-btn.lg    { padding:11px 0; }
+.cx-btn.done  { background:var(--cx-fill); color:var(--cx-text-2); }
+/* 状态切换靠叠类不靠换类：.cx-btn.pri.done 仍保留 flex:1，按钮宽度不跳变 */
+.cx-btn.pri.done { background:var(--cx-fill); color:var(--cx-text-2); }
+
+/* ── 手机壳内页结构 ─────────────────────────────────────────────────────────
+   .cx-body 必须 min-height:0，否则 flex 子项不收缩、内容溢出机框。 */
+.cx-body      { flex:1; min-height:0; overflow-y:auto; }
+.cx-statbar   { height:44px; flex-shrink:0; display:flex; align-items:center; justify-content:space-between;
+                padding:0 24px; color:var(--cx-text); font-size:13px; font-weight:600; }
+.cx-statbar .icons { display:flex; gap:5px; align-items:flex-end; }
+.cx-pagehead  { padding:6px 16px 8px; flex-shrink:0; display:flex; align-items:center; gap:8px; }
+.cx-pagehead .t { font-size:16px; font-weight:700; color:var(--cx-text); }
+.cx-sechd     { padding:14px 16px 4px; color:var(--cx-text); font-size:15px; font-weight:700; }
+.cx-ib        { display:flex; align-items:center; justify-content:center; color:var(--cx-text-2);
+                cursor:pointer; flex-shrink:0; }
+
+/* ── 后台密集面板（无边框规则的例外）────────────────────────────────────────
+   #161A1E on #0B0E11 的亮度差在密集垂直堆叠时不足以定界，控制台类布局保留
+   hairline。对客 App / Web 前台不用这个类，用 .cx-card。 */
+.cx-panel     { background:var(--cx-card); border:1px solid var(--cx-hair); border-radius:12px; padding:14px 16px; }
+.cx-panel + .cx-panel { margin-top:12px; }
+
+/* ── 微交互 ─────────────────────────────────────────────────────────────────
+   已有自动轮播 / 自动滚动的组件不要再叠第二层动画。 */
+.cx-tap       { transition:transform .12s ease, opacity .12s ease; }
+.cx-tap:active{ transform:scale(.94); opacity:.85; }
+.cx-in        { animation:cxIn .34s cubic-bezier(.22,.61,.36,1); }
+@keyframes cxIn { from{opacity:0; transform:translateY(12px);} to{opacity:1; transform:none;} }
+
+/* 跑马灯：内容重复两遍走 translateX(-50%) 无缝循环。
+   位移作用在内层 track，不作用在滚动容器自身。 */
+.cx-marquee       { overflow:hidden; position:relative; }
+.cx-marquee-track { display:inline-flex; white-space:nowrap; animation:cxMarquee 18s linear infinite; }
+@keyframes cxMarquee { from{transform:translateX(0);} to{transform:translateX(-50%);} }
+
+/* ── 滚动条（双引擎覆盖）───────────────────────────────────────────────────*/
+.cx-body::-webkit-scrollbar, .cx-sheet::-webkit-scrollbar { width:0; height:0; display:none; }
+.cx-body, .cx-sheet { scrollbar-width:none; -ms-overflow-style:none; }

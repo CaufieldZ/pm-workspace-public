@@ -1,0 +1,77 @@
+# 通用基础设施技术词（infra domain - 所有项目都该扫）
+# 一行一词
+# 通信 / 协议
+binlog
+WebSocket
+gRPC
+RPC
+SDK
+Apollo
+HTTP/2
+HTTP/3
+QUIC
+protobuf
+thrift
+avro
+# 消息队列
+Kafka
+Pulsar
+RocketMQ
+RabbitMQ
+# 存储
+Redis
+ElasticSearch
+MySQL
+PostgreSQL
+MongoDB
+ClickHouse
+HBase
+Cassandra
+InfluxDB
+TimescaleDB
+TiDB
+# 流 / 批计算
+Flink
+Hadoop
+Hive
+Presto
+Trino
+Druid
+# 配置 / 注册中心
+ZooKeeper
+Etcd
+Consul
+Nacos
+# 对象存储 / CDN
+S3
+OSS
+COS
+CDN
+# 网关 / 服务网格
+Nginx
+Envoy
+Istio
+Kong
+APISIX
+# 容器 / 编排
+K8s
+Kubernetes
+Docker
+Helm
+# 监控 / 可观测
+Prometheus
+Grafana
+ELK
+Loki
+Tempo
+Jaeger
+SkyWalking
+Sentinel
+Hystrix
+# 鉴权
+JWT
+OAuth
+OIDC
+SAML
+RBAC
+ABAC
