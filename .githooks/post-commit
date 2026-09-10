@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# commit 后：① 规则源改动提醒 bump skel_version（智能防腐化，只提醒不阻断）② 自动 push origin（后台）
+# log: /tmp/pm-autopush.log
+
+cd "$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+
+# ── 规则源改动提醒 bump skel_version（只提醒不阻断）──
+# 本次 commit 改了规则源（骨架生成器 / check / 词表）但没改 workspace.json → 提醒 bump。
+# 规则源清单 = check_rule_version_drift.py --rule-sources（单一真相源）。
+CHANGED=$(git diff-tree --no-commit-id --name-only -r HEAD 2>/dev/null)
+if [ -n "$CHANGED" ]; then
+  # workspace.json 本次改了 → 已 bump（或有意不动），不提醒
+  if ! echo "$CHANGED" | grep -qF '.claude/skills/_shared/workspace.json'; then
+    RULE_SOURCES=$(python3 scripts/check_rule_version_drift.py --rule-sources 2>/dev/null)
+    if [ -n "$RULE_SOURCES" ]; then
+      HIT=""
+      while IFS= read -r src; do
+        [ -z "$src" ] && continue
+        if echo "$CHANGED" | grep -qF "$src"; then
+          HIT="$src"
+          break
+        fi
+      done <<< "$RULE_SOURCES"
+      if [ -n "$HIT" ]; then
+        cat >&2 <<EOF
+
+💡 [skel-version-bump] 本次 commit 改了规则源：$HIT
+   规则源（骨架生成器 / check / 词表）语义变更后，应 bump skel_version：
+     .claude/skills/_shared/workspace.json  "skel_version": "vN" → "vN+1"
+   bump 后旧产物会被 check_rule_version_drift 标红灯，提醒重生。
+   → 纯 refactor / 修 typo（不改产物骨架语义）则忽略本提醒。
+
+EOF
+      fi
+    fi
+  fi
+fi
+
+# ── autopush（后台，失败不阻塞）──
+branch=$(git symbolic-ref --short HEAD 2>/dev/null) || exit 0
+[ -z "$branch" ] && exit 0
+nohup git push origin "$branch" >/tmp/pm-autopush.log 2>&1 </dev/null &
+exit 0

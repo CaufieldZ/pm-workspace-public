@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>示例产品 · 可交互原型 v1.0</title>
+<style>
+
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#f0f2f5;font-family:'Noto Sans SC','Poppins',system-ui,-apple-system,sans-serif;font-size:13px;color:#1e293b;min-height:100vh;}
+
+
+.gnav{position:fixed;top:0;left:0;right:0;z-index:9999;background:#1F1F1E;border-bottom:1px solid rgba(217,119,87,.15);display:flex;align-items:center;padding:0 32px;height:52px;gap:20px;box-shadow:0 2px 12px rgba(0,0,0,.3);}
+.gnav-logo{font-size:15px;font-weight:800;color:#C3C2B7;white-space:nowrap;display:flex;align-items:center;gap:8px;}
+.gnav-logo span{font-size:20px;}
+.gnav-sep{width:1px;height:24px;background:rgba(195,194,183,0.12);}
+.gnav-tabs{display:flex;gap:0;}
+.gnav-tab{padding:15px 28px;font-size:13px;font-weight:600;color:rgba(195,194,183,0.45);cursor:pointer;border-bottom:2px solid transparent;transition:.2s;white-space:nowrap;display:flex;align-items:center;gap:6px;}
+.gnav-tab:hover{color:rgba(195,194,183,0.82);}
+.gnav-tab.on{color:#FAF9F5;border-bottom-color:#D97757;}
+.gnav-ic{font-size:15px;}
+.gnav-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.gnav-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;}
+.gnav-ver{font-size:11px;color:rgba(195,194,183,0.45);font-family:'JetBrains Mono',ui-monospace,monospace;letter-spacing:.04em;}
+.gnav-view-wrap{padding-top:52px;min-height:100vh;}
+.gnav-view-section{display:none;}
+.gnav-view-section.gnav-active{display:block;}
+
+
+
+
+.p-nav{background:#181A20;border-bottom:1px solid #2B3139;padding:0 24px;height:48px;display:flex;align-items:center;gap:0;position:sticky;top:52px;z-index:100;}
+.p-nav-logo{display:flex;align-items:center;gap:6px;margin-right:20px;cursor:pointer;}
+.p-nav-logo b{font-size:15px;font-weight:800;color:#EAECEF;}
+.p-nav-logo span{font-size:18px;}
+.p-nav-item{padding:0 14px;height:48px;display:flex;align-items:center;font-size:13px;color:#848E9C;cursor:pointer;position:relative;white-space:nowrap;transition:.15s;}
+.p-nav-item:hover{color:#EAECEF;}
+.p-nav-item.act{color:#007FFF;font-weight:600;border-bottom:2px solid #007FFF;}
+.p-nav-item .red-dot{width:6px;height:6px;background:#F6465D;border-radius:50%;position:absolute;top:12px;right:6px;}
+.p-nav-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.p-nav-right .p-btn-blue{background:#007FFF;color:#fff;padding:5px 16px;border-radius:5px;font-size:12px;font-weight:600;border:none;cursor:pointer;}
+.p-nav-right .p-btn-out{border:1px solid #2B3139;color:#848E9C;padding:4px 12px;border-radius:5px;font-size:12px;background:transparent;cursor:pointer;}
+
+
+.p-dropdown{display:none;position:absolute;top:48px;left:0;background:#161A1E;border:1px solid #2B3139;border-radius:0 0 10px 10px;padding:16px;min-width:520px;box-shadow:0 8px 30px rgba(0,0,0,.4);z-index:200;gap:20px;}
+.p-dropdown.show{display:flex;}
+.p-drop-col{flex:1;min-width:0;}
+.p-drop-col h4{font-size:9px;color:#5E6673;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.p-drop-item{display:flex;align-items:center;gap:8px;padding:7px 6px;border-radius:6px;cursor:pointer;font-size:13px;color:#EAECEF;font-weight:600;margin-bottom:2px;transition:.15s;}
+.p-drop-item:hover{background:rgba(0,127,255,.08);}
+.p-drop-item .di{width:28px;height:28px;border-radius:6px;background:#222730;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.p-drop-item .ds{font-size:10px;color:#5E6673;font-weight:400;margin-top:1px;}
+.p-drop-item .entry{color:#007FFF;}
+
+
+.p-tabs{display:flex;border-bottom:1px solid #2B3139;padding:0 24px;}
+.p-tab{padding:10px 18px;font-size:13px;color:#848E9C;font-weight:500;border-bottom:2px solid transparent;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:5px;white-space:nowrap;}
+.p-tab:hover{color:#EAECEF;}
+.p-tab.act{color:#EAECEF;font-weight:700;border-bottom-color:#007FFF;}
+.p-tab .p-tc{font-size:10px;background:#222730;color:#5E6673;padding:1px 6px;border-radius:8px;font-weight:600;}
+.p-tab.act .p-tc{background:rgba(0,127,255,.12);color:#007FFF;}
+
+
+.p-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding-bottom:8px;}
+.p-card{background:#161A1E;border:1px solid #2B3139;border-radius:10px;padding:14px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;min-height:120px;}
+.p-card:hover{border-color:#007FFF;transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,127,255,.08);}
+.p-card .p-cb{font-size:9px;padding:2px 6px;border-radius:3px;display:inline-block;width:fit-content;font-weight:600;}
+.p-cb-on{color:#0ECB81;background:rgba(14,203,129,.1);}
+.p-cb-soon{color:#FF8C00;background:rgba(255,140,0,.1);}
+.p-cb-end{color:#5E6673;background:#222730;}
+.p-card .p-ct{font-size:13px;font-weight:700;margin-top:6px;line-height:1.4;}
+.p-card .p-cd{font-size:11px;color:#848E9C;margin-top:4px;}
+.p-card .p-cf{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:10px;}
+.p-card .p-cf .p-tm{font-size:11px;color:#5E6673;}
+.p-card .p-cf .p-btn{background:#007FFF;color:#fff;padding:4px 12px;border-radius:5px;font-size:11px;font-weight:600;border:none;cursor:pointer;}
+.p-card .p-cf .p-btn-out{background:transparent;border:1px solid #2B3139;color:#848E9C;padding:3px 11px;border-radius:5px;font-size:11px;cursor:pointer;}
+.p-card.ended{opacity:.55;}
+.p-card.ended:hover{transform:none;box-shadow:none;border-color:#2B3139;}
+
+
+.p-wide{grid-column:1/-1;background:#091626;border:1px solid rgba(0,127,255,.3);border-radius:10px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:.15s;}
+.p-wide:hover{border-color:#007FFF;box-shadow:0 4px 20px rgba(0,127,255,.12);}
+
+
+.p-topic{padding:0 24px;}
+.p-topic-hd{display:flex;justify-content:space-between;align-items:center;padding:16px 0 10px;}
+.p-topic-left{display:flex;align-items:center;gap:8px;}
+.p-topic-icon{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;}
+.p-topic-hd h3{font-size:14px;font-weight:700;}
+.p-topic-n{font-size:11px;color:#5E6673;margin-left:4px;}
+.p-topic-more{font-size:12px;color:#007FFF;font-weight:600;cursor:pointer;transition:.15s;}
+.p-topic-more:hover{opacity:.8;}
+
+
+.p-header{padding:24px 24px 16px;display:flex;gap:20px;align-items:flex-start;}
+.p-hdr-left{flex:1;}
+.p-hdr-left h1{font-size:22px;font-weight:800;}
+.p-hdr-sub{font-size:12px;color:#848E9C;margin-top:4px;}
+.p-my-act{display:inline-flex;align-items:center;gap:4px;margin-top:12px;font-size:12px;color:#007FFF;font-weight:600;cursor:pointer;}
+
+
+.p-carousel{width:280px;flex-shrink:0;background:#161A1E;border:1px solid #2B3139;border-radius:10px;padding:14px;cursor:pointer;transition:.15s;}
+.p-carousel:hover{border-color:#007FFF;}
+.p-cr-dots{display:flex;gap:4px;margin-top:8px;}
+.p-cr-dot{width:5px;height:5px;border-radius:3px;background:#363C45;transition:.2s;}
+.p-cr-dot.on{background:#007FFF;width:14px;}
+
+
+.cz-tab{padding:14px 28px;font-size:14px;font-weight:600;color:#5E6673;cursor:pointer;position:relative;transition:.2s;}
+.cz-tab:hover{color:#EAECEF;}
+.cz-tab.on{color:#EAECEF;}
+.cz-tab.on::after{content:'';position:absolute;bottom:0;left:28px;right:28px;height:2px;background:#F0B90B;border-radius:1px;}
+.cz-chip{padding:6px 18px;border-radius:20px;font-size:12px;font-weight:600;background:#1E2329;color:#848E9C;cursor:pointer;transition:.2s;}
+.cz-chip.on{background:#007FFF;color:#fff;}
+
+
+.p-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;}
+.p-overlay.show{display:block;}
+.p-drawer{position:fixed;top:52px;right:-440px;width:440px;bottom:0;background:#181A20;border-left:1px solid #2B3139;z-index:501;transition:right .3s ease;overflow-y:auto;box-shadow:-4px 0 20px rgba(0,0,0,.4);}
+.p-drawer.show{right:0;}
+.p-drawer-bar{background:#161A1E;border-bottom:1px solid #2B3139;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;}
+.p-drawer-bar h3{font-size:15px;font-weight:700;}
+.p-drawer-bar .dx{color:#5E6673;font-size:20px;cursor:pointer;}
+.p-drawer-bar .dx:hover{color:#F6465D;}
+
+
+.p-page{display:none;}
+.p-page.show{display:block;}
+.p-footer{height:60px;}
+
+
+:root{
+  --bg:#F5F6FA;--white:#FFF;--border:#E4E7ED;--border-l:#DCDFE6;
+  --blue:#007FFF;--blue-l:#E6F4FF;--blue-d:#0066CC;  
+  --green:#00B42A;--green-l:#E8F5E9;
+  --red:#F53F3F;--red-l:#FFEBEE;
+  --orange:#FF7D00;--orange-l:#FFF3E0;
+  --text:#1D2129;--text2:#4E5969;--text3:#86909C;--text4:#C9CDD4;
+  --sidebar:#001529;--sidebar-a:#1890FF;
+}
+
+
+.layout{display:flex;min-height:100vh;}
+
+
+.sb{width:200px;background:var(--sidebar);color:#fff;flex-shrink:0;position:fixed;top:52px;bottom:0;overflow-y:auto;z-index:50;}
+.sb-logo{padding:16px;font-size:15px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:8px;}
+.sb-grp{padding:16px 16px 6px;font-size:10px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.5px;}
+.sb-item{padding:10px 16px 10px 24px;font-size:13px;color:rgba(255,255,255,.6);cursor:pointer;transition:.15s;display:flex;align-items:center;gap:8px;}
+.sb-item:hover{color:#fff;background:rgba(255,255,255,.05);}
+.sb-item.on{color:#fff;background:var(--sidebar-a);border-right:3px solid #fff;}
+
+
+.mn{margin-left:200px;flex:1;min-width:0;}
+
+
+.tb{background:var(--white);border-bottom:1px solid var(--border);padding:0 24px;height:48px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:52px;z-index:40;}
+.bc{font-size:12px;color:var(--text3);}
+.bc b{color:var(--text);}
+
+
+.ct{padding:20px 24px;}
+.pt{font-size:18px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.pt .proto{background:var(--orange-l);color:var(--orange);font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600;}
+
+
+.cd{background:var(--white);border-radius:8px;border:1px solid var(--border);padding:16px 20px;margin-bottom:16px;}
+
+
+.fb{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:14px;}
+.fg{display:flex;align-items:center;gap:4px;}
+.fl{font-size:12px;color:var(--text2);white-space:nowrap;}
+.fs{padding:5px 28px 5px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;background:var(--white);color:var(--text);appearance:none;cursor:pointer;}
+
+
+.b{padding:6px 16px;border-radius:4px;font-size:12px;font-weight:500;border:1px solid var(--border);cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:4px;}
+.b-blue{background:var(--blue);color:#fff;border-color:var(--blue);}
+.b-blue:hover{background:var(--blue-d);}
+.b-green{background:var(--green);color:#fff;border-color:var(--green);}
+.b-orange{background:var(--orange);color:#fff;border-color:var(--orange);}
+.b-red{background:transparent;color:var(--red);border-color:var(--red);}
+.b-ghost{background:transparent;color:var(--text2);}
+.b-ghost:hover{color:var(--blue);border-color:var(--blue);}
+.b-sm{padding:4px 10px;font-size:11px;}
+
+
+.tw{overflow-x:auto;}
+.mgt-table{width:100%;border-collapse:collapse;font-size:12px;}
+.mgt-table th{background:#FAFBFC;padding:10px 8px;text-align:left;font-weight:600;color:var(--text2);border-bottom:1px solid var(--border);white-space:nowrap;}
+.mgt-table td{padding:10px 8px;border-bottom:1px solid var(--border);vertical-align:top;}
+.mgt-table tr:hover td{background:#FAFBFC;}
+
+
+.s-on{color:var(--green);font-weight:600;}
+.s-off{color:var(--red);font-weight:600;}
+.badge{display:inline-block;font-size:9px;padding:1px 5px;border-radius:2px;font-weight:700;margin-left:4px;vertical-align:middle;}
+.badge-n{background:var(--green-l);color:#2E7D32;}
+.badge-d{background:var(--red-l);color:#C62828;}
+
+
+.ops{display:flex;gap:4px;flex-wrap:wrap;}
+.op{font-size:11px;cursor:pointer;padding:2px 8px;border-radius:3px;font-weight:500;}
+.op-on{color:var(--green);background:var(--green-l);}
+.op-off{color:var(--orange);background:var(--orange-l);}
+.op-e{color:var(--blue);background:var(--blue-l);}
+.op-d{color:var(--red);background:var(--red-l);}
+
+
+.f-sec{margin-bottom:24px;}
+.f-sec-t{font-size:14px;font-weight:700;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;}
+.f-row{display:flex;align-items:flex-start;margin-bottom:14px;}
+.f-lbl{width:110px;text-align:right;padding-right:12px;padding-top:7px;font-size:12px;color:var(--text2);flex-shrink:0;}
+.f-lbl .req{color:var(--red);}
+.f-ctl{flex:1;}
+.f-inp{width:100%;max-width:400px;padding:7px 10px;border:1px solid var(--border);border-radius:4px;font-size:13px;}
+.f-sel{padding:7px 10px;border:1px solid var(--border);border-radius:4px;font-size:13px;min-width:200px;}
+.f-hint{font-size:11px;color:var(--text3);margin-top:4px;}
+
+
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:95;align-items:center;justify-content:center;}
+.modal-bg.show{display:flex;}
+.modal{background:var(--white);border-radius:10px;width:600px;max-width:92vw;max-height:85vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.15);}
+.modal-hd{padding:16px 20px;border-bottom:1px solid var(--border);font-size:15px;font-weight:700;display:flex;justify-content:space-between;align-items:center;}
+.modal-hd .close{cursor:pointer;font-size:18px;color:var(--text3);}
+.modal-hd .close:hover{color:var(--red);}
+.modal-bd{padding:20px;}
+.modal-ft{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+
+
+.tc-list{display:flex;flex-direction:column;gap:12px;}
+.tc-card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:16px;display:flex;align-items:center;gap:16px;transition:.15s;}
+.tc-card:hover{border-color:var(--blue);box-shadow:0 2px 8px rgba(0,127,255,.06);}
+.tc-drag{cursor:grab;color:var(--text4);font-size:18px;flex-shrink:0;}
+.tc-order{width:28px;height:28px;background:var(--blue-l);color:var(--blue);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;}
+.tc-info{flex:1;min-width:0;}
+.tc-name{font-size:15px;font-weight:700;}
+.tc-rule{font-size:12px;color:var(--text3);margin-top:3px;}
+.tc-rule code{background:var(--bg);padding:1px 6px;border-radius:3px;font-size:11px;color:var(--text2);}
+
+
+.tc-switch{width:40px;height:22px;border-radius:11px;background:var(--text4);position:relative;cursor:pointer;transition:.3s;flex-shrink:0;}
+.tc-switch.on{background:var(--blue);}
+.tc-switch::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:2px;left:2px;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.15);}
+.tc-switch.on::after{left:20px;}
+
+
+.info{font-size:11px;color:var(--text3);padding:10px 14px;background:#FAFBFC;border-radius:6px;margin-top:12px;line-height:1.8;border:1px solid var(--border);}
+.info b{color:var(--text2);}
+
+
+.hide{display:none;}
+
+
+.app-mock{width:375px;height:812px;margin:24px auto;border-radius:48px;border:3px solid #2B3139;background:#181A20;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06);display:flex;flex-direction:column;}
+
+
+.app-mock::before{content:'';position:absolute;top:10px;left:50%;transform:translateX(-50%);width:124px;height:36px;background:#000;border-radius:20px;z-index:10;pointer-events:none;}
+
+
+.app-mock .ph-status{display:flex;justify-content:space-between;padding:21px 28px 6px;font-size:12px;color:#848E9C;flex-shrink:0;font-family:'Noto Sans SC','Poppins',system-ui,-apple-system,sans-serif;}
+.app-mock .p-nav{position:relative;top:auto;flex-shrink:0;padding:0 12px;height:40px;border-radius:0;}
+.app-mock .p-nav-logo b{font-size:14px;}
+.app-mock .p-btn-out,.app-mock .p-btn-blue{font-size:11px;padding:4px 10px;}
+.app-mock .p-page{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+
+
+.app-mock .home-ind{width:134px;height:5px;background:rgba(255,255,255,0.3);border-radius:3px;margin:8px auto 10px;flex-shrink:0;}
+
+
+.app-mock .p-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:500;display:none;}
+.app-mock .p-overlay.show{display:block;}
+.app-mock .p-drawer{position:absolute;bottom:0;left:0;right:0;max-height:80%;background:#1B1D22;border-radius:16px 16px 0 0;z-index:501;transform:translateY(100%);transition:transform .3s ease;overflow-y:auto;box-shadow:0 -4px 20px rgba(0,0,0,.4);}
+.app-mock .p-drawer.show{transform:translateY(0);}
+
+.app-mock .p-drawer:not(.show){visibility:hidden;pointer-events:none;}
+.app-mock .p-drawer-bar{background:#1B1D22;border-bottom:1px solid #2B3139;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:16px 16px 0 0;}
+.app-mock .p-drawer-bar h3{font-size:14px;}
+
+
+.app-mock .p-grid{grid-template-columns:1fr;gap:8px;}
+.app-mock .p-card{padding:12px;}
+.app-mock .p-header{padding:12px 12px 10px;flex-direction:column;gap:8px;}
+.app-mock .p-carousel{width:100%;}
+
+
+.app-mock *::-webkit-scrollbar{display:none;width:0;height:0;}
+.app-mock *{scrollbar-width:none;-ms-overflow-style:none;}
+
+
+.app-mock .cta-bar{position:absolute;left:0;right:0;bottom:24px;background:#0B0E11;border-top:1px solid #2B2F36;padding:10px 14px;display:flex;align-items:center;gap:8px;z-index:30;}
+.app-mock .cta-blue{flex:1;background:#2979FF;color:#fff;border:none;padding:9px 0;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;line-height:1.2;}
+.app-mock .cta-blue.cta-grey{background:#2B2F36;color:#848E9C;}
+.app-mock .cta-sub{font-size:9px;font-weight:400;opacity:.85;margin-top:2px;}
+.app-mock .bell-btn{background:#1B1D22;border:1px solid #2B2F36;color:#FCD535;width:42px;height:42px;border-radius:8px;font-size:16px;cursor:pointer;flex-shrink:0;}
+.app-mock .bell-btn.muted{color:#5E6673;}
+
+
+.web-front{background:#0B0E11;color:#EAECEF;min-height:calc(100vh - 52px);display:flex;flex-direction:column;}
+.web-front > .p-page{flex:1;}
+
+
+.wf-footer{background:#0D1117;border-top:1px solid #2B3139;padding:48px 24px 24px;margin-top:auto;flex-shrink:0;}
+.wf-footer-cols{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:48px;}
+.wf-footer h4{font-size:12px;font-weight:700;color:#EAECEF;margin-bottom:16px;letter-spacing:.08em;text-transform:uppercase;}
+.wf-footer a{display:block;font-size:13px;color:#848E9C;margin-bottom:8px;text-decoration:none;cursor:pointer;}
+.wf-footer a:hover{color:#EAECEF;}
+.wf-footer-legal{max-width:1200px;margin:32px auto 0;padding-top:24px;border-top:1px solid #1F2226;font-size:12px;color:#5E6673;display:flex;justify-content:space-between;align-items:center;}
+
+
+.theme-cd {
+  
+  --bg:       #1F1F1E;
+  --white:    rgba(255,255,255,0.04);
+  --border:   rgba(195,194,183,0.12);
+  --border-l: rgba(195,194,183,0.08);
+  --blue:     #D97757;       
+  --blue-l:   rgba(217,119,87,0.12);
+  --blue-d:   #B8593C;
+  --green:    #0ECB81;       
+  --green-l:  rgba(14,203,129,0.10);
+  --red:      #F6465D;
+  --red-l:    rgba(246,70,93,0.10);
+  --orange:   #D29922;
+  --orange-l: rgba(210,153,34,0.10);
+  --text:     rgba(195,194,183,0.90);
+  --text2:    rgba(195,194,183,0.70);
+  --text3:    rgba(195,194,183,0.45);
+  --text4:    rgba(195,194,183,0.20);
+  --sidebar:  #2A2A29;
+  --sidebar-a: #D97757;
+}
+.theme-cd body { background: #1F1F1E; color: rgba(195,194,183,0.82); font-family: "Noto Sans SC", "Poppins", system-ui, -apple-system, sans-serif; }
+.theme-cd .cd  { background: rgba(255,255,255,0.04); }
+.theme-cd .tb  { background: rgba(255,255,255,0.03); backdrop-filter: blur(12px); }
+.theme-cd .modal { background: #2A2A29; }
+.theme-cd .info  { background: rgba(255,255,255,0.03); }
+
+</style>
+</head>
+<body>
+
+<div class="gnav">
+  <div class="gnav-logo"><span>🔥</span> 示例产品</div>
+  <div class="gnav-sep"></div>
+  <div class="gnav-tabs">
+    <div class="gnav-tab on" onclick="switchGlobalView(0)"><span class="gnav-ic">📱</span> 对客 App</div>
+    <div class="gnav-tab" onclick="switchGlobalView(1)"><span class="gnav-ic">🖥</span> 对客 web</div>
+    <div class="gnav-tab" onclick="switchGlobalView(2)"><span class="gnav-ic">⚙️</span> 管理台</div>
+  </div>
+  <div class="gnav-right">
+    <span class="gnav-ver">v1.0</span>
+  </div>
+</div>
+
+<div class="gnav-view-wrap">
+
+
+<div class="gnav-view-section gnav-active" id="app-view" style="background:#181A20;color:#EAECEF;min-height:calc(100vh - 52px);display:flex;justify-content:center;padding:0;">
+<div class="app-mock">
+  <div class="ph-status"><span>9:41</span><span>⚡📶</span></div>
+  <div class="p-nav">
+    <div class="p-nav-logo" onclick="goPage('app-main')"><span>🔥</span><b>对客 App</b></div>
+    <div class="p-nav-right">
+      <button class="p-btn-out">💰 资产</button>
+    </div>
+  </div>
+
+<!-- ═══════════════════════════════════════ -->
+<div class="p-page show" id="page-app-main">
+<div style="height:300px;display:flex;align-items:center;justify-content:center;color:#848E9C;font-size:14px;">App 首页</div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<div class="p-page" id="page-app-detail">
+<div style="height:300px;display:flex;align-items:center;justify-content:center;color:#848E9C;font-size:14px;">App 详情</div>
+</div>
+
+  <!-- 抽屉（底部上推，app-mock 内部绝对定位） -->
+  <div class="p-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+  <div class="p-drawer" id="drawerPanel">
+    <div class="p-drawer-bar"><h3>交易</h3><span class="dx" onclick="closeDrawer()">✕</span></div>
+    <div class="p-drawer-body" style="padding:16px;">
+
+    </div>
+  </div>
+  <div class="home-ind"></div>
+</div>
+</div>
+
+
+<div class="gnav-view-section" id="web-view">
+<div class="web-front">
+  <!-- 顶 nav（复用 .p-nav / .p-nav-item / .p-btn-blue）-->
+  <div class="p-nav">
+    <div class="p-nav-logo" onclick="goPage('web-main')"><span>🔥</span><b>示例产品</b></div>
+    <div class="p-nav-item">买币 ▾</div>
+    <div class="p-nav-item">行情 ▾</div>
+    <div class="p-nav-item">交易 ▾</div>
+    <div class="p-nav-item">合约 ▾</div>
+    <div class="p-nav-item">赚币 ▾</div>
+    <div class="p-nav-right">
+      <button class="p-btn-out">💰 资产</button>
+      <button class="p-btn-blue">登录 / 注册</button>
+    </div>
+  </div>
+
+<!-- ═══════════════════════════════════════ -->
+<div class="p-page show" id="page-web-main">
+<div style="height:300px;display:flex;align-items:center;justify-content:center;color:#848E9C;font-size:14px;">Web 首页</div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<div class="p-page" id="page-web-detail">
+<div style="height:300px;display:flex;align-items:center;justify-content:center;color:#848E9C;font-size:14px;">Web 详情</div>
+</div>
+
+  <!-- footer（三列 + legal） -->
+  <div class="wf-footer">
+    <div class="wf-footer-cols">
+<div>
+        <h4>关于</h4>
+        <a>公司介绍</a><a>新闻中心</a><a>联系我们</a>
+      </div>
+      <div>
+        <h4>服务</h4>
+        <a>帮助中心</a><a>API 文档</a><a>费率说明</a>
+      </div>
+      <div>
+        <h4>合规</h4>
+        <a>服务条款</a><a>隐私政策</a><a>风险提示</a>
+      </div>
+    </div>
+    <div class="wf-footer-legal">
+      <span>© 2026 示例产品. All rights reserved.</span>
+      <span>Ver 原型</span>
+    </div>
+  </div>
+
+  <!-- 抽屉（右侧滑入，对客 web 模式） -->
+  <div class="p-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+  <div class="p-drawer" id="drawerPanel">
+    <div class="p-drawer-bar"><h3>详情</h3><span class="dx" onclick="closeDrawer()">✕</span></div>
+    <div class="p-drawer-body" style="padding:16px 20px;">
+
+    </div>
+  </div>
+</div><!-- .web-front -->
+</div>
+
+
+<div class="gnav-view-section" id="mgt-view" style="background:#F5F6FA;color:#1D2129;">
+<div class="layout">
+  <div class="sb">
+    <div class="sb-logo"><span style="font-size:18px">🔥</span> 管理后台</div>
+    <div class="sb-grp">功能管理</div>
+    <div class="sb-item on" onclick="swPage(this,0)">📋 列表管理</div>
+    <div class="sb-item" onclick="swPage(this,1)">📊 数据看板</div>
+  </div>
+  <div class="mn">
+    <div class="tb">
+      <div class="bc">🏠 首页 / <b id="bcText">列表管理</b></div>
+      <div style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:10px;">
+        <span style="background:var(--green-l);color:#2E7D32;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;">测试环境</span>
+        <span>👤 运营</span>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <div class="ct page" id="page0">
+<div style="height:300px;display:flex;align-items:center;justify-content:center;color:#848E9C;font-size:14px;">列表管理</div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <div class="ct page hide" id="page1">
+<div style="height:300px;display:flex;align-items:center;justify-content:center;color:#848E9C;font-size:14px;">数据看板</div>
+    </div>
+  </div>
+</div>
+
+<!-- 弹窗 -->
+<div class="modal-bg" id="editModal">
+  <div class="modal">
+    <div class="modal-hd"><span id="modalTitle">编辑</span><span class="close" onclick="this.closest('.modal-bg').classList.remove('show')">✕</span></div>
+    <div class="modal-bd">
+      <p style="color:#848E9C;text-align:center;padding:40px 0;">弹窗内容</p>
+    </div>
+    <div class="modal-ft">
+      <button class="b b-ghost" onclick="this.closest('.modal-bg').classList.remove('show')">取消</button>
+      <button class="b b-blue" onclick="saveItem()">保存</button>
+    </div>
+  </div>
+</div>
+</div>
+
+</div><!-- gnav-view-wrap -->
+
+
+<script>
+// ── 全局 View 切换 ──
+function switchGlobalView(idx) {
+  document.querySelectorAll('.gnav-tab').forEach((t, i) => t.classList.toggle('on', i === idx));
+  document.querySelectorAll('.gnav-view-section').forEach((v, i) => v.classList.toggle('gnav-active', i === idx));
+}
+
+// ── 前台 Tab 切换 ──
+function switchTab(el, prefix, tab) {
+  el.parentElement.querySelectorAll('.p-tab').forEach(t => t.classList.remove('act'));
+  el.classList.add('act');
+  ['ongoing','upcoming','ended'].forEach(t => {
+    var content = document.getElementById(prefix + '-' + t);
+    if (content) content.style.display = (t === tab) ? 'block' : 'none';
+  });
+}
+
+// ── 页面跳转 ──
+function goPage(name) {
+  document.querySelectorAll('.p-page').forEach(p => p.classList.remove('show'));
+  var target = document.getElementById('page-' + name);
+  if (target) target.classList.add('show');
+  closeDropdown();
+}
+
+// ── 下拉菜单 ──
+function toggleDropdown(e) {
+  e.stopPropagation();
+  document.getElementById('acDropdown').classList.toggle('show');
+}
+function closeDropdown() {
+  var dd = document.getElementById('acDropdown');
+  if (dd) dd.classList.remove('show');
+}
+document.addEventListener('click', closeDropdown);
+
+// ── 抽屉 ──
+function openDrawer() {
+  document.getElementById('drawerOverlay').classList.add('show');
+  document.getElementById('drawerPanel').classList.add('show');
+}
+function closeDrawer() {
+  document.getElementById('drawerOverlay').classList.remove('show');
+  document.getElementById('drawerPanel').classList.remove('show');
+}
+
+// ── Chip 胶囊切换 ──
+function switchChip(el, prefix, tab) {
+  el.parentElement.querySelectorAll('.cz-chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  ['ongoing','upcoming','ended'].forEach(t => {
+    var content = document.getElementById(prefix + '-' + t);
+    if (content) content.style.display = (t === tab) ? 'block' : 'none';
+  });
+}
+
+// ── 设备切换（Web/App） ──
+function switchDevice(webId, appId, devBtns, idx) {
+  devBtns.forEach((b, i) => {
+    b.style.background = i === idx ? '#007FFF' : 'transparent';
+    b.style.color = i === idx ? '#EAECEF' : '#5E6673';
+  });
+  document.getElementById(webId).style.display = idx === 0 ? 'block' : 'none';
+  document.getElementById(appId).style.display = idx === 1 ? 'block' : 'none';
+}
+
+// ── 后台页面切换 ──
+function swPage(el, idx) {
+  document.querySelectorAll('.sb-item').forEach(s => s.classList.remove('on'));
+  el.classList.add('on');
+  document.querySelectorAll('.page').forEach((p, i) => {
+    p.classList.toggle('hide', i !== idx);
+  });
+}
+
+// ── 弹窗 ──
+document.querySelectorAll('.modal-bg').forEach(m => {
+  m.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('show'); });
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+// [TEMPLATE] 数据驱动 CRUD 模式（后台管理必用）
+// 核心原则：JS 数组存数据 → render 渲染列表 → 弹窗按索引读写
+// ═══════════════════════════════════════════════════════════════════════
+
+/*
+// ── Step 1：数据源（JS 数组） ──
+var items = [
+  { name: '项目A', status: '已上线', type: '类型1', sort: 1 },
+  { name: '项目B', status: '未上线', type: '类型2', sort: 2 },
+];
+var currentIdx = -1;  // -1=新增, >=0=编辑
+
+// ── Step 2：渲染函数（列表 + 统计全部从数组生成） ──
+function renderList() {
+  var container = document.getElementById('listContainer');
+  var html = '';
+  items.forEach(function(item, i) {
+    html += '<tr>'
+      + '<td><b>' + item.name + '</b></td>'
+      + '<td>' + item.status + '</td>'
+      + '<td>' + item.type + '</td>'
+      + '<td>'
+      +   '<span onclick="openEdit(' + i + ')" style="cursor:pointer;color:#007FFF;">编辑</span> '
+      +   '<span onclick="deleteItem(' + i + ')" style="cursor:pointer;color:#F53F3F;">删除</span>'
+      + '</td>'
+      + '</tr>';
+  });
+  container.innerHTML = html;
+  // 统计实时更新
+  document.getElementById('itemCount').textContent = '共 ' + items.length + ' 条';
+}
+
+// ── Step 3：新增（空表单 + 默认值） ──
+function openAdd() {
+  currentIdx = -1;
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-type').value = '类型1';  // 默认值
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+// ── Step 4：编辑（按索引读数据填入弹窗） ──
+function openEdit(idx) {
+  currentIdx = idx;
+  var d = items[idx];
+  document.getElementById('f-name').value = d.name;
+  document.getElementById('f-type').value = d.type;
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+// ── Step 5：保存 = 写数据 + render + 关弹窗（三步缺一不可） ──
+function saveItem() {
+  var name = document.getElementById('f-name').value.trim();
+  if (!name) { alert('请填写名称'); return; }
+  var type = document.getElementById('f-type').value;
+
+  if (currentIdx >= 0) {
+    // 编辑：写回原数组
+    items[currentIdx].name = name;
+    items[currentIdx].type = type;
+  } else {
+    // 新增：push 到数组
+    items.push({ name: name, status: '未上线', type: type, sort: items.length + 1 });
+  }
+
+  renderList();                                                    // 刷新列表
+  document.getElementById('editModal').style.display = 'none';     // 关弹窗
+}
+
+// ── Step 6：删除（二次确认 + splice + render） ──
+function deleteItem(idx) {
+  if (!confirm('确定删除「' + items[idx].name + '」？')) return;
+  items.splice(idx, 1);
+  renderList();
+}
+
+// ── 初始渲染 ──
+renderList();
+*/
+
+// CRUD helpers placeholder
+function saveItem() { console.log("saved"); }
+</script>
+
+</body>
+</html>

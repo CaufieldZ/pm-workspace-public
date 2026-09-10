@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "check:node": "node --version"
+  }
+}

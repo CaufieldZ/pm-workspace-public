@@ -1,0 +1,36 @@
+# 社区 / 推荐 / Feed 技术词（social domain）
+# 命中即视为后端 / 算法实现细节，PM 文档应改业务白话
+# 召回 / 排序
+Recommender
+RecallRanker
+CoarseRanker
+FineRanker
+ReRanker
+ItemCF
+UserCF
+SwingI2I
+i2i
+u2i
+u2u
+u2u2i
+DSSM
+TwoTower
+# 向量检索
+Embedding
+ANN
+HNSW
+Faiss
+Milvus
+KNN
+# 模型 / 算法
+MAB
+RAG
+LLMRanker
+CTR
+CVR
+LTR
+# 图 / 关系
+GraphDB
+Neo4j
+JanusGraph
+Nebula

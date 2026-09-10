@@ -1,0 +1,71 @@
+# Web 前端技术词（web-frontend domain）
+# 框架 / 库
+React
+Vue
+Angular
+Svelte
+Solid
+Qwik
+NextJS
+NuxtJS
+RemixJS
+SvelteKit
+# 状态管理
+Redux
+Zustand
+Pinia
+MobX
+Recoil
+Jotai
+TanStack
+React Query
+SWR
+# 构建工具
+Webpack
+Vite
+Rollup
+Babel
+esbuild
+swc
+Turbopack
+# 模块系统
+ESM
+UMD
+CJS
+AMD
+# 样式
+Tailwind
+styled-components
+emotion
+CSS Modules
+SASS
+LESS
+# 渲染
+DOM
+Virtual DOM
+SSR
+CSR
+ISR
+Hydration
+# Hooks（PM 不该写具体 hook 名）
+useState
+useEffect
+useMemo
+useReducer
+useCallback
+useRef
+useContext
+# 标准 API
+ServiceWorker
+IndexedDB
+WebAssembly
+WebGL
+WebGPU
+# 类型
+TypeScript
+Flow
+# 部署 / 边缘
+CDN
+PWA
+Vercel
+Cloudflare

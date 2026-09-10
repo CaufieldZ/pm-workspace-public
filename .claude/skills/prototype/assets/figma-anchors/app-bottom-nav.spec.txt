@@ -1,0 +1,80 @@
+=== 12547:22326 当前选中=首页 ===
+[COMPONENT] 当前选中=首页 375×134 r=20.0 fill=#191919
+  [FRAME] 导航 375×56
+    [FRAME] Frame 2147215797 224×40
+      [INSTANCE] tab标题 32×40
+        [TEXT] 2113466 32×20 fill=#FFFFFF "发现" HarmonyOS Sans SC 500 16.0px/lh20.0px
+        [VECTOR] Rectangle 41039 16×3 fill=#007FFF
+      [INSTANCE] tab标题 32×40
+        [TEXT] 2113466 32×20 fill=#828282 "关注" HarmonyOS Sans SC 500 16.0px/lh20.0px
+        [VECTOR] Rectangle 41039 16×3 fill=#007FFF
+      [INSTANCE] tab标题 32×40
+        [TEXT] 2113466 32×20 fill=#828282 "快讯" HarmonyOS Sans SC 500 16.0px/lh20.0px
+        [VECTOR] Rectangle 41039 16×3 fill=#007FFF
+      [INSTANCE] tab标题 32×40
+        [TEXT] 2113466 32×20 fill=#828282 "直播" HarmonyOS Sans SC 500 16.0px/lh20.0px
+        [VECTOR] Rectangle 41039 16×3 fill=#007FFF
+      [INSTANCE] tab标题 32×40
+        [TEXT] 2113466 32×20 fill=#828282 "公告" HarmonyOS Sans SC 500 16.0px/lh20.0px
+        [VECTOR] Rectangle 41039 16×3 fill=#007FFF
+    [FRAME] Frame 2147215798 24×24
+      [FRAME] 上拉展开 16×16
+        [VECTOR] Vector 8849 8×8 stroke=#FFFFFF/1.7999999523162842px
+  [FRAME] Frame 2147215798 375×44 stroke=#000000/1.0px
+    [FRAME] Tab Bar Buttons 375×44
+      [INSTANCE] home 72×44
+        [INSTANCE] icon/home 64×28
+          [GROUP] Group 1312319044 14×22
+            [GROUP] Group 2085665546 14×22
+              [VECTOR] Vector 9×22 fill=#FFFFFF
+              [VECTOR] Vector 7×13 fill=#007FFF
+        [TEXT] 首页 64×14 fill=#FFFFFF "首页" HarmonyOS Sans SC 400 10.0px/lh14.0px
+      [INSTANCE] market 72×44
+        [INSTANCE] icon/market 64×28
+          [FRAME] Frame 2147215796 28×28
+            [FRAME] 图标网格和关键线 20×20
+              [GROUP] Group 2147215801 16×15
+                [FRAME] Frame 2087326240 16×8
+                  [VECTOR] Vector 7886 4×4 fill=#828282
+                  [VECTOR] Vector 7887 4×6 fill=#828282
+                  [VECTOR] Vector 7888 4×8 fill=#828282
+                [BOOLEAN_OPERATION] Subtract 16×7 fill=#828282
+                  [VECTOR] Vector 10013 15×5 stroke=#828282/2.0px
+                  [RECTANGLE] Rectangle 346280997 2×5 fill=#D9D9D9
+        [TEXT] 行情 64×14 fill=#828282 "行情" HarmonyOS Sans SC 400 10.0px/lh14.0px
+      [INSTANCE] trade 72×44
+        [INSTANCE] icon/futures 44×44 r=100.0 fill=#FFFFFF
+          [FRAME] 图标网格和关键线 20×20
+            [GROUP] Group 2147215797 17×12
+              [VECTOR] Vector 10017 16×3 fill=#000000 stroke=#000000/2.0px
+              [VECTOR] Vector 10016 16×3 fill=#000000 stroke=#000000/2.0px
+        [TEXT] 交易 64×14 fill=#828282 "交易" HarmonyOS Sans SC 400 10.0px/lh14.0px
+      [INSTANCE] futures 72×44
+        [INSTANCE] icon/futures 64×28
+          [FRAME] 探索 20×20
+            [FRAME] 图标网格和关键线 20×20
+            [GROUP] Group 2147215817 26×25
+              [BOOLEAN_OPERATION] Subtract 21×16 fill=#828282
+                [BOOLEAN_OPERATION] Union 21×16 fill=#FFFFFF
+                  [VECTOR] Rectangle 346281109 18×14 fill=#000000
+                  [ELLIPSE] Ellipse 14980 10×10 fill=#FFFFFF
+                [ELLIPSE] Ellipse 14981 4×5 fill=#494949
+              [BOOLEAN_OPERATION] Subtract 12×11 fill=#828282
+                [BOOLEAN_OPERATION] Subtract 12×7 fill=#FFFFFF
+                  [VECTOR] Vector 10028 10×6 stroke=#FFFFFF/1.999999761581421px
+                [VECTOR] Rectangle 346281109 (Stroke) 17×12 fill=#000000
+        [TEXT] 探索 64×14 fill=#828282 "探索" HarmonyOS Sans SC 400 10.0px/lh14.0px
+      [INSTANCE] assects 72×44
+        [INSTANCE] icon/assects 64×28
+          [FRAME] 图标网格和关键线 20×20
+            [BOOLEAN_OPERATION] Subtract  fill=#828282
+            [BOOLEAN_OPERATION] Subtract 17×12 fill=#828282
+              [VECTOR] Rectangle 346280999 17×12 fill=#8C8C8C
+              [VECTOR] Rectangle 346281004  stroke=#000000/2.0px
+            [VECTOR] Rectangle 346281003 10×4 stroke=#828282/2.0px
+            [BOOLEAN_OPERATION] Subtract 3×3 fill=#828282
+              [RECTANGLE] Rectangle 346281000 3×3 fill=#D9D9D9
+              [ELLIPSE] Ellipse 14952 6×6 fill=#D9D9D9
+        [TEXT] 资产 64×14 fill=#828282 "资产" HarmonyOS Sans SC 400 10.0px/lh14.0px
+  [FRAME] Home Indicator 375×34
+    [RECTANGLE] Home Indicator 134×5 r=100.0 fill=#FFFFFF

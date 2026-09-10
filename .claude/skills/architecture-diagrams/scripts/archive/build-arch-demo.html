@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<!-- ⚠ 生成产物，勿直接改此 HTML。源脚本：.claude/skills/architecture-diagrams/scripts/build_arch_skeleton.py —— 改源后跑 `python3 .claude/skills/architecture-diagrams/scripts/build_arch_skeleton.py` 重生（直接改会被下次重生覆盖）-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="x-pm-skel-version" content="v6">
+<meta name="description" content="Architecture Demo">
+<title>示例方案 · 架构图集</title>
+<style>
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@300;400;500;600;900&family=Lora:ital,wght@0,400..700;1,400..700&family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+
+:root {
+  --arch-bg:       #FAF9F5;
+  --arch-surface:  rgba(20,20,19,0.04);
+  --arch-surface2: rgba(20,20,19,0.06);
+  --arch-ink:      #141413;
+  --arch-ink-82:   rgba(20,20,19,0.82);
+  --arch-ink-58:   rgba(20,20,19,0.58);
+  --arch-ink-40:   rgba(20,20,19,0.40);
+  --arch-hair:     rgba(20,20,19,0.10);
+  --arch-accent:   #D97757;
+  --arch-mono:     "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  --arch-serif-cn: "Noto Serif SC", serif;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--arch-serif-cn),'Noto Sans SC',system-ui,sans-serif;background:var(--arch-bg);color:var(--arch-ink-82);min-height:100vh;}
+
+
+.tb{background:rgba(250,249,245,0.85);border-bottom:1px solid var(--arch-hair);padding:0 12px;display:flex;flex-wrap:wrap;gap:0;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);}
+.t{padding:13px 10px;font-size:10.5px;font-weight:500;font-family:var(--arch-mono);letter-spacing:0.06em;color:var(--arch-ink-40);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;user-select:none;}
+.t:hover{color:var(--arch-ink-58);}
+.t.a{color:var(--arch-ink);border-bottom-color:var(--arch-accent);}
+.t .i{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;font-size:9px;font-weight:700;margin-right:3px;background:var(--arch-surface);color:var(--arch-ink-40);}
+.t.a .i{background:var(--arch-accent);color:#fff;}
+
+
+.pw{display:none;background:var(--arch-bg);padding:28px 32px;}
+.pw.a{display:block;}
+.pg{max-width:1120px;margin:0 auto;}
+
+
+h1{font-family:var(--arch-serif-cn);font-size:28px;font-weight:900;color:var(--arch-ink);margin-bottom:4px;text-wrap:balance;}
+.sub{font-family:var(--arch-mono);font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--arch-accent);margin-bottom:24px;}
+.rl{height:1px;background:var(--arch-hair);margin-bottom:22px;}
+.st{font-family:var(--arch-serif-cn);font-size:14px;font-weight:700;color:var(--arch-ink-82);margin-bottom:10px;}
+
+
+.fx{display:flex;gap:12px;} .fx>*{flex:1;}
+.mt{margin-top:14px;} .mb{margin-bottom:14px;} .mb2{margin-bottom:20px;}
+
+
+.cd{padding:14px;border-radius:4px;background:var(--arch-surface);border:1px solid var(--arch-hair);}
+
+
+.tg{display:inline-block;font-family:var(--arch-mono);font-size:8.5px;font-weight:600;letter-spacing:0.08em;padding:1px 5px;border-radius:2px;vertical-align:middle;}
+.tg-k{background:rgba(14,203,129,0.16);color:#0A8A56;}    
+.tg-n{background:rgba(47,108,242,0.14);color:#1E40AF;}    
+.tg-w{background:rgba(210,153,34,0.20);color:#92580E;}    
+.tg-c{background:rgba(246,70,93,0.14);color:#B91C1C;}     
+.tg-p{background:rgba(139,92,246,0.14);color:#6D28D9;}    
+
+
+
+.co{border-radius:4px;padding:11px 14px;font-size:11px;line-height:1.7;border:1px solid;color:var(--arch-ink-82);}
+.co-b{border-color:rgba(47,108,242,0.24);background:rgba(47,108,242,0.06);}
+.co-a{border-color:rgba(210,153,34,0.28);background:rgba(210,153,34,0.08);}
+.co-r{border-color:rgba(246,70,93,0.24);background:rgba(246,70,93,0.06);}
+.co-g{border-color:rgba(14,203,129,0.24);background:rgba(14,203,129,0.06);}
+.co-v{border-color:rgba(139,92,246,0.24);background:rgba(139,92,246,0.06);}
+.co strong{font-weight:700;color:var(--arch-ink);}
+
+
+.sn{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;font-family:var(--arch-mono);font-size:9px;font-weight:700;flex-shrink:0;margin-right:3px;}
+.sn-b{background:rgba(47,108,242,0.16);color:#1E40AF;}
+.sn-a{background:rgba(210,153,34,0.20);color:#92580E;}
+.sn-p{background:rgba(139,92,246,0.16);color:#6D28D9;}
+.sn-g{background:rgba(14,203,129,0.18);color:#0A8A56;}
+.sn-r{background:rgba(246,70,93,0.16);color:#B91C1C;}
+
+
+.sec-blue b{background:rgba(47,108,242,0.12);color:#1E40AF;}
+.sec-amber b{background:rgba(210,153,34,0.16);color:#92580E;}
+.sec-purple b{background:rgba(139,92,246,0.12);color:#6D28D9;}
+.sec-green b{background:rgba(14,203,129,0.14);color:#0A8A56;}
+.sec-red b{background:rgba(246,70,93,0.12);color:#B91C1C;}
+
+
+table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:14px;}
+table th{padding:7px 10px;text-align:left;border-bottom:1px solid var(--arch-hair);background:var(--arch-surface2);color:var(--arch-ink-58);font-family:var(--arch-mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;}
+table td{padding:7px 10px;border-bottom:1px solid var(--arch-hair);color:var(--arch-ink-58);}
+table tr:nth-child(even){background:var(--arch-surface);}
+
+
+.sec{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.sec b{font-family:var(--arch-mono);font-size:10px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;padding:3px 10px;border-radius:3px;white-space:nowrap;}
+.sec .sl{flex:1;height:1px;background:var(--arch-hair);}
+.sec em{font-size:10px;color:var(--arch-ink-40);font-style:italic;}
+
+
+code{font-family:var(--arch-mono);font-size:10px;background:var(--arch-surface);padding:1px 4px;border-radius:2px;color:var(--arch-ink-82);}
+
+
+.addr{display:inline-block;padding:4px 10px;border-radius:3px;border:1px solid var(--arch-accent);background:rgba(217,119,87,0.08);font-family:var(--arch-mono);font-size:11px;font-weight:700;color:var(--arch-accent);letter-spacing:0.3px;}
+
+
+.leg{display:flex;gap:16px;margin-top:12px;padding-top:12px;border-top:1px solid var(--arch-hair);flex-wrap:wrap;}
+.leg-i{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--arch-ink-40);}
+.leg-s{width:20px;height:10px;border-radius:2px;border:1.5px solid;}
+
+
+.n{position:absolute;border-radius:4px;border:1px solid var(--arch-hair);background:var(--arch-surface);padding:9px 12px;font-size:11px;line-height:1.5;}
+.n b{font-family:var(--arch-serif-cn);font-size:12px;font-weight:700;display:flex;align-items:center;gap:4px;margin-bottom:2px;color:var(--arch-ink);}
+.n small{color:var(--arch-ink-40);font-size:10.5px;}
+
+
+
+
+.seq{margin:20px 0;}
+.seq-heads{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:0;position:relative;z-index:2;}
+.seq-lh{text-align:center;padding:9px 8px;font-family:var(--arch-mono);font-size:10px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;border-radius:6px;border:1px solid;}
+.seq-lh.user{background:rgba(47,108,242,0.08);color:#1E40AF;border-color:rgba(47,108,242,0.28);}
+.seq-lh.polo{background:rgba(210,153,34,0.10);color:#92580E;border-color:rgba(210,153,34,0.32);}
+.seq-lh.vault{background:rgba(139,92,246,0.08);color:#6D28D9;border-color:rgba(139,92,246,0.32);}
+.seq-lh.platform-c{background:rgba(14,203,129,0.10);color:#0A8A56;border-color:rgba(14,203,129,0.32);}
+
+.seq-body{position:relative;padding:8px 0;}
+.seq-row,.seq-msg{position:relative;z-index:2;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+
+
+.seq.cols-2 .seq-heads,.seq.cols-2 .seq-row,.seq.cols-2 .seq-msg{grid-template-columns:1fr 1fr;}
+.seq.cols-4 .seq-heads,.seq.cols-4 .seq-row,.seq.cols-4 .seq-msg{grid-template-columns:1fr 1fr 1fr 1fr;}
+
+
+.seq-lifeline{position:absolute;top:0;bottom:0;width:2px;transform:translateX(-50%);z-index:0;pointer-events:none;}
+.seq-lifeline.user{background:rgba(47,108,242,0.22);}
+.seq-lifeline.polo{background:rgba(210,153,34,0.24);}
+.seq-lifeline.vault{background:rgba(139,92,246,0.24);}
+.seq-lifeline.platform-c{background:rgba(14,203,129,0.24);}
+
+
+.seq-ll{display:flex;justify-content:center;align-items:center;padding:5px 8px;min-height:14px;}
+
+
+.seq-box{position:relative;z-index:3;padding:9px 14px;border-radius:6px;font-family:var(--arch-serif-cn);font-size:11.5px;font-weight:700;text-align:center;line-height:1.45;max-width:220px;width:100%;background:var(--arch-bg);border:1.5px solid;}
+.seq-box.user{border-color:rgba(47,108,242,0.42);color:#1E40AF;}
+.seq-box.polo{border-color:rgba(210,153,34,0.42);color:#92580E;}
+.seq-box.vault{border-color:rgba(139,92,246,0.42);color:#6D28D9;}
+.seq-box.platform-c{border-color:rgba(14,203,129,0.42);color:#0A8A56;}
+.seq-sub{font-family:var(--arch-mono);font-size:10px;font-weight:500;color:var(--arch-ink-58);margin-top:3px;letter-spacing:0.02em;line-height:1.55;}
+
+
+.seq-msg{position:relative;min-height:40px;z-index:2;}
+.seq-arr{position:absolute;top:50%;height:2px;background:var(--arch-ink-82);transform:translateY(-50%);z-index:2;}
+.seq-arr::after{content:'';position:absolute;top:-5px;width:0;height:0;border:6px solid transparent;}
+.seq-arr.right::after{right:-1px;border-left-color:var(--arch-ink-82);}
+.seq-arr.left::after{left:-1px;border-right-color:var(--arch-ink-82);}
+.seq-arr-lbl{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-family:var(--arch-mono);font-size:9.5px;font-weight:700;color:var(--arch-ink-82);white-space:nowrap;letter-spacing:0.04em;background:var(--arch-bg);padding:0 8px;}
+
+</style>
+</head>
+<body>
+<div class="tb">
+  <div class="t a" onclick="sw(0)"><span class="i">0</span>一页全景</div>
+  <div class="t" onclick="sw(1)"><span class="i">1</span>账户结构</div>
+  <div class="t" onclick="sw(2)"><span class="i">2</span>资金流</div>
+</div>
+<div class="pw a" id="t0"><div class="pg">
+<h1>一页全景</h1>
+<div class="sub">DEMO</div>
+<div class="rl"></div>
+<div class="co co-b"><strong>总体目标</strong>方案 demo</div><div class="fx mt"><div class="cd"><div class="st">入口</div></div><div class="cd"><div class="st">中台</div></div><div class="cd"><div class="st">出口</div></div></div>
+</div>
+</div>
+<div class="pw" id="t1"><div class="pg">
+<h1>账户结构</h1>
+<div class="sub">DEMO</div>
+<div class="rl"></div>
+<table><thead><tr><th>账户</th><th>用途</th></tr></thead><tbody><tr><td>主账户</td><td>持仓</td></tr><tr><td>子账户</td><td>对冲</td></tr></tbody></table>
+</div>
+</div>
+<div class="pw" id="t2"><div class="pg">
+<h1>资金流</h1>
+<div class="sub">DEMO</div>
+<div class="rl"></div>
+<div class="co co-g"><strong>结论</strong>跨方异步结算</div>
+</div>
+</div>
+
+<script>
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * 架构图集 Tab 切换 JS · Architecture Diagrams Tab Switch
+ * 用法：完整复制到 <script> 标签内
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+function sw(i) {
+  document.querySelectorAll('.t').forEach((t, idx) => {
+    t.classList.toggle('a', idx === i);
+  });
+  document.querySelectorAll('.pw').forEach((p, idx) => {
+    p.classList.toggle('a', idx === i);
+  });
+}
+
+</script>
+</body>
+</html>

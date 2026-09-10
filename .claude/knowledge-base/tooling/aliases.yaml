@@ -1,0 +1,92 @@
+common:
+  - canonical: "进入房间"
+    variants:
+      - value: "进房"
+        strength: strong
+      - value: "join room"
+        strength: strong
+      - value: "进入会议"
+        strength: weak
+      - value: "加入房间"
+        strength: weak
+  - canonical: "登录"
+    variants:
+      - value: "login"
+        strength: strong
+      - value: "鉴权"
+        strength: weak
+      - value: "认证"
+        strength: weak
+
+products:
+  conference:
+    - canonical: "conference"
+      variants:
+        - value: "视频会议"
+          strength: strong
+        - value: "会议"
+          strength: weak
+        - value: "meeting"
+          strength: strong
+    - canonical: "roomkit"
+      variants:
+        - value: "tuiroomkit"
+          strength: strong
+        - value: "tui roomkit"
+          strength: weak
+        - value: "roomkit"
+          strength: strong
+        - value: "会议套件"
+          strength: strong
+        - value: "官方会议 ui"
+          strength: weak
+  live:
+    - canonical: "live"
+      variants:
+        - value: "直播"
+          strength: strong
+        - value: "live streaming"
+          strength: strong
+  chat:
+    - canonical: "chat"
+      variants:
+        - value: "即时通信"
+          strength: strong
+        - value: "im"
+          strength: weak
+        - value: "聊天"
+          strength: weak
+  call:
+    - canonical: "call"
+      variants:
+        - value: "音视频通话"
+          strength: strong
+        - value: "视频通话"
+          strength: strong
+        - value: "语音通话"
+          strength: strong
+  rtc-engine:
+    - canonical: "rtc engine"
+      variants:
+        - value: "trtc 引擎"
+          strength: strong
+        - value: "rtc"
+          strength: weak
+        - value: "实时音视频引擎"
+          strength: strong
+
+cross_product:
+  - canonical: "直播弹幕"
+    products: [live, chat]
+    variants:
+      - value: "live barrage"
+        strength: strong
+      - value: "弹幕直播"
+        strength: strong
+  - canonical: "直播连麦"
+    products: [live, rtc-engine]
+    variants:
+      - value: "连麦直播"
+        strength: strong
+      - value: "co-guest live"
+        strength: strong

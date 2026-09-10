@@ -1,0 +1,181 @@
+# intent-signals.yaml
+# capability 查询的二级意图分类信号词
+#
+# detect_capability_intent() 用这两张表把 capability 查询分成：
+#   integrate  — 用户想在自己的项目里接入 / 构建功能（→ domain skill onboarding）
+#   lookup     — 用户想了解功能 / 查阅文档（→ trtc-docs）
+#   ambiguous  — 两类信号同时出现或都没有（→ dispatcher 主动问用户）
+#
+# 匹配方式：substring，在 _normalize_query() 归一化后的字符串上做。
+# 原则：
+#   - 只收"强信号"——能独立判定意图的短语，避免高频通用词误判。
+#   - 中文优先收完整词组（接入 / 是什么），不收单字（做 / 用）。
+#   - 每次新增前先问：这个词单独出现时意图是否还清晰？
+#   - 文档/quickstart 这类词如果同时和接入动词连用，默认视为 integrate；单独出现仍归 lookup。
+
+integrate_signals:
+  # 中文：主动构建 / 接入意图
+  - 接入
+  - 接进
+  - 接上
+  - 接起来
+  - 集成
+  - 对接
+  - 接好
+  - 搭建
+  - 落地
+  - 接通
+  - 帮我做
+  - 帮我接
+  - 帮我接入
+  - 帮我集成
+  - 我要做
+  - 我想做
+  - 做一个
+  - 做成
+  - 做完
+  - 快速接入
+  - 快速开始
+  - 开始接入
+  - 如何实现
+  - 怎么实现
+  - 怎么接
+  - 接到现有项目里
+  - 怎么接入
+  - 加到项目里
+  - 接到项目里
+  - 接进项目里
+  - 接入到项目里
+  - 接入到现有项目里
+  - 集成到项目里
+  - 集成到现有项目里
+  - 加一个功能
+  - 给现有项目加
+  - 添加功能
+  - 增加功能
+  - 新增功能
+  - 加上
+  - 接一个
+  - 做接入
+  - 做集成
+  - 步骤接入
+  - 从零接入
+  - 从0接入
+  - 从 0 接入
+  - 从头搭建
+  - 跑通
+  - 跑起来
+  - 串起来
+  - 整合进
+  - 嵌入到
+  - 嵌进去
+  - 接到业务里
+  - 接到现有业务里
+  - 接到页面里
+  - 接到直播间里
+  - 接到房间里
+  - 做到项目里
+  - 接这个能力
+  - 接这个功能
+  - 接这个场景
+  - 实现这个功能
+  - 实现这个场景
+  - 带我接
+  - 带我做
+  - 一步步接
+  - 一步步做
+  - 手把手接
+  - 逐步接入
+  - 逐步集成
+  - 迁移到
+  - 改造成
+  - 重构成
+  - 接入方案
+  - 集成方案
+  # 英文：主动构建 / 集成意图
+  - how to build
+  - how to implement
+  - how to integrate
+  - how to add
+  - how to set up
+  - how to create
+  - how to develop
+  - how to configure
+  - integrate
+  - implement
+  - hook up
+  - plug into
+  - plug in
+  - connect into
+  - connect with
+  - connect to my
+  - bring up
+  - spin up
+  - bootstrap
+  - roll out
+  - build a
+  - create a
+  - set up
+  - get started
+  - quick start
+  - add to my
+  - add to our
+  - add to the
+  - add into my
+  - add into our
+  - add in my
+  - add in our
+  - integrate into
+  - integrate with my
+  - implement in my
+  - build into
+  - embed into
+  - migrate to
+  - step by step
+  - guide me through
+  - walk me through how to
+  - wire up
+  - set up conference
+  - walk me through
+
+lookup_signals:
+  # 中文：理解 / 查询意图
+  - 是什么
+  - 有哪些
+  - 支持吗
+  - 是否支持
+  - 支持什么
+  - 能否
+  - 可以吗
+  - 有没有
+  - 怎么工作
+  - 有什么区别
+  - 有什么不同
+  - 什么区别
+  - 对比
+  - 原理
+  - 机制
+  - 概念
+  - 文档
+  - 介绍一下
+  - 了解
+  - 说明
+  # 英文：理解 / 查询意图
+  - what is
+  - what are
+  - does it support
+  - can it
+  - how does it work
+  - how does
+  - is it possible
+  - explain
+  - describe
+  - overview
+  - concept
+  - introduction
+  - vs
+  - compared to
+  - difference between
+  - what's the difference
+  - documentation
+  - docs

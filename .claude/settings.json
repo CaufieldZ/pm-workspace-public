@@ -1,0 +1,388 @@
+{
+  "env": {
+    "BROWSER_USE_DISABLE_EXTENSIONS": "1",
+    "CLAUDE_CODE_DISABLE_GIT_INSTRUCTIONS": "1",
+    "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1",
+    "CLAUDE_CODE_DISABLE_BUNDLED_SKILLS": "1",
+    "CLAUDE_CODE_ENABLE_AWAY_SUMMARY": "0",
+    "BASH_DEFAULT_TIMEOUT_MS": "300000"
+  },
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Read",
+      "Edit",
+      "MultiEdit",
+      "Write",
+      "Glob",
+      "Grep",
+      "LS",
+      "WebSearch",
+      "WebFetch",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(tree:*)",
+      "Bash(file:*)",
+      "Bash(stat:*)",
+      "Bash(du:*)",
+      "Bash(df:*)",
+      "Bash(ln:*)",
+      "Bash(basename:*)",
+      "Bash(dirname:*)",
+      "Bash(realpath:*)",
+      "Bash(readlink:*)",
+      "Bash(pwd)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(grep:*)",
+      "Bash(sed:*)",
+      "Bash(awk:*)",
+      "Bash(sort:*)",
+      "Bash(uniq:*)",
+      "Bash(tr:*)",
+      "Bash(cut:*)",
+      "Bash(column:*)",
+      "Bash(diff:*)",
+      "Bash(tee:*)",
+      "Bash(xargs:*)",
+      "Bash(jq:*)",
+      "Bash(yq:*)",
+      "Bash(rg:*)",
+      "Bash(sqlite3:*)",
+      "Bash(openssl:*)",
+      "Bash(xxd:*)",
+      "Bash(hexdump:*)",
+      "Bash(sips:*)",
+      "Bash(ffmpeg:*)",
+      "Bash(convert:*)",
+      "Bash(magick:*)",
+      "Bash(dot:*)",
+      "Bash(bat:*)",
+      "Bash(fd:*)",
+      "Bash(eza:*)",
+      "Bash(delta:*)",
+      "Bash(glow:*)",
+      "Bash(tldr:*)",
+      "Bash(gum:*)",
+      "Bash(http:*)",
+      "Bash(https:*)",
+      "Bash(markdownlint-cli2:*)",
+      "Bash(difft:*)",
+      "Bash(date:*)",
+      "Bash(which:*)",
+      "Bash(echo:*)",
+      "Bash(printf:*)",
+      "Bash(env:*)",
+      "Bash(export:*)",
+      "Bash(source *)",
+      "Bash(set -e)",
+      "Bash(ALL_PROXY=* *)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(touch:*)",
+      "Bash(mkdir:*)",
+      "Bash(rmdir:*)",
+      "Bash(chmod:*)",
+      "Bash(zip:*)",
+      "Bash(unzip:*)",
+      "Bash(tar:*)",
+      "Bash(rsync:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(ping:*)",
+      "Bash(dig:*)",
+      "Bash(nslookup:*)",
+      "Bash(host:*)",
+      "Bash(nc:*)",
+      "Bash(traceroute:*)",
+      "Bash(ifconfig:*)",
+      "Bash(ipconfig:*)",
+      "Bash(lsof -i -sTCP:LISTEN)",
+      "Bash(lsof -i -sTCP:LISTEN -P -n)",
+      "Bash(python3:*)",
+      "Bash(pip show:*)",
+      "Bash(pip list:*)",
+      "Bash(pip install:*)",
+      "Bash(pip3 install:*)",
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(uv tool *)",
+      "Bash(bash:*)",
+      "Bash(./sync_public.sh:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)",
+      "Bash(git status:*)",
+      "Bash(git blame:*)",
+      "Bash(git branch:*)",
+      "Bash(git ls-files:*)",
+      "Bash(git ls-remote:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(git fetch:*)",
+      "Bash(git remote:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git mv *)",
+      "Bash(git checkout:*)",
+      "Bash(git stash:*)",
+      "Bash(git merge:*)",
+      "Bash(git rebase:*)",
+      "Bash(git tag:*)",
+      "Bash(git pull:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git rev-list:*)",
+      "Bash(git config:*)",
+      "Bash(git restore *)",
+      "Bash(git reset *)",
+      "Bash(git push:*)",
+      "Bash(git -C * log *)",
+      "Bash(git -C * diff *)",
+      "Bash(git -C * show *)",
+      "Bash(git -C * status *)",
+      "Bash(git -C * branch *)",
+      "Bash(git -C * ls-files *)",
+      "Bash(git -C * ls-remote *)",
+      "Bash(git -C * remote *)",
+      "Bash(git -C * add *)",
+      "Bash(git -C * commit *)",
+      "Bash(git -C * push *)",
+      "Bash(git -C * mv *)",
+      "Bash(git worktree:*)",
+      "Bash(git switch:*)",
+      "Bash(git cherry-pick:*)",
+      "Bash(git reflog:*)",
+      "Bash(git describe:*)",
+      "Bash(git shortlog:*)",
+      "Bash(git clean:*)",
+      "Bash(git version)",
+      "Bash(git init:*)",
+      "Bash(mktemp:*)",
+      "Bash(uname:*)",
+      "Bash(whoami)",
+      "Bash(hostname)",
+      "Bash(base64:*)",
+      "Bash(comm:*)",
+      "Bash(ps:*)",
+      "Bash(pgrep:*)",
+      "Bash(pkill:*)",
+      "Bash(kill:*)",
+      "Bash(top:*)",
+      "Bash(htop:*)",
+      "Bash(vmstat:*)",
+      "Bash(iostat:*)",
+      "Bash(sysctl:*)",
+      "Bash(caffeinate:*)",
+      "Bash(launchctl:*)",
+      "Bash(test:*)",
+      "Bash(yarn:*)",
+      "Bash(pnpm:*)",
+      "Bash(gh:*)",
+      "Bash(browser-use:*)",
+      "Bash(bu:*)",
+      "Bash(claude mcp *)",
+      "Bash(claude plugin *)",
+      "Bash(SKIP_DELIVERABLE_GATE=1 bash .claude/hooks/pre-writeedit-guard.sh)",
+      "Bash(SKIP_IMG_PATH_GATE=1 bash .claude/hooks/pre-writeedit-guard.sh)",
+      "Bash(SKIP_SKILL_LOAD_GATE=1 bash .claude/hooks/pre-writeedit-guard.sh)",
+      "Bash(SKIP_SCRIPTS_FIRST_GATE=1 bash .claude/hooks/pre-writeedit-guard.sh)",
+      "Bash(FORCE_SYNC=1 bash sync_public.sh *)",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "mcp__confluence__confluence_create_page",
+      "mcp__confluence__confluence_get_page",
+      "mcp__confluence__confluence_search_pages",
+      "mcp__confluence__confluence_upload_attachment",
+      "mcp__dingtalk-a1__get_dingtalk_a1_file_list",
+      "mcp__dingtalk-doc__get_document_content",
+      "mcp__dingtalk-doc__get_document_info",
+      "mcp__dingtalk-doc__list_document_blocks",
+      "mcp__dingtalk-doc__search_documents",
+      "mcp__figma__download_figma_images",
+      "mcp__figma__get_design_context",
+      "mcp__figma__get_figma_data",
+      "mcp__figma__get_metadata",
+      "mcp__figma__get_screenshot",
+      "mcp__figma__whoami",
+      "mcp__sensors__get_event_properties",
+      "mcp__sensors__list_funnels",
+      "mcp__sensors__query_funnel_report",
+      "mcp__sensors__query_retention_report",
+      "mcp__sensors__query_segmentation_report",
+      "mcp__sensors__query_sql",
+      "mcp__plugin_slack_slack__slack_read_channel",
+      "mcp__plugin_slack_slack__slack_search_channels",
+      "mcp__plugin_slack_slack__slack_send_message"
+    ],
+    "ask": [
+      "Bash(git rm *)",
+      "Bash(git push -u:*)",
+      "Bash(git push --force-with-lease:*)",
+      "Bash(git add -A:*)",
+      "Bash(git add --all:*)",
+      "Bash(git add .:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(sudo:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git push * -f)",
+      "Bash(git push * -f *)",
+      "Bash(git push * --force)",
+      "Bash(git push * --force *)",
+      "Workflow",
+      "NotebookEdit",
+      "EnterWorktree",
+      "ExitWorktree",
+      "CronCreate",
+      "CronDelete",
+      "CronList",
+      "ScheduleWakeup"
+    ],
+    "denyTools": [
+      "mcp__confluence__confluence_execute_cql_search",
+      "mcp__confluence__confluence_get_current_user",
+      "mcp__sensors__list_events_all",
+      "mcp__sensors__list_event_properties_all",
+      "mcp__sensors__list_event_tags"
+    ]
+  },
+  "enableAllProjectMcpServers": false,
+  "enabledMcpjsonServers": [],
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-compact.sh"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/user-prompt-context-warn.sh"
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/user-prompt-requirement-guard.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-bash-guard.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-writeedit-guard.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-agent-log.sh"
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-task-prompt-scrub.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-read-bigfile.sh"
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-read-image-check.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-writeedit-dispatch.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-bash-deliverable-check.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-skill-load.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/stop-learn-capture.sh"
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/stop-dashboard-refresh.sh"
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/stop-pycache-clean.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
