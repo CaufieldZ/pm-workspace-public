@@ -31,7 +31,7 @@
 | 下游 | PRD 扔给研发自己理解 | PRD md 作为唯一可信源 — 业务对象 / 状态机 / 5 段式 / 文案矩阵都在一份文档，研发 / 设计 / QA AI 各取所需 |
 | 方法论沉淀 | 散落在个人习惯和文档里 | 战略层 + 工作流层 + 项目层三层落盘，可跨 session / 跨模型复用 |
 
-![PM 做决策 / AI 做执行](assets/readme/sop-home.png)
+![在 VSCode 里用 Claude Code 跑 PM 工作流](assets/readme/sop-home.png)
 
 > 16 Skill 覆盖产品经理全链路、旗舰模型讨论 → 中档模型产出节约 ~46% 成本。AI 干体力活（按模板批量生成、术语全局一致、跨文档校验），PM 干脑力活（取舍、向上管理、审业务真实性）。
 
@@ -41,7 +41,7 @@
 
 虚构的私募基金认申赎项目，完整走完 baseline → scene-list → 交互大图 → PRD 四步，Sonnet 级中档模型实测 ~20 分钟：[`examples/private-fund-demo/`](examples/private-fund-demo/)。
 
-![交互大图 hero](https://raw.githubusercontent.com/CaufieldZ/pm-workspace-public/main/examples/examples/private-fund-demo/screenshots/imap-hero.png)
+![交互大图 · H5 投资人端](assets/readme/demo-imap.png)
 
 > 上图是交互大图顶部 PART 0 · H5 投资人端（A-1 基金详情 + 认购下单 / A-2 协议签署 + 冷静期）。全部 5 Scene + 跨端数据流表见 [完整 HTML](examples/private-fund-demo/deliverables/imap-private-fund-v1.html)。
 
@@ -194,7 +194,7 @@ git config core.hooksPath .githooks
 
 PRD md 一次定义、多处使用——业务对象 / 状态机 / 子场景区块表全部结构化锁定，下游 AI Agent 不必二次解读：
 
-![下游交付指南](assets/readme/sop-delivery.png)
+![PRD md 一次定义，多处使用](assets/readme/sop-delivery.png)
 
 ```
          ┌─→ 3.2 业务对象 + 3.3 状态机 ────────────→ 研发 AI       (Cursor · Copilot · Claude Code)
@@ -214,7 +214,7 @@ PRD md ──┼─→ 5/6/7.x 子场景区块表 + 截图 ───────
 
 ## 工程质量
 
-![Hooks 全景 · 16 个 hook 分发 28 条自动兜底](assets/readme/sop-b-infra.png)
+![Hooks 全景 · 16 个 hook 挂在 6 个事件上](assets/readme/sop-b-infra.png)
 
 ### 硬性约束（代码层面拦截）
 

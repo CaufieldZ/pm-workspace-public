@@ -37,7 +37,7 @@ Meeting notes / MRD / competitor screenshots → scene lists, interaction maps, 
 
 A fictional private-fund subscription/redemption project, walking through baseline → scene-list → interaction map → PRD end-to-end. Measured ~20 min on a mid-tier Sonnet-class model: [`examples/private-fund-demo/`](examples/private-fund-demo/).
 
-![Interaction map hero](https://raw.githubusercontent.com/CaufieldZ/pm-workspace-public/main/examples/examples/private-fund-demo/screenshots/imap-hero.png)
+![Interaction map screenshot](assets/readme/demo-imap.png)
 
 > Above is the top of the interaction map, PART 0 · H5 investor view (A-1 fund detail + subscription / A-2 agreement signing + cooling-off). All 5 Scenes plus the cross-device dataflow table are in the [full HTML](examples/private-fund-demo/deliverables/imap-private-fund-v1.html).
 
