@@ -206,4 +206,4 @@ lewislulu 是 `<aside class="notes">` 嵌入 slide HTML 内。我们走**集中�
 
 ## 与 docx 演讲稿导出的关系
 
-走 [`scripts/gen-notes-docx.py`](../scripts/gen-notes-docx.py) 导 docx：脚本从 HTML 产物里抽 `window.__PPT_NOTES__` 数据，按 NAV 顺序生成 docx 文件给 PM 打印 / 备用。
+走 [`scripts/gen-notes-docx.py`](../scripts/gen-notes-docx.py) 导 docx：那是**模板脚本**——复制到 `projects/{项目}/scripts/gen_notes_v{N}.py`，把 HTML 里的 `window.__PPT_NOTES__` 内容填进文件内 `NOTES` 常量，运行 `python3 gen_notes_v1.py` 生成 docx 给 PM 打印 / 备用。步骤见 `references/ppt-notes-docx.md`。

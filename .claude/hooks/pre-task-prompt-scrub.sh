@@ -27,7 +27,7 @@ PROMPT="$HOOK_PROMPT"
 # 短 prompt(< 100 char)一般是简单查询,跳过免烦扰
 [ ${#PROMPT} -lt 100 ] && exit 0
 
-check_skip_env "task-prompt-scrub" "SKIP_TASK_PROMPT_SCRUB_GATE" "${PROMPT:0:80}"
+check_skip_env "task-prompt-scrub" "SKIP_TASK_PROMPT_SCRUB_GATE" "${PROMPT:0:80}" --exit
 
 # 合规 = 同时含 session-state 与「禁止」语义（禁 / 不要 / 不得 / do not …）。
 # 裸提及（"read session-state.md 然后继续"）正是要禁的行为，只匹配关键词会放行它。

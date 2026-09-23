@@ -621,7 +621,7 @@ if run_cat 6; then
     [ -n "$prefix" ] && [ "$prefix" != "—" ] && [ "$prefix" != "-" ] && VALID_PREFIXES="$VALID_PREFIXES $prefix"
   done
   # 加上 audit- 前缀（workspace-audit 产出）
-  VALID_PREFIXES="$VALID_PREFIXES audit-"
+  VALID_PREFIXES="$VALID_PREFIXES audit- review-"
 
   HAS_PROJECT=false
   # 项目发现：以 scene-list.md 为标记（单模型下每个非 EXEMPT 项目都有 scene-list）
@@ -1105,12 +1105,13 @@ import os, re, sys, glob
 sys.stdout.reconfigure(newline='\n')  # Windows: 防 \r 残留导致 bash [ -f ] 误判
 hook_dir = sys.argv[1]
 refs = set()
-# 捕获：${VAR[:-default]}/relpath  或  $VAR/relpath  或  裸 .claude/.../.sh|.py|.js  或  scripts/xxx.sh|py|js
+# 捕获：${VAR[:-default]}/relpath  或  $VAR/relpath  或  裸 .claude/.../.sh|.py|.js|.json  或  scripts/xxx.sh|py|js|json
+# 扩展名后加 (?![A-Za-z]) 防回溯截断（.json 曾被截成 .js 再判存在 → 误报文件不存在）
 patterns = [
-    re.compile(r'\$\{(?:CLAUDE_PROJECT_DIR|PROJECT_DIR|ROOT)(?::-[^}]*)?\}/([A-Za-z0-9_./-]+\.(?:sh|py|js))'),
-    re.compile(r'\$(?:CLAUDE_PROJECT_DIR|PROJECT_DIR|ROOT)/([A-Za-z0-9_./-]+\.(?:sh|py|js))'),
-    re.compile(r'(?<![A-Za-z0-9_/-])(\.claude/(?:skills|hooks)/[A-Za-z0-9_./-]+\.(?:sh|py|js))'),
-    re.compile(r'(?<![A-Za-z0-9_/-])(scripts/[A-Za-z0-9_./-]+\.(?:sh|py|js))'),
+    re.compile(r'\$\{(?:CLAUDE_PROJECT_DIR|PROJECT_DIR|ROOT)(?::-[^}]*)?\}/([A-Za-z0-9_./-]+\.(?:sh|py|js|json)(?![A-Za-z]))'),
+    re.compile(r'\$(?:CLAUDE_PROJECT_DIR|PROJECT_DIR|ROOT)/([A-Za-z0-9_./-]+\.(?:sh|py|js|json)(?![A-Za-z]))'),
+    re.compile(r'(?<![A-Za-z0-9_/-])(\.claude/(?:skills|hooks)/[A-Za-z0-9_./-]+\.(?:sh|py|js|json)(?![A-Za-z]))'),
+    re.compile(r'(?<![A-Za-z0-9_/-])(scripts/[A-Za-z0-9_./-]+\.(?:sh|py|js|json)(?![A-Za-z]))'),
 ]
 for f in sorted(glob.glob(f'{hook_dir}/*.sh')):
     src = open(f, encoding='utf-8', errors='ignore').read()
@@ -1217,7 +1218,7 @@ for c in sorted(ext_cmds):
       echo "  ⏭️  settings.json 或 python3 不可用，跳过"
     fi
 
-    # 15.5 pre-commit trigger 覆盖 hooks 层 + gate 调用存在性
+    # 15.5 pre-commit trigger 覆盖 hooks 层
     echo ""
     echo "--- pre-commit trigger 覆盖 ---"
     if [ -f .githooks/pre-commit ]; then
@@ -1225,12 +1226,6 @@ for c in sorted(ext_cmds):
         echo "  ✅ .githooks/pre-commit 已覆盖 .claude/hooks/ 变更"
       else
         echo "  ❌ .githooks/pre-commit trigger 未包含 ^\\.claude/hooks/，改 hook 不会触发防腐审计"
-        HOOKS_FAIL=1; GLOBAL_FAIL=1
-      fi
-      if grep -q 'check_code_review_gate\.py' .githooks/pre-commit; then
-        echo "  ✅ pre-commit 在调 check_code_review_gate.py（code-review 强制门）"
-      else
-        echo "  ❌ pre-commit 未调用 check_code_review_gate.py —— gate 脚本还在但调用被删 = 静默失效"
         HOOKS_FAIL=1; GLOBAL_FAIL=1
       fi
     fi
@@ -2026,7 +2021,7 @@ if run_cat 25; then
 
   # usage.jsonl 反过来管 gate 名册：日志有名字而注册表没有 = 死 gate；
   # 退役名册登记了却零事件 = 死豁免。两者红灯，零触发 / skip 失衡只报黄。
-  if python3 scripts/gate_health.py --strict; then
+  if python3 scripts/telemetry.py gate-health --strict; then
     :
   else
     echo "  ❌ gate 名册与遥测漂移（上方红灯）"

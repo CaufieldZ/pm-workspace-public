@@ -16,6 +16,10 @@ Confluence——md 表格不支持 rowspan，这里补上。
 - 0 — 导出成功。产物落点：-o 指定路径；缺省 <prd 基名>-埋点.xlsx 落 PRD 同目录
 - 1 — 文件不存在
 - 2 — 未在 md 里找到 10 列埋点表
+
+坑：导出 xlsx 给用户 / 外发时统一指定 name="微软雅黑"（含
+wb._named_styles['Normal'].font），openpyxl 默认 Calibri 中文会渲染错。
+本脚本表头 Font() 未指定字体名——若产物给外部用需补上。
 """
 from __future__ import annotations
 

@@ -178,6 +178,7 @@ pm-workspace 默认配色（claude.ai chat UI 实测 + Anthropic 官方 brand-gu
 
 - 留白 **≥ 40%** 总面积（极简风 60%+）
 - 间距只用 8pt 网格：**8 / 16 / 24 / 32 / 48 / 64px**
+- **纵向 flex 满屏布局（海报 / 单页封面）给每个子块 `flex: none`**：内容总高一旦超过容器，flex 默认收缩会把带 `margin-top: auto` 的块压扁到只剩边框。按像素先估总高再排，别指望 auto margin 兜底。
 
 ---
 

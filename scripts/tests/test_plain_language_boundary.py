@@ -173,3 +173,17 @@ def test_check_file_added_only_none_means_full_scan(tmp_path, monkeypatch):
     monkeypatch.setattr(cpl, "_added_lines", lambda p: None)
     strict, _ = cpl.check_file(f, added_only=True)
     assert len(strict) == 2, f"None 应回落到全量：{strict}"
+
+
+def test_line_cap_only_applies_to_full_scan(tmp_path, monkeypatch):
+    """超限文件在 added_only 下照扫新增行。
+
+    上限本意是跳过考古语料（inputs/docs/dig-*.md）；写盘路径恒 added_only，
+    若上限照旧生效，超限文件会「跳过并记 clean」——门看着在跑，实际零命中。
+    """
+    f = tmp_path / "big.md"
+    f.write_text("正文\n" * (cpl.MAX_LINES + 10) + "D-1 新账\n", encoding="utf-8")
+    assert cpl.check_file(f, added_only=False) == ([], []), "全量扫应超限跳过"
+    monkeypatch.setattr(cpl, "_added_lines", lambda p: {cpl.MAX_LINES + 11})
+    strict, _ = cpl.check_file(f, added_only=True)
+    assert [h[0] for h in strict] == [cpl.MAX_LINES + 11], strict

@@ -51,21 +51,17 @@ import urllib.request
 from pathlib import Path
 
 from lib.env_refs import apply_env_file, expand_refs  # noqa: E402
+from lib.projects import resolve_project_dir  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 API_BASE = "https://api.figma.com/v1"
 
 
 def _resolve_project_dir(name: str) -> Path:
-    cands = list((ROOT / "projects").glob(f"*/{name}"))
-    direct = ROOT / "projects" / name
-    if direct.is_dir():
-        cands.append(direct)
-    if len(cands) == 1:
-        return cands[0]
-    if len(cands) > 1:
-        sys.exit(f"❌ -p {name} 匹配多个：{[str(c) for c in cands]}")
-    sys.exit(f"❌ -p {name} 找不到对应项目目录")
+    try:
+        return resolve_project_dir(ROOT, name)
+    except ValueError as exc:
+        sys.exit(f"❌ {exc}")
 
 
 # ── 凭证 ──────────────────────────────────────────────────────

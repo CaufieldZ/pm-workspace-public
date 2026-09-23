@@ -90,27 +90,33 @@ is_plain_language_exempt() {
   return 1
 }
 
-# SKIP 环境变量门
-# 用法：check_skip_env GATE_NAME ENV_VAR_NAME [DETAIL_PREFIX]
-#   GATE_NAME      调 _log_skip_gate 用（gate 字符串名，dashboard 分组键）
-#   ENV_VAR_NAME   要检查的 env 变量名（如 SKIP_DELIVERABLE_GATE）
-#   DETAIL_PREFIX  可选，截断到 120 字符
+# SKIP 环境变量门 —— 全工区唯一实现（PostToolUse Write|Edit / Bash 与 PreToolUse 三侧共用）
+# 用法：check_skip_env GATE_NAME ENV_VAR_NAME [DETAIL] [--exit]
+#   GATE_NAME   调 _log_skip_gate 用（gate 字符串名，dashboard 分组键）
+#   ENV_VAR_NAME 要检查的 env 变量名（如 SKIP_DELIVERABLE_GATE）
+#   DETAIL      可选，写进 skip 日志的定位信息，截断到 120 字符
+#   --exit      命中即 exit 0（PreToolUse 侧语义：放行整条 hook 链）
 #
 # 行为：
-#   - 命中 env=1 或命令行 inline `<VAR>=1` → _log_skip_gate + exit 0
-#   - 不命中 → 静默 return
+#   - 命中 env=1 → _log_skip_gate +（--exit ? exit 0 : return 0）
+#   - 命中命令行 inline `<VAR>=1`（仅当 HOOK_COMMAND 非空，即 Bash 路径）→ 同上
+#   - 不命中 → return 1
 check_skip_env() {
   local gate="$1"
   local var="$2"
   local detail="${3:-}"
+  local mode="${4:-}"
   local val
   eval "val=\${${var}:-0}"
   if [ "$val" = "1" ]; then
     _log_skip_gate "$gate" "env  ${detail:0:120}"
-    exit 0
+    [ "$mode" = "--exit" ] && exit 0
+    return 0
   fi
   if [ -n "${HOOK_COMMAND:-}" ] && echo "$HOOK_COMMAND" | grep -qE "\b${var}=1\b"; then
     _log_skip_gate "$gate" "inline  ${HOOK_COMMAND:0:120}"
-    exit 0
+    [ "$mode" = "--exit" ] && exit 0
+    return 0
   fi
+  return 1
 }

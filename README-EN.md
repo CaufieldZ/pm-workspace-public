@@ -100,7 +100,7 @@ Product-management methodology committed to disk, reused across projects. Inject
 | File | Load mode | What it owns |
 |:--|:--|:--|
 | `CLAUDE.md` | Injected every session | Tool ops · shortcut routes · incoming-request PM-GATE 4-risk scan · three pipeline routing · runbook trigger table |
-| `.claude/runbooks/*.md` | Read on demand when trigger hits | 18 runbooks (methodology / artifact conventions / decision framework / LNO / project mgmt / version bump / human voice incl. conversation style / HTML pipeline / Confluence archaeology / AI platform specs entry / etc.) |
+| `.claude/runbooks/*.md` | Read on demand when trigger hits | 20 runbooks (methodology / artifact conventions / decision framework / LNO / project mgmt / version bump / human voice incl. conversation style / HTML pipeline / Confluence archaeology / defensive patterns / AI platform specs entry / etc.) |
 | `LEARNED.md` | Injected every session (optional) | Personal communication preferences + correction log (repo root, gitignored) |
 
 ### Layer 3 · Project
@@ -168,7 +168,7 @@ Source material (meeting notes / MRD / competitors / verbal)
 
 | Skill | Description |
 |:-|:-|
-| promo-kit | Turn a feature / campaign into external promo content (video storyboard / 4-panel graphic / short copy, pick one or combine) |
+| promo-kit | Turn a feature / campaign into external promo content (video storyboard / 4-panel graphic / poster / short copy, pick one or combine) |
 | aihub-package | Enterprise AI-platform packaging pipeline (sanitization checklist → vet → pack → verify) — an example of distributing Skills across teams |
 | 内部项目系统 | Internal project-management CLI bridge (tasks / requirements / progress queries) — an example of wrapping an internal system as a tool Skill |
 
@@ -275,7 +275,7 @@ pm-workspace/
 │   │   ├── pre-version-sync-gate.sh
 │   │   ├── stop-learn-capture.sh         # extracts [LEARN] from transcript → LEARNED.md
 │   │   └── ...                  #   16 total
-│   ├── runbooks/               # 18 on-demand methodology / ops references, incl. conversation style (human-voice-rules.md §0) + AI platform specs entry (ai-platform-specs.md)
+│   ├── runbooks/               # 20 on-demand methodology / ops references, incl. conversation style (human-voice-rules.md §0) + class rules (defensive-patterns.md) + AI platform specs entry (ai-platform-specs.md)
 │   ├── _meta/                  # metadata (half-life.md rule half-life index)
 │   ├── skills/                  # 18 Skills (trinity: SKILL.md + scripts/ + references/ + assets/)
 │   │   ├── {skill}/scripts/     #   executable code (Claude calls; doesn't read source)
@@ -294,7 +294,7 @@ pm-workspace/
 │   │   └── thresholds.yaml      #   threshold SSOT (200/300/500/1500/Tab≥10)
 │   ├── dashboard.py             #   aggregate hooks / skills / projects → workspace-dashboard.md
 │   ├── call_mcp.py              #   generic MCP calls (zero schema overhead)
-│   ├── fetch_confluence.py
+│   ├── confluence.py
 │   ├── fetch_figma.py
 │   ├── pull_meeting_notes.py    #   DingTalk Flash-Note puller
 │   ├── md_to_confluence.py

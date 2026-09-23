@@ -1,4 +1,4 @@
-"""gate_health 回归：五条判定各自可命中 + 注册表宽窄集不混用。
+"""telemetry.py gate-health 回归：五条判定各自可命中 + 注册表宽窄集不混用。
 
 锁定：① parse_events 只收 hook/gate 且滤掉 -shadow 与坏行；② 五个维度（死 gate /
 死豁免 / 零触发 / skip 失衡 / 无解释 skip）都有正例能点亮，也都有负例不误报；
@@ -7,7 +7,7 @@
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from gate_health import (
+from telemetry import (
     SKIP_MIN_SAMPLE,
     SKIP_RATIO,
     UNEXPLAINED_SKIP_MAX,

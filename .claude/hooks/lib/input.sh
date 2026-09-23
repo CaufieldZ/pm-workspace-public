@@ -12,6 +12,12 @@
 #   CMD=$(hook_command)
 #   TRANS=$(hook_transcript_path)
 #
+# 事件专用一次性解析（比 hook_parse_all 少出无关字段，也少一次序列化）：
+#   hook_parse_bash_input → HOOK_TOOL_NAME / HOOK_COMMAND / HOOK_TOOL_INPUT（整个 tool_input）
+#   hook_parse_read       → HOOK_TOOL_NAME / HOOK_FILE_PATH / HOOK_HAS_PAGING
+#   hook_parse_skill      → HOOK_TOOL_NAME / HOOK_SKILL_NAME
+#   hook_parse_task       → HOOK_TOOL_NAME / HOOK_SUBAGENT_TYPE / HOOK_DESCRIPTION / HOOK_PROMPT
+#
 # 设计：
 # - 用 jq 解析（启动 ~1ms，远低于 python3 冷启动 ~30ms；settings.json 已 allow jq）
 # - 解析失败返回空串（不阻塞 hook，调用方按空判断）
@@ -75,6 +81,39 @@ PY
   fi
 }
 
+# Bash 专用一次性解析：tool_name + command + **整个 tool_input**（compact JSON）一次 jq 出。
+# 给需要重建 tool_input 的 hook 用（`updatedInput` 是整体替换而非补丁，其余键必须原样带回），
+# 如 pre-proxy-check.sh 的代理注入。
+#
+# 不并进 hook_parse_all：那条路径同时服务 Write/Edit，会把整份文件内容一并序列化，
+# 每次写入白付一次大 JSON 序列化。
+hook_parse_bash_input() {
+  HOOK_TOOL_NAME=""; HOOK_COMMAND=""; HOOK_TOOL_INPUT=""
+  if command -v jq >/dev/null 2>&1; then
+    eval "$(printf '%s' "$INPUT" | jq -r '
+      "HOOK_TOOL_NAME=" + (.tool_name // "" | @sh),
+      "HOOK_COMMAND=" + (.tool_input.command // "" | @sh),
+      "HOOK_TOOL_INPUT=" + ((.tool_input // {}) | tojson | @sh)' 2>/dev/null)"
+  else
+    # jq 缺失兜底（同 hook_parse_all 的理由）：缺了它代理注入会静默失效
+    eval "$(HOOK_JSON="$INPUT" python3 - <<'PY'
+import json, os, shlex
+try:
+    d = json.loads(os.environ.get("HOOK_JSON") or "{}")
+    if not isinstance(d, dict):
+        d = {}
+except Exception:
+    d = {}
+ti = d.get("tool_input")
+ti = ti if isinstance(ti, dict) else {}
+print(f"HOOK_TOOL_NAME={shlex.quote(str(d.get('tool_name') or ''))}")
+print(f"HOOK_COMMAND={shlex.quote(str(ti.get('command') or ''))}")
+print(f"HOOK_TOOL_INPUT={shlex.quote(json.dumps(ti))}")
+PY
+)"
+  fi
+}
+
 # Read 专用一次性解析：tool_name + file_path + has_paging（offset/limit 任一存在 → 1）一次 jq 出。
 # pre-read-bigfile 原本 hook_parse_all 后还要单独 jq 取 paging，合并省一次 jq fork。
 # HOOK_HAS_PAGING 是固定 0/1 不经 @sh；其余仍 @sh 防注入。jq 失败保持预置值。
@@ -100,6 +139,35 @@ ti = ti if isinstance(ti, dict) else {}
 print(f"HOOK_TOOL_NAME={shlex.quote(str(d.get('tool_name') or ''))}")
 print(f"HOOK_FILE_PATH={shlex.quote(str(ti.get('file_path') or ''))}")
 print(f"HOOK_HAS_PAGING={1 if ('offset' in ti or 'limit' in ti) else 0}")
+PY
+)"
+  fi
+}
+
+# Skill 专用一次性解析：tool_name + skill 名一次 jq 出。
+# 区分两条 skill 触发路径——Read 读 SKILL.md（file_path 有值）与 Skill 工具调用（tool_input.skill）。
+hook_parse_skill() {
+  HOOK_TOOL_NAME=""; HOOK_SKILL_NAME=""
+  if command -v jq >/dev/null 2>&1; then
+    eval "$(printf '%s' "$INPUT" | jq -r '
+      "HOOK_TOOL_NAME=" + (.tool_name // "" | @sh),
+      "HOOK_SKILL_NAME=" + (.tool_input.skill // "" | @sh)' 2>/dev/null)"
+  else
+    eval "$(HOOK_JSON="$INPUT" python3 - <<'PY'
+import json, os, shlex
+try:
+    d = json.loads(os.environ.get("HOOK_JSON") or "{}")
+    if not isinstance(d, dict):
+        d = {}
+except Exception:
+    d = {}
+ti = d.get("tool_input")
+ti = ti if isinstance(ti, dict) else {}
+for var, val in (
+    ("HOOK_TOOL_NAME", d.get("tool_name")),
+    ("HOOK_SKILL_NAME", ti.get("skill")),
+):
+    print(f"{var}={shlex.quote(str(val) if val is not None else '')}")
 PY
 )"
   fi

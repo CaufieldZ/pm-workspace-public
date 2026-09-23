@@ -11,6 +11,7 @@ source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/log.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/input.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/guards.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/pre-writeedit-guards.sh"
+source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/notes.sh"
 
 INPUT=$(cat)
 hook_parse_all
@@ -23,5 +24,9 @@ pg_scripts_first        || exit 2
 pg_deliverable_source   || exit 2
 pg_deliverable_img_path || exit 2
 pg_skill_load           || exit 2
+
+# warn 类说明汇总送达模型（exit 0 时 stderr 模型看不到，见 lib/notes.sh 文件头）。
+# 上面任一 guard 命中即 exit 2 —— 那条路上 stderr 本就可达模型，不重复注入。
+note_emit "PreToolUse"
 
 exit 0

@@ -8,7 +8,7 @@
   python3 scripts/upscale.py *.jpg                            # 批量
 
 模型：scripts/models/Real-ESRGAN-x4.onnx（~67MB，gitignore 不进仓库）。
-缺失时自动从 HuggingFace 下载；国内网络先 export ALL_PROXY=http://本地代理端口。
+缺失时自动从 HuggingFace 下载；代理由 lib/proxy.py 运行时判定，无需手动 export。
 CPU 推理速度参考：384 tile 每块约 10s，1200×800 全图约 2-3 分钟。
 """
 
@@ -27,16 +27,36 @@ MODEL_PATH = Path(__file__).parent / "models" / "Real-ESRGAN-x4.onnx"
 MODEL_URL = "https://huggingface.co/SceneWorks/real-esrgan-onnx/resolve/main/real_esrgan_x4.onnx"
 
 
+def _apply_proxy() -> str | None:
+    """发外网请求前把代理判定写进 os.environ（判定源 = lib/proxy.py，工区唯一）。
+
+    urllib 只认环境变量里的 HTTP_PROXY / HTTPS_PROXY，不会自己判定；判定不到
+    （境外 / 代理未启动）时判定源会清掉残留变量，让这里走直连。
+    """
+    scripts_dir = str(Path(__file__).resolve().parent)   # 本文件就在 <root>/scripts 下
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)                  # 被 import（而非直接跑）时也找得到 lib
+    try:
+        from lib.proxy import apply_env
+    except Exception:
+        return None
+    return apply_env()
+
+
 def _ensure_model() -> None:
     if MODEL_PATH.exists():
         return
     MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
     print(f"模型缺失，下载中（~67MB）→ {MODEL_PATH}")
+    _apply_proxy()
     try:
-        urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)  # https_proxy 环境变量生效时自动走代理
+        urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
     except Exception as e:
         MODEL_PATH.unlink(missing_ok=True)
-        raise SystemExit(f"下载失败：{e}\n国内网络请先 export ALL_PROXY=http://本地代理端口 后重试") from e
+        raise SystemExit(
+            f"下载失败：{e}\n"
+            "确认本机代理已启动，再看判定结论：python3 scripts/lib/proxy.py --describe"
+        ) from e
     print("下载完成")
 
 

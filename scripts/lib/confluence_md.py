@@ -213,6 +213,43 @@ def _parse_pipe_row(line: str) -> list[str] | None:
     return [c.strip() for c in raw[1:-1].split("|")]
 
 
+# ── md 表格基元（宽松解析器）──────────────────────────────────────────
+# 本模块有两套表格解析口径，各有明确作用域，新增判定前先认领其一，别再起第三套：
+#
+#   严格管道（首尾都必须 `|`）：`_parse_pipe_row` + `_TABLE_SEPARATOR_RE`
+#       作用域：区块表渲染（5 列固定表头，`_split_md_around_block_tables`）
+#   宽松（strip 后切，不要求首尾管道）：`_table_cells` + 下面两个判定
+#       作用域：埋点表合并（`merge_tracking_tables`）+ 推送前断表检测（`broken_tables`）
+#
+# 两者对 `| - |`（单格分隔行）、`|--- | ---`（省尾管）判定不同，是解析器差异不是漂移。
+
+
+_TABLE_ROW_RE = re.compile(r"^\s*\|")
+
+
+def _table_cells(line: str) -> list[str]:
+    """md 表格行 → cell 列表（去首尾 | + 去反引号）。"""
+    return [c.strip().strip("`") for c in line.strip().strip("|").split("|")]
+
+
+def _is_table_row(line: str) -> bool:
+    """真表格行：行首 `|` 且 ≥2 格。
+
+    格数下限是给 Confluence 转出的「每单元格独占一行」形态兜底——那种行形如
+    ` | 文本` / ` | `，只解析出 1 格，不是 md 表格。
+    """
+    return bool(_TABLE_ROW_RE.match(line)) and len(_table_cells(line)) >= 2
+
+
+def _is_sep_line(line: str) -> bool:
+    """表格分隔行（| --- | :---: |）：≥2 格，格内只含 : - 空格，且至少一格带 `-`。"""
+    if not _is_table_row(line):
+        return False
+    cells = _table_cells(line)
+    return (all(set(c) <= set(": -") for c in cells)
+            and any("-" in c for c in cells))
+
+
 def _render_block_table_storage(table_md: str) -> str:
     """完整区块表 md（header + sep + N data row）→ 原生 <table> storage XML。"""
     lines = table_md.strip().splitlines()

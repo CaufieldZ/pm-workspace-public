@@ -90,6 +90,11 @@
 
 两 profile 都要达 spec coding 规范——靠**业务语义精度**（字段契约 / 状态机 / 全局规则 / 埋点四支柱齐全，中文字段名 + 类型 + 约束 + 枚举写足），不靠技术黑话，研发 AI 反推 key / SQL。骨架生成 `gen_prd_skeleton.py --profile baseline|delta`。
 
+**改 delta 前两条必查**：
+
+- **双端 delta 先查前序落点决策**：Web 与 App 同一功能可能被前序 delta 定成完全不同的组件（半屏 vs 新标签页完整页），逐个 CTA 确认落点，别用「与 App 一致」一句盖过去。
+- **改某场景的规则前先读它的「现状」行**：线上形态可能就是更简方案（如单列表），撤回比新设计省连带成本。
+
 ### delta 按产物形状切「增量」（结构化互依整体的写法 · 强制）
 
 「delta 只写增量」对**结构化互依整体**是错的：权限矩阵 / 状态机 / 档位表 / 字段表是当成完整格子读的，delta 只写片段 → 研发得翻 baseline 脑内打补丁才知道当前真相 = §4.6 叶子完整性在结构层的失败。按产物形状分两种写法：
@@ -230,7 +235,9 @@ delta 先认档位（`gen_prd_skeleton.py --tier`），§2 按档位组织。这
 - ✅ `发帖场景（见 5.1）的系统检查...`
 - ✅ `删帖相关逻辑见 5.3 删帖`
 
-由 `plain-language-gate` hook 兜底拦截（post-Write/Edit 触发）。
+由 `prd-content-gate` hook 兜底拦截（PRD 写入后，只查本次新增行）。
+
+**白话判据（全部 PRD 正文）**：术语首次出现给一句「指的是什么」；机关腔（口径 / 求值 / 内生 / 上界 / 正交 / 兜底）换直白说法；分位数写「最热 10%」不写 p90——读者是运营、研发、测试和老板。**术语骨架保留**（价值假设 / 反转条件 / 经验值 / 处置阶梯），只把解释写白话；用聊天词替代术语本身（我们赌的是 / 拍的 / 闭嘴）是口水话，不是白话。本判据只管 PRD 正文，与 `human-voice-rules.md` 的对话层词库分工不同。
 
 ---
 
@@ -244,6 +251,9 @@ PRD md 最终通过 `md_to_confluence.py` 推送到 wiki，**Confluence markdown
 | PlantUML 代码块 | ❌ 显示源代码 | 同上 |
 | HTML `<details>` 折叠 | ⚠ 部分渲染但样式异常 | 用 md 表格 + 副标题 |
 | HTML 注释 `<!-- -->` | ❌ 在 wiki 上原样可见 | 删除注释 / 改成正文括号说明 |
+| 表格中被空行切断的行 | ❌ 空行后按字面段落渲染 | 中途插行要紧贴上一行不留空行；推送后验收「行首竖线是否出现在 storage 里」 |
+
+**delta 场景节用 `## N.x` 二级标题**：`md_to_confluence.py` 按「## 本轮需求索引」整章剥到下一同级标题为止，场景节写成 `###` 会被连章吞掉（含截图）。推送后必查附件数与正文关键词，不能只看脚本 ✓。
 
 ### PM 不定义 URL / 路由
 
@@ -351,12 +361,15 @@ python3 projects/sensors-metrics/scripts/probe_event_properties.py \
 - 应埋点平台只填 `APP` / `Web`、触发机制只写客户端可观测的触发点（上报方铁律见上；服务端与后台类不设埋点）
 - 复用既有事件 + 本期扩展属性：触发机制末尾加「本期扩展属性」
 
-**新事件命名约定**（与行为分析平台现有命名风格对齐）：
+**新事件命名三步**（查证优先，禁凭记忆起名）：
 
-- 事件英文名前缀按行为：`pageview_` 曝光 / `appclick_` App 端点击 / `webclick_` Web 端点击 / `app_*_submit` 客户端提交 / `app_*_success` 成功结果（客户端观测后上报） / `app_*_status` 状态流转（客户端观测上报）
-- 事件英文名结构：`{前缀}_{模块}_{动作}`，如 `appclick_card_trade` / `pageview_order_entry`
+1. probe 行为分析平台拿真名：`probe_event_properties.py --events <候选名>`——候选名已存在 = 既有事件，抄真名不改造（全量已注册事件见 [events_all.json](../../../../projects/sensors-metrics/.probe-cache/events_all.json) 防命名空间冲突）
+2. grep 本域字典抄范式：`projects/sensors-metrics/references/events-{域}.md` 找同类事件，新名跟域内主导范式走（域范式表见 [event-naming-conventions.md](../../../../projects/sensors-metrics/references/event-naming-conventions.md)）
+3. 域内无先例才用通用模板：`{前缀}_{模块}_{动作}`，如 `appclick_card_trade` / `pageview_order_entry`，前缀按行为——`pageview_` 曝光 / `appclick_` App 端点击 / `webclick_` Web 端点击 / `app_*_submit` 客户端提交 / `app_*_success` 成功结果（客户端观测后上报） / `app_*_status` 状态流转（客户端观测上报），并在埋点章标注「域内无先例」
+
 - 属性英文名：能复用行为分析平台已有字段（`platform_type` / `is_login` / `liveid` / `upid` / `contentid` / `uid` / `communityId` / `TransPair_current_id`）就不新建
 - 新建属性英文名：snake_case 全小写优先；命中行为分析平台驼峰历史习惯（`commentNum` / `giftId` / `liveTime`）保持一致就好，不强求统一
+- **引用存量属性必须核出中文名 / 口径的出处**：来源三选一——行为分析平台 `cname`、`events-{域}.md` 字典、问注册方（研发 / 数据）。三处都查不到就写「口径待确认」并标非必填，**禁按英文名自编中文名**（编出来的名字会被研发当契约实现）
 
 **章节边界**：
 

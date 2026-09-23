@@ -4,7 +4,7 @@
 # 用途：post-cjk Branch B / post-plain-language Branch B / post-prd-check 三处都做
 #       「Bash 跑完 gen_/fill_/patch_ 脚本后扫最近修改的 HTML / md / drawio」
 #
-# 用法（前提是已 source lib/log.sh — 用其 file_mtime）：
+# 用法（无额外依赖，直接 source 本文件即可）：
 #   source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/recent.sh"
 #
 #   # 60s 内 prd-*.md，排除 scenes/
@@ -48,8 +48,14 @@ find_recent_deliverables() {
   [ "$include_root" = "1" ] && [ -d "$root/deliverables" ] && roots+=("$root/deliverables")
   [ ${#roots[@]} -eq 0 ] && return 0
 
-  local cutoff
-  cutoff=$(( $(date +%s) - window ))
+  # 参考文件：mtime 回拨 window 秒，逐文件用 bash 内建 `[ "$f" -nt "$ref" ]` 比时间。
+  # 零 per-file fork——原先每文件 fork 一个 stat，85 个候选文件约 0.43s，现约 0.02s。
+  # 兜底：date -v 是 BSD 语法，GNU date 走 -d；两者都失败时退化成 touch（ref 即当下）。
+  local ref
+  ref=$(mktemp) || return 0
+  if ! touch -t "$(date -v-"${window}"S +%Y%m%d%H%M.%S 2>/dev/null)" "$ref" 2>/dev/null; then
+    touch -d "-${window} seconds" "$ref" 2>/dev/null || touch "$ref"
+  fi
 
   # 拼 find 参数：-path '*/deliverables/*' -type f -not -path '*/archive/*' [-not -path EXTRA]... \( -name g1 -o -name g2 ... \)
   local find_args=(-path '*/deliverables/*' -type f -not -path '*/archive/*')
@@ -72,8 +78,8 @@ find_recent_deliverables() {
   find_args+=(\( "${name_args[@]}" \))
 
   find "${roots[@]}" "${find_args[@]}" 2>/dev/null | while read -r f; do
-    local mt
-    mt=$(file_mtime "$f")
-    [ -n "$mt" ] && [ "$mt" -gt "$cutoff" ] && echo "$f"
+    [ "$f" -nt "$ref" ] && echo "$f"
   done | sort -u
+
+  rm -f "$ref"
 }

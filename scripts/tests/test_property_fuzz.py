@@ -60,38 +60,27 @@ def test_scene_list_sep_row_never_crashes(line):
 
 # ═══════════ 2. md_scan（PRD 扫描器）═══════════
 
-# 两个扫描函数的返回键全集（check_prd_md.sh fail_keys 依赖，缺键即静默漏检）
-_HUMAN_VOICE_KEYS = [
-    "date_tag_hits", "snake_field_hits", "css_impl_hits", "zombie_heading_hits",
-    "v_tag_heading_hits", "tech_field_hits", "pm_overreach_hits",
-    "visual_overreach_hits", "semicolon_abuse_hits", "long_sentence_hits",
-    "bullet_runon_hits", "scene_prose_runon_hits",
-]
-_STRUCTURAL_KEYS = [
-    "circle_nums", "placeholders", "decision_nums", "section_anchors",
-    "route_urls", "cjk_half_punct", "bare_scene_codes", "broken_image_alt",
-    "iteration_traces", "nested_subscenes", "branch_prose_hits",
-    "horizontal_rule_hits", "blockquote_hits",
-]
+# 两个扫描函数的返回键全集（check_prd_md.sh fail_keys 依赖，缺键即静默漏检）。
+# 清单唯一真源 = humanize/patterns.py——这里取四种开关全开 / 全关的并集，不再手抄副本。
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / ".claude/skills/prd/scripts"))
+from humanize.patterns import prd_fail_keys, prd_warn_keys  # noqa: E402
+
+_ALL_FAIL = prd_fail_keys(
+    split=True, skeleton=False, profile="delta", scene_prose=True
+) + prd_fail_keys(split=False, skeleton=True, profile="baseline", scene_prose=False)
+_PRD_KEYS = sorted({k for k, _ in _ALL_FAIL} | {k for k, _ in prd_warn_keys(skeleton=True)})
 
 
 @given(st.text(max_size=6000))
-def test_md_scan_human_voice_never_crashes(text):
-    """任意 md → 不崩溃 + 返回 dict 含 human_voice 全部键（fail_keys 依赖）。"""
-    out = md_scan.scan_human_voice_md(text)
-    assert isinstance(out, dict)
-    for key in _HUMAN_VOICE_KEYS:
-        assert key in out, f"scan_human_voice_md 缺键 {key}"
-        assert isinstance(out[key], list)
+def test_md_scan_never_crashes_and_exposes_all_keys(text):
+    """任意 md → 两个扫描函数不崩溃，且 fail / warn 清单引用的键都真的存在。
 
-
-@given(st.text(max_size=6000))
-def test_md_scan_structural_never_crashes(text):
-    """任意 md → 结构性扫描不崩溃 + 返回 dict 含 structural 全部键。"""
-    out = md_scan.scan_prd_structural_md(text)
-    assert isinstance(out, dict)
-    for key in _STRUCTURAL_KEYS:
-        assert key in out, f"scan_prd_structural_md 缺键 {key}"
+    check_prd_md.sh 消费的是两者合并后的 dict，所以按合并结果断言；
+    缺键会让该维度静默漏检（拿不到 key → hits 恒空 → 永远绿）。
+    """
+    out = {**md_scan.scan_human_voice_md(text), **md_scan.scan_prd_structural_md(text)}
+    for key in _PRD_KEYS:
+        assert key in out, f"md_scan 缺键 {key}"
         assert isinstance(out[key], list)
 
 

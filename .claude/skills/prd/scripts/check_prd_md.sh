@@ -5,7 +5,8 @@
 usage() {
     cat <<'EOF'
 PRD md 自检：讲人话 / 结构 / 截图 / CJK 标点 FAIL/WARN 分级扫描。
-PRD 写入后 hook 自动跑（骨架形态），交付 / 推 Confluence 前手动跑完整形态。
+交付 / 推 Confluence 前手动跑完整形态；写入时的增量检查由 prd-content-gate 承担
+（hook_check_prd_content.py，维度与本脚本同源，只查本次新增行）。
 
 用法：
     bash .claude/skills/prd/scripts/check_prd_md.sh <prd.md> [--skeleton]
@@ -24,9 +25,10 @@ PRD 写入后 hook 自动跑（骨架形态），交付 / 推 Confluence 前手�
 
 前置：
     - <prd.md> 存在；split 模式需 {stem}-scenes/ 子文件齐全（缺则 compose 报缺失）
-    - 同目录 prd_compose.py / screenshot_for_prd.py / humanize/md_scan.py、
+    - 同目录 prd_compose.py / screenshot_for_prd.py / humanize/{md_scan,patterns}.py、
       仓库根 scripts/check_cjk_punct.py（check_cjk_punct 缺失时该项跳过并报 ⚠）
-    - 环境逃生阀：SKIP_SCENE_PROSE_GATE=1 跳过场景正文串句检查（确需保留连贯叙事时用）
+    - 环境逃生阀：SKIP_SCENE_PROSE_GATE=1 跳过场景正文串句检查（确需保留连贯叙事时用）；
+      SKIP_PRD_STRUCT_GATE=1 跳过文档结构维（章节完整性 + 渲染卫生，确非误报时用）
     - --help 本身无前置
 
 退出码：
@@ -117,61 +119,19 @@ SKELETON = sys.argv[3] == '1'
 PROFILE = sys.argv[4] if len(sys.argv) > 4 else 'delta'
 IS_SPLIT = len(sys.argv) > 5 and sys.argv[5] == '1'
 from humanize.md_scan import scan_human_voice_md, scan_prd_structural_md
+from humanize.patterns import prd_fail_keys, prd_warn_keys
 
 md = open(sys.argv[1], encoding='utf-8').read()
 voice = scan_human_voice_md(md)
 struct = scan_prd_structural_md(md)
 
-# FAIL 级（命中即阻断；--skeleton 模式下 placeholders 降级到 WARN）
-fail_keys = [
-    ('date_tag_hits', '流水账日期 / 版本标记'),
-    ('zombie_heading_hits', '僵尸 heading（应物理删除）'),
-    ('v_tag_heading_hits', 'heading 含 V 版本流水'),
-    ('tech_field_hits', '5 段式禁用研发字段（触发/读/写/事件/API）'),
-    ('circle_nums', '圈数字 ①②③（CLAUDE.md 全局禁）'),
-    ('decision_nums', '正文「决策 N」（应在 baseline 决策记录 / delta §6）'),
-    ('route_urls', '正文具体 URL / 路由（PM 不定义技术实现，应用「独立页 / 独立路由」业务语义）'),
-    ('pm_overreach_hits', 'PM 角色越界禁词（hover / DOM / i18n / modal / cache / dirty / @media 等）'),
-    ('visual_overreach_hits', 'PM 视觉细节越界（颜色 / 尺寸 / 描边 / 圆角 / 设备壳 / ✕ 等，应由设计规范定）'),
-    ('iteration_traces', '§1.4 核心变更迭代流水词'),
-    ('broken_image_alt', '图片 alt 为空'),
-    ('nested_subscenes', '5/6/7 章两层嵌套（##### N.x.y.z 禁，一层 #### N.x.y 物理分组放行）'),
-    ('horizontal_rule_hits', '水平线 ---（Confluence 渲染丑，章节用 h1/h2 自然分隔；表格 |---| 不算）'),
-]
-# 场景正文串句（FAIL）：§2.x 需求正文 现状 / 本轮 标签 bullet 焊多句。逃生阀 SKIP_SCENE_PROSE_GATE=1
-# （连贯叙事确实该保留时用，用前先向用户说明原因——知会制，非审批制）。
-if os.environ.get('SKIP_SCENE_PROSE_GATE') != '1':
-    fail_keys.append(('scene_prose_runon_hits', '场景正文标签 bullet 焊多句（一 bullet 一原子事实 / 多阶段用 →；逃生阀 SKIP_SCENE_PROSE_GATE=1）'))
-# section_anchors / bare_scene_codes 是 split（多文件拼接）才有的死链 / 裸编号风险：
-# §X.Y 锚点拼页后跨文件失效，裸编号在 scenes/ 散件里无上下文。单文件（single delta /
-# baseline）内 §X.Y 是合法内跳、编号索引是设计模式 → 只对 split 查，不按 profile 名判。
-if IS_SPLIT:
-    fail_keys.append(('section_anchors', '正文「§X.Y」章节锚点（应用白话章节名）'))
-    fail_keys.append(('bare_scene_codes', '正文裸场景编号（应用「编号 + 白话名」或纯白话）'))
-if not SKELETON:
-    fail_keys.append(('placeholders', '占位符残留（TBD/TODO/{{ 待填）'))
-# 引用块 >：baseline 历史 living 文档存量豁免（等迭代消化），delta / single / split 都拦
-if PROFILE != 'baseline':
-    fail_keys.append(('blockquote_hits', '引用块 >（Confluence 渲染丑，业务故事用 **业务故事**：正文；表格 | 不算）'))
-
-# 埋点表「应埋点平台」列出现服务端 / 后台类（CMS）→ FAIL（Platform C 只做 APP / Web 端埋点，
-# 见 prd-chapter-rules §三点八；baseline 存量豁免——历史事件已按服务端注册，不拦存量）
-if PROFILE != 'baseline':
-    fail_keys.append(('server_platform_tracking', '埋点表应埋点平台含服务端 / 后台（只做 APP / Web 端埋点）'))
-
-warn_keys = [
-    ('snake_field_hits', 'snake_case 字段名（字段表已豁免）'),
-    ('css_impl_hits', 'CSS 实现细节（PM 不应写）'),
-    ('cjk_half_punct', 'CJK 旁半角标点'),
-    ('semicolon_abuse_hits', '分号滥用（单行 ≥ 2 分号 → 拆成 bullet 或 1.2.3. 编号；表格行豁免）'),
-    ('long_sentence_hits', '长句 run-on（句段 ≥ 100 字 → 拆句或转列表；表格行豁免）'),
-    ('bullet_runon_hits', 'bullet 串句（行内句号串并列项 → 一项一 bullet，句号只落行尾；表格行豁免）'),
-    ('branch_prose_hits', '条件分支散文规则（全局规则章单行 ≥ 2 分支标记 → 改「给定｜当｜则」可断言表，见 prd-scene-templates §4.5；表格行豁免）'),
-    ('label_li_runs', '场景块 li 重复标签前缀（同一标签 ≥ 3 条连排 → 标签做组头一次、子项缩一级 bullet，见 prd-scene-template-quickref）'),
-    ('acceptance_echo_hits', '验收复述规格（同场景单元内验收 bullet 与规格 bullet 近重复 → 验收只写可验证判定点，能从规格直读的删掉）'),
-]
-if SKELETON:
-    warn_keys.append(('placeholders', '占位符残留（骨架阶段允许，PM 填完前要清掉）'))
+# 维度清单唯一真源 = humanize/patterns.py（hook 侧新门 / fuzz 测试共用同一份），
+# 此处只按本次运行条件取子集，不再维护清单副本。
+fail_keys = prd_fail_keys(
+    split=IS_SPLIT, skeleton=SKELETON, profile=PROFILE,
+    scene_prose=os.environ.get('SKIP_SCENE_PROSE_GATE') != '1',
+)
+warn_keys = prd_warn_keys(skeleton=SKELETON)
 
 merged = {**voice, **struct}
 fail_total = 0
@@ -316,6 +276,41 @@ else:
     print("  ✓ 补丁包分量伸缩无异常")
 PY
 # 纯 WARN，不进 fail
+
+# ── 1.7 文档结构：章节完整性 + 渲染卫生（FAIL）──────────
+# 拦两类「写坏但内容扫描全绿」的坏法：
+#   ① 文档被脚本写残（整段章节丢失）——按头部「迭代档位」判定 delta 后查必备章节号
+#   ② 渲染卫生——标题前缺空行（紧跟 HTML 块会被吞进块内、不再当标题渲染）、<td> 内空行
+#      （Confluence 截断 HTML 块 → 表格花屏）
+echo
+echo "── 1.7. 文档结构（完整性 + 渲染卫生）──"
+STRUCT_EXIT=0
+if [ "${SKIP_PRD_STRUCT_GATE:-0}" = "1" ]; then
+    echo "  → SKIP_PRD_STRUCT_GATE=1，跳过"
+else
+python3 - "$COMPOSED_FILE" "$SCRIPT_DIR" "$REPO_ROOT" "$SKELETON_MODE" <<'PY' || STRUCT_EXIT=$?
+import sys
+sys.path.insert(0, sys.argv[2])
+from humanize.prd_struct_scan import previous_version, scan_structure
+
+text = open(sys.argv[1], encoding='utf-8').read()
+prev = None if sys.argv[4] == '1' else previous_version(sys.argv[3], sys.argv[1])
+problems, warns = scan_structure(text, prev)
+
+for w in warns:
+    print(f'  ⚠️  {w}')
+if problems:
+    for p in problems[:10]:
+        print(f'  ❌ {p}')
+    if len(problems) > 10:
+        print(f'  ... +{len(problems) - 10}')
+    print(f'  → 共 {len(problems)} 处')
+    sys.exit(2)
+if not warns:
+    print('  ✓ 章节与上一版一致、渲染卫生无命中')
+PY
+fi
+if [ "$STRUCT_EXIT" -ne 0 ]; then fail=1; fi
 
 # ── 2. 截图存在性（委托 Python，避免 bash + 中文路径 quirk）──
 echo

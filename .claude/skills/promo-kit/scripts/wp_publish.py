@@ -14,7 +14,7 @@ frontmatter 为准,命令行同名参数仅作覆盖;无 frontmatter 的裸 md �
 
 链路:md → Gutenberg 块标记 → POST /wp/v2/posts。默认 status=draft(合规审校先行),
 --publish 才直接发布。凭据读 .env(WP_SITE / WP_USER / WP_APP_PASSWORD),代理按
-scripts/proxy_env.sh 判定(square.example.com 直连不通,走 Clash 7897)。站内匿名 REST
+scripts/lib/proxy.py 运行时判定。站内匿名 REST
 全关,所有请求带 Basic 鉴权。站点画像(语言/分类/块结构)见 references/wp-square-api.md。
 """
 import argparse
@@ -23,7 +23,6 @@ import html
 import json
 import os
 import re
-import subprocess
 import sys
 import time
 import urllib.error
@@ -91,19 +90,16 @@ def load_env():
 
 
 def build_opener():
-    """代理按 scripts/proxy_env.sh 判定;direct 模式则显式清空代理。"""
-    proxy = None
+    """代理按 scripts/lib/proxy.py 判定;判定不到(境外 / 代理未启动)则显式清空走直连。"""
+    proxies: dict = {}
+    scripts_dir = str(REPO_ROOT / 'scripts')
+    if scripts_dir not in sys.path:          # 幂等：build_opener 可能被多次调用
+        sys.path.insert(0, scripts_dir)
     try:
-        out = subprocess.run(
-            ['bash', str(REPO_ROOT / 'scripts' / 'proxy_env.sh'), '--print'],
-            capture_output=True, text=True, timeout=30,
-        ).stdout
-        m = re.search(r'proxy=(\S+)', out)
-        if m and m.group(1) not in ('', '-'):
-            proxy = m.group(1)
+        from lib.proxy import proxies as _proxies
+        proxies = _proxies()
     except Exception:
-        proxy = None
-    proxies = {'http': proxy, 'https': proxy} if proxy else {}
+        proxies = {}
     return urllib.request.build_opener(urllib.request.ProxyHandler(proxies))
 
 
@@ -134,7 +130,8 @@ def req(opener, site, auth, method, path, body=None, raw=False, extra_headers=No
             except Exception:
                 return e.code, {}
         except urllib.error.URLError as e:
-            die(f'网络不通({e.reason})。排查:1) 沙箱内先禁沙箱重试 2) Clash 7897 是否在线 — 见 runbooks/proxy-fallback.md')
+            die(f'网络不通({e.reason})。排查:1) 沙箱内先禁沙箱重试 '
+                f'2) 代理判定结论 — python3 scripts/lib/proxy.py --describe（见 runbooks/proxy-fallback.md）')
 
 
 def make_auth(user, pw):

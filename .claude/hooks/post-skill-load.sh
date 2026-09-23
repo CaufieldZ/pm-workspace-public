@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# PostToolUse hook: 监听 Read .claude/skills/{name}/SKILL.md → 记录 skill 触发
+# PostToolUse hook: 监听 Read .claude/skills/{name}/SKILL.md 与 Skill 工具调用 → 记录 skill 触发
 #
-# Skill 触发的可观测信号：模型读了对应 SKILL.md
+# Skill 触发的两条可观测信号：模型读了对应 SKILL.md（老路径）；模型用 Skill 工具直接调起
+# （这条路径没有 Read 事件，光靠 SKILL.md 路径认不出来）
 # 不拦截，纯记录。写入 .claude/logs/usage.jsonl
 #
 # ⚠️ 不可删：是 dashboard half-life signal 唯一数据源 + jsonl 里唯一项目↔Skill 关联
@@ -16,8 +17,43 @@ INPUT=$(cat)
 # 绝大多数 Read 不是 guide 文件：raw input 不含任一字样 → case 早退（零 fork），
 # 省掉 hook_parse_all 的 jq + 下方 sed。含字样的才走精确解析。
 case "$INPUT" in
-  *SKILL.md*|*info-ownership.md*|*SCRIPTS_WRITING.md*|*HOOK_WRITING.md*|*runbooks*|*quickref*|*AUTHORING-RULES.md*|*AI中台-规范及帮助文档*) ;;
+  *SKILL.md*|*info-ownership.md*|*SCRIPTS_WRITING.md*|*HOOK_WRITING.md*|*runbooks*|*quickref*|*AUTHORING-RULES.md*|*AI中台-规范及帮助文档*|*'"skill"'*) ;;
   *) exit 0 ;;
+esac
+
+ROOT="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+
+# 反推当前项目（SKILL.md 路径与 Skill 入参里都没有项目信息）
+# fallback 链：① git 未提交变更里第一个 projects/{X}/{Y} 路径（最准，跟当前作业一致）
+#              ② session-state.md 「项目: xxx」字段（用户主动 checkpoint 才有）
+#              ③ 空字符串（log_event 容忍）
+infer_project() {
+  local project=""
+  if command -v git >/dev/null 2>&1 && [ -d "$ROOT/.git" ]; then
+    project=$(cd "$ROOT" && git status --porcelain 2>/dev/null \
+      | awk '{print $NF}' \
+      | grep -oE 'projects/[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+' \
+      | head -1 \
+      | sed 's|projects/||')
+  fi
+  if [ -z "$project" ]; then
+    local state_file="$ROOT/.claude/session-state.md"
+    if [ -f "$state_file" ]; then
+      project=$(grep -oE '项目[:：][[:space:]]*[a-zA-Z0-9_/-]+' "$state_file" 2>/dev/null | head -1 | sed -E 's/项目[:：][[:space:]]*//')
+    fi
+  fi
+  printf '%s' "$project"
+}
+
+# Skill 工具调用路径：没有 Read 事件，skill 名从 tool_input.skill 取
+case "$INPUT" in
+  *'"skill"'*)
+    hook_parse_skill
+    [ "$HOOK_TOOL_NAME" != "Skill" ] && exit 0
+    [ -z "$HOOK_SKILL_NAME" ] && exit 0
+    log_event skill "$HOOK_SKILL_NAME" triggered "$(infer_project)"
+    exit 0
+    ;;
 esac
 
 hook_parse_all
@@ -25,7 +61,6 @@ hook_parse_all
 [ "$HOOK_TOOL_NAME" != "Read" ] && exit 0
 
 FILE_PATH="$HOOK_FILE_PATH"
-ROOT="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 
 # guide-read 埋点（跨 session 持久）：skill-load-gate / required-read-gate 的 6h fallback 查这条，
 # 解决「上轮读过 guide，compact / 换 session 后 transcript 清零，再编辑同一产物又被拦」的失忆误报。
@@ -40,26 +75,5 @@ esac
 SKILL_NAME=$(echo "$FILE_PATH" | sed -nE 's|.*/\.claude/skills/([^/]+)/SKILL\.md$|\1|p')
 [ -z "$SKILL_NAME" ] && exit 0
 
-# 尝试反推当前项目（SKILL.md 路径里没项目信息）
-# fallback 链：① git 未提交变更里第一个 projects/{X}/{Y} 路径（最准，跟当前作业一致）
-#              ② session-state.md 「项目: xxx」字段（用户主动 checkpoint 才有）
-#              ③ 空字符串（log_event 容忍）
-PROJECT=""
-
-if command -v git >/dev/null 2>&1 && [ -d "$ROOT/.git" ]; then
-  PROJECT=$(cd "$ROOT" && git status --porcelain 2>/dev/null \
-    | awk '{print $NF}' \
-    | grep -oE 'projects/[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+' \
-    | head -1 \
-    | sed 's|projects/||')
-fi
-
-if [ -z "$PROJECT" ]; then
-  STATE_FILE="$ROOT/.claude/session-state.md"
-  if [ -f "$STATE_FILE" ]; then
-    PROJECT=$(grep -oE '项目[:：][[:space:]]*[a-zA-Z0-9_/-]+' "$STATE_FILE" 2>/dev/null | head -1 | sed -E 's/项目[:：][[:space:]]*//')
-  fi
-fi
-
-log_event skill "$SKILL_NAME" triggered "$PROJECT"
+log_event skill "$SKILL_NAME" triggered "$(infer_project)"
 exit 0

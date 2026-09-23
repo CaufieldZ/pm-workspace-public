@@ -16,7 +16,8 @@
   --docx-out <path>      docx 落点，默认 <source>.docx
 
 产物:
-  <source>.docx             ← pandoc 转出，截图内嵌
+  <source>.docx             ← pandoc 转出，截图内嵌；转完由 scripts/lib/docx_fonts.py 归正
+                              主题语言为 zh-CN（否则 WPS 会把中文按日文字体渲染）
   <dir>/images-manifest.txt ← 引用的本地图清单（帮助中心上传替换链接用）
 
 前置: pandoc 已装（PATH 或 ~/.local/bin/pandoc）；md 引用的本地图须在源 md 同目录下可解析。
@@ -31,6 +32,14 @@ import subprocess
 import sys
 import zipfile
 from pathlib import Path
+
+# 根 lib 在 <工区根>/scripts（skill 脚本在 .claude/skills/<skill>/scripts/ 下）
+sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "scripts"))
+
+try:                                    # 脚本被拷出工区时降级，不硬失败
+    from lib.docx_fonts import normalize_docx
+except ImportError:
+    normalize_docx = None
 
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
 REFERENCE_DOCX = ASSETS / "user-manual-reference.docx"
@@ -236,6 +245,15 @@ def main():
 
     # 2b. 开启表头行样式（浅蓝底加粗）
     enable_table_header_shading(docx_out)
+
+    # 2c. 东亚语言归正（reference 模板 / pandoc 都可能带日语主题标记 → WPS 把中文按日文字体渲染）
+    if normalize_docx is None:
+        print("⚠️ 未找到 scripts/lib/docx_fonts.py，跳过主题语言归正（docx 可能带日语标记）", file=sys.stderr)
+    else:
+        rep = normalize_docx(docx_out, ea_font=COVER_FONT)
+        if rep["changed"]:
+            print(f"   ↻ 主题语言归正：{rep['before']['theme_lang'] or '无'} → {rep['after']['theme_lang']}"
+                  f"（改了 {', '.join(rep['parts'])}）")
 
     # 3. 图片清单
     manifest = src_dir / "images-manifest.txt"

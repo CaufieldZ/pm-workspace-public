@@ -7,7 +7,7 @@
 - 站点：https://square.example.com（Platform C Square；WordPress.com 托管 + Jetpack；AIOSEO / Elementor / Polylang 在跑）
 - 鉴权：Application Password（Basic auth；`.env` 三件套 WP_SITE / WP_USER / WP_APP_PASSWORD）
 - **匿名 REST 全关**（`rest_login_required`）——一切请求带鉴权，含只读
-- 网络：本机直连被墙，必须走 Clash（`scripts/proxy_env.sh` 判定）
+- 网络：本机直连被墙，需走本机代理（`scripts/lib/proxy.py` 运行时判定，判不出来就直连）
 - 账号：jacky.lau（editor；publish_posts + upload_files 可，**装插件 / 管理员操作不可**）
 - 节流：连续建帖过快 → HTTP 429，等 30～60s（wp_publish.py 已内建 45s 自动重试）
 
@@ -61,7 +61,7 @@
 ## 重新探测（漂移时）
 
 ```bash
-source .env && source scripts/proxy_env.sh
+source .env && eval "$(python3 scripts/lib/proxy.py --export)"   # 挂上判定到的代理（无代理则清残留=直连）
 curl -u "$WP_USER:$WP_APP_PASSWORD" "$WP_SITE/wp-json/wp/v2/categories?per_page=100&_fields=id,name,count"   # 分类
 curl -u "$WP_USER:$WP_APP_PASSWORD" "$WP_SITE/wp-json/pll/v1/languages"                                        # 语言
 curl -u "$WP_USER:$WP_APP_PASSWORD" "$WP_SITE/wp-json/wp/v2/posts?status=publish&per_page=3&context=edit"      # 块结构抽样

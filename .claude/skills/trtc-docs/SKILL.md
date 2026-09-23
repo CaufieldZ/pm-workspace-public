@@ -62,10 +62,12 @@ For any `slice-lookup` intent, run local slice search first before DocsBot:
 python3 -m tools.search slices --product <product> --platform <platform> --query <query>
 ```
 
-- `status = exact` → Read `candidates[0].path` and answer from the slice file. **STOP — do not call DocsBot.**
+- `status = exact` → Read `candidates[0].path` and answer from the slice file. **STOP — do not call DocsBot.** Returned paths are rooted at `.claude` (`TRTC_REPO_ROOT` defaults three levels above the skill dir) — prepend `.claude/` before Read; they are not relative to the skill directory.
 - `status = not_found` or tool error → fall through to Step 0B.
 
 Currently indexed: `conference/web`, `call/flutter`. Other product/platform combinations return `not_found` and fall through automatically.
+
+Before concluding "the docs don't cover it", sweep the whole local KB surface: `slices/` + `docs/` + `scenarios/` + `products.yaml` (the last shows whether the product has a layer for that platform), and use **both** `tools.search` modes (`route` and `slices`) — scanning `slices/` alone understates coverage.
 
 #### B. Everything else — DocsBot REST tool (primary path)
 

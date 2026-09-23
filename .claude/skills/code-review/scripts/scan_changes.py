@@ -182,28 +182,34 @@ def _git(root: Path, *args: str) -> str:
 
 
 def collect_diff(root: Path, staged: bool, rev: str, files: list[str]) -> tuple[dict[str, str], str, str]:
-    """返回 ({路径: A/M/D 状态}, diff 全文, 范围说明)。"""
+    """返回 ({路径: A/M/D 状态}, diff 全文, 范围说明)。
+
+    `--` 之后的一切都被 git 当路径spec，故 `--name-status` 等选项必须排在它**前面**。
+    指定 files 时拼成 `git diff <选项> -- <路径>`——顺序写反会让状态行取到 diff 正文，
+    split("\\t") 解析不出条目 → statuses 空 → 上层报「命中 0 个文件」。
+    """
+    pathspec = ["--", *files] if files else []
     if files:
-        base = ["diff", "--", *files]
+        spec = ["diff"]
         scope = "工作区改动（指定路径）"
     elif staged:
         if not _git(root, "diff", "--cached", "--name-only").strip():
-            base = ["diff", "HEAD~1"]
+            spec = ["diff", "HEAD~1"]
             scope = "暂存区为空 → 自动回落 HEAD~1"
         else:
-            base = ["diff", "--cached"]
+            spec = ["diff", "--cached"]
             scope = "暂存区（git diff --cached）"
     else:
-        base = ["diff", rev]
+        spec = ["diff", rev]
         scope = f"git diff {rev}"
 
-    name_status = _git(root, *base, "--name-status", "--diff-filter=ACMRD")
+    name_status = _git(root, *spec, "--name-status", "--diff-filter=ACMRD", *pathspec)
     statuses: dict[str, str] = {}
     for line in name_status.splitlines():
         parts = line.split("\t")
         if len(parts) >= 2:
             statuses[parts[-1]] = parts[0][0]
-    return statuses, _git(root, *base), scope
+    return statuses, _git(root, *spec, *pathspec), scope
 
 
 def find_consumers(root: Path, symbols: list[tuple[str, str]], limit: int = 8) -> dict[str, list[str]]:
@@ -367,4 +373,13 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    rc = main()
+    # 完成埋点：本脚本是 Phase 1 唯一入口，跑过即一轮 review 真的发生过——
+    # 供 dashboard skill 触达 / half-life 统计消费。
+    try:
+        from lib.skill_log import emit as _sl
+
+        _sl("code-review", True)
+    except Exception as _e:
+        print(f"[WARN] skill_log emit failed: {_e}", file=sys.stderr)
+    sys.exit(rc)

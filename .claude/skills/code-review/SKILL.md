@@ -2,7 +2,7 @@
 name: code-review
 description: >
   当用户说「code review / 审代码 / 过一遍代码 / 提交前审一下 / 看看我这次改的」时触发。
-  改完 scripts/ · .claude/hooks/ · .claude/skills/*/scripts/ · projects/*/scripts/ 想在 commit 前收口亦触发。
+  改完 scripts/ · .claude/hooks/ · .claude/skills/*/scripts/ · projects/*/scripts/ 后，模型可建议用户跑一轮——建议即可，不自行开审。
   「审计 / 诊断」不触发（走 workspace-audit）；PRD 产出物一致性不触发（走 cross-check）。
 type: tool
 output_format: 对话内
@@ -146,7 +146,7 @@ python3 .claude/skills/code-review/scripts/scan_changes.py --staged --json-out -
 | `--json-out <path\|->` | 四段结果写 JSON，`-` 走 stdout |
 | `--no-mechanical` | 跳过第 ② 段机械层（audit / pytest 较慢时用），其余段照跑 |
 
-退出码恒 `0`——本脚本是报告器，不进 hook 链，不做阻断（阻断已由 pre-commit 承担）。
+退出码恒 `0`——本脚本是报告器，不进 hook 链，不做阻断（本 skill 无机械闸，审不审由用户点名 / 模型提议决定）。
 
 ## 自检清单
 

@@ -22,7 +22,7 @@ _pg_content() {
 pg_scripts_first() {
   [ "$HOOK_TOOL_NAME" != "Write" ] && return 0
   local FILE_PATH="$HOOK_FILE_PATH"
-  if _pg_skip_block "scripts-first" "SKIP_SCRIPTS_FIRST_GATE" "$FILE_PATH"; then return 0; fi
+  if check_skip_env "scripts-first" "SKIP_SCRIPTS_FIRST_GATE" "$FILE_PATH"; then return 0; fi
   echo "$FILE_PATH" | grep -qE 'projects/[^/]+/.*\.html$' || return 0
   echo "$FILE_PATH" | grep -qE '/(archive|inputs|screenshots|scripts|sop-src)/' && return 0
 
@@ -64,7 +64,7 @@ pg_deliverable_source() {
   local FILE_PATH="$HOOK_FILE_PATH"
   [ -z "$FILE_PATH" ] && return 0
 
-  if _pg_skip_block "deliverable-source-gate" "SKIP_DELIVERABLE_GATE" "$FILE_PATH"; then return 0; fi
+  if check_skip_env "deliverable-source-gate" "SKIP_DELIVERABLE_GATE" "$FILE_PATH"; then return 0; fi
 
   case "$FILE_PATH" in
     *projects/*/*/deliverables/*.html|*projects/*/deliverables/*.html) ;;
@@ -152,7 +152,7 @@ pg_deliverable_img_path() {
   local FILE_PATH="$HOOK_FILE_PATH"
   [ -z "$FILE_PATH" ] && return 0
 
-  if _pg_skip_block "deliverable-img-path-gate" "SKIP_IMG_PATH_GATE" "$FILE_PATH"; then return 0; fi
+  if check_skip_env "deliverable-img-path-gate" "SKIP_IMG_PATH_GATE" "$FILE_PATH"; then return 0; fi
 
   case "$FILE_PATH" in
     *projects/*/deliverables/prd-*.md|*projects/*/*/deliverables/prd-*.md) ;;
@@ -179,6 +179,7 @@ for p in md_paths + html_paths:
   if [ -s "$PARSE_ERR" ]; then
     echo "⚠️  [deliverable-img-path-gate] 图片路径解析异常，跳过本次检测（请人工核对 PRD 图片引用路径）：" >&2
     head -3 "$PARSE_ERR" >&2
+    note_add "工区 deliverable-img-path-gate 检查：$(basename "$FILE_PATH") 的图片路径解析异常，本次检测被跳过（未阻断）。请人工核对这份 PRD 的图片引用路径。"
     log_event gate deliverable-img-path-gate warn "parse-error: $(basename "$FILE_PATH")"
     rm -f "$PARSE_ERR"
     return 0
@@ -377,8 +378,9 @@ PY
       echo "" >&2
       echo "⚠️  [$GATE] 配置的必读 guide 在工作区缺席（不可读，本次跳过强制·非 block）：" >&2
       local _a; for _a in "${ABSENT[@]}"; do echo "   缺席: $_a" >&2; done
-      echo "   → hub L2 公司规范重拉：dig_confluence.py 父页 164485093（见 CLAUDE.md 启动规则）" >&2
+      echo "   → hub L2 公司规范重拉：confluence.py dig 父页 164485093（见 CLAUDE.md 启动规则）" >&2
       echo "" >&2
+      note_add "工区 ${GATE} 检查：配置的必读 guide 在工作区缺席（${ABSENT[*]}），本次强制读取被跳过（非阻断）。hub L2 公司规范可用 confluence.py dig 父页 164485093 重拉。"
       command -v log_event >/dev/null && log_event hook "$GATE" warn "absent-guide: ${ABSENT[*]}"
     fi
     return 0
@@ -418,16 +420,4 @@ PY
   echo "   → 真不适用 → outer shell \`export SKIP_SKILL_LOAD_GATE=1\` 或 SKIP_REQUIRED_READ_GATE=1（仅 PM 手动开；Claude inline 旁路无效）" >&2
   command -v log_event >/dev/null && log_event hook "$GATE" block "$REL"
   return 2
-}
-
-# 共享：SKIP env 命中 → _log_skip_gate + return 0；不命中 → return 1
-# （Write/Edit 不经 Bash 管道，inline 旁路无效，只判 env）
-_pg_skip_block() {
-  local gate="$1" var="$2" detail="${3:-}" val
-  eval "val=\${${var}:-0}"
-  if [ "$val" = "1" ]; then
-    _log_skip_gate "$gate" "env  ${detail:0:120}"
-    return 0
-  fi
-  return 1
 }

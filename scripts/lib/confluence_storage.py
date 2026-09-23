@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Confluence storage XML 图片语法读写共享层。
 
-fetch_confluence（读：扫 storage 拿 ri:attachment 引用集）与 md_to_confluence（写：
+confluence.py get（读：扫 storage 拿 ri:attachment 引用集）与 md_to_confluence（写：
 渲染 ac:image）两端共用同一套图片语法，收口此处避免正则/模板各自硬编码漂移。
 """
 from __future__ import annotations

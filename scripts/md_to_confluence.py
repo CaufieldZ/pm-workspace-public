@@ -31,7 +31,7 @@ split-children-by-chapter 模式：
 
 首推前查同名（LEARNED 2026-05-12）：
     --parent-id 模式首推时，Confluence create 同名冲突会返回 HTTP 400。
-    PM 先用 `--title` 显式改名或先用 search_pages 查空间下同名页（lib.confluence.search_pages）.
+    PM 先用 `--title` 显式改名或先用 search_pages 查空间下同名页（lib.confluence_rest.search_pages）.
 
 推送前 md 内容自检（渲染会炸的）：
     - 嵌套任务列表：Confluence ac:task-body 不允许嵌 ul，改「标签 → 子项」平铺 checkbox；
@@ -57,7 +57,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from lib.confluence import (
+from lib.confluence_rest import (
     add_label,
     base_url,
     create_page,
@@ -67,7 +67,10 @@ from lib.confluence import (
     update_page,
 )
 from lib.confluence_md import (
+    _is_sep_line,
+    _is_table_row,
     _png_dims,
+    _table_cells,
     extract_title,
     render_md_full,
     render_raw_html,
@@ -160,10 +163,79 @@ def strip_for_confluence(
     return re.sub(r"\n{3,}", "\n\n", out)
 
 
+# ── 推送前体检：表格块内空行导致断表 ───────────────────────────────────
+# md 表格中途留空行 → 空行后的 `|` 行不再是表格，被渲染成字面段落推上 wiki，
+# 只有推完肉眼验收才发现。此处在渲染前扫出来提醒。
+# 表格行 / 分隔行的判定口径见 `lib.confluence_md`（宽松解析器那组）。
+
+
+def broken_tables(md: str) -> list[int]:
+    """扫断表，回孤儿行行号（1-based，升序）。
+
+    以「表头 + 分隔行」为表区起点，表区可跨过空行继续；空行后落回表格行即断表。
+    空行后是另一张表的表头（其后紧跟分隔行）属合法双表，表区到此结束。
+    围栏代码块内的 `|` 行不算表格。
+    """
+    lines = md.split("\n")
+    broken: list[int] = []
+
+    fence = [False] * len(lines)
+    in_fence = False
+    for idx, line in enumerate(lines):
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            fence[idx] = True
+            in_fence = not in_fence
+        else:
+            fence[idx] = in_fence
+
+    i = 0
+    while i < len(lines):
+        # 表区起点 = 表格行 + 紧邻分隔行
+        if (fence[i] or not _is_table_row(lines[i])
+                or not (i + 1 < len(lines) and not fence[i + 1] and _is_sep_line(lines[i + 1]))):
+            i += 1
+            continue
+        i += 2
+        while i < len(lines) and not fence[i]:
+            if _is_table_row(lines[i]):
+                i += 1
+                continue
+            if lines[i].strip():
+                break  # 表体遇正文 → 表区结束
+            k = i
+            while k < len(lines) and not lines[k].strip() and not fence[k]:
+                k += 1
+            if k >= len(lines) or fence[k] or not _is_table_row(lines[k]):
+                break  # 空行后不是表格 → 表区结束
+            if k + 1 < len(lines) and not fence[k + 1] and _is_sep_line(lines[k + 1]):
+                break  # 空行后是另一张表的表头 → 合法双表
+            broken.append(k + 1)
+            i = k
+    return broken
+
+
+def warn_broken_tables(md: str, md_path: Path) -> None:
+    """断表提醒（不阻断推送，仅指向行号）。"""
+    rows = broken_tables(md)
+    if not rows:
+        return
+    print(
+        f"\n⚠️  {md_path.name} 检出 {len(rows)} 处断表 —— 表格块内有空行，"
+        f"空行后的行会渲染成字面段落：",
+        file=sys.stderr,
+    )
+    for ln in rows[:10]:
+        print(f"      L{ln}", file=sys.stderr)
+    if len(rows) > 10:
+        print(f"      …另 {len(rows) - 10} 处", file=sys.stderr)
+    print("    建议删掉表格内的空行后重推；坚持推送的话，这几处请推完肉眼验收。\n", file=sys.stderr)
+
+
 # ── PRD md 自适配：split 模式 compose + 本地图片提取 ─────────────────────
 
 # 相对路径图：可选 ./ 或 ../ 前缀 + 非 / 开头（排除绝对路径）。
-# fetch_confluence.py pandoc 回流吐裸 assets/x.png（无 ./），生成器吐 ./assets/x.png，两者都收；
+# confluence.py get --mode pandoc 回流吐裸 assets/x.png（无 ./），生成器吐 ./assets/x.png，两者都收；
 # 绝对路径 / 外链由 extract_local_images 的 startswith 兜底再过滤一次。
 _IMG_RE = re.compile(r"!\[([^\]]*)\]\(((?:\.{1,2}/)?[^)/][^)]*)\)")
 # HTML <img src="...">（生成器吐 HTML table 左列图 + fetch 回流的裸相对路径）
@@ -249,9 +321,9 @@ def upload_local_images(page_id: str, images: list[tuple[str, Path]],
     if not images:
         return {}
     try:
-        from lib.confluence import upload_attachment
+        from lib.confluence_rest import upload_attachment
     except ImportError as e:
-        sys.exit(f"图片上传依赖 lib.confluence.upload_attachment：{e}")
+        sys.exit(f"图片上传依赖 lib.confluence_rest.upload_attachment：{e}")
 
     mapping: dict[str, str] = {}
     name_taken: set[str] = set()
@@ -493,6 +565,7 @@ def push_split_children_by_chapter(
 
     main_md = md_path.read_text(encoding="utf-8")
     main_md = strip_for_confluence(main_md, exclude_sections or [], strip_preamble)
+    warn_broken_tables(main_md, md_path)
     chapters = parse_chapter_blocks_for_split(main_md)
     if not chapters:
         sys.exit("未在主 md 找到 §4-7 章节及其场景引用列表")
@@ -500,6 +573,13 @@ def push_split_children_by_chapter(
         f"  → 发现 {len(chapters)} 章可拆为子页：{[c['chapter'] for c in chapters]}",
         file=sys.stderr,
     )
+
+    # 子页正文由 gen_child_md 从 -scenes/*.md 串接，主 md 扫不到那些表格 → 逐文件再扫
+    for ch in chapters:
+        for _, link_path in ch["scene_links"]:
+            scene_file = scenes_dir / Path(link_path).name
+            if scene_file.exists():
+                warn_broken_tables(scene_file.read_text(encoding="utf-8"), scene_file)
 
     parent_title = title_override or extract_title(main_md)
     is_update = update_id is not None
@@ -578,11 +658,6 @@ def push_split_children_by_chapter(
 _TRACKING_EVENT_COLS = {0, 1, 2, 8}  # 事件级列：所属页面 / 事件中文名 / 事件英文名 / 应埋点平台
 
 
-def _table_cells(line: str) -> list[str]:
-    """md 表格行 → cell 列表（去首尾 | + 去反引号）。"""
-    return [c.strip().strip("`") for c in line.strip().strip("|").split("|")]
-
-
 def _is_tracking_header(cells: list[str]) -> bool:
     """10 列埋点表头签名：所属页面 + 事件英文名。"""
     return len(cells) >= 3 and cells[0] == "所属页面" and cells[2] == "事件英文名"
@@ -627,18 +702,13 @@ def merge_tracking_tables(md: str) -> tuple[str, int]:
     i = 0
     replaced = 0
     while i < len(lines):
-        s = lines[i].strip()
-        if s.startswith("|") and _is_tracking_header(_table_cells(s)):
+        if _is_table_row(lines[i]) and _is_tracking_header(_table_cells(lines[i])):
             start = i
             i += 1
-            while i < len(lines) and lines[i].strip().startswith("|"):
+            while i < len(lines) and _is_table_row(lines[i]):
                 i += 1
             block = lines[start:i]
-            rows = [
-                _table_cells(ln)
-                for ln in block
-                if not all(set(c) <= set(": -") for c in _table_cells(ln))
-            ]
+            rows = [_table_cells(ln) for ln in block if not _is_sep_line(ln)]
             if len(rows) >= 2 and len(rows[0]) >= 10:
                 out.append(_build_tracking_html_table([r[:10] for r in rows]))
                 replaced += 1
@@ -756,6 +826,7 @@ def main():
     # 单页模式（含 split 自动 compose）
     md, base_dir = maybe_compose_split(md_path)
     md = strip_for_confluence(md, exclude_sections, strip_preamble)
+    warn_broken_tables(md, md_path)
     title = args.title or extract_title(md)
 
     # merge-tracking：10 列埋点表 → rowspan HTML（rowspan 不能进 markdown 宏，仅在实际

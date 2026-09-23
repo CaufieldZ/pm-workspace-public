@@ -9,7 +9,7 @@
 #
 # 策略单一事实源 = .claude/runbooks/proxy-fallback.md：
 #   直连失败（connection refused / timeout / reset / 无法解析）+ 非国内域名 → 按
-#   scripts/proxy_env.sh 判定重试（proxy 模式加 ALL_PROXY 一次，direct 模式不重试）；
+#   scripts/lib/proxy.py 判定重试（判定到可用代理才加代理重试一次，判直连则不加）；
 #   国内域名/镜像不重试。含管道/重定向的命令 wrapper 不适用，按 runbook 手动加 ALL_PROXY。
 set +e
 
@@ -22,15 +22,15 @@ type log_event >/dev/null 2>&1 || log_event() { :; }  # source 失败兜底为 n
 
 # 失败关键词（命中才认为是网络问题，值得加代理重试）
 NET_FAIL_RE='[Cc]onnection refused|[Tt]imed? ?out|[Cc]onnection reset|[Cc]ould not resolve|[Cc]ouldn.t resolve|[Cc]onnection closed|[Nn]etwork is unreachable|[Ff]ailed to connect'
-# 国内域名/镜像（命中则不走代理，对齐 pre-bash-guard.sh 规则 A）
+# 国内域名/镜像（命中则不走代理，对齐 pre-proxy-check.sh 的国内源排除表）
 CN_RE='pypi\.tuna\.tsinghua|npmmirror|mirrors\.(aliyun|tencent|ustc|163)|registry\.npm\.taobao|goproxy\.cn|\.cn([/:]|$|[[:space:]])'
-PROXY="${ALL_PROXY:-http://本地代理端口}"
 
 CMD_STR="$*"
 
 # ── 第一次：直连（stderr 落临时文件再回显，避免异步 tee 漏读）──
 ERRFILE="$(mktemp)"
-trap 'rm -f "$ERRFILE"' EXIT
+# PROXY_ERRFILE 在判定腿才建（`${PROXY_ERRFILE:-}` 兜住 trap 早于赋值触发的场景），一并清
+trap 'rm -f "$ERRFILE" "${PROXY_ERRFILE:-}"' EXIT
 "$@" 2>"$ERRFILE"
 rc=$?
 cat "$ERRFILE" >&2
@@ -53,15 +53,24 @@ if echo "$CMD_STR" | grep -qE "$CN_RE"; then
   exit $rc
 fi
 
-# ── 第二次：按动态判定决定是否走代理（proxy_env.sh：proxy 模式已 export 代理变量）──
-source "$ROOT/scripts/proxy_env.sh"
-MODE="${PROXY_MODE:-direct}"
-if [ "$MODE" = "direct" ]; then
-  echo "[net_retry] 代理判定 direct（国外直连失败为真实失败 / 7897 不在线），不重试代理" >&2
+# ── 第二次：判定到可用代理才加代理重试（候选端口与验活规则都在 scripts/lib/proxy.py）──
+# stderr 单独收着：空结论有两种来源——「判直连」（正常）与「判定源自己炸了」（异常），
+# 吞掉 stderr 会让后者伪装成前者，排查方向被带偏。
+PROXY_ERRFILE="$(mktemp)"
+PROXY_PREFIX="$(python3 "$ROOT/scripts/lib/proxy.py" --prefix 2>"$PROXY_ERRFILE")"
+if [ -z "$PROXY_PREFIX" ]; then
+  echo "[net_retry] 未判定到可用代理（国外直连失败为真实失败 / 代理未启动），不重试代理" >&2
+  if [ -s "$PROXY_ERRFILE" ]; then
+    echo "[net_retry] 判定源自身报错（上面的结论未必是真判直连，先修这个）：" >&2
+    head -5 "$PROXY_ERRFILE" >&2
+  fi
   log_event gate net-retry proxy-skip-direct "${CMD_STR:0:120}"
   exit $rc
 fi
-echo "[net_retry] 代理判定 $MODE，加代理重试：ALL_PROXY=${ALL_PROXY:-$PROXY}" >&2
+rm -f "$PROXY_ERRFILE"
+# PROXY_PREFIX 是 `export A=… B=…;` 一行，eval 进本进程后子进程直接继承
+eval "$PROXY_PREFIX"
+echo "[net_retry] 判定到代理，加代理重试：ALL_PROXY=${ALL_PROXY}" >&2
 log_event gate net-retry proxy-retry "${CMD_STR:0:120}"
-ALL_PROXY="${ALL_PROXY:-$PROXY}" HTTPS_PROXY="${HTTPS_PROXY:-$PROXY}" HTTP_PROXY="${HTTP_PROXY:-$PROXY}" "$@"
+"$@"
 exit $?

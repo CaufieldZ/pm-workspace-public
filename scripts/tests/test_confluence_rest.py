@@ -1,10 +1,11 @@
-"""lib.confluence 测试：重试语义矩阵 / 退避 / mock opener 重试冒烟 / 401 提示 / 禁代理 / 单次批量拉取硬顶。"""
+"""lib.confluence_rest 测试：重试语义矩阵 / 退避 / mock opener 重试冒烟 / 401 提示 / 禁代理 / 单次批量拉取硬顶。"""
 
 import urllib.error
 
 import pytest
-from lib.confluence import (
+from lib.confluence_rest import (
     BATCH_PULL_CAP,
+    build_cql,
     _OPENER,
     _RETRY_MAX,
     _backoff_delay,
@@ -53,8 +54,8 @@ def test_backoff_delay_invalid_retry_after_falls_back():
 
 @pytest.fixture
 def fake_creds(monkeypatch):
-    monkeypatch.setattr("lib.confluence._BASE_URL", "https://wiki.example.com")
-    monkeypatch.setattr("lib.confluence._TOKEN", "test-token")
+    monkeypatch.setattr("lib.confluence_rest._BASE_URL", "https://wiki.example.com")
+    monkeypatch.setattr("lib.confluence_rest._TOKEN", "test-token")
 
 
 def _raising_opener(codes, response=b'{"ok": true}'):
@@ -89,24 +90,24 @@ def _raising_opener(codes, response=b'{"ok": true}'):
 
 def test_retries_two_429_then_succeeds(monkeypatch, fake_creds):
     opener, calls = _raising_opener([429, 429])
-    monkeypatch.setattr("lib.confluence._OPENER", opener)
-    monkeypatch.setattr("lib.confluence.time.sleep", lambda s: None)
+    monkeypatch.setattr("lib.confluence_rest._OPENER", opener)
+    monkeypatch.setattr("lib.confluence_rest.time.sleep", lambda s: None)
     assert api_request("GET", "/rest/api/content/1") == {"ok": True}
     assert calls["n"] == 3
 
 
 def test_503_read_retries(monkeypatch, fake_creds):
     opener, calls = _raising_opener([503])
-    monkeypatch.setattr("lib.confluence._OPENER", opener)
-    monkeypatch.setattr("lib.confluence.time.sleep", lambda s: None)
+    monkeypatch.setattr("lib.confluence_rest._OPENER", opener)
+    monkeypatch.setattr("lib.confluence_rest.time.sleep", lambda s: None)
     assert api_request("GET", "/rest/api/content/1") == {"ok": True}
     assert calls["n"] == 2
 
 
 def test_503_write_not_retried(monkeypatch, fake_creds):
     opener, calls = _raising_opener([503])
-    monkeypatch.setattr("lib.confluence._OPENER", opener)
-    monkeypatch.setattr("lib.confluence.time.sleep", lambda s: None)
+    monkeypatch.setattr("lib.confluence_rest._OPENER", opener)
+    monkeypatch.setattr("lib.confluence_rest.time.sleep", lambda s: None)
     with pytest.raises(urllib.error.HTTPError) as exc:
         api_request("POST", "/rest/api/content", {"type": "page"})
     assert exc.value.code == 503
@@ -115,8 +116,8 @@ def test_503_write_not_retried(monkeypatch, fake_creds):
 
 def test_retries_exhausted_raises(monkeypatch, fake_creds, capsys):
     opener, calls = _raising_opener([429, 429, 429, 429, 429])
-    monkeypatch.setattr("lib.confluence._OPENER", opener)
-    monkeypatch.setattr("lib.confluence.time.sleep", lambda s: None)
+    monkeypatch.setattr("lib.confluence_rest._OPENER", opener)
+    monkeypatch.setattr("lib.confluence_rest.time.sleep", lambda s: None)
     with pytest.raises(urllib.error.HTTPError):
         api_request("GET", "/rest/api/content/1")
     assert calls["n"] == _RETRY_MAX
@@ -131,7 +132,7 @@ def test_401_hint_written(monkeypatch, fake_creds, capsys):
         def open(self, req, timeout=None):
             return fake(req, timeout)
 
-    monkeypatch.setattr("lib.confluence._OPENER", FakeOpener())
+    monkeypatch.setattr("lib.confluence_rest._OPENER", FakeOpener())
     with pytest.raises(urllib.error.HTTPError):
         api_request("GET", "/rest/api/content/1")
     err = capsys.readouterr().err
@@ -167,7 +168,7 @@ def test_search_pages_clamps_over_cap(monkeypatch, fake_creds, capsys):
         seen["path"] = path
         return {"results": []}
 
-    monkeypatch.setattr("lib.confluence.api_request", fake_api_request)
+    monkeypatch.setattr("lib.confluence_rest.api_request", fake_api_request)
     search_pages("cql", limit=BATCH_PULL_CAP + 10)
     assert f"limit={BATCH_PULL_CAP}" in seen["path"]
     assert "上限" in capsys.readouterr().err
@@ -180,7 +181,7 @@ def test_search_pages_under_cap_passthrough(monkeypatch, fake_creds, capsys):
         seen["path"] = path
         return {"results": []}
 
-    monkeypatch.setattr("lib.confluence.api_request", fake_api_request)
+    monkeypatch.setattr("lib.confluence_rest.api_request", fake_api_request)
     search_pages("cql", limit=10)
     assert "limit=10" in seen["path"]
     assert capsys.readouterr().err == ""
@@ -194,7 +195,7 @@ def test_fetch_children_truncates_at_cap(monkeypatch, fake_creds, capsys):
         calls["n"] += 1
         return {"results": [{"id": str(i)} for i in range(50)]}
 
-    monkeypatch.setattr("lib.confluence.api_get", fake_api_get)
+    monkeypatch.setattr("lib.confluence_rest.api_get", fake_api_get)
     children = fetch_children("123")
     assert len(children) == BATCH_PULL_CAP
     assert calls["n"] == 1  # 第一页 50 个即触顶，不再翻页
@@ -203,7 +204,7 @@ def test_fetch_children_truncates_at_cap(monkeypatch, fake_creds, capsys):
 
 def test_fetch_children_under_cap_no_warn(monkeypatch, fake_creds, capsys):
     monkeypatch.setattr(
-        "lib.confluence.api_get",
+        "lib.confluence_rest.api_get",
         lambda path, headers=None: {"results": [{"id": "1"}, {"id": "2"}]},
     )
     assert len(fetch_children("123")) == 2
@@ -221,8 +222,8 @@ def test_fetch_attachments_download_truncates_at_cap(monkeypatch, fake_creds, ca
             for i in range(60)
         ]}
 
-    monkeypatch.setattr("lib.confluence.api_get", fake_api_get)
-    monkeypatch.setattr("lib.confluence.download_bytes", lambda path, timeout=60: b"x")
+    monkeypatch.setattr("lib.confluence_rest.api_get", fake_api_get)
+    monkeypatch.setattr("lib.confluence_rest.download_bytes", lambda path, timeout=60: b"x")
     mapping = fetch_attachments("123", download=True)
     assert len(mapping) == BATCH_PULL_CAP
     assert calls["n"] == 1  # 触顶即返回，不翻页
@@ -242,7 +243,51 @@ def test_fetch_attachments_listing_not_capped(monkeypatch, fake_creds, capsys):
             for i in range(60)
         ]}
 
-    monkeypatch.setattr("lib.confluence.api_get", fake_api_get)
+    monkeypatch.setattr("lib.confluence_rest.api_get", fake_api_get)
     mapping = fetch_attachments("123", download=False)
     assert len(mapping) == 60
     assert capsys.readouterr().err == ""
+
+
+# ═══════════ build_cql：三个读侧入口（find / search / dig）共用的拼串器 ═══════════
+
+
+@pytest.mark.parametrize("kwargs,expected", [
+    # find：按标题，带 type=page 与 order by
+    (dict(space="Platform C", title="直播竞品"),
+     'space="Platform C" AND type=page AND title ~ "直播竞品" order by created desc'),
+    (dict(title="红包雨"),
+     'type=page AND title ~ "红包雨" order by created desc'),
+    # search：全文，无 type=page 无 order by（/rest/api/search 自带相关度排序）
+    (dict(space="Platform C", text="结算延迟", type_page=False, order=None),
+     'space="Platform C" AND text ~ "结算延迟"'),
+    (dict(text="对拍", type_page=False, order=None),
+     'text ~ "对拍"'),
+    # dig：全文 / 标题 + 可选 ancestor 子树
+    (dict(space="Platform C", text="红包雨"),
+     'space="Platform C" AND type=page AND text ~ "红包雨" order by created desc'),
+    (dict(space="Platform C", title="邀请返佣", ancestor="151429067"),
+     'space="Platform C" AND type=page AND title ~ "邀请返佣" AND ancestor=151429067 order by created desc'),
+    # 纯父页考古：无关键词，只按 ancestor 拉子树
+    (dict(space="Platform C", ancestor="6723063"),
+     'space="Platform C" AND type=page AND ancestor=6723063 order by created desc'),
+])
+def test_build_cql_exact(kwargs, expected):
+    """子句顺序固定 space → type=page → title/text → ancestor → order by，逐字节锁死。
+
+    三个入口合并前各拼各的，顺序漂了会让 CQL 语义静默变化（Confluence 不报错、只是命中不同），
+    所以这里断言整串而非「包含某子句」。
+    """
+    assert build_cql(**kwargs) == expected
+
+
+def test_build_cql_escapes_quotes():
+    assert '\\"' in build_cql(space="Platform C", title='a"b')
+
+
+def test_build_cql_no_ancestor_clause_when_none():
+    assert "ancestor" not in build_cql(space="Platform C", text="x")
+
+
+def test_build_cql_empty_keyword_omits_match_clause():
+    assert " ~ " not in build_cql(space="Platform C", ancestor="1", title=None, text=None)

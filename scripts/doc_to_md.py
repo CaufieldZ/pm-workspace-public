@@ -12,6 +12,9 @@
 支持格式: .docx .pptx .xlsx .pdf .html .htm .png .jpg .jpeg .gif .bmp .tiff .mp3 .wav .m4a
 
 依赖: pipx install 'markitdown[all]'
+
+坑：转 .docx 报 MissingDependencyException 时，用 `python3 -c` 解 zip 读 word/document.xml
+去标签可拿到正文，别卡在装依赖上。
 """
 
 # route-log: 调用埋点（scripts/lib/route_log.py）

@@ -38,7 +38,7 @@ case "${ANTHROPIC_BASE_URL:-}" in
   *) exit 0 ;;
 esac
 
-check_skip_env "read-image-check" "SKIP_READ_IMAGE_CHECK_GATE" "$FILE_PATH"
+check_skip_env "read-image-check" "SKIP_READ_IMAGE_CHECK_GATE" "$FILE_PATH" --exit
 
 # ── 1. 大小 / 尺寸预检（满足限制 → 放行）───────────────────────────────
 FILE_SIZE=$(wc -c < "$FILE_PATH" 2>/dev/null | tr -d ' ')

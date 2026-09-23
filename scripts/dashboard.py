@@ -26,10 +26,10 @@ DASHBOARD = ROOT / ".claude" / "workspace-dashboard.md"
 PROJECTS_DIR = ROOT / "projects"
 SKILLS_DIR = ROOT / ".claude" / "skills"
 HUB_DIR = ROOT / "hub"
-# 退役 gate 名册：dashboard 不渲染，gate_health.py 当「死 gate 豁免」读。
+# 退役 gate 名册：dashboard 不渲染，telemetry.py gate-health 当「死 gate 豁免」读。
 # 入册资格：该名字在 usage.jsonl 里有历史事件，但注册表（hook .sh / lib / .githooks）
 # 里已不存在——即「事件是真的，gate 没了」。每条注明来历。
-# 生命周期：gate_health.py 校验每条仍有历史事件；0 事件 = 豁免本身死了，报红逼删。
+# 生命周期：telemetry.py gate-health 校验每条仍有历史事件；0 事件 = 豁免本身死了，报红逼删。
 GHOST_GATES = {
     "version-sync-gate",   # 已退役的骨架版本号同步 gate，留 68 条历史事件
     "dedup-format-test",   # 2026-08-01 log 去重机制的测试残留（/tmp/pmws_dedup_test_key）
@@ -339,9 +339,8 @@ def render_routes(events, days):
     # 不含 hook 自动跑的校验器族（check_static_chapter / check_baseline_fresh 等）——
     # 那是 hook 触发频次，混进来会淹没「模型选了哪条路由」的信号
     KNOWN_ROUTES = [
-        "fetch_confluence", "nav_confluence", "dig_confluence",
-        "confluence_api", "md_to_confluence",
-        "call_mcp", "compress_image",
+        "confluence", "confluence_api", "md_to_confluence",
+        "call_mcp", "compress_image", "image_gen", "video_gen",
         "fetch_weekly_sensors", "query_analytics", "probe_event_properties",
         "youshu_cli",
         "pull_meeting_notes", "fetch_figma", "doc_to_md", "pack_for_opus",
@@ -349,6 +348,7 @@ def render_routes(events, days):
         "sync_growth_demand_pool", "sync_ux_demand_pool",
         "read_prd_section", "export_tracking_xlsx", "render_scene_list",
         "sync_hx_status", "hx_task_progress", "hx_panel",
+        "gen_events_inventory",
         "check_cjk_punct", "impact-check",
     ]
     lines = [

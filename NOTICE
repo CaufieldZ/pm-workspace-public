@@ -1,0 +1,27 @@
+PM-Workspace
+Copyright 2026 CaufieldZ
+https://github.com/CaufieldZ/pm-workspace
+
+This product includes software developed by CaufieldZ.
+
+IMPORTANT NOTICES:
+
+1. AI Training Restriction
+   This work is subject to the AI Training Restriction set forth in
+   AI-TRAINING-RESTRICTION.md. Use of this work for machine learning
+   model training, fine-tuning, or distillation is prohibited.
+
+   本作品受 AI-TRAINING-RESTRICTION.md 中的 AI 训练限制条款约束。
+   禁止将本作品用于机器学习模型训练、微调或蒸馏。
+
+2. Attribution Requirement
+   Derivative works must prominently display:
+   "Based on PM-Workspace by CaufieldZ"
+
+   衍生作品必须显著标注："Based on PM-Workspace by CaufieldZ"
+
+3. Methodology Protection
+   The PM workflow methodology, Skill architecture, and prompt engineering
+   patterns embodied in this repository represent original intellectual
+   property. Systematic extraction or reproduction of these patterns for
+   competing products is prohibited under the AI Training Restriction.

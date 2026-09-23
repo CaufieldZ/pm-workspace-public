@@ -234,7 +234,7 @@ Claude 看完 3 秒决定动作，不需要 Read runbook。
 
 - 一旦某 gate 名进了 `usage.jsonl`（哪怕 1 次），后续 hook 改名 / 合并必须**保留同样的字符串** emit
 - gate-name 用 kebab-case，与 SKIP 环境变量同源（`prd-check-gate` ↔ `SKIP_PRD_CHECK_GATE`）
-- 一个 hook 文件可以 emit 多个 gate 名（如 `pre-bash-guard.sh` emit `proxy-check` + `git-https-gate` + `skeleton-force-gate`）
+- 一个 hook 文件可以 emit 多个 gate 名（如 `pre-bash-guard.sh` emit `git-https-gate` + `skeleton-force-gate` + `cold-read-gate`）
 - 不要为了"清理"改 gate 名 — dashboard 会出现 ghost 行
 - **`lib/log.sh` 的 `log_event` 在非 hook 脚本里 source 用时**，需先 `export CLAUDE_PROJECT_DIR`，否则它按 `BASH_SOURCE` 推断 root 会走偏到 `/Users`。
 
@@ -245,7 +245,18 @@ Claude Code 只读 stderr 作为 hook 输出注入到 tool result。`2>/dev/null
 - 模型需要感知到的所有错误 / 警告必须 `>&2`
 - checker 的 stdout / stderr 都要收 → 失败时 `cat / head / tail` 到 `>&2`
 - 不要 `2>/dev/null` 静默 checker 真实错误（`command -v _log_skip_gate 2>/dev/null` 这种存在性测试除外）
-- **例外 UserPromptSubmit**：exit 0 时无 tool result，stderr 被静默丢弃——给用户的提醒走 stdout `{systemMessage}`（不进 context、不阻断），范例 `user-prompt-context-warn.sh`（§一 模板）
+- **例外 UserPromptSubmit**：exit 0 时无 tool result，stderr 被静默丢弃——给用户的提醒走 stdout `{systemMessage}`（不进 context、不阻断），范例 `user-prompt-warn.sh`（§一 模板）
+
+**通道差异（写错 = gate 静默失效）**：PostToolUse `exit 0` 的 stderr **不进 context**（进 transcript 用户能看，模型看不到——本仓 10 gate / 5687 条空转的根因），要送达必须 `exit 2` 或走 `hookSpecificOutput.additionalContext`。UserPromptSubmit / PostToolUse 的 `additionalContext` 进 context 不见于用户；UserPromptSubmit `systemMessage` 反之。Stop 的 `additionalContext` **强制续跑一整轮**——挪贵检查到 Stop 是净亏。
+
+`additionalContext` 必须嵌在 `hookSpecificOutput` 内（顶层键静默忽略），写事实陈述别祈使式（触发 prompt-injection 防御被反弹），不注入时间戳（存档重放变陈旧）。transcript 追加式，「取末条 assistant」的 hook 必须切 `compact_boundary` 重算，否则压缩后第一条 prompt 会拿压缩前的旧值报警。
+
+**改写入参通道（PreToolUse 专用）**：`hookSpecificOutput.updatedInput` + `permissionDecision` 能在放行前改写工具入参（先例 `pre-proxy-check.sh`：给外网下载命令前置 `export …;`）。四条约束：
+
+- `updatedInput` 是**整个 tool_input 的替换、不是补丁** → 必须 `{**tool_input, "command": …}`，漏键就丢。要整体重建用 `hook_parse_bash_input`（拿整个 tool_input），**别为它扩 `hook_parse_all`**——那条路径同时服务 Write/Edit，会把整份文件内容一并序列化。
+- stdout 必须**整段单行 JSON**（`jq -nc`），混进别的输出整条被丢。
+- 改写路径**绝不能 `exit 2`**：exit 2 压过 JSON 里的任何决定，等于没注入。
+- 改写后命令的**开头变了**，settings.json 里锚在命令开头的 deny / ask 前缀（`Bash(rm -rf *)` 这类）匹配不上新串 → 带 `permissionDecision: "allow"` 会实打实放宽权限面。只在改写确有必要时用，并配一个 `*_MODE` 逃生口。
 
 ### C. tempfile 用 `mktemp`，不要硬编码
 
@@ -370,10 +381,14 @@ guard_git_safety() {
 
 配套：① 同一份 JSON 不重复 `jq`，需要多字段就扩 `hook_parse_*`（如 Read 路径 `hook_parse_read` 一次出 file_path + paging），别二次 fork。② 外部 python3 checker 只处理特定标记时，先 `grep -q '<标记>' || exit 0` 预筛（如 `stop-learn-capture` 无 `[LEARN]` 跳过整个 python3）。③ 读 yaml / config 后移到「确需精确值」时——如「文件 ≤ 下界直接放行，> 下界才 awk 取精确阈值」。
 
+Python 侧同源：成本由「**进程数 × 冷启**」决定（裸 `python3` 冷启见上表），不由算法复杂度决定——先数 spawn 次数再上 profiler；数法 = PATH shim 记 `>>>` 标记数真实 spawn。
+
+**排查热路径 hook 别喂假 stdin**：先把脚本里的 python heredoc 剥出来单独跑（heredoc 首行尾部的 `2>/dev/null` 也要剥掉），比构造输入快且能看到中间量。另：本机 `ls` 是 eza 别名，`ls -lt` 会被解析成 `--time` 报非法值——排序一律用 `find -newer` / python mtime。
+
 > ⚠️ 改 PreToolUse 安全门（git-safety / proxy-check / paradigm-gate）的粗筛时：粗筛词宁可 over-match，改完**必跑 `test/test-hooks.sh` 确认拦截行为逐字不变**，正向（该 block 仍 block）+ 边界（含子串的无害命令不误判）都要测。
 > 正则 / 匹配逻辑类改动另跑**双探针**（绕过形态必 exit 2、无害近似形态必 exit 0）：`printf '{"tool_name":"Bash","tool_input":{"command":"<cmd>"}}' | CLAUDE_HOOK_TEST=1 CLAUDE_PROJECT_DIR=<根> bash .claude/hooks/pre-bash-guard.sh` 逐条断言退出码——套件锁的是已知形态，探针补的是「你以为改对了的」新形态。
 >
-> 亚秒性能回归：`$SECONDS` 整秒分辨率对亚秒 hook 计时无效——`analyze_gate_funnel` 的 `d>0` 过滤会让 < 1s 的 dur_ms 落空；亚秒级回归走 pytest `perf_counter`，dur_ms 埋点只对定位「多秒慢闸」有意义。
+> 亚秒性能回归：`$SECONDS` 整秒分辨率对亚秒 hook 计时无效——`telemetry funnel` 的 `d>0` 过滤会让 < 1s 的 dur_ms 落空；亚秒级回归走 pytest `perf_counter`，dur_ms 埋点只对定位「多秒慢闸」有意义。
 
 ### L. 变量紧邻非 ASCII 字符必须 `${var}`
 
@@ -413,6 +428,8 @@ heredoc 特例：bash 3.2 + UTF-8 locale 下，heredoc 里变量紧邻全角字�
 | 为「美观」改 `log_event` 的 gate 字符串名 | 不改，dashboard 历史断 |
 | 改 hook 文件名但忘改 settings.json | audit §15.4 会 ❌ fail；两侧同 commit |
 | 把跨 hook 共用的判断写进单个 hook（"以后再抽 lib"）| 第二次出现立即抽 lib |
+| 内网域名 / 内部地址硬编码进 hook（`.sh` 随公开镜像直出、不脱敏）| 判定条件提成 settings.json 的 env 开关，域名值留用户级配置；测试「未设置」分支要 `env -u <var>` 显式摘除 |
+| PreToolUse matcher 写死工具名不复核 | 工具改名（`Task`→`Agent`）会让门禁静默失效数月——版本升级后核对 settings.json matcher，以 usage.jsonl 埋点停更为信号 |
 | 不写 `set +e` 导致管道里某步失败整个 hook 中断 | 默认加 `set +e`（hook 不应因子命令失败而崩溃）|
 | 删除「过时」 gate 的 `.sh` 但留 `log_event` emit | 同时删 .sh + 删 emit + 跑 audit §15 验证 |
 | 加行文类校验（的字链 / 空泛动词 / 长句 / 分号）不先标定命中数 | 先拿真实语料跑命中数：0 命中的规则是维护负担不是价值，只加命中显著的 |
@@ -421,6 +438,7 @@ heredoc 特例：bash 3.2 + UTF-8 locale 下，heredoc 里变量紧邻全角字�
 | warn 类 checker 每次 Edit 全量跑（连续 Edit 同文件重复扫发热）| 包 `_dedup_if_fresh GATE TTL KEY \|\| pc_xxx` 做同 key TTL 节流 |
 | 热路径上 `echo \| grep` 匹配固定串 / `sed`·`tr` 做字符串截取 | bash 内建 `[[ == ]]` / `case` / 参数展开（§三 K）|
 | 跑复杂 grep / python3 checker 前不做 `case` 粗筛短路 | 先 `case` 粗筛（词取精确 pattern 超集，宁 over 勿 under），罕见命中才精确判（§三 K）|
+| `local v="$1" n=${#v}` 同一句声明内引用刚声明的变量 | 同行右值先整体展开，`${#v}` 取到的是赋值前的旧值（恒 0）——要引用刚声明的变量必须拆两句 |
 | 同一份 JSON 多次 `jq` 取不同字段 | 一次 `hook_parse_all` / `hook_parse_read` 出全（§三 E / K）|
 | UserPromptSubmit 提醒写 `echo ... >&2`（exit 0 stderr 被丢，用户看不到）| `jq -nc '{systemMessage:$msg}'`（stdout JSON，§一 模板 / §三 B）|
 | 改治理规则（CJK / UI 正则 / SKIP 清单 / repo-root 定位）只改一处 | 治理代码自身无 info-ownership SSOT，多处重复且已漂移——改前 `grep -rn` 全实现处一并改（audit §15 也查 drift）。**讲人话豁免已收口**：规则表 `scripts/lib/lint_exempt.txt` 是 bash + Python 单一真相源，只改那张表，别在 `guards.sh` / checker 里另写 case |
@@ -429,8 +447,10 @@ heredoc 特例：bash 3.2 + UTF-8 locale 下，heredoc 里变量紧邻全角字�
 | 加行文 / 标点校验，注释声明「冒号领起不扫」「表格行豁免」但代码漏实现 | 注释承诺的豁免必须在代码兑现（漏实现 = 误报）；数分支条件只数起始词（若 / 如果 / 否则 / 超过）不数 consequent 连接词「则」，否则每条「若 X 则 Y」都误报 |
 | 想 hook 化 AI 味三维度（挤话 / 反复讲 / 夸夸其谈）全上规则 | 只有「挤话」（单行句号 ≥ 3）能规则化；「反复讲」是语义重复归 cross-check LLM；「夸夸其谈」包装词在 Platform C 语境多实义、词表误伤高，留写作指引 |
 | 安全门正则要求子命令紧跟程序名（`git[[:space:]]+push`）→ 全局选项前缀（`git -C <path>` / `-c k=v` / `--git-dir=…`）整体绕过；+refspec 只匹配短形式 | 子命令前允许夹选项 token（`git([[:space:]]+[^[:space:]]+)*[[:space:]]+push`）；+refspec 逐段吞 `refs/heads/` 类路径前缀、右边界含 `:` `/`——完整 refspec（`+refs/heads/main:refs/heads/main`）也拦，`+feature/main-fix` 不误伤 |
-| block 消息（或头注释）承诺 `SKIP_<X>_GATE` 逃生门但函数内无 `_pc_skip` / `check_skip_env` 消费 | stderr / 注释写出的每个 SKIP 变量必须有对应消费（grep 变量名确认消费方）；无逃生门就在消息里不写、注释里注明「无逃生门」——用户照提示 export 仍被拦 = 承诺失信（先例：SKIP_AUDIT_FAST 只存在于消息） |
+| block 消息（或头注释）承诺 `SKIP_<X>_GATE` 逃生门但函数内无 `check_skip_env` 消费 | stderr / 注释写出的每个 SKIP 变量必须有对应消费（grep 变量名确认消费方）；无逃生门就在消息里不写、注释里注明「无逃生门」——用户照提示 export 仍被拦 = 承诺失信（先例：SKIP_AUDIT_FAST 只存在于消息） |
 | 新增 `hook_parse_*` 只写 jq 分支 | 与 `hook_parse_all` 同构带 python3 兜底——jq 缺失时 eval 空 → 该门静默 fail-open（先例：hook_parse_read 缺兜底，Read 门全灭） |
+| 从别的工区 / 仓抄一段 hook 代码直接贴 | 先核该段用到的变量在本文件 / 本仓 lib 里存在——`$HOOK_DIR` 这类是对方工区的变量，拼成 `/../../scripts/x.py` 在 `set +e` + `2>/dev/null` 下静默失败，新功能整段消失还不报错 |
+| 断言只锁消息内容不锁键名 | 通道类契约（`systemMessage` / `additionalContext` / stderr）的测试必须同时断言键名存在性 + 排他性，否则「内容对但发错通道」照样全绿 |
 | 命令名精确判用无锚定 grep（`build_proto` 子串命中即拦）→ ruff / grep 把脚本路径当**参数提及**被误当调用 | 精确判锚定命令位：逐段取首 token（剥 `ENV=` 前缀与 python3 / env 包装）后 basename 匹配；参数位置的文件名提及不算调用 |
 
 ---

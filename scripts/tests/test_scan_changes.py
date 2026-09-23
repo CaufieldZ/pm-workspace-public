@@ -1,4 +1,4 @@
-"""scan_changes 回归：分桶 / 规范路由 / 符号抽取 / 覆盖缺口四组纯函数。
+"""scan_changes 回归：分桶 / 规范路由 / 符号抽取 / 覆盖缺口四组纯函数 + collect_diff 的 git 取数。
 
 锁定两件事：① 分桶口径与 pre-writeedit-guards.sh 的 required-read 归属一致
 （hub/ 与 .md 必须落 out_of_scope，否则 code-review 会越界审不归它管的东西）；
@@ -6,6 +6,7 @@
 （SCRIPTS_WRITING §三-K）。
 """
 import importlib.util
+import subprocess
 import sys
 from pathlib import Path
 
@@ -23,6 +24,7 @@ route_specs = scan_changes.route_specs
 extract_changed_symbols = scan_changes.extract_changed_symbols
 coverage_gaps = scan_changes.coverage_gaps
 guess_product_skill = scan_changes.guess_product_skill
+collect_diff = scan_changes.collect_diff
 
 
 # ── bucket_files ──────────────────────────────────────────────
@@ -182,3 +184,37 @@ def test_gap_fail_key_positive_assertion():
 
 def test_gap_clean_diff():
     assert coverage_gaps({"projects/x/scripts/crud.py": "M"}, "+x = 1") == []
+
+
+# ── collect_diff（I/O 层）─────────────────────────────────────
+
+def _make_repo(path: Path) -> None:
+    """在 path 建一次性 git 仓库并落一个空 initial commit（随 tmp_path 清理）。"""
+    def run(*args: str) -> None:
+        subprocess.run(["git", *args], cwd=path, check=True, capture_output=True)
+
+    run("init", "-q")
+    run("-c", "user.email=t@example.com", "-c", "user.name=t",
+        "commit", "-q", "--allow-empty", "-m", "init")
+
+
+def test_collect_diff_files_mode_returns_name_status(tmp_path):
+    """指定 paths 时：状态行必须取到，且 pathspec 要真生效。
+
+    回归锚点：选项若排在 `--` 之后，git 会把 `--name-status` 当路径spec，
+    该路退化成 diff 正文，split("\\t") 解析不出条目 → 上层报「命中 0 个文件」。
+    纯函数测试覆盖不到这条 I/O 路径，故单列。
+    """
+    _make_repo(tmp_path)
+    (tmp_path / "a.sh").write_text("echo 1\n", encoding="utf-8")
+    (tmp_path / "b.sh").write_text("echo 1\n", encoding="utf-8")
+    subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True, capture_output=True)
+    subprocess.run(["git", "-c", "user.email=t@example.com", "-c", "user.name=t",
+                    "commit", "-qm", "add"], cwd=tmp_path, check=True, capture_output=True)
+    (tmp_path / "a.sh").write_text("echo 2\n", encoding="utf-8")
+
+    statuses, diff, scope = collect_diff(tmp_path, False, "HEAD~1", ["a.sh"])
+    assert statuses == {"a.sh": "M"}, f"name-status 未取到：{statuses}"
+    assert "a.sh" in diff
+    assert "b.sh" not in diff, "pathspec 未生效（b.sh 未被限定掉）"
+    assert scope == "工作区改动（指定路径）"

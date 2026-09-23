@@ -139,7 +139,11 @@ help 文案措辞与 cli-cheatsheet 已覆盖的脚本保持同名同义（不�
 
 import 路径：lib 模块走 `from lib.X import`（需 `scripts/` 在 `sys.path`，`scripts/tests/conftest.py` 已注入）；根脚本走 `import check_X`。
 
+**新建根脚本前先查 `scripts/lib/` 有无同名模块**：`lib` 目录一旦进 `sys.path`，裸名 `import X` 会静默解析到 lib 那份而不是根脚本。命名约定：lib 模块一律带职责后缀（`_rest` / `_md` / `_storage`），裸名留给根目录脚本，两侧永不同名。
+
 **改 lib 模块（加 header / 改签名 / 改常量）前必全仓 grep 所有消费者**：`grep -rn "from lib.X import\|from \.modname import"` + bash heredoc 形态 `grep -rn "X" --include='*.sh'`（`python3 << 'PY' from lib.X ... PY` 常规 `--include='*.py'` 抓不到）——不能只信已知调用方，漏消费者就破坏跨 skill 链路。
+
+**消费者不止 import**：产物格式 / 正则的消费方还有检查器与 hook glob——格式扩了（如 `.mmd` 从 stateDiagram 扩到 flowchart）而门还锁旧形态，门会静默失灵、看着在跑其实零命中。改格式同步 grep `.claude/hooks/lib/checkers.sh` 等注册侧。
 
 **跑 `ruff --fix` 清 F401 未用 import 前必反查被删符号是否被跨模块 import**：ruff 只看单文件视角，删掉的符号若被别处 `from this_module import symbol` 引用，`--fix` 会静默破坏跨模块调用，删前先 grep 符号名全仓引用。
 
@@ -220,6 +224,10 @@ CLI 缺失走 `command -v x >/dev/null 2>&1` 守卫静默降级（如 macOS 专�
 
 SKILL.md References「必读」清单里的 md 文件 > 300 行时，必须同目录配 `<原名>-quickref.md`（≤ 100 行，只留必守硬规则 + 全量指针）。References 必读指向 quickref、全量降为按需读；skill-load-gate 的 GUIDE 清单同步指向 quickref。先例：prd-scene-templates 300 行 → quickref 67 行；prd-chapter-rules 561 行 → quickref ~100 行（每 PRD session 省 ~15K token）。
 
+### M. 被 source 的脚本不用 `$#` / `$1` 判自身参数
+
+source 时无参会继承调用方的位置参数，判断静默失效。用 `[ "${BASH_SOURCE[0]}" = "$0" ]` 区分执行 / source 模式（被 source 时跳过 CLI 入口段）。
+
 ---
 
 ## 四、反模式清单（写 script 时禁犯）
@@ -252,6 +260,9 @@ SKILL.md References「必读」清单里的 md 文件 > 300 行时，必须同�
 | 按时间正序的追加式日志（usage.jsonl）取「最近一次」用 `setdefault` → 拿到**最旧**时间戳 | 正序遍历直接覆盖赋值 `dict[key] = ts`；setdefault 是「首见即冻结」（先例：dashboard 4 处最近一次列全显示最旧，活跃项被误判 dead） |
 | 同一口径（哨兵值 / 多词分隔符 / 日期边界）多处实现只改一处 → 姊妹脚本口径分叉 | 口径出现第二处即抽 lib 纯函数或注释互指，改前 grep 全部同类实现（先例：行为分析平台 -1 哨兵 3 处只实现 2 处；命中内容逗号拆分姊妹脚本只实现 1 处，额度回收候选整批误判） |
 | `--help` 被参数解析吞掉后静默执行真逻辑 / argparse 参数零 `help=` | 入口最前加 `-h/--help` 早退分支，help 覆盖 §二 五要素 |
+| 只测纯函数 / 只测常用那个入口模式 | 脚本每个入口模式（位置参数 / 子命令 / flag）都要真跑过一次——纯函数测试全绿不代表入口可用（先例：位置参数模式 `--` 顺序写反，静默失效很久）|
+| 脚本里用 `ls -t` / `ls -lt` 取最新文件 | 本机 `ls` 是 eza 别名，`-t` 被解析成 `--time` 报非法值；且多 session 并存会取错对象。用 `find -newer` 或 python 按 mtime 取，并拿特征串自证 |
+| 抓包 / 日志类代理按 `self.path.endswith("messages")` 之类判路径 | 请求带查询串（`/v1/messages?beta=true`）会漏记全部请求，而转发照常工作，表现为「服务正常但日志空白」。匹配前先 `self.path.split("?")[0]` 剥查询串 |
 
 ---
 

@@ -32,15 +32,17 @@ README = HOOK_DIR / "README.md"
 SKIP_PREFIXES = ("pre-commit-",)
 
 SOURCE_RE = re.compile(r'\.claude/hooks/(lib/[a-z0-9_-]+\.sh)')
-# gate 字面量出现在六类调用：
+# gate 字面量出现在七类调用：
 #   log_event hook|gate <g>   ·   _check_block|clean|warn <g>   ·   _log_skip_gate <g>
-#   ·   _pc_line_warn "<g>"   ·   _pc_skip "<g>"   ·   GATE="<g>"
+#   ·   _pc_line_enqueue "<g>"（产线三查入队段，gate 字面量在此） ·   _pc_strict_block "<g>"
+#   ·   check_skip_env "<g>"   ·   GATE="<g>"
 GATE_RE = re.compile(
     r'(?:\blog_event\s+(?:hook|gate)\s+'
     r'|\b_check_(?:block|clean|warn)\s+'
     r'|\b_log_skip_gate\s+'
-    r'|\b_pc_line_warn\s+["\']?'
-    r'|\b_pc_skip\s+["\']?'
+    r'|\b_pc_line_enqueue\s+["\']?'
+    r'|\b_pc_strict_block\s+["\']?'
+    r'|\bcheck_skip_env\s+["\']?'
     r'|\bGATE\s*=\s*["\']?'
     r')'
     r'([a-z][a-z0-9-]+)'

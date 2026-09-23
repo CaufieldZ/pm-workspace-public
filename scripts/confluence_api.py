@@ -22,7 +22,7 @@ import sys
 import urllib.parse
 from pathlib import Path
 
-from lib.confluence import base_url, request_raw
+from lib.confluence_rest import base_url, request_raw
 
 
 def normalize_endpoint(endpoint: str, base: str) -> str:
@@ -148,7 +148,7 @@ def render_output(raw: bytes, jq: str | None, silent: bool) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="直接调 Confluence REST API（透传/调试/临时 CQL），凭据同 fetch_confluence",
+        description="直接调 Confluence REST API（透传/调试/临时 CQL），凭据同 confluence.py",
         epilog="""示例：
   # 当前用户
   python3 confluence_api.py /rest/api/user/current --jq '.displayName'

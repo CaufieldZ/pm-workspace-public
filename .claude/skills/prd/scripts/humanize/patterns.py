@@ -25,6 +25,9 @@ DATE_TAG = re.compile(
     r'[（(]\s*\d{4}-\d{2}-\d{2}[^）)]*[）)]'   # (2026-04-22 ...)
     r'|[（(]\s*from\s*v\d+[^）)]*[）)]'         # (from v47)
     r'|[（(]\s*(?:变更|新增)[^）)]*[）)]'        # (变更) (新增)
+    # 行内版本标签（v2.1 新增 / v3 更新）：版本号必须紧跟变更词——放开会让括号列表
+    # （「（1.1 现状 / 1.4 核心变更）」）与长括号（「（v1.0.0，…覆盖…）」）误命中。
+    r'|[（(]\s*v\d+(?:\.\d+)*\s{0,2}(?:新增|反转|更新|变更|覆盖|删除|废止)'
     r'|反转说明：'
     r'|砍掉：'
 )
@@ -75,6 +78,45 @@ SEMICOLON_ABUSE_THRESHOLD = 2
 LONG_SENTENCE_THRESHOLD = 100  # 阈值登记: thresholds.yaml §E prd_checks.long_sentence_chars
 SENTENCE_SPLIT_RE = re.compile(r'[。！？；]')
 MD_NOISE_RE = re.compile(r'!?\[[^\]]*\]\([^)]*\)|`[^`]*`')
+URL_RE = re.compile(r'https?://\S+')                                  # 裸网址
+QUOTE_PAIR_RE = re.compile(r'[「『][^」』]*[」』]|“[^”]*”|"[^"]*"')     # 成对引号内容
+LEADING_MARKER_RE = re.compile(r'^\s*(?:[-*+]|\d+\.)\s+')             # 行首列表符号
+
+
+def sentence_lengths(s: str, quote_mode: str = "mask") -> list[int]:
+    """按 。！？； 切句段，返回每段字数（挤话判定原语，两检测器共用）。
+
+    量长度前依次剥：行首列表符号 → 链接 / 图片 / 行内代码 → 裸网址 → 引号内原文 →
+    强调符。只剥**行首**的列表符号——行中的 `1.` 是正文，剥了会把长度算短。
+
+    quote_mode 决定引号内原文怎么算（两种判据要的语义相反，不能共用一种）：
+      mask — 替成 1 个字符，长度不算进本文。长句判定用：引一段长公告不算自己写了长句。
+      fill — 替成等长填充，长度照算但不许内部标点切句。碎句判定用：若按 mask 算，
+             引一句长文案会把该句压成很短，把中位数拖低、把正常散文误判成碎句。
+    """
+    s = LEADING_MARKER_RE.sub('', s)
+    s = MD_NOISE_RE.sub('', s)
+    s = URL_RE.sub('', s)
+    if quote_mode == "fill":
+        s = QUOTE_PAIR_RE.sub(lambda m: "甲" * len(m.group(0)), s)
+    else:
+        s = QUOTE_PAIR_RE.sub('"', s)
+    s = s.replace('*', '')
+    return [len(seg.strip()) for seg in SENTENCE_SPLIT_RE.split(s) if seg.strip()]
+
+
+def median_sentence_len(s: str, quote_mode: str = "mask") -> float:
+    """句长中位数（无句段时 0）。偶数个取中间两个的均值。
+
+    用下中位数会把「几句短 + 一句中长」的段落误判成碎句（中位落到短的那侧）。
+    """
+    lens = sorted(sentence_lengths(s, quote_mode))
+    if not lens:
+        return 0.0
+    n = len(lens)
+    if n % 2:
+        return float(lens[n // 2])
+    return (lens[n // 2 - 1] + lens[n // 2]) / 2
 
 # ── bullet 串句（WARN · 一个 bullet 只扛一个原子断言） ────────────────────────
 # bullet 行内出现「句号 + 后续实质内容」= 句号没落行尾 = 把多条并列断言焊成一行
@@ -405,3 +447,105 @@ PRD_CHANGELOG_BODY_HISTORY = re.compile(
     r'|从「[^」]+」改名|形态从「[^」]+」改为|页面标题从「[^」]+」改名)'
 )
 PRD_CHANGELOG_ITERATION_WORDS = ['覆盖条目', '反转回', '中间稿', '上一稿', '前一版']
+
+
+# ── PRD 自检维度清单（唯一真源）──────────────────────────────────────────────
+# check_prd_md.sh 与 hook 侧新门都从这里取维度，不再各自维护副本。
+# 每项 = (md_scan 返回键, 人读标签)。按运行条件选入见下面两支函数。
+
+# 无条件 FAIL 维度
+_PRD_FAIL_BASE: list[tuple[str, str]] = [
+    ("date_tag_hits", "流水账日期 / 版本标记"),
+    ("zombie_heading_hits", "僵尸 heading（应物理删除）"),
+    ("v_tag_heading_hits", "heading 含 V 版本流水"),
+    ("tech_field_hits", "5 段式禁用研发字段（触发/读/写/事件/API）"),
+    ("circle_nums", "圈数字 ①②③（CLAUDE.md 全局禁）"),
+    ("decision_nums", "正文「决策 N」（应在 baseline 决策记录 / delta §6）"),
+    ("route_urls", "正文具体 URL / 路由（PM 不定义技术实现，应用「独立页 / 独立路由」业务语义）"),
+    ("pm_overreach_hits", "PM 角色越界禁词（hover / DOM / i18n / modal / cache / dirty / @media 等）"),
+    ("visual_overreach_hits", "PM 视觉细节越界（颜色 / 尺寸 / 描边 / 圆角 / 设备壳 / ✕ 等，应由设计规范定）"),
+    ("iteration_traces", "§1.4 核心变更迭代流水词"),
+    ("broken_image_alt", "图片 alt 为空"),
+    ("nested_subscenes", "5/6/7 章两层嵌套（##### N.x.y.z 禁，一层 #### N.x.y 物理分组放行）"),
+    ("horizontal_rule_hits", "水平线 ---（Confluence 渲染丑，章节用 h1/h2 自然分隔；表格 |---| 不算）"),
+]
+
+# 场景正文串句：§2.x 需求正文 现状 / 本轮 标签 bullet 焊多句。
+# 逃生阀 SKIP_SCENE_PROSE_GATE=1（连贯叙事确实该保留时用，用前先向用户说明原因——知会制）。
+_PRD_FAIL_SCENE_PROSE = (
+    "scene_prose_runon_hits",
+    "场景正文标签 bullet 焊多句（一 bullet 一原子事实 / 多阶段用 →；逃生阀 SKIP_SCENE_PROSE_GATE=1）",
+)
+
+# §X.Y 锚点死链 / 裸场景编号只在 split（多文件拼接）成立：拼页后锚点跨文件失效，
+# 裸编号在 scenes/ 散件里无上下文。单文件（single delta / baseline）内跳与编号索引是设计模式。
+_PRD_FAIL_SPLIT_ONLY: list[tuple[str, str]] = [
+    ("section_anchors", "正文「§X.Y」章节锚点（应用白话章节名）"),
+    ("bare_scene_codes", "正文裸场景编号（应用「编号 + 白话名」或纯白话）"),
+]
+
+_PRD_FAIL_PLACEHOLDERS = ("placeholders", "占位符残留（TBD/TODO/{{ 待填）")
+
+# 引用块 >：baseline 历史 living 文档存量豁免（等迭代消化），delta / single / split 都拦。
+_PRD_FAIL_BLOCKQUOTE = (
+    "blockquote_hits",
+    "引用块 >（Confluence 渲染丑，业务故事用 **业务故事**：正文；表格 | 不算）",
+)
+
+# 埋点表「应埋点平台」列出现服务端 / 后台类（CMS）→ FAIL（Platform C 只做 APP / Web 端埋点）。
+# baseline 存量豁免——历史事件已按服务端注册，不拦存量。
+_PRD_FAIL_SERVER_PLATFORM = (
+    "server_platform_tracking",
+    "埋点表应埋点平台含服务端 / 后台（只做 APP / Web 端埋点）",
+)
+
+# 无条件 WARN 维度
+PRD_WARN_KEYS: list[tuple[str, str]] = [
+    ("snake_field_hits", "snake_case 字段名（字段表已豁免）"),
+    ("css_impl_hits", "CSS 实现细节（PM 不应写）"),
+    ("cjk_half_punct", "CJK 旁半角标点"),
+    ("semicolon_abuse_hits", "分号滥用（单行 ≥ 2 分号 → 拆成 bullet 或 1.2.3. 编号；表格行豁免）"),
+    ("long_sentence_hits", "长句 run-on（句段 ≥ 100 字 → 拆句或转列表；表格行豁免）"),
+    ("bullet_runon_hits", "bullet 串句（行内句号串并列项 → 一项一 bullet，句号只落行尾；表格行豁免）"),
+    ("branch_prose_hits", "条件分支散文规则（全局规则章单行 ≥ 2 分支标记 → 改「给定｜当｜则」可断言表，见 prd-scene-templates §4.5；表格行豁免）"),
+    ("label_li_runs", "场景块 li 重复标签前缀（同一标签 ≥ 3 条连排 → 标签做组头一次、子项缩一级 bullet，见 prd-scene-template-quickref）"),
+    ("acceptance_echo_hits", "验收复述规格（同场景单元内验收 bullet 与规格 bullet 近重复 → 验收只写可验证判定点，能从规格直读的删掉）"),
+]
+
+# 骨架阶段：占位符从 FAIL 降 WARN（PM 填完前要清掉）
+_PRD_WARN_PLACEHOLDERS = ("placeholders", "占位符残留（骨架阶段允许，PM 填完前要清掉）")
+
+
+def prd_fail_keys(
+    split: bool = False,
+    skeleton: bool = False,
+    profile: str = "delta",
+    scene_prose: bool = True,
+) -> list[tuple[str, str]]:
+    """按运行条件返回 FAIL 维度清单。
+
+    Args:
+        split: PRD 是否 split 形态（同级有 {stem}-scenes/）
+        skeleton: 骨架阶段模式（占位符降 WARN）
+        profile: "baseline" 走 baseline 豁免集，其余按 delta
+        scene_prose: 是否查场景正文串句（逃生阀 SKIP_SCENE_PROSE_GATE=1 时传 False）
+    """
+    keys = list(_PRD_FAIL_BASE)
+    if scene_prose:
+        keys.append(_PRD_FAIL_SCENE_PROSE)
+    if split:
+        keys.extend(_PRD_FAIL_SPLIT_ONLY)
+    if not skeleton:
+        keys.append(_PRD_FAIL_PLACEHOLDERS)
+    if profile != "baseline":
+        keys.append(_PRD_FAIL_BLOCKQUOTE)
+        keys.append(_PRD_FAIL_SERVER_PLATFORM)
+    return keys
+
+
+def prd_warn_keys(skeleton: bool = False) -> list[tuple[str, str]]:
+    """按运行条件返回 WARN 维度清单。"""
+    keys = list(PRD_WARN_KEYS)
+    if skeleton:
+        keys.append(_PRD_WARN_PLACEHOLDERS)
+    return keys

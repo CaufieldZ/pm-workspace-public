@@ -1,28 +1,34 @@
 #!/usr/bin/env python3
-"""从 Confluence URL 拉取页面内容，自动适配 4 种形态。
+"""Confluence 读侧统一 CLI：定位页面 / 拉页面 / 批量考古。
 
-凭证（任一即可，--help 本身不需要）：
-  - env var：CONF_BASE_URL + CONF_TOKEN（开发推荐，不依赖私有配置）
-  - 仓库根 .mcp.json 的 mcpServers.confluence.env（PM 工作流默认）
+写侧（推 md 上去）走 `md_to_confluence.py`；裸 REST 透传走 `confluence_api.py`。
 
-最常用：
-  python3 scripts/fetch_confluence.py <url> --out-dir ./dump
-  # auto 嗅探形态：
-  #   父+子页 PRD → split-restore（还原本地 split 目录结构）
-  #   单页 markdown 宏 PRD → md-macro（CDATA 原样还原）
-  #   人编辑文档 → pandoc（保留 HTML 复杂表 + 精准下图）
+用法：
+    # 不知道 pageId：按标题定位，拿 pageId + URL
+    python3 scripts/confluence.py find "<标题词>" [--space <KEY>] [--limit N]
+    # 按内容词全文搜（哪个 space 的哪页提过 X）
+    python3 scripts/confluence.py search "<内容词>" [--space <KEY>] [--limit N]
+    # 看父页下的子页树
+    python3 scripts/confluence.py tree <parentId> [--recursive] [--max-depth N] [--show-url]
+    # 拉单页（auto 嗅探 4 种形态：split-restore / md-macro / pandoc / simple）
+    python3 scripts/confluence.py get <url> [--out-dir DIR | -p <项目>] [--mode ...] [--no-images]
+    # 考古：一组历史迭代文档聚成时间线语料
+    python3 scripts/confluence.py dig "<关键词>" [--space <KEY>] [--title] [--limit N] [-p <项目>]
+    python3 scripts/confluence.py dig --page-id <ID> [--diff N]
 
-可选：
-  --no-images                                    纯文字模式，不下图（md 引用保留为占位）
-  --view-map "4:broadcaster-h5,5:audience,..."   split-restore 模式 view 前缀映射
-  -p 项目名 / --out-dir 目录                      落盘位置（互斥）
-  --mode {auto,simple,md-macro,pandoc,split-restore}  强制指定模式
-  --html / --raw / --with-children               旧能力保留
+示例：
+    python3 scripts/confluence.py find "<功能名>" --limit 3
+    python3 scripts/confluence.py get "<页面 URL>" --out-dir ./dump
+    python3 scripts/confluence.py dig "<功能名>" --title --limit 5 -p <项目名>
 
-产物落点：-p → projects/{项目}/inputs/docs/；--out-dir → {dir}/{title}.md（pandoc/md-macro
-图落 {dir}/assets/）；都不传 → md 打 stdout。split-restore 模式必传其一，产物 =
-{stem}.md + {stem}-scenes/。
-退出码：1 = 参数互斥 / 页面未找到 / 凭证缺失（sys.exit 消息体见 stderr）。
+前置：Confluence 凭证 CONF_BASE_URL + CONF_TOKEN（env，或仓库根 .mcp.json /
+    .mcp-disabled.json 的 mcpServers.confluence.env）；--help 本身不需要。
+    get --mode pandoc 额外需要 pandoc（brew install pandoc）。
+产物：find / search / tree 打 stdout 不落盘；get 落 -p → projects/{项目}/inputs/docs/、
+    --out-dir → {dir}/{title}.md（图落 assets/），都不传则 stdout；dig 落
+    dig-{关键词}.md / dig-page-{pageId}.md（同 -p / --out-dir 规则，默认当前目录）。
+退出码：0 正常（命中 0 篇提示在 stdout，不算失败）；1 = 参数互斥 / 页面未找到 /
+    凭证缺失 / 命中 0 篇（dig）——消息体见 stderr。
 """
 
 # route-log: 调用埋点（scripts/lib/route_log.py）
@@ -30,10 +36,11 @@ import pathlib as _pl
 import sys as _s
 
 _r = next((p for p in _pl.Path(__file__).resolve().parents if (p / ".claude").is_dir()), None)
-_r and (_s.path.insert(0, str(_r / "scripts")), __import__("lib.route_log", fromlist=["emit"]).emit("fetch_confluence"))
+_r and (_s.path.insert(0, str(_r / "scripts")), __import__("lib.route_log", fromlist=["emit"]).emit("confluence"))
 
 import argparse
 import base64
+import difflib
 import html
 import re
 import shutil
@@ -46,14 +53,21 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 sys.path.insert(0, str(ROOT / "scripts"))
-from lib.confluence import (  # noqa: E402 （HTTP 层 + 凭据发现收口 lib）
+from lib.confluence_rest import (  # noqa: E402 （HTTP 层 + CQL 构造 + 凭据发现收口 lib）
     BATCH_PULL_CAP,
     api_get,
+    api_request,
+    base_url,
+    build_cql,
     fetch_attachments,
     fetch_children,
+    get_page,
+    list_child_pages,
     load_creds,
+    search_content,
+    search_pages,
 )
-from lib.confluence_storage import extract_referenced_images
+from lib.confluence_storage import extract_referenced_images  # noqa: E402
 
 
 def parse_url(url):
@@ -435,48 +449,294 @@ def page_to_md_block(page, heading_offset=0, img_mapping=None, img_rel_dir=None)
     return f"{heading_level} {title}\n\n> Confluence v{version} | pageId: {page_id}\n\n{md_body}"
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    parser.add_argument("url", help="Confluence 页面 URL")
-    parser.add_argument("--project", "-p", help="项目名（存到 projects/{项目}/inputs/docs/）")
-    parser.add_argument("--output", "-o", help="输出文件名（默认用页面标题）")
-    parser.add_argument("--out-dir", help="通用输出目录（与 -p 互斥）；md 落 {dir}/{title}.md，pandoc/md-macro 模式图落 {dir}/assets/")
-    parser.add_argument("--images", action="store_true", help="markdown + 图片目录（需 -p；pandoc/md-macro 模式默认下图，无需此 flag）")
-    parser.add_argument("--no-images", action="store_true", help="纯文字模式：不下载图，md 内图引用保留为占位（仅 pandoc/md-macro 模式生效）")
-    parser.add_argument("--html", action="store_true", help="单 HTML 文件，图片 base64 内嵌（需 -p）")
-    parser.add_argument("--raw", action="store_true", help="输出原始 Confluence 存储 HTML")
-    parser.add_argument(
-        "--mode",
-        choices=["auto", "simple", "md-macro", "pandoc", "split-restore"],
-        default="auto",
-        help=(
-            "auto（默认）按 storage 嗅探：父+子页+md宏 -> split-restore，单页+md宏 -> md-macro，其余 -> pandoc；"
-            "simple = 旧 html_to_markdown（向后兼容）；"
-            "md-macro = 剥 markdown 宏 CDATA 直出（PM push 的单页 PRD）；"
-            "pandoc = HTML -> GFM，保留 HTML 复杂表 + 全图本地预览（人编辑文档）；"
-            "split-restore = 还原本地 split 目录结构（主 md + scenes/{view}-{id}-{name}.md），父+子页 PRD 专用"
-        ),
-    )
-    parser.add_argument(
-        "--view-map",
-        help='split-restore 模式必填：章节号 -> view 前缀，逗号分隔。例: "4:broadcaster-h5,5:audience,6:broadcaster-web,7:cms"',
-    )
-    parser.add_argument(
-        "--stem",
-        help="split-restore 模式：主 md 文件名 stem（默认从父页标题派生）。最终产物 = {stem}.md + {stem}-scenes/",
-    )
-    parser.add_argument(
-        "--with-children",
-        action="store_true",
-        help=f"递归抓父页 + 所有子页合并 markdown（按 wiki 上 position 顺序拼接，"
-             f"子页 heading 自动下沉一级；单次最多 {BATCH_PULL_CAP} 子页，超出截断告警）；"
-             f"与 --mode pandoc/md-macro 不兼容",
-    )
-    args = parser.parse_args()
+def page_url(page: dict) -> str:
+    """从 page 的 _links.webui 拼完整 URL；缺失回退 viewpage.action。"""
+    webui = page.get("_links", {}).get("webui")
+    if webui:
+        return f"{base_url()}{webui}"
+    return f"{base_url()}/pages/viewpage.action?pageId={page['id']}"
 
+def render_find(hits: list[dict]) -> str:
+    """渲染 find 结果为一张表（标题 | space | pageId | URL）。"""
+    if not hits:
+        return "命中 0 篇。放宽关键词，或确认 --space 是否正确。"
+    lines = ["| 标题 | space | pageId | URL |", "|------|-------|--------|-----|"]
+    for p in hits:
+        space_key = p.get("space", {}).get("key", "—")
+        lines.append(f"| {p['title']} | {space_key} | {p['id']} | {page_url(p)} |")
+    return "\n".join(lines)
+
+
+def walk_tree(parent_id: str, recursive: bool, max_depth: int, _depth: int = 0) -> list[dict]:
+    """递归收集子页，返回 [{page, depth}, ...]（前序）。
+
+    max_depth 从 1 起（1 = 只直接子页）；recursive=False 等价 max_depth=1。
+    """
+    out: list[dict] = []
+    for p in list_child_pages(parent_id):
+        out.append({"page": p, "depth": _depth})
+        deeper = recursive and (max_depth <= 0 or _depth + 1 < max_depth)
+        if deeper:
+            out.extend(walk_tree(p["id"], recursive, max_depth, _depth + 1))
+    return out
+
+def clean_excerpt(excerpt: str) -> str:
+    """净化高亮摘要：去 HTML 实体翻转、剥 @@@hl@@@ 标记、压缩空白、截 80 字。"""
+    text = html.unescape(excerpt)
+    text = re.sub(r"@@@(?:hl|endhl)@@@", "", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text if len(text) <= 80 else text[:80] + "…"
+
+
+def search_space_key(result: dict) -> str:
+    """从 resultGlobalContainer.displayUrl（/display/<key>）取 space key，缺失回退空间名。"""
+    cont = result.get("resultGlobalContainer") or {}
+    m = re.search(r"/display/([^/?#]+)", cont.get("displayUrl") or "")
+    if m:
+        return m.group(1)
+    return cont.get("title") or "—"
+
+
+def search_page_id(result: dict) -> str:
+    """从 url 的 pageId= 参数取父页 id（attachment 结果指向其父页）；回退 content.id。"""
+    m = re.search(r"pageId=(\d+)", result.get("url") or "")
+    if m:
+        return m.group(1)
+    content = result.get("content")
+    if isinstance(content, dict) and content.get("type") == "page" and content.get("id"):
+        return str(content["id"])
+    return "—"
+
+
+def render_search(hits: list[dict]) -> str:
+    """渲染 search 结果为一张表（标题 | 类型 | 空间 | 摘要 | URL）。"""
+    if not hits:
+        return "命中 0 篇。放宽关键词，或确认 --space 是否正确。"
+    lines = ["| 标题 | 类型 | 空间 | 摘要 | URL |", "|------|------|------|------|-----|"]
+    for r in hits:
+        content = r.get("content")
+        kind = content.get("type", "—") if isinstance(content, dict) else "—"
+        url = f"{base_url()}{r.get('url', '')}".split("&preview=")[0]  # 去掉 preview 前缀尾巴
+        cells = [
+            str(r.get("title") or "—"),
+            str(kind),
+            str(search_space_key(r)),
+            clean_excerpt(r.get("excerpt") or ""),
+            url,
+        ]
+        cells = [c.replace("|", "\\|") for c in cells]  # 摘要/标题可能含 |，防表格断裂
+        lines.append("| " + " | ".join(cells) + " |")
+    return "\n".join(lines)
+
+
+def render_tree(nodes: list[dict], show_url: bool) -> str:
+    """缩进渲染树：每层两空格 + └─，可选带 pageId / URL。"""
+    if not nodes:
+        return "该父页下没有子页（或 parentId 不对）。"
+    lines = []
+    for n in nodes:
+        p = n["page"]
+        indent = "  " * n["depth"]
+        tail = f"  [{p['id']}]"
+        if show_url:
+            tail += f"  {page_url(p)}"
+        lines.append(f"{indent}- {p['title']}{tail}")
+    return "\n".join(lines)
+
+
+_VER_RE = re.compile(r"[vV](\d+(?:\.\d+)*)")
+_DATE_RE = re.compile(r"(\d{4})[-/.](\d{1,2})(?:[-/.](\d{1,2}))?")
+_QUARTER_RE = re.compile(r"(\d{4})?\s*[qQ]([1-4])")
+
+
+def title_version_key(title: str) -> tuple | None:
+    """从标题抽一个可比的版本键；抽不到返回 None。
+
+    命中优先级：日期（YYYY-MM[-DD]）> 季度（[YYYY]Qn）> vN[.n]。
+    返回可比 tuple，供有命名规律的迭代之间正序排列；无规律的交给创建时间兜底。
+    """
+    m = _DATE_RE.search(title)
+    if m:
+        y, mo, d = int(m.group(1)), int(m.group(2)), int(m.group(3) or 0)
+        return (0, y, mo, d)
+    m = _QUARTER_RE.search(title)
+    if m:
+        y = int(m.group(1)) if m.group(1) else 0
+        return (1, y, int(m.group(2)))
+    m = _VER_RE.search(title)
+    if m:
+        nums = tuple(int(x) for x in m.group(1).split("."))
+        return (2,) + nums
+    return None
+
+
+def sort_pages(items: list[dict]) -> list[dict]:
+    """按「创建时间为全局主键、标题版本号为同段 tie-break」正序排。
+
+    items: [{"page": {...}, "created": iso, "updated": iso}, ...]
+    创建时间保证全局单调；同时刻/相近文档再按标题版本键细分。
+    """
+    def key(item):
+        vk = title_version_key(item["page"]["title"])
+        return (item["created"], vk if vk is not None else ())
+
+    return sorted(items, key=key)
+
+
+SOP_BLOCK = """## 这份语料怎么用（下一步 SOP）
+
+1. 综合：把本语料喂 general-purpose agent，重建两段——「现状真相」（各功能最终态）+「演进时间线」（谁改了什么、带 pageId）。语料 > 1 万行时按时间正序分段并行派，agent prompt 禁读写 session-state。
+2. 反哺 baseline：**先做 gap 全量比对**（考古全部功能 vs baseline 逐项、标在线性），别只做「深度补强」就收工。完整四铁律见 `.claude/runbooks/confluence-archaeology.md`。
+"""
+
+
+def render_corpus(keyword: str | None, space: str, parent_id: str | None, items: list[dict], with_images: bool) -> str:
+    """把已排序的 items 渲染成一份考古语料 md（顶部时间轴索引 + 各篇正文）。"""
+    base = base_url()
+    lines = [
+        f"# 考古语料：{keyword or f'父页 {parent_id} 子树'}",
+        "",
+        f"> space=`{space}`"
+        + (f" · ancestor=`{parent_id}`" if parent_id else "")
+        + f" · 命中 {len(items)} 篇 · 按时间正序（创建时间为主，标题版本号细分）",
+        "",
+        SOP_BLOCK,
+        "## 命中清单（时间轴）",
+        "",
+        "| # | 文档 | 创建 | 最后更新 | 最后修改 | pageId |",
+        "|---|------|------|----------|----------|--------|",
+    ]
+    for i, item in enumerate(items, 1):
+        p = item["page"]
+        webui = p.get("_links", {}).get("webui")
+        url = f"{base}{webui}" if webui else ""
+        title_cell = f"[{p['title']}]({url})" if url else p["title"]
+        lines.append(
+            f"| {i} | {title_cell} | {item['created'][:10]} | {item['updated'][:10]} | {item['author']} | {p['id']} |"
+        )
+    lines += ["", "---", ""]
+
+    for i, item in enumerate(items, 1):
+        p = item["page"]
+        src = (
+            f"> 文档 #{i} · pageId {p['id']} · "
+            f"创建 {item['created'][:10]} · 最后更新 {item['updated'][:10]}"
+            + (f" · 最后修改 {item['author']}" if item["author"] != "—" else "")
+        )
+        block = page_to_md_block(
+            p,
+            heading_offset=1,
+            img_mapping=item.get("img_mapping") if with_images else None,
+            img_rel_dir="assets" if with_images else None,
+        )
+        lines += [src, "", block, "", "---", ""]
+
+    return "\n".join(lines)
+
+
+# ── 单页考古：当前正文 + 逐版本元数据时间线（--diff N 附正文 diff）────────────
+# 历史版本正文走 /rest/api/content/{id}?version=N&expand=body.storage。
+# /version 与 /diff 端点在 Platform C 实例均 404，故正文 diff 在本地用 difflib 算。
+
+
+def fetch_page_versions(page_id: str) -> tuple[dict, list[dict]]:
+    """拉当前页（含正文）+ 逐版本元数据（experimental /version/{n}，轻量）。
+
+    返回 (page, timeline)，timeline 新 → 旧 [{number, by, when, minor}, ...]。
+    """
+    page = get_page(page_id, expand="body.storage,version,history,space")
+    latest = page["version"]["number"]
+    timeline = []
+    for v in range(latest, 0, -1):
+        meta = api_request("GET", f"/rest/experimental/content/{page_id}/version/{v}")
+        timeline.append({
+            "number": meta.get("number", v),
+            "by": meta.get("by", {}).get("displayName", "—"),
+            "when": (meta.get("when") or "")[:19].replace("T", " "),
+            "minor": meta.get("minorEdit", False),
+        })
+        print(f"  → v{v}/{latest}", file=sys.stderr, end="\r")
+    print(file=sys.stderr)
+    return page, timeline
+
+
+def fetch_version_md(page_id: str, version: int) -> str:
+    """拉指定历史版本的正文，转 md（拿不到正文时返回空串）。"""
+    data = api_request("GET", f"/rest/api/content/{page_id}?version={version}&expand=body.storage")
+    storage = ((data.get("body") or {}).get("storage") or {}).get("value") or ""
+    return html_to_markdown(storage) if storage else ""
+
+
+def render_version_diff(page_id: str, versions: list[int]) -> str:
+    """逐版本正文 diff（旧 → 新），unified diff 格式。versions 必须升序。"""
+    bodies = {}
+    for v in versions:
+        bodies[v] = fetch_version_md(page_id, v)
+        print(f"  → 正文 v{v}", file=sys.stderr, end="\r")
+    print(file=sys.stderr)
+
+    lines = ["", "---", "", "## 版本正文 diff（旧 → 新）", ""]
+    for older, newer in zip(versions, versions[1:]):
+        a, b = bodies[older], bodies[newer]
+        if a == b:
+            lines += [f"### v{older} → v{newer}", "", "_（正文无变化）_", ""]
+            continue
+        d = list(difflib.unified_diff(a.splitlines(), b.splitlines(),
+                                      fromfile=f"v{older}", tofile=f"v{newer}",
+                                      lineterm="", n=2))
+        added = sum(1 for x in d if x.startswith("+") and not x.startswith("+++"))
+        removed = sum(1 for x in d if x.startswith("-") and not x.startswith("---"))
+        lines += [f"### v{older} → v{newer}（+{added} / -{removed} 行）", "",
+                  "```diff", *d, "```", ""]
+    return "\n".join(lines)
+
+
+def render_page_corpus(page: dict, timeline: list[dict], img_mapping=None) -> str:
+    """单页考古语料：版本时间线（新 → 旧）+ 当前正文。"""
+    lines = [
+        f"# 考古语料（单页）：{page['title']}",
+        "",
+        f"> pageId={page['id']} · 当前 v{page['version']['number']} · "
+        f"创建 {(page.get('history', {}).get('createdDate') or '')[:10]} · "
+        f"共 {len(timeline)} 版",
+        "",
+        SOP_BLOCK,
+        "## 版本时间线（新 → 旧）",
+        "",
+        "| 版本 | 修改人 | 时间 | minor |",
+        "|------|--------|------|-------|",
+    ]
+    for t in timeline:
+        lines.append(f"| v{t['number']} | {t['by']} | {t['when']} | {'是' if t['minor'] else '—'} |")
+    lines += ["", "---", ""]
+    lines.append(page_to_md_block(page, img_mapping=img_mapping, img_rel_dir="assets" if img_mapping else None))
+    return "\n".join(lines)
+
+
+# ── 子命令 handler ───────────────────────────────────────────
+
+def cmd_find(args) -> None:
+    cql = build_cql(space=args.space, title=args.title)
+    print(f"CQL: {cql}", file=sys.stderr)
+    hits = search_pages(cql, limit=args.limit, expand="space")
+    print(render_find(hits))
+
+
+def cmd_search(args) -> None:
+    cql = build_cql(space=args.space, text=args.keyword, type_page=False, order=None)
+    print(f"CQL: {cql}", file=sys.stderr)
+    hits = search_content(cql, limit=args.limit)
+    print(render_search(hits))
+
+
+def cmd_tree(args) -> None:
+    if args.max_depth and not args.recursive:
+        print("警告：--max-depth 需配合 --recursive 才生效，当前只列直接子页。", file=sys.stderr)
+    nodes = walk_tree(args.parent_id, args.recursive, args.max_depth)
+    print(render_tree(nodes, args.show_url))
+
+
+def cmd_get(args) -> None:
     # ── 互斥守门 ──
     if args.project and args.out_dir:
         sys.exit("错误：-p / --project 与 --out-dir 互斥")
@@ -493,7 +753,7 @@ def main():
     if args.view_map and args.mode not in ("auto", "split-restore"):
         sys.exit("错误：--view-map 仅 --mode split-restore 使用")
 
-    base_url, token = load_creds()
+    load_creds()  # 凭证缺失即早退（base_url() 从同一发现链取）
 
     result = parse_url(args.url)
     if isinstance(result, tuple):
@@ -730,7 +990,7 @@ def main():
         content = (
             f"# {title}\n\n"
             f"> Confluence v{version} | pageId: {page_id}\n"
-            f"> 源：{base_url}/pages/viewpage.action?pageId={page_id}\n\n"
+            f"> 源：{base_url()}/pages/viewpage.action?pageId={page_id}\n\n"
             f"{body_md.strip()}\n"
         )
 
@@ -793,9 +1053,185 @@ def main():
         print(content)
 
 
+def cmd_dig(args) -> None:
+    if args.project and args.out_dir:
+        sys.exit("错误：-p / --project 与 --out-dir 互斥")
+    if args.page_id:
+        if args.keyword or args.parent_id:
+            sys.exit("错误：--page-id 单页模式与 keyword / --parent-id 互斥")
+    elif not args.keyword and not args.parent_id:
+        sys.exit("错误：keyword 与 --parent-id 至少给一个（单页考古用 --page-id）")
+    if args.limit > BATCH_PULL_CAP:
+        sys.exit(f"错误：--limit 超过单次批量拉取上限 {BATCH_PULL_CAP}（安全限制）；更早文档用 --parent-id / --title 收窄后分批考古")
+
+    def _resolve_out_dir():
+        if args.project:
+            out = ROOT / "projects" / args.project / "inputs" / "docs"
+        elif args.out_dir:
+            out = Path(args.out_dir)
+        else:
+            out = Path.cwd()
+        out.mkdir(parents=True, exist_ok=True)
+        return out
+
+    # ── 单页考古模式 ──
+    if args.page_id:
+        out_dir = _resolve_out_dir()
+        page, timeline = fetch_page_versions(args.page_id)
+        img_mapping = None
+        if args.images:
+            refs = extract_referenced_images(page["body"]["storage"]["value"])
+            if refs:
+                atts = fetch_attachments(args.page_id, download=True, filter_names=refs)
+                img_mapping = save_images_to_dir(atts, out_dir / "assets") or None
+        corpus = render_page_corpus(page, timeline, img_mapping)
+        diff_note = ""
+        if args.diff:
+            latest = page["version"]["number"]
+            versions = list(range(max(1, latest - args.diff + 1), latest + 1))
+            corpus += render_version_diff(args.page_id, versions)
+            diff_note = f" + {len(versions) - 1} 组正文 diff"
+        out_path = out_dir / f"dig-page-{args.page_id}.md"
+        out_path.write_text(corpus, encoding="utf-8")
+        print(f"语料已写入 {out_path}（{len(timeline)} 版时间线 + 当前正文{diff_note}）")
+        return
+
+    kw_field = "title" if args.title else "text"
+    cql = build_cql(space=args.space, ancestor=args.parent_id, **{kw_field: args.keyword})
+    print(f"CQL: {cql}", file=sys.stderr)
+    hits = search_pages(cql, limit=args.limit, expand="body.storage,version,history,space")
+
+    if not hits:
+        if not args.keyword:
+            sys.exit(f"命中 0 篇。确认 --parent-id={args.parent_id} 下有子页、--space {args.space} 是否正确。")
+        hint = "" if args.title else "泛词试试 --title 走标题匹配（噪声少）；或"
+        sys.exit(f"命中 0 篇。{hint}放宽关键词，或确认 --space {args.space} / --parent-id 是否正确。")
+    if len(hits) >= args.limit:
+        if args.limit >= BATCH_PULL_CAP:
+            extra = f"已达单次批量拉取上限 {BATCH_PULL_CAP}（安全限制），更早文档用 --parent-id / --title 收窄后分批考古。"
+        else:
+            extra = "加大 --limit 可拉更多" + ("" if args.title else " 或加 --title 走标题匹配收窄噪声") + "。"
+        print(f"警告：命中 ≥ {args.limit} 篇，当前只取最新 {args.limit} 篇（更早的被切）。{extra}", file=sys.stderr)
+
+    # search 的 expand 直接带回正文 + 创建/更新时间/最后修改人，省掉逐页 get_page 的 N+1 请求
+    items = [
+        {
+            "page": h,
+            "created": h.get("history", {}).get("createdDate") or "9999",
+            "updated": h.get("version", {}).get("when") or "9999",
+            "author": h.get("version", {}).get("by", {}).get("displayName", "—"),
+        }
+        for h in hits
+    ]
+    items = sort_pages(items)
+
+    slug = (_safe_filename(args.keyword)[:40] if args.keyword else f"parent-{args.parent_id}") or "dig"
+    out_dir = _resolve_out_dir()
+    if args.images:
+        img_dir = out_dir / "assets"
+        for item in items:
+            # 只下 storage 实际引用的图（attachment 仓库含历史版本 + 未引用图，全集是垃圾流量）
+            refs = extract_referenced_images(item["page"]["body"]["storage"]["value"])
+            if not refs:
+                item["img_mapping"] = {}
+                continue
+            atts = fetch_attachments(item["page"]["id"], download=True, filter_names=refs)
+            item["img_mapping"] = save_images_to_dir(atts, img_dir) if atts else {}
+
+    out_path = out_dir / f"dig-{slug}.md"
+    out_path.write_text(
+        render_corpus(args.keyword, args.space, args.parent_id, items, args.images),
+        encoding="utf-8",
+    )
+    print(f"语料已写入 {out_path}（{len(items)} 篇）")
+    print("下一步：喂 general-purpose agent 重建「现状真相 + 演进时间线」。")
+    print("反哺 baseline 前先读 .claude/runbooks/confluence-archaeology.md（先 gap 全量比对，别只做深度补强）。")
+
+
+# ── CLI ──────────────────────────────────────────────────────
+
+def main() -> int:
+    ap = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    fp = sub.add_parser("find", help="按标题模糊找页面，拿 pageId + URL")
+    fp.add_argument("title", help="标题关键词（模糊匹配）")
+    fp.add_argument("--space", help="限定 space key（如 DEMO_SPACE_KEY；缺省不限）")
+    fp.add_argument("--limit", type=int, default=20, help="最多返回几条（默认 20）")
+
+    sp = sub.add_parser("search", help="按内容词全文搜索，返回 space + 高亮摘要 + pageId + URL")
+    sp.add_argument("keyword", help="内容词（全文匹配，CQL text~）")
+    sp.add_argument("--space", help="限定 space key（如 DEMO_SPACE_KEY；缺省不限）")
+    sp.add_argument("--limit", type=int, default=20, help="最多返回几条（默认 20）")
+
+    tp = sub.add_parser("tree", help="看父页下的子页树")
+    tp.add_argument("parent_id", help="父页 pageId")
+    tp.add_argument("--recursive", action="store_true", help="递归所有后代（默认只列直接子页）")
+    tp.add_argument("--max-depth", type=int, default=0, help="递归最大层数（0 = 不限；需配 --recursive）")
+    tp.add_argument("--show-url", action="store_true", help="每行带完整 URL")
+
+    gp = sub.add_parser("get", help="拉单页（auto 嗅探 4 种形态）")
+    gp.add_argument("url", help="Confluence 页面 URL")
+    gp.add_argument("--project", "-p", help="项目名（存到 projects/{项目}/inputs/docs/）")
+    gp.add_argument("--output", "-o", help="输出文件名（默认用页面标题）")
+    gp.add_argument("--out-dir", help="通用输出目录（与 -p 互斥）；md 落 {dir}/{title}.md，pandoc/md-macro 模式图落 {dir}/assets/")
+    gp.add_argument("--images", action="store_true", help="markdown + 图片目录（需 -p；pandoc/md-macro 模式默认下图，无需此 flag）")
+    gp.add_argument("--no-images", action="store_true", help="纯文字模式：不下载图，md 内图引用保留为占位（仅 pandoc/md-macro 模式生效）")
+    gp.add_argument("--html", action="store_true", help="单 HTML 文件，图片 base64 内嵌（需 -p）")
+    gp.add_argument("--raw", action="store_true", help="输出原始 Confluence 存储 HTML")
+    gp.add_argument(
+        "--mode",
+        choices=["auto", "simple", "md-macro", "pandoc", "split-restore"],
+        default="auto",
+        help=(
+            "auto（默认）按 storage 嗅探：父+子页+md宏 -> split-restore，单页+md宏 -> md-macro，其余 -> pandoc；"
+            "simple = 旧 html_to_markdown（向后兼容）；"
+            "md-macro = 剥 markdown 宏 CDATA 直出（PM push 的单页 PRD）；"
+            "pandoc = HTML -> GFM，保留 HTML 复杂表 + 全图本地预览（人编辑文档）；"
+            "split-restore = 还原本地 split 目录结构（主 md + scenes/{view}-{id}-{name}.md），父+子页 PRD 专用"
+        ),
+    )
+    gp.add_argument(
+        "--view-map",
+        help='split-restore 模式必填：章节号 -> view 前缀，逗号分隔。例: "4:broadcaster-h5,5:audience,6:broadcaster-web,7:cms"',
+    )
+    gp.add_argument(
+        "--stem",
+        help="split-restore 模式：主 md 文件名 stem（默认从父页标题派生）。最终产物 = {stem}.md + {stem}-scenes/",
+    )
+    gp.add_argument(
+        "--with-children",
+        action="store_true",
+        help=f"递归抓父页 + 所有子页合并 markdown（按 wiki 上 position 顺序拼接，"
+             f"子页 heading 自动下沉一级；单次最多 {BATCH_PULL_CAP} 子页，超出截断告警）；"
+             f"与 --mode pandoc/md-macro 不兼容",
+    )
+
+    dp = sub.add_parser("dig", help="考古：一组历史迭代文档聚成时间线语料")
+    dp.add_argument("keyword", nargs="?", help="feature 关键词（全文匹配）；省略则纯按 --parent-id 拉整棵子树")
+    dp.add_argument("--space", default="DEMO_SPACE_KEY", help="Confluence space key（默认 DEMO_SPACE_KEY）")
+    dp.add_argument("--parent-id", help="限定在某父页子树下（CQL ancestor 子句）；无 keyword 时必填")
+    dp.add_argument("--page-id", help="单页考古模式：当前正文 + 逐版本元数据时间线（与 keyword / --parent-id 互斥）")
+    dp.add_argument("--diff", type=int, nargs="?", const=2, metavar="N",
+                    help="单页考古附加：对比最近 N 个版本的正文（默认 2 = 上一版 vs 当前版；仅 --page-id 下有效）")
+    dp.add_argument("--limit", type=int, default=25, help=f"最多拉几篇（默认 25，取最新 N 篇；单次上限 {BATCH_PULL_CAP}）")
+    dp.add_argument("--title", action="store_true", help="按标题匹配（泛 feature 词强烈建议，噪声远少于全文）")
+    dp.add_argument("--project", "-p", help="项目名（语料落 projects/{项目}/inputs/docs/）")
+    dp.add_argument("--out-dir", help="通用输出目录（与 -p 互斥）")
+    dp.add_argument("--images", action="store_true", help="下载正文图片到 assets/（默认纯文字省 token；只下 storage 实际引用的）")
+
+    args = ap.parse_args()
+    {"find": cmd_find, "search": cmd_search, "tree": cmd_tree,
+     "get": cmd_get, "dig": cmd_dig}[args.cmd](args)
+    return 0
+
+
 if __name__ == "__main__":
     try:
-        main()
+        sys.exit(main())
     except urllib.error.HTTPError as e:
         body = e.read().decode()[:300]
         sys.exit(f"错误：Confluence HTTP {e.code}\n  {body}\n  检查 CONF_BASE_URL / CONF_TOKEN / 页面权限")

@@ -64,6 +64,10 @@ FORK_GROUPS: dict[str, tuple[str, list[str]]] = {
         ["hub/tracking-design/scripts/export_tracking_xlsx.py",
          "projects/community/scripts/export_tracking_xlsx.py"],
     ),
+    "scan_secrets": (
+        "hub/_scan_secrets.sh",
+        ["hub/secret-scan/scripts/scan_secrets.sh"],
+    ),
     "render_scene_list": (
         ".claude/skills/scene-list/scripts/render_scene_list.py",
         ["hub/scene-list/scripts/render_scene_list.py"],
@@ -72,9 +76,9 @@ FORK_GROUPS: dict[str, tuple[str, list[str]]] = {
         ".claude/skills/prd/scripts/gen_prd_skeleton.py",
         ["hub/prd/scripts/gen_prd_skeleton.py"],
     ),
-    "fetch_confluence": (
-        "scripts/fetch_confluence.py",
-        ["hub/confluence-cli/scripts/fetch_confluence.py"],
+    "confluence": (
+        "scripts/confluence.py",
+        ["hub/confluence-cli/scripts/confluence.py"],
     ),
     "md_to_confluence": (
         "scripts/md_to_confluence.py",

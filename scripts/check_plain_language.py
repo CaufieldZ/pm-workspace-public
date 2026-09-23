@@ -7,7 +7,7 @@ r"""
 
 违禁词（strict 全部阻断）：
   1. 内部文件名：baseline.md / scene-list.md / SKILL.md / CLAUDE.md / pm-methodology.md / artifact-conventions.md
-  2. 决策 / 章节锚点：决策 N / 第 N 章|节|条 / §X.Y（西文小节锚点）
+  2. 决策 / 章节锚点：决策 N / 第 N 章|节|条
   3. 场景编号裸引用：A-1 / B-2a / M-1 / D-1 / F-1（在正文段落里出现，需配白话名）
   4. 骨架锚点：PART A / PART 1 / PART B2（IMAP / 原型骨架内部编号外泄）
   5. 残留占位：[待补充*] / FIXME / TODO
@@ -27,7 +27,8 @@ Usage:
 
 --added-only：只报该文件相对 HEAD 的新增行。living 文档（baseline / 老 delta）存量违规
 多，全量扫会让每次编辑都被旧账拦下，只能走 SKIP 绕过、门沦为噪音。hook 走这个模式；
-人手动复查想拿全量清单就不传。
+人手动复查想拿全量清单就不传。行数上限（MAX_LINES）只管全量扫——超限文件在写盘路径上
+若照旧跳过，会记成 clean，门看着在跑其实零命中。
 
 前置：无。
 
@@ -291,7 +292,9 @@ def check_file(path: Path, added_only: bool = False) -> tuple[list, list]:
     except OSError:
         return [], []
     lines = text.splitlines()
-    if len(lines) > MAX_LINES:
+    # 上限只管全量扫：--added-only 只判新增那几行，大文件照扫不误工，
+    # 否则超限文件在写盘路径上会「跳过并记成 clean」——门看着在跑，实际零命中。
+    if not added_only and len(lines) > MAX_LINES:
         print(f"  ⚠ 跳过 {path}（{len(lines)} 行 > 上限 {MAX_LINES}，超限不扫）", file=sys.stderr)
         return [], []
     # .drawio / .mmd 只扫 label 文本（跳过 XML / mermaid 语法噪音），行号回原文件

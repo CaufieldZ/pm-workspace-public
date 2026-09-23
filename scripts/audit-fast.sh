@@ -57,16 +57,41 @@ FAIL=""
 # ── 0. standalone 产物跳过场景编号检查 ──
 # standalone skill (mrd-review / competitor-analysis 等) 不在 pipeline 上,
 # 产物本就不应该带 scene-list 编号 (例: 评审 MRD 时产品场景还没定)
+# 两份前缀清单（standalone / 合法前缀）都只取自 SKILL.md frontmatter：
+# 单进程一次抽完，逐文件 sed|head|tr 是一轮 ~4N 次 fork
 STANDALONE_PREFIXES=""
-for f in "$ROOT"/.claude/skills/*/SKILL.md; do
-  type_val=$(sed -n 's/^type: *//p' "$f" 2>/dev/null | head -1 | tr -d ' ')
-  [ "$type_val" != "standalone" ] && continue
-  pfx=$(sed -n 's/^output_prefix: *//p' "$f" 2>/dev/null | head -1 | tr -d ' ')
-  [ -z "$pfx" ] && continue
-  [ "$pfx" = "none" ] && continue
-  STANDALONE_PREFIXES="$STANDALONE_PREFIXES|$pfx"
-done
-STANDALONE_PREFIXES="${STANDALONE_PREFIXES#|}"
+VALID_PREFIXES=""
+eval "$(python3 - "$ROOT/.claude/skills" <<'PY'
+import pathlib, re, shlex, sys
+
+standalone, valid = [], []
+for f in sorted(pathlib.Path(sys.argv[1]).glob("*/SKILL.md")):
+    try:
+        lines = f.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        continue
+    type_val = prefix = None
+    for line in lines:                     # 每个键取首次出现（语义同 sed -n + head -1）
+        if type_val is None and line.startswith("type:"):
+            type_val = re.sub(r"^type: *", "", line).replace(" ", "")
+        if prefix is None and line.startswith("output_prefix:"):
+            prefix = re.sub(r"^output_prefix: *", "", line)
+        if type_val is not None and prefix is not None:
+            break
+    if prefix is None:
+        continue
+    # standalone 清单：值内空格全去（同 tr -d ' '），排除空串 / none
+    p_nospace = prefix.replace(" ", "")
+    if type_val == "standalone" and p_nospace and p_nospace != "none":
+        standalone.append(p_nospace)
+    # 合法前缀清单：按 , / 拆词（多前缀 frontmatter「A- / B-」「A-, B-」），排除 none
+    if prefix and prefix != "none":
+        valid.extend(prefix.replace(",", " ").replace("/", " ").split())
+
+print("STANDALONE_PREFIXES=" + shlex.quote("|".join(standalone)))
+print("VALID_PREFIXES=" + shlex.quote("|".join(valid)))
+PY
+)"
 
 SKIP_SCENE_CHECK=0
 if [ -n "$STANDALONE_PREFIXES" ] && echo "$BASENAME" | grep -qE "^($STANDALONE_PREFIXES)"; then
@@ -136,23 +161,13 @@ PY
 fi
 
 # ── 2. 命名前缀规范 ──
-# 动态读取所有 SKILL.md 的 output_prefix（排除 none）
-VALID_PREFIXES=""
-for f in "$ROOT"/.claude/skills/*/SKILL.md; do
-  pfx=$(sed -n 's/^output_prefix: *//p' "$f" 2>/dev/null)
-  [ -z "$pfx" ] && continue
-  [ "$pfx" = "none" ] && continue
-  # 单 skill 多前缀：frontmatter 用「A- / B-」或「A-, B-」分隔，拆成正则交替
-  pfx=$(echo "$pfx" | tr ',/' '  ' | tr -s ' ')
-  for p in $pfx; do
-    VALID_PREFIXES="$VALID_PREFIXES|$p"
-  done
-done
-VALID_PREFIXES="${VALID_PREFIXES#|}"
+# 前缀清单（含多前缀「A- / B-」拆词）已在 §0 随 frontmatter 一次性提取
 # prd skill「交付前冷读」工序产物（cold_read.py 生成的盲点清单），非顶层 skill 输出但是合法交付物
 VALID_PREFIXES="$VALID_PREFIXES|cold-read-"
 # PRD 衍生对接 handoff（给开发 / 数据组的专项抽取文档，非 skill 输出但是合法交付物）
 VALID_PREFIXES="$VALID_PREFIXES|handoff-"
+# 评审讲稿（PM 评审准备产物：对着原型怎么讲 / 收口清单 / Q&A 预案，非 skill 输出但是合法交付物）
+VALID_PREFIXES="$VALID_PREFIXES|review-"
 
 if [ -n "$VALID_PREFIXES" ]; then
   # 文件名如果以某个已知前缀开头就合法

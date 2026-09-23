@@ -56,7 +56,7 @@ scripts:
 **会拦你的 hook**：
 - `script-syntax-gate` / `cjk-punct`
 - `plain-language-gate` — proto-*.html 文案讲人话（禁裸编号 / 决策号）
-- `ui-annotation-gate` — 渲染壳内禁开发注解（`（此处占位）`/`注：`/`TODO` 会被开发误读为真实文案）；build 后 Bash 路径拦截
+- `ui-annotation-gate` — 渲染壳内禁开发注解（`（此处占位）`/`注：`/`TODO`）与内部编号（`A-1`/决策号/`baseline.md`）；build 后 Bash 路径拦截
 - `prototype-shell-gate` — page_fns 不生成设备壳
 - `prototype-split-gate` — proto-*.html 产出时校验 src/scenes 已拆分（找不到即 FAIL）
 - `prototype-audit` — 产出后自动跑 audit_against_baseline 摘要
@@ -104,7 +104,7 @@ bash .claude/skills/prototype/scripts/check_proto.sh deliverables/proto-*.html
 ### 文案讲人话
 
 12. **正文禁 PM 内部代号**：原型 HTML 文案给用户看，禁正文出现决策 N / 场景编号 A-1 / context 内部条目。规则源头 `.claude/runbooks/human-voice-rules.md`，`plain-language-gate` hook 拦截
-13. **屏内只放真实文案**：原型整份就是 UI，禁在渲染壳（`.app-mock` / `.web-front` / `.layout`）内写开发注解——`（此处占位）` / `（灰条占位）` / `（动态加载）` / `注：` / `TODO` 这类括注会被开发误读为真实产品文案。注解一律删掉。`ui-annotation-gate` hook 在 build 后拦截。留删判据：使用者在本页做决定需要知道的才留，系统内部机制 / 版本语言 / 算法口径归 PRD
+13. **屏内只放真实文案**：原型整份就是 UI，禁在渲染壳（`.app-mock` / `.web-front` / `.layout`）内写开发注解——`（此处占位）` / `（灰条占位）` / `（动态加载）` / `注：` / `TODO` 这类括注会被开发误读为真实产品文案；屏内也不放内部编号（裸场景编号 `A-1` / 决策号 / `baseline.md` 这类内部文件名）。注解与编号一律删掉。`ui-annotation-gate` hook 在 build 后拦截。留删判据：使用者在本页做决定需要知道的才留，系统内部机制 / 版本语言 / 算法口径归 PRD
 
 ### 共享场景库的装配纪律（建了 src/registry.py 就必吃）
 
@@ -186,7 +186,7 @@ project = {'name': 'Demo 直播', 'version': '2.3',
 
 **App 端接管整条顶导**（如需头像 + 搜索框 + 操作图标替代默认 p-nav）：在 crud CSS 补 `.app-mock > .p-nav{display:none}`，page_fns 自行渲染 `.app-nav` 替代。
 
-**改某页文案 / 场景结构后必须重拍该页全部自定义态截图**（如弹窗 TRTC/OBS 两态、直播间直播 / 回放两态）：`.freshness.json` manifest 按整页 `.p-page` DOM 子树 hash 判定，漏拍同页任一状态都会连带报 stale。同页多态截图在 `registry.py` 的 `Scene.extra_shots` 声明（每条 `{'suffix': 'replay', 'setup': 'switchXxx(true);'}`，输出 `proto-{end}-{end}-{page}-{suffix}.png`），screenshot 脚本通用循环遍历，不在脚本里硬编码 `if` 块。
+**改某页文案 / 场景结构后必须重拍该页全部自定义态截图**（如弹窗 TRTC/OBS 两态、直播间直播 / 回放两态）：`.freshness.json` manifest 按整页 `.p-page` DOM 子树 hash 判定，漏拍同页任一状态都会连带报 stale。同页多态截图在 `registry.py` 的 `Scene.extra_shots` 声明（每条 `{'suffix': 'replay', 'setup': 'switchXxx(true);'}`，输出 `proto-{end}-{end}-{page}-{suffix}.png`），screenshot 脚本通用循环遍历，不在脚本里硬编码 `if` 块；手机壳半屏浮层的下半区同理（`setup` 里设 `scrollTop`，见 `references/visual-rework-atlas.md §六`）。
 
 ### 美学通用底线（所有范式必吃）
 
@@ -411,7 +411,7 @@ _TONE['up'] / _TONE['down']     # 涨跌色
 
 **踩坑速查**（交付前过一遍）：
 - [ ] 一级页面展示的摘要 = 编辑弹窗数据（数据驱动根治）
-- [ ] 渲染壳内无开发注解（`（此处占位）`/`注：`/`TODO`），屏内只放真实文案
+- [ ] 渲染壳内无开发注解（`（此处占位）`/`注：`/`TODO`）、无内部编号（`A-1`/决策号/`baseline.md`）
 - [ ] 同一概念没有两种叫法
 - [ ] 多个编辑按钮传了索引参数，弹窗内容正确对应
 - [ ] 保存 = 写数据 + render + 关弹窗三步

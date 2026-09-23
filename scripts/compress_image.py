@@ -5,6 +5,10 @@ Bedrock 硬限制（any-image 和 many-image 两条均需满足）：
   - 任意维度 ≤ 2000px
   - 单文件 ≤ 5 MB（5 242 880 bytes）
 
+坑：`Image.open(p)` 后无条件 `im.save(p)` 会把 jpeg / webp 二次有损编码
+（实测 126 KB → 63 KB，跑两次持续掉画质不幂等）——「不需要改动」必须显式判空提前返回，
+别靠「结果看起来没变」。写体检类 warn 规则时阈值按信息密度校准，中文按字符数比英文会系统性误报。
+
 用法（单张）：
     python3 scripts/compress_image.py path/to/img.png
 用法（多张）：

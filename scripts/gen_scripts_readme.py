@@ -61,7 +61,7 @@ LIB_GROUPS = [
         "html_basics", "html_builder", "html_components", "md_to_html",
     ]),
     ("外部服务封装", [
-        "confluence", "confluence_storage", "google_sheets", "demand_pool_base",
+        "confluence_rest", "confluence_storage", "google_sheets", "demand_pool_base",
     ]),
 ]
 LIB_DEFAULT_GROUP = "其他"

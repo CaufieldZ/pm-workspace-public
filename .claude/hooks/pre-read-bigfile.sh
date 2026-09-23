@@ -36,7 +36,7 @@ esac
 # 已带 offset 或 limit → 放行(模型已知分页)。paging 标志由 hook_parse_read 一并解析，省一次 jq。
 [ "$HOOK_HAS_PAGING" = "1" ] && exit 0
 
-check_skip_env "read-bigfile" "SKIP_READ_BIGFILE_GATE" "$FILE_PATH"
+check_skip_env "read-bigfile" "SKIP_READ_BIGFILE_GATE" "$FILE_PATH" --exit
 
 LINE_COUNT=$(wc -l < "$FILE_PATH" 2>/dev/null)
 LINE_COUNT="${LINE_COUNT//[[:space:]]/}"   # 去 BSD wc 前导空格（参数展开，省 tr fork）

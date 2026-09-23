@@ -112,6 +112,8 @@ projects/{项目}/deliverables/{季度}/{版本}/
 
 配图不内嵌正文（营销排版设计侧另做），只在文末索引登记路径。docx 可选：需发运营 / 传阅时 `build_manual.py --promo` 转出。
 
+**句子质量过 promo-kit 判据**（营销稿与手册同适用，起草时一并过，不只看本 skill 模板）：可替换性（抽掉功能名还成立 = 通用句）+ 顺承 / 机制两条降档 + 六种关系写代号，判据与毙句库见 `.claude/skills/promo-kit/SKILL.md` §4。
+
 **多语言版本**：外文版落 `promo-{feature}-{lang}.md`（如 `-en`），与主稿并列、卖点/结构/配图一一对应。调性**按渠道分别本地化**，不逐句直译（英文 mock 走 native CT 语感而非中译英）。图上外文交 On-Image String Map（不改图）。mock 晒单文案默认中等档（有 KOL 味不脏）。详规见 `references/promo-localization.md`。
 
 ### callout 四类（手册模式 · blockquote，docx 由 callout.lua 渲成底纹框）

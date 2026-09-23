@@ -6,7 +6,8 @@
 
 新方案：遍历 body 下所有可见文本节点，按规则跳过：
 - 不可见标签（script/style/noscript/template/svg/code）
-- 锚点容器（phone-label / gd-num / id="scene-*"/.st > h2 等）整个子树
+- HTML 注释（不渲染，读者看不到）
+- 锚点容器（phone-label / gd-num / anno-n / .st > h2 等）整个子树
 - 框架/设备外壳容器（app-shell / gnav / gnav-view-section 等）整个子树
   ← 不含业务文本，只是布局
 
@@ -21,7 +22,7 @@
 """
 from __future__ import annotations
 
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup, Comment, Tag
 
 # 完全跳过的 HTML 标签（含子树）
 SKIP_TAGS = {
@@ -119,6 +120,9 @@ def iter_visible_text(html_text: str):
     for node in body.descendants:
         # 跳过 Tag 节点本身（只处理文本节点）
         if isinstance(node, Tag):
+            continue
+        # HTML 注释不渲染 —— 它不是可见文本，扫进来会让 <!-- 待删 --> 之类误报
+        if isinstance(node, Comment):
             continue
         # 必须是非空文本
         text = str(node).strip()

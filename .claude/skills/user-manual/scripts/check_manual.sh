@@ -17,6 +17,10 @@ user-manual Step B 自检：手册 / 营销稿 md 交付前三连检查。
 2) check_plain_language.py --strict（内部锚点 / 决策号 / 翻译腔）；3) check_cjk_punct.py --strict。
 2 / 3 项脚本不在则跳过对应节（warn 提示）。
 
+坑: --promo 会按文档内 ![]() 引用重建同目录 images-manifest.txt——渠道稿把图路径写在
+表格反引号里会被统计成 0 张，覆盖掉同目录已有手册的图片清单。在已有 manifest 的目录跑
+它之前先备份，跑完 git diff 核对。
+
 前置: pandoc 已装（build 步需要）；--help 不需要。
 
 退出码:

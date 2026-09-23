@@ -1,6 +1,9 @@
-"""md_to_confluence 纯函数测试（覆盖任务列表转换 + 提示面板宏）。"""
+"""md_to_confluence 纯函数测试（覆盖任务列表转换 + 提示面板宏 + 推送前断表检测）。"""
+from pathlib import Path
+
 import pytest
 from lib.confluence_md import _convert_task_lists, _split_md_around_fences, render_md_full
+from md_to_confluence import broken_tables, warn_broken_tables
 
 
 def test_pure_task_list_converts():
@@ -114,4 +117,48 @@ def test_steps_unterminated_is_text():
     """缺闭合 ::: 当普通文本，不误判为步骤表格。"""
     parts = _split_md_around_fences(":::steps\n| a | b |\n没闭合")
     assert all(k != "steps" for k, _ in parts)
+
+
+# ── 推送前断表检测 ──────────────────────────────────────────────
+
+@pytest.mark.parametrize("md,expected", [
+    # 断表：表体后空行，空行后落回表格行且不是新表头
+    ("| a | b |\n|---|---|\n| 1 | 2 |\n\n| 3 | 4 |\n", [5]),
+    ("| a | b |\n|---|---|\n| 1 | 2 |\n\n| 3 | 4 |\n| 5 | 6 |\n", [5]),
+    # 逐行夹空行：每处孤立行都要报出来，不能只报第一处
+    ("| a | b |\n|---|---|\n| 1 | 2 |\n\n| 3 | 4 |\n\n| 5 | 6 |\n", [5, 7]),
+    # 空行不止一行时报落回后的那一行
+    ("| a | b |\n|---|---|\n| 1 | 2 |\n\n\n| 3 | 4 |\n", [6]),
+    # 省略尾管的写法同样判为断表
+    ("| a | b\n|--- | ---|\n| 1 | 2\n\n| 3 | 4\n", [5]),
+])
+def test_broken_tables_detected(md, expected):
+    assert broken_tables(md) == expected
+
+
+@pytest.mark.parametrize("md", [
+    # 空行后是另一张表的表头（后面紧跟分隔行）→ 合法双表
+    "| a | b |\n|---|---|\n| 1 | 2 |\n\n| c | d |\n|---|---|\n| 3 | 4 |\n",
+    "| a | b |\n|---|---|\n| 1 | 2 |\n| 3 | 4 |\n",
+    "| a | b |\n|---|---|\n| 1 | 2 |\n\n正文段落\n",
+    "段落\n\n| a | b |\n|---|---|\n| 1 | 2 |\n",
+    # 围栏代码块内的 | 行不是表格
+    "| a | b |\n|---|---|\n| 1 | 2 |\n\n```\n| x | y |\n```\n",
+    # Confluence 转出的「每单元格独占一行」形态：每行只解析出 1 格，不是 md 表格
+    " | \n |\n 2 | 赵雪超 | 6月\n | 186\n\n | 刘益玮\n",
+    ' | Toast"下单成功"\n | -\n | \n | \n\n |\n',
+])
+def test_broken_tables_not_flagged(md):
+    assert broken_tables(md) == []
+
+
+def test_warn_broken_tables_silent_when_clean(capsys):
+    warn_broken_tables("| a | b |\n|---|---|\n| 1 | 2 |\n", Path("x.md"))
+    assert capsys.readouterr().err == ""
+
+
+def test_warn_broken_tables_reports_lines(capsys):
+    warn_broken_tables("| a | b |\n|---|---|\n| 1 | 2 |\n\n| 3 | 4 |\n", Path("x.md"))
+    err = capsys.readouterr().err
+    assert "x.md" in err and "L5" in err
 

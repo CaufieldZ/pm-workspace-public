@@ -233,7 +233,7 @@ from gen_flow_base import render_flowchart
 `_q(text)` — label 引号包裹 + 双引号换单引号 + `\n` 转 `<br/>`。
 
 环境依赖：
-- `mmdc`（`npm i -g @mermaid-js/mermaid-cli`），**≥ 11.16**——`swimlane-beta` 图型需要
+- `mmdc`（`npm i -g @mermaid-js/mermaid-cli`），**≥ 11.16**——`swimlane-beta` 图型需要。装时用 `PUPPETEER_SKIP_DOWNLOAD=true` + `PUPPETEER_EXECUTABLE_PATH` 指向本机 Chrome，省 150MB Chromium 下载；`mmdc` 不在 PATH 时 `gen_flow_base` 只写 .mmd 不报错，别以为图已更新
 - Chromium 由 `_find_chromium()` 自动探测：`PUPPETEER_EXECUTABLE_PATH` → Playwright 缓存 → puppeteer 缓存 → 系统 Chrome
 
 ## 自检清单

@@ -20,6 +20,7 @@ scripts:
   screenshot_for_prd.py: "PRD 截图 framework（IMAP 模式 shoot_from_imap + 原型模式 shoot_from_proto（骨架原型按 view × page discover）+ 截图同步落 .freshness.json manifest（v2：hash 而非 mtime，IMAP 按 .flow / 原型按 .p-page DOM 子树 hash 判定，无关 CSS/注释/reformat 不再误报；缺 manifest 自动降级 mtime）+ 通用 helpers）— python3 screenshot_for_prd.py --imap <html> -o <assets_dir> / --proto <html> -o <assets_dir>；项目原型脚本 import shoot_from_imap / shoot_from_proto / dismiss_all_overlays / assert_screenshots_fresh。--assert-fresh 模式供 check_prd_md.sh 调用"
   check_prd_md.sh: "md 自检（FAIL/WARN 分级，--skeleton 模式跳占位符 + 截图 + freshness）— bash check_prd_md.sh <prd.md> [--skeleton]。§X.Y 锚点 + 裸场景编号死链查只对 split（有 `-scenes/` 子目录）开，单文件（single delta / baseline）天然豁免；profile（按文件名 prd-*-baseline.md 判）只控 baseline 其他行为"
   cold_read.py: "交付前冷读反测打包 — python3 cold_read.py --prepare <prd.md> [--targets 3.1,4.1,5.1] [--mode leaf|dedup]。leaf（默认）= 叶子完整性 7 类盲区，按 target 出 N 个探针 + 落 cold-read-{date}.md；dedup = 语义赘述 6 类，全文单探针 + 落 dedup-scan-{date}.md。两者均 compose 全文 + 附 scene-list 落 context 文件；脚本只打包，实际冷读由「交付前冷读」Step 派 Agent 子代理跑"
+  migrate_scene_blocks.py: "场景块形态迁移（平铺 → 组头式）— python3 migrate_scene_blocks.py <prd.md> [--apply] [--report]。单遍扫描 + 块外字符按偏移原样切片 + 逐块文本等价门（正文有任何改动即中止不写盘）；缺省 dry-run，--apply 先落 .bak；混标签块整块跳过报行号"
   humanize/md_scan.py: "md 版扫描 — scan_human_voice_md(md_text) / scan_prd_structural_md(md_text)"
   core/md_renderer.py: "md 输出原语 — MdWriter / scene_5section_card / 等（被 sections_md.py 调用）"
   sections_md.py: "普通 12 章骨架 + 场景卡生成（被 gen_prd_skeleton.py 调用）：build_full_skeleton（普通 12 章）/ build_scene_file（split 子场景）+ 章节 render 原语与 SceneInfo 模型"
@@ -63,6 +64,7 @@ scripts:
 - `python3 screenshot_for_prd.py --imap <html> -o <assets_dir>` — IMAP 模式截图；`--proto <html>` 骨架原型通用截图（view × page discover）。**路由规则：项目根有 `scripts/screenshot_proto.py` → 必须走项目脚本，禁用 `--proto`**（项目脚本读 registry.shot_setup，含多场景页面会截到正确态；通用模式不读 registry，会停在默认态；框架已加 `screenshot-route-gate` 拦截）
 - `bash check_prd_md.sh <prd.md> [--skeleton]` — md 自检（FAIL/WARN 分级；死链查按是否有 `-scenes/` 判 split，单文件 delta / baseline 豁免）
 - `python3 cold_read.py --prepare <prd.md> [--targets 3.1,4.1,5.1]` — 交付前冷读打包（context 文件 + 探针 prompt + 报告模板），实际冷读派子代理跑
+- `python3 migrate_scene_blocks.py <prd.md> [--apply] [--report]` — 场景块平铺 → 组头式迁移（dry-run 缺省；--apply 先备份再落盘）
 - `python3 export_tracking_xlsx.py <prd.md> [-o out.xlsx]` — 埋点章节导出合并单元格 xlsx（事件级列同事件 merge）
 - `from humanize.md_scan import scan_human_voice_md, scan_prd_structural_md` — md 扫描
 - `from core.md_renderer import MdWriter, scene_5section_card` — md 输出原语
@@ -74,7 +76,8 @@ scripts:
 - `script-syntax-gate` / `cjk-punct` — 写 .py/.sh + md 自动跑
 - `prd-check-gate` — `gen_prd*.py` 后自动跑 `check_prd_md.sh --skeleton`
 - `prd-cross-check-gate` — PRD 写入后自动跑 7 维结构校验
-- `plain-language-gate` — 扫正文裸编号 / 锚点 / 翻译腔
+- `prd-content-gate` — PRD 写入后查本次新增行的内容硬错（流水标签 / 技术字段 / 越界禁词 / 场景正文串句等，维度与 `check_prd_md` 同源，`SKIP_PRD_CONTENT_GATE=1` 跳过）
+- `plain-language-gate` — 扫非 PRD 产物的正文裸编号 / 锚点 / 翻译腔（PRD 由 `prd-content-gate` 按 PRD 自己的口径判）
 - `pm-visual-gate` — 扫视觉越界（颜色 / 尺寸 / 描边 / 圆角 / 设备壳等视觉规格）
 - `baseline-fresh-gate` — 编辑 baseline / delta 后查反向合并新鲜度
 - `cold-read-gate` — delta PRD 推 Confluence 前查同目录冷读产物（缺则拦，`SKIP_COLD_READ_GATE=1` 跳过）
@@ -98,7 +101,7 @@ bash .claude/skills/prd/scripts/check_prd_md.sh projects/{项目}/deliverables/p
 ### 10 条核心硬规则
 
 1. **全文讲人话，不写技术黑话** — 全文（含契约层，章号见红线 3）禁 snake_case 研发字段（`trtc_enabled` / `card_id`）+ 禁旧模板五件套字段名（`**触发** / **读** / **写** / **事件** / **API**`）做 bullet 标签——禁的是行首标签用法（自检清单「模板字段名锁定」grep 的模式），不是正文自然语言里的「触发」一词。PM 用业务语义描述（「新增一条帖子记录」），研发 AI 自己反推 SQL / 事件名 / key。**唯一例外 = 埋点章事件 / 属性英文名**（行为分析平台外部契约）。业务方案专名（TRTC / OBS / RTMP）保留。完整禁用清单 `references/prd-scene-templates.md`
-2. **正文禁裸场景编号 + 禁 §X.Y 章节锚点**（见红线 1/2，单文件 = baseline + single delta 同样豁免，死链只在 split 查）— `A-1 / B-2 / M-1 / F-1` 和 `§5.1 / §4.1` 只能在章节标题、第 2.1 场景地图表、截图文件名、埋点事件名、md 链接里出现。正文跨章引用用「章节号 + 白话名」（`见 4.1 单帖卡片`）或「编号 + 白话名」（`F-1 推荐加权`）或纯白话名。`plain-language-gate` hook + `check_prd_md.sh` 兜底
+2. **正文禁裸场景编号 + 禁 §X.Y 章节锚点**（见红线 1/2，单文件 = baseline + single delta 同样豁免，死链只在 split 查）— `A-1 / B-2 / M-1 / F-1` 和 `§5.1 / §4.1` 只能在章节标题、第 2.1 场景地图表、截图文件名、埋点事件名、md 链接里出现。正文跨章引用用「章节号 + 白话名」（`见 4.1 单帖卡片`）或「编号 + 白话名」（`F-1 推荐加权`）或纯白话名。`prd-content-gate` hook + `check_prd_md.sh` 兜底
 3. **5/6/7 章子场景必须扁平** — 禁 `5.1.1 / 5.1.2` 嵌套。一件事需要拆就拆并列 `5.1 / 5.2`。`split_prd.py` 检测嵌套直接报错
 4. **同一字段只写一次** — 跨场景共用规则进第 4 章，场景独有进 5/6/7.x 系统检查；通用文案进第 8 章，场景文案进 5/6/7.x；状态机进 3.3，场景状态分支进 5/6/7.x；**异常场景共性进第 4 章「全局异常降级总则」**（接口超时 / 缓存兜底 / 全站规则继承 / 承载方边界），场景文件只留 1–3 条独有项 + 一行豁免注释。异常表 4 不写规则见 `references/prd-scene-templates.md §4.3.1`。完整归属矩阵 `references/prd-chapter-rules.md §二`
 5. **CJK 标点 + 圈数字** — CJK 旁禁半角 `,:;()`，禁圈数字 `①②③`。`check_cjk_punct.py --strict` + `humanize/md_scan.py` 兜底
@@ -122,6 +125,25 @@ bash .claude/skills/prd/scripts/check_prd_md.sh projects/{项目}/deliverables/p
 **§2.x 场景正文的 `**现状**` / `**修改点**`（delta，旧称「本轮」）bullet 是 FAIL 级契约（不是 WARN）**：这几个标签下的 bullet 一条只扛一个原子事实——一件事的多阶段（原状态 → 变更 → 现状）用 `→` 串成一行链，多件独立事各自一条 bullet，句号只落行尾不做行内焊接。`check_prd_md.sh` 的 `scene_prose_runon` 维阻断 commit（§6 决策记录章天然够不着，论证句照旧可长）。连贯叙事确实该整段保留时走逃生阀 `SKIP_SCENE_PROSE_GATE=1`——**用前先向用户说明为什么这段不该拆**（知会制）。
 
 正反例 + 细则（含 delta 叙事对保留指引）见 `references/prd-chapter-rules.md §三`，自检清单 9/10/11。
+
+### 简洁契约（简单的事用简单的话说）
+
+三件套管的是「一行塞了几件事」，这三条管「一件事被写复杂了」：
+
+1. 一件事一句话，说清谁、做什么、结果是什么。
+2. 限定条件只写会影响开发或测试的（阈值 / 端侧 / 角色 / 时序），其余不写。
+3. 能删的括号补充、名词串、抽象词直接删——删完意思不变，就说明它本来多余。
+
+改前 / 改后：
+
+- 改前：按身份与盈利额分流：非带单员小额盈利导晒单、大额盈利导带单员申请、带单员导带单项目卡
+  改后：普通用户赚得少，引去晒单；赚得多，引去申请带单员。已经是带单员的，引去发带单卡。
+- 改前：机器人只在两种时机发言：刚开播、转冷场；发言量按真人活跃度补——真人发言少时机器人多补，真人活跃后机器人少发或停发
+  改后：机器人只在刚开播、转冷场时发言。真人不说话时多补，真人活跃后少发或停发。
+- 改前：顺带一个明确的减法：点赞、观看人数、打赏三路假数据连配置带逻辑一并下线
+  改后：点赞、观看人数、打赏三路假数据一并下线
+
+机械检测够不着这类语义判断，靠 Step 3.5 冷读的 `--mode dedup` 探针（「简单的事写复杂」一类）。
 
 ### 语义去重三条（delta 最大字数黑洞，句法三件套管不到）
 
@@ -198,7 +220,7 @@ python3 .claude/skills/prd/scripts/gen_prd_skeleton.py -p {产品线/项目} -v 
    - 3.3 状态机同理：只画本期新对象，既有对象状态沿用现状
 4. 第 4 章全局业务规则（先定 contract）
 5. 第 5/6/7 章子场景（按模板逐个填，可并行；UI 场景走区块表 4.1，横切策略走粗体段 4.2，详见 `references/prd-scene-templates.md`）
-6. 第 8/9/10 章（文案 / 埋点 / SLA，并行）。埋点表写完后：
+6. 第 8/9/10 章（文案 / 埋点 / SLA，并行）。埋点表开写前先查证命名——probe 行为分析平台真名 + grep 域字典抄范式（三步细则见 `references/prd-chapter-rules.md` §三点八）；写完后：
    - **推 Confluence（首选）**：`md_to_confluence.py <prd.md> --merge-tracking`，wiki 上事件级列自动合并单元格，无需额外文件
    - **单独发给研发（备用）**：`python3 .claude/skills/prd/scripts/export_tracking_xlsx.py <prd.md>` 导 xlsx，用于不看 wiki 的场景
 7. 第 11/12 章（排期 + 附录，最后）
@@ -209,10 +231,12 @@ python3 .claude/skills/prd/scripts/gen_prd_skeleton.py -p {产品线/项目} -v 
 
 md 是源文件，PM 直接 VS Code / Edit 改。改完跑 `check_prd_md.sh` 过则推。**不需要 gen_prd_v{N+1}.py 这种 per-project 生成器**。
 
+**整篇形态迁移**（存量平铺块 → 组头式，PM 提「形态统一 / 标签排一列不好读」时）走 `migrate_scene_blocks.py`，禁手写转换脚本——守卫（文本等价门 / 备份 / 整块拒绝）都在脚本里，见 quickref §五。
+
 split 模式：
 - 改主骨架（1-4 / 8-12 章）→ 直接编辑 `prd-xxx-v{N}.md`
 - 改某场景 → 编辑 `prd-xxx-v{N}-scenes/{view}-{编号}-{名}.md`
-- 加新场景 → 主 md 的 5/6/7 章 bullet 加链接 + scenes/ 目录建新 md
+- 加新场景 → **先在 `scene-list.md` 落编号，再写 PRD**（PRD 里先用新编号会被 `audit-fast` 拦「场景编号未定义」）+ 主 md 的 5/6/7 章 bullet 加链接 + scenes/ 目录建新 md
 - 删场景 → 主 md 删链接行 + 删 scenes/ 文件
 
 ### Step 2：重生骨架的 stale 清理（--force 陷阱）
@@ -252,10 +276,21 @@ python3 .claude/skills/prd/scripts/gen_prd_skeleton.py -p {项目} -v {N} --forc
    from screenshot_for_prd import launch_page, dismiss_all_overlays, fix_dpi
    ```
 
+5. **生图补示意（`image_gen.py`）** → 若某示意图**拍不出来**（页面外的系统通知 / 跨系统时序 / 现有原型表达不了的新态），用最接近的真实原型截图走以图生图补：
+   ```bash
+   python3 scripts/image_gen.py "<只改 X + 逐条保留清单>" --edit <最接近的原型截图> \
+     --size 2048x1024 --quality high --out <delta>/assets/mock-{view}-{page}-{主题}.png
+   ```
+   - **必须喂真实原型截图（`--edit`）**：凭空文生图会编出产品里不存在的措辞——实测把工作台真实的「同意 / 拒绝」编成「通过 / 拒绝」。真图打底才保得住真实文案与布局。取材优先级：归档 delta 里的真实原型截图 > 当前原型重截 > 线上截图
+   - 出图后**逐字核对图内文字**（模型会编数据与文案）；图内文字越少越准，说明性文字放图外
+   - 新页面首版（无真图可喂）**不走生图**，等原型出来再截
+   - `--edit` 会把参考图原图字节发到外部端点；参考图含未发布界面时先确认该端点可用（数据出域判断）
+
 **源 HTML 探测**：`discover_source_html` 合并 prototype + IMAP 候选（`*原型*.html` / `proto-*.html` / `*交互大图*.html` / `imap-*.html`），取 mtime 最新。任一源动了 → PNG stale。archive / deprecated 子串排除。
 
 **命名 / 路径**：
 - 文件 `scene-{编号}.png`（如 `scene-A-1.png` / `scene-D-0-mylive.png`）；原型模式 `proto-{view}-{page}.png`（如 `proto-h5-center.png`）
+- 生图示意用 `mock-{view}-{page}-{主题}.png`，alt 必须标「（示意，非原型实拍）」——`scene-*` / `proto-*` 是原型实拍、受 `.freshness.json` 追踪；`mock-*` 无 DOM 无追踪，只作说明不作规格依据
 - 输出 `deliverables/assets/`，md 引用 `![alt](./assets/xxx.png)`（split 子场景用 `../assets/`）
 
 **自动守门**：`check_prd_md.sh --assert-fresh` 比对源 HTML mtime（实为 .freshness.json hash 判定 .flow DOM 子树，无关 CSS / 注释不再误报；缺 manifest 降级 mtime），FAIL raise + 列过期清单。
@@ -357,6 +392,7 @@ AI 在 PM 推之前主动问一次。
 
 - `patch` = `编号 / 需求 / 端 · 模块 / 修改点 / 验收 / 优先级`。骨架**不为任何需求预生成 H3 块**——轻项在表里就讲完了，重项才另起。**升块判据**（任一命中）：新增 / 变更业务对象 · 涉状态流转 · 跨端行为不一致 · 有取舍要在 §6 交代；重项模板在骨架 §2.0 表后的 HTML 注释里，复制出来用。「默认最轻、升块是加法」是承重设计，反过来（预生成四槽靠删）必然被填满。`check_prd_md.sh` 的「delta 分量伸缩启发式」报 WARN 兜底（该塌没塌 + 「详见 2.N」悬空指针）
 - `bundle` = `编号 / 需求 / 分组 / 反向合并目标 / 优先级`，分组**只许沿一条轴**（模块 > 用户旅程 > 跟版边界 > 团队，选读者跨引最少的一条），每条需求仍出 H3 块
+- **`feature` / `bundle` 档骨架会按 scene-list 全部场景预生成 §2.N 场景块**（`patch` 档只吐 §2.0 索引表、不预生成块）——块数是产品线场景总数、不是本轮需求数。按「只写本轮改动」裁掉非本轮场景块并重编号（脚本切块，别手工逐块删，删漏一块就是一个空壳章）
 - **bundle 按端拆文件**（触发条件：各端有独立研发团队 + 开发明确要求）：一个版本号下产多个文件 `prd-{线}-{版本}-{端}.md`（如 `-web.md` / `-app.md`），每个文件是完整独立的 delta（含自己的 §1–§9），静态章按本端内容裁剪（无关的业务对象 / 状态机 / 规则整章删），原合并文件加废弃注释指向拆分后的文件。同版本的索引表只在原文件或约定的一端保留，拆分后各文件 §2.0 只列本端需求。
 
 详见 [prd-chapter-rules.md §2 行文](references/prd-chapter-rules.md)。
@@ -366,6 +402,8 @@ AI 在 PM 推之前主动问一次。
 - `--tier` 只管 §2 怎么排版（索引 + 分组 vs 平铺叙事），不决定四支柱有没有内容。两者各管各的，别混。
 
 **反向合并映射唯一落在 §9 表**：骨架正文不吐「本轮无 X 则删本章 / 上线后反向合并进 baseline §X」这类章首导语（plumbing 进不了交付物）。哪章可删、合并到 baseline 哪章，看 §9 反向合并指引表（推 Confluence 时 §9 自动剥离，见 Step 4）。
+
+**小需求 delta 先做形态校准**：写之前翻同产品线最近一个补丁包（`deliverables/{季度}/` 里最近的小版本）作形态基准——骨架的完整仪式感（场景块三列表 / 四段法决策 / 逐项埋点看板表）不该对小需求全量启用，别让轻需求撑出重文档。
 
 ## API 速查
 
@@ -404,7 +442,7 @@ python3 .claude/skills/prd/scripts/export_tracking_xlsx.py <prd.md> [-o out.xlsx
 
 ## 自检清单（PM 交付前过一遍）
 
-**机器已拦（信任 checker，不用人肉复查第二遍）**：`bash check_prd_md.sh <prd.md>` exit 0 已覆盖——§X.Y 锚点 + 裸场景编号死链（只对 split 开，单文件 = baseline + single delta 天然豁免；profile 仅控 baseline 其他行为）、行内版本标签、mermaid / URL 路由、`---` 水平线、`>` 引用块（baseline 例外）、占位符（终态）、行文三件套 WARN（单行 ≥ 2 分号 / 句段 ≥ 100 字 / bullet 行内串句，豁免细则 `references/prd-chapter-rules.md §三`）、组头式三段式标签（`label_li_runs`）。`python3 scripts/check_cjk_punct.py <md> --strict` exit 0 已覆盖 CJK 标点。FAIL/WARN 直接修。
+**机器已拦（信任 checker，不用人肉复查第二遍）**：`bash check_prd_md.sh <prd.md>` exit 0 已覆盖——§X.Y 锚点 + 裸场景编号死链（只对 split 开，单文件 = baseline + single delta 天然豁免；profile 仅控 baseline 其他行为）、行内版本标签、mermaid / URL 路由、`---` 水平线、`>` 引用块（baseline 例外）、占位符（终态）、行文三件套 WARN（单行 ≥ 2 分号 / 句段 ≥ 100 字 / bullet 行内串句，豁免细则 `references/prd-chapter-rules.md §三`）、组头式三段式标签（`label_li_runs`）、文档结构（章节数较上一版减少 / 标题前缺空行 / 表格单元格内空行 = FAIL，行数缩水逾两成 = WARN；逃生阀 `SKIP_PRD_STRUCT_GATE=1`）。`python3 scripts/check_cjk_punct.py <md> --strict` exit 0 已覆盖 CJK 标点。FAIL/WARN 直接修。
 
 **人肉盲区（机器抓不到，真要过）**：
 

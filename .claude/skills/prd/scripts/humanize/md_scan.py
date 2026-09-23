@@ -52,6 +52,7 @@ from .patterns import (
     SNAKE_FIELD,
     ZOMBIE_HEADING,
     is_exempt_chapter,
+    sentence_lengths,
 )
 
 # 水平线：一行仅 3+ 个连字符。表格分隔行 |---| 含 | 不匹配，天然豁免；Confluence 不渲染且显示丑。
@@ -195,16 +196,14 @@ def _scan_server_platform_tracking(md_text: str) -> list[str]:
 
 
 def _longest_sentence_len(line: str) -> int:
-    """剥 markdown 噪音后按 。！？； 切句段，返回最长句段的字数。
+    """按 。！？； 切句段，返回最长句段的字数。
 
-    每段去掉行首列表 / 编号 / 引用标记再量，避免把 `- ` / `1. ` 算进长度。
+    剥噪音与切句都走 patterns.sentence_lengths（与 check_bullet_density 同一份原语，
+    两边口径不再各写一套）。MD_NOISE_RE / SENTENCE_SPLIT_RE 在本模块仍被别处用到，
+    故保留 import。
     """
-    cleaned = MD_NOISE_RE.sub("", line).replace("*", "")
-    longest = 0
-    for seg in SENTENCE_SPLIT_RE.split(cleaned):
-        seg = seg.strip().lstrip("-*>#0123456789. 、)）")
-        longest = max(longest, len(seg))
-    return longest
+    lens = sentence_lengths(line)
+    return max(lens) if lens else 0
 
 
 _QUOTE_PAIR_RE = re.compile(r'[「『][^」』]*[」』]|“[^”]*”|"[^"]*"')
@@ -361,8 +360,9 @@ def scan_human_voice_md(md_text: str) -> dict:
             if H2_V_TAG.search(line):
                 v_tag_heading_hits.append(f"L{line_no}: {line.strip()[:80]}")
             continue
-        # 章节豁免（句号维度）：H1 或 H2 命中豁免名单即整章免查长句 / bullet 串句
-        # （与 check_bullet_density block 一致——它在任一 H1/H2 边界重置 in_exempt）
+        # 章节豁免只作用于「长句 run-on」一维：H1 / H2 命中豁免名单（决策 / 变更 / 埋点章）
+        # 的论证叙事一句本就长，硬砍割裂推理。句号密度 / 分号串 / bullet 串句不吃豁免，
+        # 与 check_bullet_density 的分章口径一致。
         _exempt_chapter = is_exempt_chapter(_h1) or is_exempt_chapter(h2)
         if _FENCE_RE.match(line) or line.strip().startswith("```"):
             continue
@@ -461,7 +461,7 @@ def scan_prd_structural_md(md_text: str, scene_count: int = 0) -> dict:
     blockquote_hits: list[str] = []
 
     in_changelog = False
-    section_text_lines: list[str] = []
+    section_changelog_lines: list[tuple[int, str]] = []
     for _line_no, line, _h1, _h2, in_heading in _iter_lines_with_h2(md_text):
         if in_heading:
             if line.startswith("## 1.4"):
@@ -470,9 +470,15 @@ def scan_prd_structural_md(md_text: str, scene_count: int = 0) -> dict:
             else:
                 in_changelog = False
         if in_changelog:
-            section_text_lines.append(line)
-    section_changelog = "\n".join(section_text_lines)
-    iteration_traces = [w for w in PRD_CHANGELOG_ITERATION_WORDS if w in section_changelog]
+            section_changelog_lines.append((_line_no, line))
+    # 带行号：命中要能定位到 §1.4 的哪一行，光给词形 PM 得自己回查全文。
+    # 同一词多处出现只报首次（词是全集，报一次够定位）。
+    iteration_traces = []
+    for word in PRD_CHANGELOG_ITERATION_WORDS:
+        for no, ln in section_changelog_lines:
+            if word in ln:
+                iteration_traces.append(f"L{no}: {word}")
+                break
 
     # 用户故事引言现在只在场景级 h3（### X.Y M-/A-/D- ...）下要求，
     # 所有 H1 一级章（含场景章 5/6/7）都是骨架章，不查 H1 引言。
@@ -555,10 +561,13 @@ def scan_prd_structural_md(md_text: str, scene_count: int = 0) -> dict:
             nested_subscenes.append(f"L{line_no}: {raw_line.strip()[:80]}")
 
     # 场景块 li 重复标签前缀（WARN）：三段式标签（显示逻辑 / 显示要素 / 交互）每个区块
-    # 只该做一次组头、子规则缩一级 bullet；逐条 li 都焊「显示逻辑：」前缀 = 结构冗余，
+    # 只该做一次组头、子规则缩一级 bullet；逐条 li 都焊标签前缀 = 结构冗余，
     # 行形状检查（分号 / 长句）各自看单行都合格，抓不到。连续 ≥ 3 条同前缀 li 报一处。
+    # 前缀家族三种平铺写法都认：`标签：` / `<strong>标签</strong>：` / `标签 · `；
+    # 组头式（标签后直接换行跟嵌套列表）不在此列，不会误报。
     label_li_runs: list[str] = []
-    _LABEL_LI_RE = re.compile(r"^\s*<li>\s*(显示逻辑|显示要素|交互)：")
+    _LABEL_LI_RE = re.compile(
+        r"^\s*<li>\s*(?:<strong>\s*)?(显示逻辑|显示要素|交互)\s*(?:</strong>)?\s*[：:·]")
     _LABEL_RUN_THRESHOLD = 3
     run_label, run_start, run_len = None, 0, 0
     in_fence = False
@@ -573,13 +582,13 @@ def scan_prd_structural_md(md_text: str, scene_count: int = 0) -> dict:
         else:
             if run_len >= _LABEL_RUN_THRESHOLD:
                 label_li_runs.append(
-                    f"L{run_start}: 连续 {run_len} 个「{run_label}：」前缀 li（标签做组头一次，子项缩一级 bullet）"
+                    f"L{run_start}: 连续 {run_len} 个「{run_label}」前缀 li（标签做组头一次，子项缩一级 bullet）"
                 )
             run_label = m.group(1) if m else None
             run_start, run_len = line_no, (1 if m else 0)
     if run_len >= _LABEL_RUN_THRESHOLD:
         label_li_runs.append(
-            f"L{run_start}: 连续 {run_len} 个「{run_label}：」前缀 li（标签做组头一次，子项缩一级 bullet）"
+            f"L{run_start}: 连续 {run_len} 个「{run_label}」前缀 li（标签做组头一次，子项缩一级 bullet）"
         )
 
     return {

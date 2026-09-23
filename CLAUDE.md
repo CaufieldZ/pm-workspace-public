@@ -39,27 +39,28 @@
 | 触发词 | 直接执行 |
 |--------|----------|
 | **📚 Wiki / Confluence** | |
-| 拉 Confluence/wiki | `fetch_confluence.py <url> [-p {项目}]`（4 形态自适应，指定形态 `--mode`；可下图 / 带子页）|
-| 不知道 pageId/URL 定位页面 | `nav_confluence.py find "标题词" [--space <KEY>]` 拿 pageId+URL；`tree <parentId> [--recursive]` 看子页树 |
-| 内容词全文搜索（哪页提到 X / 哪个 space 有） | `nav_confluence.py search "内容词" [--space <KEY>] [--limit N]`（高亮摘要 + 空间归属 + URL）|
-| 考古 feature（多篇迭代文档聚成时间线语料） | `dig_confluence.py "关键词" --space <KEY> [-p {项目}]`（单页换 `--page-id`）→ 喂 agent 重建现状 + 演进 |
+| 拉 Confluence/wiki（已知 URL） | `confluence.py get <url> [-p {项目}]`（`--mode` 指定形态；可下图 / 带子页）|
+| 定位页面 / 全文搜索 / 看子页树（不知道 pageId） | `confluence.py find "标题词"` 拿 pageId+URL · `search "内容词"` 全文（高亮摘要 + 空间归属）· `tree <parentId> [--recursive]`；均可 `--space <KEY>` |
+| 考古 feature（多篇迭代文档聚成时间线语料） | `confluence.py dig "关键词" --space <KEY> [-p {项目}]`（单页换 `--page-id`）→ 喂 agent 重建现状 + 演进 |
 | 直接调 Confluence REST（透传/调试/临时 CQL） | `confluence_api.py <endpoint> [-X POST] [-f k=v] [--jq '...']`（迷你 jq：点路径 / `.a[]` / `\| length`）|
 | 推 Confluence | `md_to_confluence.py <md> --parent-id <id>`（自动剥内部章节 + 传本地图；覆盖已有页加 `--update-id`）|
 | **🧠 MCP 按需调用** | |
 | 联网搜索（无 WebSearch 模型必跑 / 中文站点优先） | `call_mcp.py call web-search-prime web_search_prime search_query="..."` |
 | 网页读取（已知 URL 抓正文） | `call_mcp.py call web-reader webReader url="..."`；SPA / 反爬 / 需交互 → browser-use |
-| 读开源仓库/GitHub 源码 | `call_mcp.py call zread search_doc repo_name="owner/repo" query="..."`（另有 `get_repo_structure` / `read_file`，参数均 `repo_name`）|
+| 读开源仓库/GitHub 源码 | `gh` CLI（本工区唯一入口）→ cheatsheet §gh |
 | Outlook 邮件/日历/联系人 | `call_mcp.py call outlook_mcp <tool> ...`（全量工具 `call_mcp.py list outlook_mcp`；**返回双层 JSON 需二次 `json.loads`**；登录失效先 `get_login_url`）|
-| 识图/OCR/图表/视频 | 模型原生看图。**Read 前预检**：任意维度 > 2000px 或 > 5 MB 先跑 `compress_image.py`（Bedrock 硬限制）|
+| 识图/OCR/图表/视频 | 模型原生看图。**Read 前预检**：任意维度 > 2000px 或 > 5 MB 先跑 `compress_image.py`|
 | **📊 行为分析平台 / 报表** | |
-| 行为分析平台周报数据 | `.claude/skills/data-report/scripts/fetch_weekly_sensors.py --week-end <周五>`（一条命令拉全周报口径）|
+| 行为分析平台周报数据 | `.claude/skills/data-report/scripts/fetch_weekly_sensors.py --week-end <周五>` |
 | 行为分析平台任意查数（UV/PV/漏斗/留存/粘性/LTV/用户序列） | `projects/sensors-metrics/scripts/query_analytics.py`；**body 直接抄 `sensors-queries.md` §0 的 R0-R13 配方（含三条通用坑），别从 swagger 摸参数** |
-| 行为分析平台事件/属性探查（事件真名 + 真属性 + STRING 真值候选） | `projects/sensors-metrics/scripts/probe_event_properties.py --events <事件名>`（test 埋点加 `--env test`）；事件字典 `projects/sensors-metrics/references/events-{community,livestream,social}.md` |
+| 行为分析平台事件探查 · 埋点清单/事件·属性对账 | `projects/sensors-metrics/scripts/` 下 `probe_event_properties.py --events <名>`（test 加 `--env test`）· `gen_events_inventory.py {线\|all}`（出 diff 后落盘）；事件字典 `references/events-{community,livestream,social}.md` · 虚拟事件组成定义 `references/virtual-events.md` |
 | 指标口径（周报指标怎么算） | `projects/sensors-metrics/references/report-metrics-catalog.md` |
 | BI 报告/BI 链接 | `youshu_cli.py` → cheatsheet |
 | **🛠 通用工具** | |
 | 会议纪要/拉纪要 | `pull_meeting_notes.py "关键词" -p {项目}` |
 | 下载 Figma 图片/批量素材 | `fetch_figma.py` → cheatsheet |
+| 生图/改图（配图 · 封面 · 宣发图） | `image_gen.py "提示词"`（改图 `--edit <图>`；`-p {项目}` 落项目）|
+| 出视频（文生 / 图生 / 参考生） | `video_gen.py "提示词"`（图生 `--first-frame`；`-p {项目}` 落项目）|
 | pdf/docx/pptx/xlsx → md | `doc_to_md.py <file> [--batch]` |
 | 打包工作区 | `pack_for_opus.py` → cheatsheet |
 | Slack 消息 | `slack.py` → cheatsheet（send/read/search/thread/draft/schedule）|
@@ -74,26 +75,24 @@
 | 内部项目系统任务进展（分支/H 号做到哪一步） | `.claude/skills/内部项目系统/scripts/hx_task_progress.py [H号]` |
 | 内部项目系统个人面板（我手头/逾期的任务） | `.claude/skills/内部项目系统/scripts/hx_panel.py [--filter overdue\|current]` |
 | **✅ 校验 / 自检** | |
-| 产物四件套自检（PRD / 场景清单 / IMAP / 原型） | hook 写后自动跑骨架形态；交付 / 推前手动跑完整。PRD `bash .claude/skills/prd/scripts/check_prd_md.sh <prd.md>`（`--skeleton`）· 场景清单 `python3 .claude/skills/scene-list/scripts/check_scene_list.py <scene-list.md> [--strict]` · IMAP `bash .claude/skills/interaction-map/scripts/check_imap.sh <html>` · 原型 `bash .claude/skills/prototype/scripts/check_proto.sh <html>` · UI 屏内禁开发注解 `check_ui_annotation.py` |
-| 静态章写作纪律（baseline 模块章/现状章/scene-list 静态章四不） | `check_static_chapter.py` |
+| 产物四件套自检（PRD / 场景清单 / IMAP / 原型） | hook 写后自动跑骨架；交付 / 推前手动跑完整。PRD `bash .claude/skills/prd/scripts/check_prd_md.sh <prd.md>`（`--skeleton`）· 场景清单 `python3 .claude/skills/scene-list/scripts/check_scene_list.py <scene-list.md> [--strict]` · IMAP `bash .claude/skills/interaction-map/scripts/check_imap.sh <html>` · 原型 `bash .claude/skills/prototype/scripts/check_proto.sh <html>` · UI 屏内禁开发注解 `check_ui_annotation.py` |
+| 产物写作纪律（静态章四不 / 大白话 / 挤话 / 屏内语气） | `check_static_chapter.py` · `check_plain_language.py <md>` · `check_bullet_density.py` · `bash .claude/skills/_shared/check_voice_html.sh <imap\|proto> <html>`；hook 写后自动跑，存量复查手动 |
 | CJK 标点检查/修复 | `check_cjk_punct.py <file> [--fix] [--dry-run]` |
-| 讲人话 / 挤话 / 语气（人读产出物文风门） | `check_plain_language.py <md>`（大白话 / 长句）· `check_bullet_density.py`（挤话一团）· `bash .claude/skills/_shared/check_voice_html.sh <imap\|proto> <html>`（屏内语气）；hook 自动跑，存量复查手动 |
-| 决策 note 格式校验 | `check_decisions.py`（默认扫 `.claude/decisions/`，`--strict` exit 2）|
-| 规则层合规（LEARNED / 体积棘轮 / 版本漂移 / 生成脚本 docstring） | `check_learned_rules.py <file>` · `check_rule_volume.py` · `check_rule_version_drift.py {项目}` · `check_generator_docstring.py` |
-| 现状一致性（baseline 新鲜度 / 同源副本漂移） | `check_baseline_fresh.py {项目}` · `check_fork_drift.py` |
+| 规则层合规（决策 note / LEARNED / 棘轮 / 版本漂移 / 生成器 docstring） | `check_decisions.py`（`--strict` exit 2）· `check_learned_rules.py <file>` · `check_rule_volume.py` · `check_rule_version_drift.py {项目}` · `check_generator_docstring.py` |
+| 现状一致性 / 并行冲突（baseline 新鲜度 · 同源副本 · delta 反向合并重叠） | `check_baseline_fresh.py {项目}` · `check_fork_drift.py` · `check_delta_conflict.py {产品线}` |
+| 埋点命名域一致性（PRD 埋点表新事件 vs 域字典范式） | `projects/sensors-metrics/scripts/check_event_naming.py <prd.md>` |
 | git 提交前体检 | `check_staged_large_files.py`（staged 超大文件 + 项目本地源素材入库；pre-commit 自动调）|
 | 影响检测 | `bash scripts/impact-check.sh {项目}`（scene-list 变更后找过期产物）|
-| 并行 delta 冲突检测 | `check_delta_conflict.py {产品线}`（在途 delta 反向合并目标重叠）|
 
 只有 Skill 触发词匹配**且不在上表**才走 Skill 流程（读 SKILL.md → 按 Step 执行）。音视频能力事实（推流 / 连麦 / 编码档位 / 错误码 / 计费）不凭记忆答：TRTC 走 `trtc-docs` skill，OBS 走 `references/repos/obs-studio` 源码 grep（耦合点见 `projects/livestream/lessons.md`）。
 
 ## 启动规则
 
 - **baseline 按需读取**：> 300 行禁全量 Read，走 `.claude/skills/prd/scripts/read_prd_section.py <baseline.md>`：先 `--toc` → 必读方向章节 → 按任务选读；追加信息 `--grep` 定位 → `-s` 取章节。≤ 300 行直接全量 Read。
-- **项目视图自动注入**：session-start hook 已注入 dashboard「## 项目视图」节（每 6h 刷新）。**不要再 ls projects/ 探项目状态**；某项目 inputs/deliverables 细节用 `ls projects/{项目}/inputs/ deliverables/ scene-list.md 2>/dev/null` 一次。
-- **LEARNED.md**：根目录 `LEARNED.md`，session 开始读取（如存在且非空）。被用户纠正 / 踩坑修正 / 发现可复用工区教训时，回复末尾**单独起一行** `[LEARN] 一句话规则`（单行、< 500 字、不以 ``` 或 — 开头，否则 hook 静默丢弃）。
+- **项目视图自动注入**：session-start hook 已注入 dashboard「## 项目视图」节（每 6h 刷新）。**不要再 ls projects/ 探项目状态**；细节按需 `ls projects/{项目}/`。
+- **LEARNED.md**：根目录，session 开始读取。被纠正 / 踩坑 / 发现可复用工区教训时，回复末尾**单独起一行** `[LEARN] 一句话规则`（单行 < 500 字、不以 ``` 或 — 开头，否则 hook 静默丢弃）。攒多了按 `skill-conventions.md` §LEARNED.md 整理纪律清池。
 - **决策记录（decisions）**：`.claude/decisions/`（proposed / implemented / rejected 三态）。工区治理类非平凡变更（建模 / 路由 / 门槛 / gate / skill 形态 / 目录结构 / 术语）同轮必须写或更新一篇，`## Alternatives considered` 强制。产品业务决策走 baseline 决策章。边界与格式见 `.claude/decisions/README.md`。
-- **session-state.md**：`.claude/session-state.md`，按需手动 checkpoint（**切 session 前** / 手动 compact 前 / 高风险操作前 Write）。SessionStart 与 PreCompact hook 自动注入；72h 未更新自动清理。**首选切 session 而非 compact**：新 session 是干净 slate，compact summary 是 LLM 不可控产物——仅「顺利做事但 ctx 长了、没误判」时 compact。
+- **session-state.md**：`.claude/session-state.md`，按需手动 checkpoint（**切 session 前** / 手动 compact 前 / 高风险操作前 Write）。SessionStart 与 PreCompact hook 自动注入；72h 未更新自动清理。**首选切 session 而非 compact**：新 session 是干净 slate，compact summary 不可控——仅「顺利做事但 ctx 长了、没误判」时 compact。
 - **Skill 路径**：所有 Skill 定义在 `.claude/skills/{skill-name}/SKILL.md`，禁 find/ls 探索。
 
 ## 工具调用红线
@@ -107,11 +106,11 @@
 
 ## 修改入口防误操
 
-> 已被 hook 机械拦截的（改产物前未 Read SKILL.md / 直 Edit 脚本化 HTML / 静态章四不 / 图片路径 / 骨架版本号同步 / 原型范式 / 推 wiki / 大文件 Read）—— 看 hook 报错按指引执行，不在此列。
+> 已被 hook 机械拦截的（改产物前未 Read SKILL.md / 直 Edit 脚本化 HTML / 静态章四不 / 图片路径 / 骨架版本号同步 / 原型范式 / 推 wiki / 大文件 Read）—— 报错按指引执行。
 
 - **改业务规则 / 流程节点 / 入口位置 / 门槛阈值 / 权限规则 / 状态机 / 场景定位 / 场景属性 / 场景归属 前必先 Read `.claude/runbooks/pm-methodology.md`**（§二 逻辑拼图 + 决策段四段法）。业务规则 / 场景变动一律按方法论推演——三维度按 pm-methodology §二「逻辑拼图」豁免规则附回复末尾，再动文件。
 - **改 baseline / scene-list.md / 产物文件前必先回读上下文**：baseline > 300 行用 read_prd_section.py；产物间引用与编号规则见 artifact-conventions.md。
-- **HTML 生成规模**：> 200 行禁 Write 直接写、必须脚本生成；> 1500 行或 Tab ≥ 10 拆分规则见 `.claude/runbooks/html-build-split.md`。本节阈值（200 / 300 / 500 / 1500 / Tab≥10）见 `scripts/lib/thresholds.yaml`，Python 调用 `from lib.thresholds import T`。
+- **HTML 生成规模**：> 200 行禁 Write 直接写、必须脚本生成；> 1500 行或 Tab ≥ 10 拆分规则见 `.claude/runbooks/html-build-split.md`。本节各阈值见 `scripts/lib/thresholds.yaml`（唯一真源），Python 调用 `from lib.thresholds import T`。
 
 ## 代码与工程纪律
 
@@ -129,6 +128,7 @@
 - Playwright / headless / 截图 → `cli-cheatsheet.md` §Playwright
 - `pip` / `npm` / `brew` / `curl` / `wget` / `go get` / `cargo` 出现 `timeout` / `connection refused` / `reset` → `proxy-fallback.md`
 - 调 MCP 工具 / 改 `.mcp.json` / 新增 MCP server → `mcp-config.md`（按需落 `.mcp-disabled.json` 配 `call_mcp.py`）
+- 新增 / 轮换 / 删除凭据、怀疑密钥泄露、改 `.env` 结构 → `secrets-management.md`
 - 方案选型 / 评估竞品做法 / 找不到竞品 pattern → `decision-framework.md`
 - 改 ≥ 2 文件 / 删新增场景 / 改术语 / 决定要不要升版 → `version-bump.md`
 - 新建项目 / 提到不存在的项目名 / 项目命名疑问 / 不确定文件落点 / 改 .gitignore 项目相关条目 → `project-mgmt.md`
@@ -140,6 +140,7 @@
 - 新写 PRD §4.x 不确定「理由」保留边界 → `human-voice-rules.md`
 - commit / git 安全 / 新写 hook / 推代码 / 推两边 / 双 repo / sync public → `git-and-hooks.md`（「推两边」= push private origin + 跑 `./sync_public.sh` 同步公开镜像）
 - 新建 / 改造 skill / 加 frontmatter / 加产出物前缀 / 写任何塑形模型行为的规则 · 红线（含改 CLAUDE.md · runbook · SKILL.md 行为段）→ `skill-conventions.md`（按失败类型选形态；行为塑形改动先 micro-test）
+- 改检查器 / 写生成器 / 派子 agent / 破坏性改动前 → `defensive-patterns.md`（类规则与防重演）
 - audit / rules-review 后补充技术债 / 想看待办重活清单 / 立项框架层重构 → `tech-debt-backlog.md`
 - 动 `hub/` 分发包 / 出包 / 上架 SkillHub / 打 zip / 加 aihub_tool / 同步源头到 hub / 抽象 skill 发给同事 → 先 `Read hub/README.md`（维护者手册）；命令速查见 `cli-cheatsheet.md` §hub 包生产线
 - 新建 / 改 `hub/` 下 skill / agent / tool / CLI / 知识库产物 / 建 Agent / 建 Tool 前 → 先 `Read .claude/runbooks/ai-platform-specs.md`（公司中台官方规范：产物→必读规范映射；Claude Code skill 走工区 skill-conventions，AI 中台 Agent·Tool 走公司规范，冲突按此优先级）

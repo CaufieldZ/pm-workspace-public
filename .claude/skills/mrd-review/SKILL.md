@@ -11,7 +11,7 @@ optional_inputs: [baseline]
 consumed_by: []
 scripts:
   check_mrd.sh: "评审报告基本卫生自检（圈数字 / 占位符 / CJK 标点）— bash .claude/skills/mrd-review/scripts/check_mrd.sh <评审报告.md>"
-  scripts/fetch_confluence.py: "拉 wiki MRD（共享脚本，根目录 scripts/）— python3 scripts/fetch_confluence.py <url> -p {项目}"
+  scripts/confluence.py: "拉 wiki MRD（共享脚本，根目录 scripts/）— python3 scripts/confluence.py get <url> -p {项目}"
   scripts/check_cjk_punct.py: "CJK 半角标点扫描（共享脚本），由 check_mrd.sh 内部调用"
 ---
 
@@ -45,7 +45,7 @@ scripts:
 
 **Public API（不可改签名）**：
 - `bash check_mrd.sh <评审报告.md>` — 报告卫生自检入口；Step 6 调用
-- `scripts/fetch_confluence.py <url> -p <项目>` — wiki MRD 拉取（共享脚本，根目录 scripts/）
+- `scripts/confluence.py get <url> -p <项目>` — wiki MRD 拉取（共享脚本，根目录 scripts/）
 - `scripts/check_cjk_punct.py` — CJK 标点扫，被 `check_mrd.sh` 内部调用
 
 **会拦你的 hook**：
@@ -159,7 +159,7 @@ Outcome 评估 / 北极星判断 → Read `.claude/runbooks/pm-methodology.md` �
 | 输入形态 | 处理方式 |
 |----------|----------|
 | 本地 `.md` / `.docx` 文件路径 | 走 Step 1.5 派 Haiku 子 agent 提取（不要主线程 Read 全文） |
-| `https://*.atlassian.net/*` 或 `https://confluence.*` | `python3 scripts/fetch_confluence.py <url> -p {项目}` 拉到 `projects/{项目}/inputs/mrd-{slug}.md` 后走 Step 1.5 |
+| `https://*.atlassian.net/*` 或 `https://confluence.*` | `python3 scripts/confluence.py get <url> -p {项目}` 拉到 `projects/{项目}/inputs/mrd-{slug}.md` 后走 Step 1.5 |
 | 用户只丢标题 / 模糊描述 | 反问要文件路径或 wiki 链接，不要凭空评审 |
 
 如能识别项目，同步读 `projects/{项目}/prd-{项目}-baseline.md` 业务对象 / 全局规则章（产品现状 + 业务规则），交叉核对 MRD 中的判断是否和已有现状冲突。
@@ -271,7 +271,7 @@ bash .claude/skills/mrd-review/scripts/check_mrd.sh <评审报告.md>
 
 **执行类**（模型不读，脚本调用）：
 - `scripts/check_mrd.sh` — 报告卫生自检
-- `scripts/fetch_confluence.py`（共享脚本）— wiki MRD 拉取
+- `scripts/confluence.py`（共享脚本）— wiki MRD 拉取
 
 ## 自检清单
 

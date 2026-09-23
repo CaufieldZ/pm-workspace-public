@@ -20,6 +20,7 @@ Usage:
     cat foo.md | python3 scripts/check_cjk_punct.py --stdin [--strict]
     python3 scripts/check_cjk_punct.py --fix <file>         # 自动修 strict 级标点
     python3 scripts/check_cjk_punct.py --fix-spaces <file>  # 自动补空格（中英/中数/单位，幂等）
+    python3 scripts/check_cjk_punct.py --strict-then-fix-spaces <file>  # 热路径合并档：单进程「strict 判定 → 干净才补空格」
 
 前置：无。
 
@@ -599,8 +600,31 @@ def main():
     use_stdin = "--stdin" in args
     do_fix = "--fix" in args
     do_fix_spaces = "--fix-spaces" in args
+    do_strict_fix_spaces = "--strict-then-fix-spaces" in args
     dry_run = "--dry-run" in args
     files = [Path(a) for a in args if not a.startswith("-")]
+
+    if do_strict_fix_spaces:
+        # 热路径合并档：同一进程内先按 strict 判定，干净才补空格——等价于连跑
+        # `--strict` 再 `--fix-spaces`，省一次解释器冷启 + 一次文件读。
+        # strict 命中时交回 _report（内部 sys.exit(2)），报告与 `--strict` 逐字一致；
+        # 干净时静默补空格（调用方约定：strict 通过即不喷建议级 warn）。
+        if not files:
+            print("--strict-then-fix-spaces 需要传文件路径", file=sys.stderr)
+            sys.exit(1)
+        file_hits = [(str(fp), check_file(fp, full=full)) for fp in files if fp.exists()]
+        if any(h[1] == "strict" for _, hits in file_hits for h in hits):
+            _report(file_hits, strict=True)
+        for fp in files:
+            if fp.exists():
+                # best-effort：补空格阶段任何异常都不得影响判定结果。
+                # 调用方原先单独跑 --fix-spaces 时用 `|| true` 吞错，合并后必须在此保持同语义，
+                # 否则失败会变成非零退出码 → hook 误判为 strict 违规 → 误拦。
+                try:
+                    fix_file(fp, dry_run=dry_run, punct=False, spaces=True)
+                except Exception:
+                    pass
+        return
 
     if do_fix or do_fix_spaces:
         if not files:

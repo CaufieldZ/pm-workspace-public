@@ -37,12 +37,6 @@ if ! bash .githooks/check-decision-pair.sh; then
   exit 1
 fi
 
-# -------- 重大代码变更 ↔ code review 配对（所有 commit 都跑）--------
-# 阈值 lib/thresholds.yaml `code_review`；审过放行走 SKIP_CODE_REVIEW_GATE=1
-if ! "$PYTHON_BIN" scripts/check_code_review_gate.py; then
-  exit 1
-fi
-
 CHANGED=$(git diff --cached --name-only --diff-filter=ACMR)
 
 NEEDS_AUDIT=false

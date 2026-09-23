@@ -15,7 +15,7 @@
 #   - 检查具体文件（static_chapter / prd_cross_check）→ key = 文件路径
 #   - 检查产品线树（baseline_fresh / rule_version_drift）→ key = 产品线名
 #
-# cache：$TMPDIR/pmws_dedup/<gate>.<sha1(key)[:16]>，mtime = 上次跑时刻
+# cache：$TMPDIR/pmws_dedup/<gate>.<cksum(key)>，mtime = 上次跑时刻
 # TTL 内 → emit dedupe-skip（action 不在 dashboard 5 列，不污染聚合；usage.jsonl 留痕）
 set +e
 
@@ -29,9 +29,11 @@ _dedup_if_fresh() {
   [ -z "$key" ] && return 1            # 无 key 无法去重，放行跑
   [ -z "$ttl" ] && return 1
 
-  mkdir -p "$_DEDUP_DIR" 2>/dev/null || return 1
+  [ -d "$_DEDUP_DIR" ] || mkdir -p "$_DEDUP_DIR" 2>/dev/null || return 1
   local hash cache
-  hash=$(printf '%s' "$key" | shasum 2>/dev/null | cut -c1-16)
+  # 缓存键只需稳定短串：cksum（小 C 程序）替 shasum（perl 脚本），省一次 perl 冷启 + 一次 cut
+  hash=$(printf '%s' "$key" | cksum 2>/dev/null)
+  hash="${hash%% *}"                    # cksum 输出「校验和 字节数」取首段
   [ -z "$hash" ] && return 1
   cache="$_DEDUP_DIR/$gate.$hash"
 

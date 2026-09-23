@@ -1,11 +1,11 @@
 """check_bullet_density 单测。
 
-锁住「非豁免章内单行句号 ≥3 = 挤话」规则 + 误报边界：
-  命中  — 正文段落 / bullet 单行 ≥3 个中文句号
-  干净  — ≤2 句号 / 分号串子项 / 单句 bullet
+锁住四条挤话判据 + 误报边界：
+  命中  — bullet 单行 ≥3 句号 / 单行 ≥2 分号 / 单句 ≥100 字 / 段落碎句（≥3 句且句长中位 <9）
+  干净  — ≤2 句号 / 分号串子项 / 单句 bullet / 三句完整短句 / 引号内的长文案
   跳过  — >/表格/代码块/:::/frontmatter/空行/纯图片
-  无章节豁免 — 决策 / 埋点 / 变更章也配写好看，句号≥3 / 分号串照样报（block 一视同仁；
-              章节豁免只在 md_scan WARN 层给「长句可以长」这一维）
+  章节豁免 — 只给「长句」这一维：决策 / 变更 / 埋点章的论证句可以长；
+            句号 / 分号 / 碎句一视同仁（哪章都该拆）
   逃生口 — <!-- lint-skip:density --> 行级跳过
 """
 import check_bullet_density as c
@@ -152,6 +152,47 @@ def test_enumeration_field_not_false_positive():
     # 顿号 6 段但仅 0 句号 0 分号，合法枚举
     assert _lines("- 选手列表（序号、姓名、赛事阶段、直播票数、评审团票数、总票数）") == []
     assert _lines("- 投票组件：免费票余额展示、Platform C 现货余额、投票弹窗、消耗提示") == []
+
+
+# ── 新增判据：碎句 / 长句 / 行首编号 / 引号 ────────────────
+def test_three_complete_short_sentences_clean():
+    """三句完整的短句不是挤话——段落不再数句号，句长够就不是碎句。"""
+    assert _lines("目前这条漏斗没有看板。运营每天只能手工拉数。我们想做一张看板。") == []
+
+
+def test_paragraph_and_bullet_long_sentence_hit():
+    """单句 ≥100 字的段落与 bullet 都报，kind 带「长句」。"""
+    long_sent = "甲" * c.LONG_SENTENCE_CHARS
+    for text in (f"{long_sent}。", f"- {long_sent}。"):
+        hits = c.check_text(text)
+        assert hits and "长句" in hits[0][1], (text, hits)
+
+
+def test_long_sentence_exempt_in_decision_chapter():
+    """决策 / 变更 / 埋点章的论证句可以长——长句这一维免查，同句在正文照报。"""
+    long_sent = "甲" * c.LONG_SENTENCE_CHARS
+    assert _lines(f"# 6. 决策记录（WHY）\n取舍：{long_sent}。") == []
+    assert _lines(f"# 2. 本轮需求\n{long_sent}。") == [2]
+
+
+def test_quoted_long_text_not_counted_as_long_sentence():
+    """引号里是引用来的整块文案，内部长度不算进本文的句长。"""
+    assert _lines(f"- 提示用户「{'甲' * 300}」，点确认继续。") == []
+
+
+def test_quoted_text_does_not_fake_a_fragment():
+    """引号内长文案不能把该句压短、把中位数拖低——否则正常三段式手册语被误判碎句。"""
+    assert _lines(
+        "提交后页面提示「我们将在 1-2 个工作日内审核完毕」。审核有结果会用 App 推送通知你："
+        "通过后身份直接变成主播，可以去主播中心创建直播；没通过会写明原因。"
+    ) == []
+
+
+def test_leading_list_number_not_counted_in_sentence_len():
+    """行首 `1. ` 是列表标记不计句长——99 字放行、100 字才拦，差的就是那三个字符。"""
+    body = "甲" * (c.LONG_SENTENCE_CHARS - 1)
+    assert _lines(f"1. {body}。") == []
+    assert _lines(f"1. {body}甲。") != []
 
 
 # ── diff-based（only_line_texts：只报本次新增行，存量不报） ──────────

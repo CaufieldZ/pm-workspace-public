@@ -67,7 +67,7 @@ def test_build_body_none_without_sources():
 
 def test_request_raw_absolute_url_not_double_joined(monkeypatch):
     """normalize_endpoint 已拼好绝对 URL → request_raw 不得再拼 base（曾双拼导致 Errno 8）。"""
-    import lib.confluence as lc
+    import lib.confluence_rest as lc
     seen = {}
 
     class FakeResp:
@@ -92,7 +92,7 @@ def test_request_raw_absolute_url_not_double_joined(monkeypatch):
     monkeypatch.setattr(lc, "_TOKEN", "t")
     monkeypatch.setattr(lc, "_OPENER", FakeOpener())
 
-    from lib.confluence import request_raw
+    from lib.confluence_rest import request_raw
     status, _, raw = request_raw("GET", "https://wiki.example.com/rest/api/user/current", None, {})
     assert status == 200
     assert seen["url"] == "https://wiki.example.com/rest/api/user/current"

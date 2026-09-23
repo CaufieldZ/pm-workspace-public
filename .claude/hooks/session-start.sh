@@ -57,6 +57,28 @@ if [ -s "$DASHBOARD" ]; then
   echo "" >> "$OUT"
 fi
 
+# ── LEARNED.md 整理提醒（条目只产不消 → 给整理一个看得见的触发器）──────
+# 条目数超 thresholds.yaml learned.consolidate_threshold → 措辞升级为「该整理」；
+# 未超阈值只报一行数字；0 条不注入（零噪音）。marker 由整理轮更新，
+# 纪律见 skill-conventions.md §LEARNED.md 整理纪律。
+LEARNED_FILE="$PROJECT_DIR/LEARNED.md"
+if [ -f "$LEARNED_FILE" ]; then
+  L_COUNT=$(grep -c '^- \*\*\[20' "$LEARNED_FILE" 2>/dev/null)
+  [ -z "$L_COUNT" ] && L_COUNT=0
+  L_LAST=$(sed -n 's/.*last-consolidated: \([0-9-]\{10\}\).*/\1/p' "$LEARNED_FILE" 2>/dev/null | head -1)
+  L_THRESH=$(awk '/^learned:/{f=1; next} f && /^[a-z]/{exit} f && /consolidate_threshold:/{gsub(/[^0-9]/,"",$2); print $2; exit}' "$PROJECT_DIR/scripts/lib/thresholds.yaml" 2>/dev/null)
+  [ -z "$L_THRESH" ] && L_THRESH=60
+  L_TAIL=""
+  [ -n "$L_LAST" ] && L_TAIL=" · 上次整理 ${L_LAST}"
+  if [ "$L_COUNT" -gt "$L_THRESH" ]; then
+    echo "── LEARNED.md ${L_COUNT} 条${L_TAIL}（超 ${L_THRESH} 条，该整理：先归位再清池）──" >> "$OUT"
+    echo "" >> "$OUT"
+  elif [ "$L_COUNT" -gt 0 ]; then
+    echo "── LEARNED.md ${L_COUNT} 条${L_TAIL} ──" >> "$OUT"
+    echo "" >> "$OUT"
+  fi
+fi
+
 # ── session-state.md（按需手动 checkpoint 桥梁）─────────────────────
 # 定位：跨 session / 手动 compact 时的桥梁文件，用户主动 Write 才生效
 # 72h 未更新 → 视为过期任务，rm 文件 + echo 提示（避免周末隔月残留误导新 session）

@@ -387,7 +387,7 @@ def _leftright_html_table(
     左列：每张图一个 `<img>`；右列：每个模块 `<strong>{idx}. {name}</strong>` +
     `<ul>`（三段式标签做组头各一次，规则一条一 bullet 缩进挂组头下；
     显示要素 / 交互有内容才出）。
-    对齐 fetch_confluence.py pandoc 拉回的多行缩进格式，源码可读、可回流。
+    对齐 confluence.py get --mode pandoc 拉回的多行缩进格式，源码可读、可回流。
     """
     img_lines = [
         f'<img src="{_xml_attr_escape(path)}" alt="{_xml_attr_escape(caption or scene_name)}" />'

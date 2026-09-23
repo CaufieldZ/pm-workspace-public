@@ -84,6 +84,10 @@
       "Bash(touch:*)",
       "Bash(mkdir:*)",
       "Bash(rmdir:*)",
+      "Bash(rm -f /tmp/*)",
+      "Bash(rm -rf /tmp/*)",
+      "Bash(rm -f /private/tmp/*)",
+      "Bash(rm -rf /private/tmp/*)",
       "Bash(chmod:*)",
       "Bash(zip:*)",
       "Bash(unzip:*)",
@@ -225,7 +229,16 @@
       "Bash(git add .:*)"
     ],
     "deny": [
-      "Bash(rm -rf *)",
+      "Bash(rm -rf /)",
+      "Bash(rm -rf ~*)",
+      "Bash(rm -rf $HOME*)",
+      "Bash(rm -rf /Users/*)",
+      "Bash(rm -rf /Applications/*)",
+      "Bash(rm -rf /Library/*)",
+      "Bash(rm -rf /opt/*)",
+      "Bash(rm -rf /usr/local/*)",
+      "Bash(rm -rf .*)",
+      "Bash(rm -rf projects*)",
       "Bash(sudo:*)",
       "Bash(git push --force:*)",
       "Bash(git push -f:*)",
@@ -281,11 +294,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/user-prompt-context-warn.sh"
-          },
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/user-prompt-requirement-guard.sh"
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/user-prompt-warn.sh"
           }
         ]
       }
@@ -297,6 +306,10 @@
           {
             "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-bash-guard.sh"
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-proxy-check.sh"
           }
         ]
       },
@@ -356,7 +369,7 @@
         ]
       },
       {
-        "matcher": "Read",
+        "matcher": "Read|Skill",
         "hooks": [
           {
             "type": "command",

@@ -3,9 +3,10 @@ r"""渲染 UI 屏内禁开发注解 — ui-annotation-gate 入口。
 
 模型常把开发注解写进 prototype / IMAP 的实际渲染屏里（如
 「带单战绩（无资格则不展示，此处隐藏占位）」），开发误读为真实文案。
-本检查只扫 mockup 渲染屏内部：
-- prototype（proto-*.html）：.app-mock / .web-front / .layout
-- IMAP（imap-*.html）：.phone / .webframe（ann-card / flow-note 旁注区合法，不扫）
+本检查只扫 mockup 渲染屏内部（开发注解 + 内部编号）：
+- prototype（proto-*.html）：.app-mock / .web-front / .layout（屏内另禁裸场景编号 / 决策号 / 内部文件名）
+- IMAP（imap-*.html）：.phone / .webframe（ann-card / flow-note 旁注区合法，不扫；
+  屏内的「C-3 ↗」是合法跳转写法，内部编号一类不对 IMAP 开）
 
 规则源：.claude/skills/prototype/SKILL.md + .claude/skills/interaction-map/SKILL.md
 
@@ -82,8 +83,8 @@ def main():
 
     if total:
         print('', file=sys.stderr)
-        print('❌ 渲染 UI 屏内写了开发注解，开发会误读为真实产品文案。', file=sys.stderr)
-        print('   修法（原型）：删掉注解，屏内只放真实文案。', file=sys.stderr)
+        print('❌ 渲染 UI 屏内写了开发注解 / 内部编号，读者会误读为真实产品文案。', file=sys.stderr)
+        print('   修法（原型）：删掉注解与内部编号（A-1 / 决策 N / baseline.md），屏内只放真实文案。', file=sys.stderr)
         print('   修法（IMAP）：注解移到 mockup 外的 ann-card / flow-note，手机/Web 屏内只放真实文案。', file=sys.stderr)
         print('   改源后重 build。临时绕过：SKIP_UI_ANNOTATION_GATE=1', file=sys.stderr)
         sys.exit(2 if strict else 1)

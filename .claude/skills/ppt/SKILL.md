@@ -10,7 +10,7 @@ depends_on: []
 optional_inputs: [baseline]
 consumed_by: []
 scripts:
-  gen-notes-docx.py: "导出演讲者备注 docx — python3 gen-notes-docx.py <html>"
+  gen-notes-docx.py: "口播稿 docx 模板（复制到项目 scripts/ 填 NOTES 常量后运行；直接跑 = 出示例 docx）— 步骤见 references/ppt-notes-docx.md"
   # deck-fill.js / fill-template.js 在 assets/（模板源，非可执行），用法：复制 *-script-template.js 到项目 scripts/ 改写
 ---
 
@@ -37,7 +37,7 @@ scripts:
 **Public API（不可改签名）**：
 - `fillDeck({ title, theme, acts, slides, outputPath })` — `assets/deck-fill.js` 拼纯 deck（默认范式）
 - `fillTemplate({ title, theme, nav, renderers, notes, outputPath })` — `assets/fill-template.js` 拼 sidebar Doc 模式
-- `python3 gen-notes-docx.py <html>` — 导出演讲者备注 docx
+- `gen-notes-docx.py` — 口播稿 docx 模板：复制到项目 `scripts/gen_notes_v{N}.py`、填 `NOTES` 常量后运行（`python3 gen-notes-docx.py` 直接跑 = 出示例 docx）
 
 **会拦你的 hook**：
 - `script-syntax-gate` / `cjk-punct`

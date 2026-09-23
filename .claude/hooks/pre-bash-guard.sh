@@ -2,7 +2,7 @@
 # PreToolUse: Bash 命令前置守卫（多规则聚合 · 5 hook 合并入口）
 #
 # 本文件内联规则：
-#   A：外网下载未设代理 → warn 不阻断（命令照跑，连不通由 proxy-fallback.md 兜底）
+#   A：外网下载的代理判定与注入 → 已迁至 pre-proxy-check.sh（本文件只留文末指针，不重复判）
 #   B：git push/remote 用 HTTPS → 阻断（CLAUDE.md「push 用 SSH」）
 #   C：gen_prd_skeleton --force 但目标 scenes 目录有旧文件 → 阻断（LEARNED 2026-05-12 L8）
 #
@@ -18,6 +18,12 @@ source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/input.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/guards.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/strip.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/bash-guards.sh"
+source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/notes.sh"
+
+# warn 类说明汇总送达模型（exit 0 时 stderr 模型看不到，见 lib/notes.sh 文件头）。
+# 本脚本有多条 exit 0 早退、且 guard 子函数里会直接 exit 2，故用 EXIT trap 兜住所有出口：
+# 只在退出码为 0 时发射 —— exit 2（阻断）那条路上 stderr 本就可达模型，不重复注入。
+trap 'rc=$?; [ "$rc" = "0" ] && note_emit "PreToolUse"' EXIT
 
 INPUT=$(cat)
 hook_parse_all
@@ -113,48 +119,8 @@ case "$CMD_STRIPPED" in
     ;;
 esac
 
-# === 规则 A：外网下载未设代理（原有逻辑，复用上方 CMD_STRIPPED）===
-# case 粗筛短路：不含任何下载命令关键词的命令（绝大多数，如 git status / ls / cat）
-# 直接 exit 0，省下方 4~6 个复杂 grep。粗筛是 HARD/SOFT pattern 全部命令名的超集
-# （宁可 over-match 回落到精确 grep，绝不 under-match 漏拦）。go/gh 用双词 glob 覆盖命令开头。
-case "$CMD_STRIPPED" in
-  *brew*|*pip*|*npm*|*pnpm*|*yarn*|*bun*|*cargo*|*composer*|*curl*|*wget*|*clone*) ;;
-  *go\ get*|*go\ install*|*go\ mod*|*gh\ api*|*gh\ clone*|*gh\ run*|*gh\ repo*) ;;
-  *) exit 0 ;;
-esac
+# === 外网下载的代理处理已迁至 pre-proxy-check.sh ===
+# 那条命令的判定与注入由独立 hook 负责（命中即把代理挂上，不再只发提醒）。
+# 本文件不再参与 proxy-check——两处同时判会让同一条命令被处理两次。
 
-# 左边界 = 行首 / 管道分隔符 / 可选 ENV=val 前缀
-# 只匹配剥字符串后的版本
-HARD_HIT=no
-echo "$CMD_STRIPPED" | grep -qE '(^|[;&|`\n])[[:space:]]*([A-Z_][A-Z0-9_]*=[^[:space:]]*[[:space:]]+)*(brew[[:space:]]+(install|tap|upgrade|reinstall|update)|pip3?[[:space:]]+install|npm[[:space:]]+(install|i|add|ci)|pnpm[[:space:]]+(install|i|add)|yarn[[:space:]]+(add|install)|bun[[:space:]]+(add|install)|cargo[[:space:]]+install|go[[:space:]]+(get|install|mod[[:space:]]+download)|gh[[:space:]]+(api|clone|run|repo[[:space:]]+clone)|composer[[:space:]]+(install|require|update))([[:space:]]|$)' && HARD_HIT=yes
-
-# 条件拦组：curl / wget / git clone 仅在境外 URL 时拦
-SOFT_HIT=no
-if [ "$HARD_HIT" = "no" ]; then
-  echo "$CMD_STRIPPED" | grep -qE '(^|[;&|`\n])[[:space:]]*([A-Z_][A-Z0-9_]*=[^[:space:]]*[[:space:]]+)*(curl|wget|git[[:space:]]+clone)([[:space:]]|$)' \
-    && echo "$CMD_STRIPPED" | grep -qE '(https?://|git@)(github\.com|raw\.githubusercontent|gist\.github|pypi\.org|registry\.npmjs|crates\.io|rubygems\.org|proxy\.golang\.org|packagist\.org|go\.googlesource|googleapis|gcr\.io|ghcr\.io|docker\.io|quay\.io|huggingface\.co|anaconda\.org|objects\.githubusercontent)' \
-    && SOFT_HIT=yes
-fi
-
-[ "$HARD_HIT" = "no" ] && [ "$SOFT_HIT" = "no" ] && exit 0
-
-# 已设代理 → 放
-echo "$CMD" | grep -qiE '(ALL_PROXY|HTTPS?_PROXY|all_proxy|https?_proxy)=|--proxy[[:space:]]|-x[[:space:]]*https?://' && exit 0
-
-# 国内镜像 → 放
-echo "$CMD" | grep -qE '(pypi\.tuna\.tsinghua|npmmirror|mirrors\.(aliyun|tencent|ustc|163)|registry\.npm\.taobao|goproxy\.cn|\.cn[/:])' && exit 0
-
-# 显式跳过 → 放
-echo "$CMD" | grep -q 'SKIP_PROXY_CHECK=1' && exit 0
-
-# 命中：warn 不阻断（命令照跑，连不通由 proxy-fallback.md runbook 事后兜底）
-# 事前无法预判直连通不通（海外直连正常 / 墙内才需代理），所以只提示不拦
-PROXY_HINT="${ALL_PROXY:-http://本地代理端口}"
-echo "" >&2
-echo "⚠️  [proxy-check] 外网下载未设代理（海外直连正常则忽略本提示）" >&2
-echo "   $CMD" >&2
-echo "   自动降级: bash scripts/net_retry.sh <cmd>（直连失败自动加代理重试）" >&2
-echo "   含管道/重定向时手动: ALL_PROXY=$PROXY_HINT $CMD" >&2
-echo "" >&2
-log_event gate proxy-check warn "${CMD:0:120}"
 exit 0

@@ -53,11 +53,11 @@
 
 ### V5 · 代理检查 / 被墙下载
 
-**位置**：`CLAUDE.md` §Runbook 触发条件 · `.claude/runbooks/proxy-fallback.md` · `.claude/hooks/pre-bash-guard.sh`（聚合 proxy / git-https / skeleton-force 多规则）
+**位置**：`CLAUDE.md` §Runbook 触发条件 · `.claude/runbooks/proxy-fallback.md` · `.claude/hooks/pre-proxy-check.sh`（外网下载自动挂代理）
 
 **为什么 volatile**：跟 维护者 的网络环境（中国大陆）绑定，换个国家立刻冗余。跟模型无关但跟使用场景强相关。
 
-**review 信号**：proxy-check block 频次。如 维护者 长期出差海外，可关闭。
+**review 信号**：`proxy-check` 注入频次与 `PROXY_GATE_MODE=block` 用量。判定本身在境外会自然收敛成直连，整条只在长期海外时可直接关（`PROXY_GATE_MODE=off`）。
 
 ### V6 · 子 Agent 调度规则
 

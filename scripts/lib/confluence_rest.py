@@ -27,8 +27,17 @@ from lib.env_refs import apply_env_file, expand_refs
 _BASE_URL: str | None = None
 _TOKEN: str | None = None
 
-# REST 调用默认超时（秒）：无超时时半开连接 / LB 抽风会让整个推送无限挂起
-_HTTP_TIMEOUT = 30
+# REST 调用默认超时（秒）：无超时时半开连接 / LB 抽风会让整个推送无限挂起。
+# 读写分档：本实例写路径（建页 / 传附件）实测会超过 30s——客户端放弃时服务端其实已写成功，
+# 表现为「报超时但已落库」+ 重试叠附件版本。写给足时间，读保持短超时以便快速失败。
+_HTTP_TIMEOUT = 30           # 读
+_HTTP_TIMEOUT_WRITE = 180    # 写（POST / PUT / DELETE）
+
+
+def _timeout_for(method: str) -> int:
+    """按方法取超时：写走 _HTTP_TIMEOUT_WRITE。"""
+    return _HTTP_TIMEOUT_WRITE if method.upper() in ("POST", "PUT", "DELETE") else _HTTP_TIMEOUT
+
 
 # 重试语义（借鉴 confluence-cli）：429 全方法可重试；503 只重放读方法
 _RETRY_MAX = 4  # 1 次直连 + 3 次重试
@@ -136,7 +145,7 @@ def api_request(method: str, path: str, body: dict | None = None, headers: dict 
     for k, v in (headers or {}).items():
         req_headers[k] = v
     try:
-        _, _, raw = _request_with_retry(method, url, data, req_headers, _HTTP_TIMEOUT)
+        _, _, raw = _request_with_retry(method, url, data, req_headers, _timeout_for(method))
         if not raw:
             return {}
         try:
@@ -193,6 +202,42 @@ def update_page(page_id: str, title: str | None, body: str) -> dict:
         "body": {"storage": {"value": body, "representation": "storage"}},
     }
     return api_request("PUT", f"/rest/api/content/{page_id}", payload)
+
+
+def build_cql(
+    *,
+    space: str | None = None,
+    title: str | None = None,
+    text: str | None = None,
+    ancestor: str | None = None,
+    type_page: bool = True,
+    order: str | None = "created desc",
+) -> str:
+    """拼 CQL 查询串：子句顺序固定 space → type=page → title/text → ancestor → order by。
+
+    三个读侧入口共用（confluence.py 的 find / search / dig）：
+
+        find    build_cql(space=s, title=kw)
+        search  build_cql(space=s, text=kw, type_page=False, order=None)
+        dig     build_cql(space=s, text=kw, ancestor=parent_id)
+
+    `order="created desc"` 让 limit 截断时保住**最新**的 N 篇（考古的现状真相在最新文档），
+    调用方再本地正序渲染成时间线。search 走 /rest/api/search 自带相关度排序，故传 order=None。
+    关键词里的双引号转义后内联——CQL 无参数化协议，拼串是唯一形态。
+    """
+    parts = []
+    if space:
+        parts.append(f'space="{space}"')
+    if type_page:
+        parts.append("type=page")
+    for field, value in (("title", title), ("text", text)):
+        if value:
+            escaped = value.replace('"', '\\"')
+            parts.append(f'{field} ~ "{escaped}"')
+    if ancestor:
+        parts.append(f"ancestor={ancestor}")
+    cql = " AND ".join(parts)
+    return f"{cql} order by {order}" if order else cql
 
 
 def search_pages(cql: str, limit: int = 10, expand: str | None = None) -> list:
@@ -302,7 +347,7 @@ def upload_attachment(page_id: str, filename: str, data: bytes, mime: str = "ima
         files["minorEdit"] = (None, "true")
     _requests_session().post(url, headers=headers,
                              files=files,
-                             timeout=_HTTP_TIMEOUT).raise_for_status()
+                             timeout=_HTTP_TIMEOUT_WRITE).raise_for_status()
 
 
 def request_raw(method: str, path: str, body: bytes | None = None,
@@ -319,13 +364,13 @@ def request_raw(method: str, path: str, body: bytes | None = None,
     for k, v in (headers or {}).items():
         req_headers[k] = v
     try:
-        return _request_with_retry(method, url, body, req_headers, _HTTP_TIMEOUT)
+        return _request_with_retry(method, url, body, req_headers, _timeout_for(method))
     except urllib.error.HTTPError as e:
         return e.code, dict(e.headers.items()), e.read()
 
 
 def api_get(path: str, headers: dict | None = None) -> dict:
-    """GET JSON 请求，默认带 Accept: application/json（fetch_confluence 行为）。"""
+    """GET JSON 请求，默认带 Accept: application/json（confluence.py get 行为）。"""
     h = {"Accept": "application/json"}
     if headers:
         h.update(headers)

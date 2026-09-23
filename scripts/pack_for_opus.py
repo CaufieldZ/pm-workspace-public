@@ -122,23 +122,29 @@ def check_repomix():
     return ['npx', '-y', 'repomix@latest']
 
 
-def _proxy_decision() -> str | None:
-    """调 scripts/proxy_env.sh --print 拿代理判定，返回代理 URL（判定非 proxy / 调用失败 → None）。"""
+def _proxy_env() -> dict:
+    """要注入子进程 env 的代理变量集（判定源 = scripts/lib/proxy.py，工区唯一）。
+
+    判定直连 / 库不可用 → 空 dict（不注入，让子进程直连）。延迟到调用时导入，
+    免得 `--help` 也付一次 lib 导入。
+    """
+    if str(ROOT / 'scripts') not in sys.path:
+        sys.path.insert(0, str(ROOT / 'scripts'))
     try:
-        r = subprocess.run(
-            ['bash', str(ROOT / 'scripts' / 'proxy_env.sh'), '--print'],
-            capture_output=True, text=True, timeout=15,
-        )
-    except (subprocess.TimeoutExpired, OSError):
-        return None
-    mode = proxy = ''
-    for line in r.stdout.splitlines():
-        key, _, val = line.partition('=')
-        if key == 'mode':
-            mode = val.strip()
-        elif key == 'proxy':
-            proxy = val.strip()
-    return proxy if mode == 'proxy' else None
+        from lib.proxy import merged_no_proxy, proxy_url
+    except Exception:
+        return {}
+    url = proxy_url()
+    if not url:
+        return {}
+    # node / npx 认 ALL_PROXY；HTTP(S)_PROXY 是给走 urllib 的子进程的（urllib 无视 ALL_PROXY）。
+    # NO_PROXY 必带，否则本机服务会被塞进代理。
+    return {
+        'ALL_PROXY': url,
+        'HTTP_PROXY': url,
+        'HTTPS_PROXY': url,
+        'NO_PROXY': merged_no_proxy(),
+    }
 
 
 def resolve_project_path(project: str) -> Path:
@@ -231,11 +237,11 @@ def main():
 
     env = os.environ.copy()
     if cmd_base[0] == 'npx' and not env.get('ALL_PROXY'):
-        _url = _proxy_decision()
-        if _url:
-            env['ALL_PROXY'] = _url  # npx fallback 按 proxy_env.sh 判定注入，国外直连不注入
+        _penv = _proxy_env()
+        if _penv:
+            env.update(_penv)
         else:
-            print("[INFO] 代理判定 direct，npx 直连", file=sys.stderr)
+            print("[INFO] 未判定到代理，npx 直连", file=sys.stderr)
 
     result = subprocess.run(cmd, cwd=ROOT, env=env, capture_output=not args.verbose, text=True)
     if result.returncode != 0:

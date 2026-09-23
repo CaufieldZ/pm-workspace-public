@@ -7,11 +7,12 @@
   3. 技术实现：binlog / RPC / WebSocket / SDK / TUILiveKit 组件 / Apollo / pageId=
   4. UI 视觉：颜色 hex / px / font-family / IBM Plex Mono / <input type=
 
-只扫静态章（H2 标题命中「方案决策 / 设计决策 / 关键设计决策 / 本轮方案决策 / 版本历史 /
-变更记录」或「## 7. / ## 8. / ## 9.」前的内容）。
+只扫静态章：`#` 一级标题命中非静态关键词（「方案决策 / 变更记录 / 已交付 / 里程碑 / 竞品分析」等）
+时整章跳过；`##` 二级标题命中时只跳过本节。埋点章 / 非功能性需求章是半静态——只免「技术实现」
+「UI 视觉」两类，流水标注和思考过程照查。
 
 章节级豁免：HTML 注释 `<!-- lint-allow: TRTC, OBS -->` 把词加入当前章节白名单
-（到下一个 H2 失效）。
+（到下一个 `#` / `##` 失效）。
 
 用法：
     python3 scripts/check_static_chapter.py projects/<产品线>/prd-<产品线>-baseline.md
@@ -130,6 +131,25 @@ DYNAMIC_H2 = re.compile(
     + r").*$"
 )
 
+# 一级标题同判据：baseline / scene-list 用 `#` 分章，非静态章往往整章开在 H1（「# 15. 变更记录」），
+# 底下的 `##` 不一定再带关键词 —— 只认 H2 会让这类整章漏扫。
+DYNAMIC_H1 = re.compile(
+    r"^#\s+(?:[0-9]+\.\s+)?.*(?:"
+    + "|".join(re.escape(k) for k in NON_STATIC_KEYWORDS)
+    + r").*$"
+)
+
+# 半静态章：这两类章的表格 / 枚举里天然出现组件名与视觉词（埋点枚举写 translate、
+# 非功能性需求写性能参数），照查会常驻误报；但流水标注 / 思考过程在这里仍是真问题。
+PARTIAL_STATIC_KEYWORDS = ("埋点", "非功能性需求")
+PARTIAL_STATIC_H1 = re.compile(
+    r"^#\s+(?:[0-9]+\.\s+)?.*(?:"
+    + "|".join(re.escape(k) for k in PARTIAL_STATIC_KEYWORDS)
+    + r").*$"
+)
+PARTIAL_SKIP_CATEGORIES = frozenset({"技术实现", "UI 视觉"})
+
+H1 = re.compile(r"^#\s+")
 H2 = re.compile(r"^##\s+")
 
 # ── 豁免 ────────────────────────────────────────────────────────────
@@ -142,7 +162,7 @@ def check_file(path: Path) -> list[tuple[int, str, str, str, str]]:
     """返回命中列表 [(lineno, level, category, excerpt, matched), ...]。
 
     matched = 命中的离散词 / 片段（m.group(0)），供词表防腐化埋点反查死词；
-    ui_jargon / tech_jargon 命中词与 dump_term_inventory 词形一致，可直接闭环。
+    ui_jargon / tech_jargon 命中词与 telemetry term-inventory 词形一致，可直接闭环。
     """
     try:
         text = path.read_text(encoding="utf-8")
@@ -155,22 +175,34 @@ def check_file(path: Path) -> list[tuple[int, str, str, str, str]]:
 
     lines = text.splitlines()
     hits: list[tuple[int, str, str, str, str]] = []
-    in_dynamic = False  # 是否进入动态章（停止扫描）
+    chapter_dynamic = False  # H1 级：整章非静态 → 停止扫描
+    section_dynamic = False  # H2 级：本节非静态 → 只停本节
+    muted_cats: frozenset[str] = frozenset()  # H1 半静态章内只免这几类，空 = 未免
     chapter_allow: set[str] = set()  # 当前章节内的豁免词
 
     for i, raw in enumerate(lines, start=1):
         line = raw.rstrip()
 
-        # 章节切换
-        if H2.match(line):
-            if DYNAMIC_H2.match(line):
-                in_dynamic = True
+        # 一级标题：整章状态全部重置（H2 级状态跟着清）
+        if H1.match(line):
+            chapter_dynamic = bool(DYNAMIC_H1.match(line))
+            section_dynamic = False
+            if chapter_dynamic:
+                muted_cats = frozenset()
+            elif PARTIAL_STATIC_H1.match(line):
+                muted_cats = PARTIAL_SKIP_CATEGORIES
             else:
-                in_dynamic = False
+                muted_cats = frozenset()
+            chapter_allow = set()
+            continue
+
+        # 二级标题：只重置本节状态
+        if H2.match(line):
+            section_dynamic = bool(DYNAMIC_H2.match(line))
             chapter_allow = set()  # 每个 H2 章节清空豁免
             continue
 
-        if in_dynamic:
+        if chapter_dynamic or section_dynamic:
             continue
 
         # 累积本章节的 lint-allow
@@ -191,6 +223,8 @@ def check_file(path: Path) -> list[tuple[int, str, str, str, str]]:
 
         # 逐 pattern 匹配
         for pat, category in patterns:
+            if category in muted_cats:
+                continue
             m = pat.search(line)
             if not m:
                 continue

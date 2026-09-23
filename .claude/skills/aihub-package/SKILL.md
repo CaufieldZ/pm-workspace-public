@@ -47,7 +47,7 @@ scripts:
 - **打包禁手动 zip**：必须走 `bash hub/_repack.sh <包>`（自带缓存清理 + 预检 + INDEX 刷新）。手动 zip 会漏 `__pycache__` / `.DS_Store`、忘预检、INDEX drift
 - **改完源码必重打 zip**：`check_hub_fresh.py --strict` 抓「源文件比 zip 新」红灯，audit cat 21 阻断 commit。改完顺序：改源码 → `_repack.sh` → `_verify.sh`
 - **公司中台规范不可绕**：写 `hub/*/aihub_tool.py` / `system-prompt.md` / `agent-model.json` 前，`pre-writeedit-guard.sh` 会 block 直到读了 `ai-platform-specs.md` + 对应 L2 规范文档（MCP / Agent / Prompt 编写规范）
-- **内部文档不入 git**：`hub/AI中台-规范及帮助文档/` 走 .gitignore（含 wiki.internal-domains.com 内网 host），重拉走 `dig_confluence.py` 父页 164485093；`sync_public.sh` 排除整个 `/hub/`，绝不进公开镜像
+- **内部文档不入 git**：`hub/AI中台-规范及帮助文档/` 走 .gitignore（含 wiki.internal-domains.com 内网 host），重拉走 `confluence.py dig` 父页 164485093；`sync_public.sh` 排除整个 `/hub/`，绝不进公开镜像
 - **脱敏 fork 禁盲跑 sync --apply**：hub 是源头 skill 的脱敏泛化镜像，不是源头旧拷贝。`sync.sh` 显示的 diff 是「脱敏改造 + 源头新改动」混合，必须人工挑 backport，绝不 `--apply` 全量覆盖（会重新泄漏内网路径 + 抹掉脱敏改造）
 
 ## 核心输出规范

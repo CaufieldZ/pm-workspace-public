@@ -11,21 +11,11 @@ dashboard.py 按 type=skill + action=completed/failed 聚合「Skill 完成率�
 import datetime
 import json
 import os
-from pathlib import Path
+
+from lib.route_log import _find_root  # 与本文件原实现逐字相同，收编单源（两模块均不随 hub 分发）
 
 
-def _find_root() -> Path:
-    env = os.environ.get("CLAUDE_PROJECT_DIR")
-    if env:
-        return Path(env)
-    here = Path(__file__).resolve()
-    for p in [here] + list(here.parents):
-        if (p / ".claude").is_dir():
-            return p
-    return here.parent
-
-
-def emit(name: str, success: bool = True, reason: str = None) -> None:
+def emit(name: str, success: bool = True, reason: str | None = None) -> None:
     try:
         root = _find_root()
         log_dir = root / ".claude" / "logs"

@@ -22,19 +22,36 @@ NOTES 数据结构：每页一个 dict
     - list[(str, bool)]  含内联加粗的段，bool=True 表示该段加粗 + slate-800 深色
 - transition: str      过渡句（斜体浅灰，自然衔接下一页）
 
-前置：python-docx 已装（pip install python-docx；模块级 import，--help 也需要）。其余无。
+前置：python-docx 已装（pip install python-docx；模块级 import，--help 也需要）。
+     主题语言归正用工区 `scripts/lib/docx_fonts.py`（建文档时调用，绕开 python-docx 默认模板自带
+     的日语标记——那标记会让 WPS 把中文按日文字体渲染）；脚本被复制到项目 scripts/ 下也能向上找到。
 
 退出码：0 = 生成成功。
 """
 
+import importlib
 import os
 import sys
+from pathlib import Path
 
 from docx import Document
 from docx.enum.text import WD_LINE_SPACING
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt, RGBColor
+
+
+def _load_docx_fonts():
+    """向上找工作区 scripts/lib/docx_fonts.py（复制到项目 scripts/ 下也能找到）；找不到返回 None。"""
+    for base in (Path(__file__).resolve(), *Path(__file__).resolve().parents):
+        cand = base / 'scripts' / 'lib'
+        if (cand / 'docx_fonts.py').exists():
+            sys.path.insert(0, str(cand))
+            return importlib.import_module('docx_fonts')
+    return None
+
+
+_docx_fonts = _load_docx_fonts()
 
 # ================================================================
 # 视觉常量（不要随便改，对齐 PM-AI-SOP-script-v3.docx）
@@ -139,7 +156,7 @@ def render_paragraph_runs(paragraph, content):
 
 
 def build_notes(notes_data, output_path):
-    doc = Document()
+    doc = _docx_fonts.new_document() if _docx_fonts else Document()
 
     section = doc.sections[0]
     section.left_margin = Cm(2.4)
@@ -200,6 +217,9 @@ def build_notes(notes_data, output_path):
     doc.save(output_path)
     print(f'✅ 已生成: {output_path}')
     print(f'   页数: {len(notes_data)}')
+    if _docx_fonts is None:
+        print('   ⚠️  未找到工区 scripts/lib/docx_fonts.py：主题语言可能留成日语，'
+              'WPS 会把中文按日文字体渲染（拷脚本时把该 lib 一并带上）')
 
 
 if __name__ == '__main__':

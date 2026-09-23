@@ -17,7 +17,7 @@
 # HITS   : 可选，命中计数（如 CJK 命中 3 处半角标点）
 # DUR_MS : 可选，checker / 脚本耗时毫秒（runner.sh 计时后传，定位慢闸）
 # HITS_WORDS : 可选，命中词明细 JSON 数组串（如 '["赋能","闭环"]'），去重限 50、整 ≤200 char；
-#              词表防腐化用（analyze_term_hits 反查死词 / 漏收）。第 5 位 HITS 计数语义不动
+#              词表防腐化用（telemetry terms 反查死词 / 漏收）。第 5 位 HITS 计数语义不动
 #
 # session_id：不走参数，log_event 自动读 $CLAUDE_CODE_SESSION_ID env（Claude Code
 #   给整个进程树暴露，bash / python 子进程都继承同一值）→ 事件流串成会话主键
@@ -28,7 +28,16 @@
 #    "session_id":"341b60a1-...","dur_ms":42,"hits_words":["赋能","闭环"]}
 #
 # 设计：静默失败（埋点不应阻塞业务逻辑）；原子 append（< 4KB 单行写 POSIX 保证原子）
+#
+# 热路径三项按进程缓存（目录解析 / 目录创建 / 时间戳）：
+# log_event 在写盘热路径上被调 ~10 次，每次 4 个 fork（$() 取 root + mkdir + date + jq），
+# 实测 24.4ms/次，其中前三项固定开销占 ~18ms。目录与 root 在单个 hook 进程内不变、
+# 时间戳按秒复用不影响 analytics 粒度，故缓存 —— 每次只剩 jq 一个 fork 干真活。
 set +e
+
+_LOG_DIR_CACHE=""
+_LOG_TS=""
+_LOG_TS_SEC=""
 
 log_event() {
   local type="$1"
@@ -45,9 +54,14 @@ log_event() {
 
   [ -z "$type" ] || [ -z "$name" ] || [ -z "$action" ] && return 0
 
-  local log_dir="$(_hook_root)/.claude/logs"
+  # root 解析（$( ) 是 fork）按进程缓存：同一 hook 进程内 root 与目录名不变
+  if [ -z "$_LOG_DIR_CACHE" ]; then
+    _LOG_DIR_CACHE="$(_hook_root)/.claude/logs"
+  fi
+  local log_dir="$_LOG_DIR_CACHE"
   # SIGPIPE 竞态防御：head/管道截断中断脚本后，trap 里 $(...) 命令替换可能捕获
   # echo 残留（含换行 / ANSI 转义），污染 log_dir → mkdir 会创建怪目录树。校验后跳过。
+  # 校验每次照跑，不因缓存而绕过。
   case "$log_dir" in
     *$'\n'*|*$'\e'*) return 0 ;;
   esac
@@ -55,7 +69,8 @@ log_event() {
     */.claude/logs) ;;
     *) return 0 ;;
   esac
-  mkdir -p "$log_dir" 2>/dev/null || return 0
+  # 已存在则跳过 mkdir（[ -d ] 是内建，零 fork）；不存在才真建
+  [ -d "$log_dir" ] || { mkdir -p "$log_dir" 2>/dev/null || return 0; }
 
   # 截断 detail（避免单条 event 过大）
   if [ ${#detail} -gt 200 ]; then
@@ -65,8 +80,13 @@ log_event() {
   # jq 构造单行 JSON（启动 ~1ms，远低于 python3 冷启动 ~30ms；settings.json 已 allow jq）。
   # hits / dur_ms 能转 int 走 number，否则保留字符串（复刻原 try/except）；
   # hits_words 是已 dump 的 JSON 数组串，--argjson 解析后去重 + 限 50（解析失败则整条不带该字段）。
-  local ts
-  ts=$(date '+%Y-%m-%dT%H:%M:%S+08:00')
+  # ts 按秒复用（$SECONDS 变化才重取）：analytics 粒度就是秒，同秒内事件本就同一戳；
+  # 长驻进程也不会取到陈旧值。date 失败则 _LOG_TS 留空 → 下次调用重试。
+  if [ -z "$_LOG_TS" ] || [ "$_LOG_TS_SEC" != "$SECONDS" ]; then
+    _LOG_TS=$(date '+%Y-%m-%dT%H:%M:%S+08:00')
+    _LOG_TS_SEC="$SECONDS"
+  fi
+  local ts="$_LOG_TS"
   jq -cn \
     --arg ts "$ts" --arg type "$type" --arg name "$name" --arg action "$action" \
     --arg detail "$detail" --arg hits "$hits" --arg dur_ms "$dur_ms" \
@@ -112,7 +132,11 @@ _log_skip_gate() {
   local detail="$2"
   [ -n "${CLAUDE_HOOK_TEST:-}" ] && return 0
   log_event gate "$gate_name" skip "$detail"
-  local log_dir="$(_hook_root)/.claude/logs"
+  # 与 log_event 共用同一份目录缓存（上方 log_event 已填充）
+  if [ -z "$_LOG_DIR_CACHE" ]; then
+    _LOG_DIR_CACHE="$(_hook_root)/.claude/logs"
+  fi
+  local log_dir="$_LOG_DIR_CACHE"
   case "$log_dir" in
     *$'\n'*|*$'\e'*) return 0 ;;
   esac
@@ -120,6 +144,11 @@ _log_skip_gate() {
     */.claude/logs) ;;
     *) return 0 ;;
   esac
-  mkdir -p "$log_dir" 2>/dev/null || return 0
-  echo "$(date '+%Y-%m-%d %H:%M:%S')  $gate_name  $detail" >> "$log_dir/skip-gates.log"
+  [ -d "$log_dir" ] || { mkdir -p "$log_dir" 2>/dev/null || return 0; }
+  # 复用 log_event 缓存的时间戳：ISO 串去掉 +08:00 后缀、T 换空格 == date '+%Y-%m-%d %H:%M:%S'。
+  # log_event 早退（如测试态）时 _LOG_TS 为空 → 回退真取一次。
+  local human_ts="${_LOG_TS%%+*}"
+  [ -z "$human_ts" ] || human_ts="${human_ts/T/ }"
+  [ -z "$human_ts" ] && human_ts="$(date '+%Y-%m-%d %H:%M:%S')"
+  echo "$human_ts  $gate_name  $detail" >> "$log_dir/skip-gates.log"
 }

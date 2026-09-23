@@ -40,6 +40,7 @@ guard_risky_op() {
   echo "   → 先 Write .claude/session-state.md 保存当前进度" >&2
   echo "   → 理由: Playwright / 大文件渲染一旦 tool output 超 50K 或 API 挂住，无 compact 触发，状态会丢" >&2
   echo "" >&2
+  note_add "工区 risky-op 检查：即将执行高风险 Bash 操作（触发原因：${risky_reason}）。按工区约定，这类操作前建议先 checkpoint 到 .claude/session-state.md——Playwright / 大文件渲染一旦 tool output 超 50K 或 API 挂住，无 compact 触发，状态会丢。"
   log_event hook risky-op warn "$risky_reason"
   return 0
 }
@@ -179,6 +180,7 @@ EOF
 
   if [ -z "$project" ]; then
     echo "⚠️  pre-prototype-paradigm-gate: 命中 build_proto_skeleton 但未识别项目名，跳过范式门检测（请确认命令含 projects/{项目} 路径或 -p {项目} 参数）" >&2
+    note_add "工区 prototype-paradigm-gate 检查：本条命令命中 build_proto_skeleton 但未识别出项目名，范式门本次被跳过（未阻断）。要让范式门生效，命令需含 projects/{项目} 路径或 -p {项目} 参数。"
     log_event gate prototype-paradigm-gate warn "no-project: ${cmd:0:80}"
     return 0
   fi

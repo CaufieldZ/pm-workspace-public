@@ -5,9 +5,11 @@
 读起来像真实产品文案，开发误以为该处真有这段文字。
 
 口径：
-- prototype：整份就是 UI，注解不该出现在任何渲染壳内（.app-mock/.web-front/.layout）。
+- prototype：整份就是 UI，注解不该出现在任何渲染壳内（.app-mock/.web-front/.layout）；
+  屏内还禁内部编号（场景编号 / 决策号 / 内部文件名，见 INTERNAL_ID_PATTERNS）。
 - IMAP：注解是合法一等功能，但只能在 mockup 外（.ann-card/.flow-note）；
-  .phone/.webframe 屏内禁。编号锚点（.phone-label/.anno-n）由 visible_text._is_in_anchor 跳过。
+  .phone/.webframe 屏内禁。编号锚点（.phone-label/.anno-n）由 visible_text._is_in_anchor 跳过；
+  内部编号不查——屏内的「C-3 ↗」是合法跳转写法。
 
 调用方：
 - scripts/check_ui_annotation.py（ui-annotation-gate hook）
@@ -21,6 +23,7 @@ import re
 
 from bs4 import BeautifulSoup, Comment, Tag
 
+from .banned_terms import DECISION_RE, INTERNAL_FILES_RE, SCENE_ANCHOR_RE
 from .visible_text import SKIP_TAGS, _is_in_anchor
 
 # mockup 根容器：屏内文本 = 渲染 UI，注解禁入
@@ -62,6 +65,22 @@ def scan_ui_annotation(text):
     for m in ANNOTATION_PAREN_RE.finditer(text):
         hits.append(('annotation_paren', m.group(0)))
     return hits
+
+
+# 屏内「内部编号」：场景编号 / 决策号 / 内部文件名 —— 都是 PM 内部定位用的坐标，
+# 渲染屏里的读者看到「A-1」「见 baseline.md」不知道指什么。
+# 只对 prototype 开：IMAP 屏内的「C-3 ↗」是合法跳转写法（编号就是跳转目标），见
+# interaction-map SKILL。编号锚点类容器（phone-label / ganno-n）由遍历层跳过。
+INTERNAL_ID_PATTERNS = (
+    (SCENE_ANCHOR_RE, 'internal_scene_code'),
+    (DECISION_RE, 'internal_decision_num'),
+    (INTERNAL_FILES_RE, 'internal_file_name'),
+)
+
+
+def scan_internal_ids(text):
+    """扫描文本里的内部编号锚点，返回 (category, match_str) 列表。"""
+    return [(cat, m.group(0)) for pat, cat in INTERNAL_ID_PATTERNS for m in pat.finditer(text)]
 
 
 def find_mockup_annotations(html_text, kind):
@@ -107,6 +126,8 @@ def find_mockup_annotations(html_text, kind):
             if _is_in_anchor(node):
                 continue
             hits = scan_ui_annotation(text)
+            if kind == 'proto':
+                hits = hits + scan_internal_ids(text)
             if hits:
                 raw_cls = parent.get('class')
                 if isinstance(raw_cls, str):  # bs4 单 class 返回 str
