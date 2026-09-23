@@ -31,7 +31,7 @@
 | 下游 | PRD 扔给研发自己理解 | PRD md 作为唯一可信源 — 业务对象 / 状态机 / 5 段式 / 文案矩阵都在一份文档，研发 / 设计 / QA AI 各取所需 |
 | 方法论沉淀 | 散落在个人习惯和文档里 | 战略层 + 工作流层 + 项目层三层落盘，可跨 session / 跨模型复用 |
 
-![在 VSCode 里用 Claude Code 跑 PM 工作流](assets/readme/sop-home.png)
+![在 VSCode 里用 Claude Code 跑 PM 工作流](assets/readme/hero-vscode.png)
 
 > 16 Skill 覆盖产品经理全链路、旗舰模型讨论 → 中档模型产出节约 ~46% 成本。AI 干体力活（按模板批量生成、术语全局一致、跨文档校验），PM 干脑力活（取舍、向上管理、审业务真实性）。
 
@@ -95,7 +95,7 @@ git config core.hooksPath .githooks
 
 整个系统由**战略 → 工作流 → 项目**三个层次构建，下层引用上层，上层不感知下层：
 
-![四层文件架构](assets/readme/sop-b-arch.png)
+![四层文件架构](assets/readme/arch-four-layers.png)
 
 > 启动顺序从宽到窄——L0 战略 → L1 全局规则 → L2 Skill 包 → L3 项目文件。下图把 README 的"工作流层"按文件类型进一步拆为 L1 全局规则（CLAUDE.md + runbooks）+ L2 Skill 包（SKILL.md + references + scripts），更接近真实文件分布。
 
@@ -194,7 +194,7 @@ git config core.hooksPath .githooks
 
 PRD md 一次定义、多处使用——业务对象 / 状态机 / 子场景区块表全部结构化锁定，下游 AI Agent 不必二次解读：
 
-![PRD md 一次定义，多处使用](assets/readme/sop-delivery.png)
+![PRD md 一次定义，多处使用](assets/readme/prd-downstream.png)
 
 ```
          ┌─→ 3.2 业务对象 + 3.3 状态机 ────────────→ 研发 AI       (Cursor · Copilot · Claude Code)
@@ -214,7 +214,7 @@ PRD md ──┼─→ 5/6/7.x 子场景区块表 + 截图 ───────
 
 ## 工程质量
 
-![Hooks 全景 · 16 个 hook 挂在 6 个事件上](assets/readme/sop-b-infra.png)
+![Hooks 全景 · 16 个 hook 挂在 6 个事件上](assets/readme/hooks-lifecycle.png)
 
 ### 硬性约束（代码层面拦截）
 
