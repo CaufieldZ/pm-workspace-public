@@ -6,12 +6,12 @@
 
 [中文](README.md) · **English**
 
-Meeting notes / MRD / competitor screenshots → scene lists, interaction maps, PRDs. 18 Skills covering the full product-manager workflow.
+Meeting notes / MRD / competitor screenshots → scene lists, interaction maps, PRDs. 16 Skills covering the full product-manager workflow.
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-1f54d6?style=flat-square)](LICENSE)
-[![Skills](https://img.shields.io/badge/skills-18-D97757?style=flat-square)](.claude/skills)
-[![Hooks](https://img.shields.io/badge/hooks-14-000?style=flat-square)](.claude/hooks)
-[![Audit](https://img.shields.io/badge/audit-21_categories-000?style=flat-square)](.claude/skills/workspace-audit)
+[![Skills](https://img.shields.io/badge/skills-16-D97757?style=flat-square)](.claude/skills)
+[![Hooks](https://img.shields.io/badge/hooks-16-000?style=flat-square)](.claude/hooks)
+[![Audit](https://img.shields.io/badge/audit-18_categories-000?style=flat-square)](.claude/skills/workspace-audit)
 [![Python](https://img.shields.io/badge/python-3.10+-000?style=flat-square)]()
 [![Node](https://img.shields.io/badge/node-18+-000?style=flat-square)]()
 [![Claude Code](https://img.shields.io/badge/claude_code-native-000?style=flat-square)](https://docs.anthropic.com/en/docs/claude-code)
@@ -27,7 +27,7 @@ Meeting notes / MRD / competitor screenshots → scene lists, interaction maps, 
 | Input | Meeting notes / MRD / competitor shots / verbal asks | Same |
 | Process | PM hand-draws wireframes, writes PRDs, re-aligns repeatedly | AI produces per-Skill deliverables, PM reviews and tweaks |
 | Time cost | 3–5 days | 10 min – 2 hours |
-| Consistency | Different output each time, term drift | Locked IDs + globally consistent terms + 16-category audit |
+| Consistency | Different output each time, term drift | Locked IDs + globally consistent terms + 18-category audit |
 | Downstream | PRD thrown to engineering to interpret | PRD md is the single source of truth — business objects / state machines / 5-section scenes / copy matrices all in one doc, dev / design / QA agents each take what they need |
 | Methodology | Scattered across personal habits and docs | Three layers (strategy / workflow / project) written to disk, reusable across sessions and models |
 
@@ -100,7 +100,7 @@ Product-management methodology committed to disk, reused across projects. Inject
 | File | Load mode | What it owns |
 |:--|:--|:--|
 | `CLAUDE.md` | Injected every session | Tool ops · shortcut routes · incoming-request PM-GATE 4-risk scan · three pipeline routing · runbook trigger table |
-| `.claude/runbooks/*.md` | Read on demand when trigger hits | 20 runbooks (methodology / artifact conventions / decision framework / LNO / project mgmt / version bump / human voice incl. conversation style / HTML pipeline / Confluence archaeology / defensive patterns / AI platform specs entry / etc.) |
+| `.claude/runbooks/*.md` | Read on demand when trigger hits | 18 runbooks (methodology / artifact conventions / decision framework / LNO / project mgmt / version bump / human voice incl. conversation style / HTML pipeline / Confluence archaeology / defensive patterns / AI platform specs entry / etc.) |
 | `LEARNED.md` | Injected every session (optional) | Personal communication preferences + correction log (repo root, gitignored) |
 
 ### Layer 3 · Project
@@ -209,7 +209,7 @@ PRD md ─────┼─→ 5-7 "Page structure & information hierarchy" tab
 |:-|:-|
 | Anti-rot hook | `.githooks/pre-commit` runs secret scan + staged large-file/local-source-material blocks on every commit; Skill / rule / `.claude/hooks/` changes additionally run `audit.sh 1,2,3,4,7,12,13,14,15,16,17,19,20,21,23,25` (16 hard checks) |
 | 16 runtime hooks | 16 hook files fan out into 28 automatic guards: CJK punctuation / plain-language / version sync / wiki push / scripts-first / prototype paradigm / risky-op fallback / Learn-Rule capture / session survival, etc. stderr warnings mean fix-now, blocking hooks reject the write |
-| 21 workspace-audit categories | Phase 1 — 21 script-based hard checks (files / numbers / deps / rules / tokens / deliverables / SKILL_TABLE / scripts / imports / trinity purity / hooks health / spec-promise consistency / SKILL structure / dead links / dangling scene IDs / cross-platform / count reconciliation / hub health / script health / threshold distribution / proto reproducibility / gate health, etc.) + Phase 2 — 4 model-reasoning checks (rule conflicts / security / robustness / slimming) |
+| 18 workspace-audit categories | Phase 1 — 18 script-based hard checks (files / numbers / deps / rules / tokens / deliverables / SKILL_TABLE / scripts / imports / trinity purity / hooks health / spec-promise consistency / SKILL structure / dead links / dangling scene IDs / cross-platform / count reconciliation / hub health / script health / threshold distribution / proto reproducibility / gate health, etc.) + Phase 2 — 4 model-reasoning checks (rule conflicts / security / robustness / slimming) |
 | Regression tests | 554 pytest cases in `scripts/tests/` (dashboard rendering / CJK punctuation / ID contracts / gate semantics, etc.) + 134 dual-probe assertions in `test-hooks.sh` (must-block forms block, harmless lookalikes pass) — run on any hook / renderer change |
 | HTML iron rule | > 200 lines must be script-generated (Step A skeleton → B fill → C self-check), direct Write is forbidden |
 | Self-check backpressure | Each Skill carries its own checklist; up to 2 auto-fix attempts, then stops and reports — silent skip is forbidden |
@@ -275,9 +275,9 @@ pm-workspace/
 │   │   ├── pre-version-sync-gate.sh
 │   │   ├── stop-learn-capture.sh         # extracts [LEARN] from transcript → LEARNED.md
 │   │   └── ...                  #   16 total
-│   ├── runbooks/               # 20 on-demand methodology / ops references, incl. conversation style (human-voice-rules.md §0) + class rules (defensive-patterns.md) + AI platform specs entry (ai-platform-specs.md)
+│   ├── runbooks/               # 18 on-demand methodology / ops references, incl. conversation style (human-voice-rules.md §0) + class rules (defensive-patterns.md) + AI platform specs entry (ai-platform-specs.md)
 │   ├── _meta/                  # metadata (half-life.md rule half-life index)
-│   ├── skills/                  # 18 Skills (trinity: SKILL.md + scripts/ + references/ + assets/)
+│   ├── skills/                  # 16 Skills (trinity: SKILL.md + scripts/ + references/ + assets/)
 │   │   ├── {skill}/scripts/     #   executable code (Claude calls; doesn't read source)
 │   │   ├── {skill}/references/  #   .md docs (Read on demand)
 │   │   ├── {skill}/assets/      #   templates / fonts / config (read by scripts into output)

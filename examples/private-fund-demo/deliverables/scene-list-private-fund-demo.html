@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>private-fund-demo · 场景清单 v1.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@300;400;500;600;900&family=Lora:ital,wght@0,400..700;1,400..700&family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+
+
+:root {
+  
+  --cd-bg:      #1F1F1E;
+  --cd-ink:     #C3C2B7;
+  --cd-ink-82:  rgba(195, 194, 183, 0.82);
+  --cd-ink-58:  rgba(195, 194, 183, 0.58);
+  --cd-ink-40:  rgba(195, 194, 183, 0.40);
+  --cd-ink-18:  rgba(195, 194, 183, 0.18);
+  --cd-hairline: rgba(195, 194, 183, 0.10);
+
+  
+  --cd-accent:      #D97757;  
+  --cd-accent-deep: #B45A3D;  
+  --cd-accent-glow: rgba(217, 119, 87, 0.22);
+  --cd-accent-2:    #6A9BCC;  
+  --cd-accent-3:    #788C5D;  
+
+  
+  --cd-light-bg:   #FAF9F5;   
+  --cd-light-ink:  #141413;   
+  --cd-light-dim:  #B0AEA5;   
+  --cd-light-soft: #E8E6DC;   
+  --cd-light-hair: rgba(20, 20, 19, 0.10);
+
+  
+  --cd-serif-cn: "Noto Serif SC", "Source Han Serif SC", serif;
+  --cd-serif-en: "Lora", Georgia, "Times New Roman", serif;
+  --cd-sans:     "Noto Sans SC", "Poppins", "PingFang SC", -apple-system, system-ui, sans-serif;
+  --cd-mono:     "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+
+  
+  --sp-1: 8px;
+  --sp-2: 16px;
+  --sp-3: 24px;
+  --sp-4: 32px;
+  --sp-6: 48px;
+  --sp-8: 64px;
+
+  
+  --radius-sm:  4px;
+  --radius-md:  8px;
+  --radius-lg: 16px;
+}
+
+
+.theme-cd-light {
+  --cd-bg:      var(--cd-light-bg);
+  --cd-ink:     var(--cd-light-ink);
+  --cd-ink-82:  rgba(20, 20, 19, 0.82);
+  --cd-ink-58:  rgba(20, 20, 19, 0.58);
+  --cd-ink-40:  rgba(20, 20, 19, 0.40);
+  --cd-ink-18:  rgba(20, 20, 19, 0.18);
+  --cd-hairline: rgba(20, 20, 19, 0.10);
+}
+
+
+.theme-cd-brand {
+  --cd-bg:      #141413;
+  --cd-ink:     #FAF9F5;
+  --cd-ink-82:  rgba(250, 249, 245, 0.82);
+  --cd-ink-58:  rgba(250, 249, 245, 0.58);
+  --cd-ink-40:  rgba(250, 249, 245, 0.40);
+  --cd-ink-18:  rgba(250, 249, 245, 0.18);
+  --cd-hairline: rgba(250, 249, 245, 0.10);
+}
+
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--cd-bg);
+  color: var(--cd-ink);
+  font-family: 'Noto Sans SC', 'Noto Serif SC', 'Poppins', 'PingFang SC', -apple-system, system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: var(--sp-8) var(--sp-6) var(--sp-8);
+}
+
+
+.hd, .note, .stats {
+  max-width: 1080px;
+}
+
+
+.hd {
+  padding-bottom: var(--sp-4);
+  margin-bottom: var(--sp-6);
+  border-bottom: 1px solid var(--cd-hairline);
+}
+.hd .eyebrow {
+  font-family: var(--cd-mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  color: var(--cd-ink-58);
+  text-transform: uppercase;
+  margin-bottom: var(--sp-2);
+}
+.hd h1 {
+  font-family: var(--cd-serif-cn), var(--cd-serif-en);
+  font-weight: 500;
+  font-size: 56px;
+  line-height: 1.2;
+  margin: 0 0 var(--sp-3);
+  color: var(--cd-ink);
+  letter-spacing: -0.015em;
+}
+.hd .meta {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  font-family: var(--cd-mono);
+  font-size: 12px;
+  color: var(--cd-ink-58);
+  letter-spacing: 0.02em;
+}
+.hd .meta span strong {
+  color: var(--cd-ink);
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+
+.note {
+  border-left: 2px solid var(--cd-accent);
+  padding: var(--sp-2) var(--sp-3);
+  margin: 0 0 var(--sp-6);
+  background: rgba(217, 119, 87, 0.05);
+  font-size: 14.5px;
+  color: var(--cd-ink);
+  line-height: 1.75;
+}
+.note p {
+  margin: 0;
+}
+.note p + p {
+  margin-top: 8px;
+  color: var(--cd-ink-82);
+  font-size: 13.5px;
+}
+
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
+  margin: var(--sp-4) 0 var(--sp-8);
+  padding: var(--sp-3) 0;
+  border-top: 1px solid var(--cd-hairline);
+  border-bottom: 1px solid var(--cd-hairline);
+}
+.stat {
+  min-width: 120px;
+}
+.stat .lbl {
+  font-family: var(--cd-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cd-ink-58);
+  margin-bottom: 8px;
+}
+.stat .val {
+  font-family: var(--cd-serif-cn), var(--cd-serif-en);
+  font-size: 36px;
+  font-weight: 500;
+  color: var(--cd-ink);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+.stat .val .sub {
+  font-family: var(--cd-mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--cd-ink-40);
+  margin-left: 8px;
+  letter-spacing: 0.04em;
+}
+
+
+.sec {
+  margin-bottom: var(--sp-8);
+}
+.sec h2 {
+  font-family: var(--cd-serif-cn), var(--cd-serif-en);
+  font-weight: 500;
+  font-size: 32px;
+  line-height: 1.3;
+  margin: 0 0 var(--sp-3);
+  color: var(--cd-ink);
+  letter-spacing: -0.005em;
+}
+.sec p {
+  font-size: 15px;
+  color: var(--cd-ink-82);
+  margin: 0 0 var(--sp-2);
+  line-height: 1.75;
+  max-width: 76ch;
+}
+
+
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14.5px;
+  margin-top: var(--sp-3);
+}
+.tbl thead th {
+  text-align: left;
+  font-weight: 500;
+  font-family: var(--cd-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cd-ink-58);
+  padding: 12px var(--sp-2) 10px;
+  border-bottom: 1px solid var(--cd-hairline);
+  white-space: nowrap;
+}
+.tbl thead th:first-child { padding-left: 0; }
+.tbl thead th:last-child { padding-right: 0; }
+
+.tbl tbody td {
+  padding: 16px var(--sp-2);
+  border-bottom: 1px solid var(--cd-hairline);
+  vertical-align: top;
+  color: var(--cd-ink-82);
+  line-height: 1.65;
+}
+.tbl tbody td:first-child { padding-left: 0; }
+.tbl tbody td:last-child { padding-right: 0; }
+
+
+.tbl td.col-id,
+.tbl td.col-pri,
+.tbl td.col-dev { white-space: nowrap; }
+
+.tbl tbody tr:hover td {
+  background: rgba(195, 194, 183, 0.025);
+}
+
+
+.tbl td.col-id {
+  font-family: var(--cd-mono);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--cd-accent);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+
+.tbl td.col-name {
+  color: var(--cd-ink);
+  font-weight: 500;
+  font-size: 15px;
+}
+
+
+.pri {
+  display: inline-block;
+  font-family: var(--cd-mono);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 3px;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.pri-p0  { background: rgba(245, 63, 63, 0.14);  color: #F47272; }
+.pri-p1  { background: rgba(217, 119, 87, 0.18); color: var(--cd-accent); }
+.pri-p2  { background: rgba(195, 194, 183, 0.10); color: var(--cd-ink-58); }
+.pri-v2  { background: rgba(106, 155, 204, 0.18); color: var(--cd-accent-2); }
+.pri-future { background: rgba(120, 140, 93, 0.18); color: var(--cd-accent-3); }
+.pri-skip { background: transparent; color: var(--cd-ink-40); border: 1px dashed var(--cd-hairline); }
+
+
+.dev {
+  display: inline-block;
+  font-family: var(--cd-mono);
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  background: rgba(195, 194, 183, 0.06);
+  color: var(--cd-ink-82);
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+}
+.dev-mob { color: var(--cd-accent-2); }
+.dev-web { color: var(--cd-accent-3); }
+
+
+.tbl-compact {
+  font-size: 13.5px;
+  margin-top: var(--sp-2);
+  max-width: 720px;
+}
+.tbl-compact thead th {
+  font-size: 10px;
+}
+.tbl-compact tbody td {
+  padding: 10px var(--sp-2);
+  font-size: 13.5px;
+}
+
+
+footer {
+  margin-top: var(--sp-8);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--cd-hairline);
+  font-family: var(--cd-mono);
+  font-size: 11px;
+  color: var(--cd-ink-40);
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+}
+footer code {
+  background: rgba(195, 194, 183, 0.08);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: var(--cd-ink-82);
+  font-size: 11px;
+}
+
+
+code {
+  font-family: var(--cd-mono);
+  font-size: 0.9em;
+  background: rgba(195, 194, 183, 0.08);
+  padding: 1px 6px;
+  border-radius: 3px;
+  color: var(--cd-ink);
+}
+
+
+strong { color: var(--cd-ink); font-weight: 500; }
+
+
+ul, ol {
+  margin: 0 0 var(--sp-3);
+  padding-left: 1.4em;
+  color: var(--cd-ink-82);
+  font-size: 15px;
+  line-height: 1.8;
+}
+li { margin-bottom: 4px; }
+
+
+.flow-tbl {
+  margin-top: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.flow-row {
+  padding: var(--sp-2) 0;
+  border-bottom: 1px solid var(--cd-hairline);
+}
+.flow-row:last-child { border-bottom: none; }
+
+.flow-line {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.flow-ep {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+.flow-ep-text {
+  font-size: 14px;
+  color: var(--cd-ink-58);
+  font-style: italic;
+}
+.flow-ep-empty {
+  color: var(--cd-ink-40);
+}
+.flow-multi {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.flow-view {
+  font-family: var(--cd-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cd-ink-40);
+  margin-bottom: 2px;
+}
+.flow-id {
+  display: inline-block;
+  font-family: var(--cd-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cd-accent);
+  background: rgba(217, 119, 87, 0.10);
+  padding: 3px 9px;
+  border-radius: 3px;
+  letter-spacing: 0.04em;
+  margin-right: 4px;
+}
+.flow-name {
+  font-size: 14px;
+  color: var(--cd-ink);
+  font-weight: 500;
+  margin-top: 2px;
+  line-height: 1.5;
+}
+
+.flow-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  padding: 0 var(--sp-1);
+  position: relative;
+}
+.flow-arrow::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--cd-ink-18);
+  z-index: 0;
+}
+.flow-arrow::after {
+  content: "▸";
+  position: absolute;
+  right: -2px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--cd-ink-40);
+  font-size: 14px;
+  z-index: 0;
+}
+.flow-action {
+  position: relative;
+  z-index: 1;
+  background: var(--cd-bg);
+  padding: 2px 12px;
+  font-size: 13px;
+  color: var(--cd-ink);
+  font-weight: 500;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.flow-extra {
+  margin-top: 8px;
+  margin-left: 0;
+  padding: 6px var(--sp-2);
+  background: rgba(195, 194, 183, 0.04);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--cd-ink-58);
+  line-height: 1.65;
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="hd">
+    <div class="eyebrow">scene list · 场景清单</div>
+    <h1>private-fund-demo · 场景清单 v1.0</h1>
+    <div class="meta"><span>项目<strong>private-fund-demo</strong></span><span>生成<strong>2026-05-01 02:45</strong></span><span>by<strong>维护者</strong></span></div>
+  </header>
+  <div class="note"><p>编号锁定后不可改动，新增只追加。所有产出物（交互大图 / PRD）复用此编号和 View 划分。</p></div>
+  <div class="stats"><div class="stat"><div class="lbl">Sections</div><div class="val">2</div></div><div class="stat"><div class="lbl">Total scenes</div><div class="val">5</div></div><div class="stat"><div class="lbl">P0</div><div class="val">5<span class="sub">must-ship</span></div></div><div class="stat"><div class="lbl">P1</div><div class="val">0<span class="sub">enhance</span></div></div><div class="stat"><div class="lbl">P2</div><div class="val">0<span class="sub">polish</span></div></div><div class="stat"><div class="lbl">Later</div><div class="val">0<span class="sub">future</span></div></div></div>
+  <section class="sec"><h2>View 1 · H5 投资人端</h2><p><strong>统计</strong>：共 4 个场景 · P0 × 4</p><table class="tbl tbl-compact"><thead><tr><th>编号</th><th>场景</th><th>模块</th><th>设备</th><th>P</th></tr></thead><tbody><tr><td class="col-id">A-1</td><td class="col-name">基金详情 + 认购下单</td><td>认购模块</td><td class="col-dev"><span class="dev dev-mob">📱phone</span></td><td class="col-pri"><span class="pri pri-p0">P0</span></td></tr><tr><td class="col-id">A-2</td><td class="col-name">认购协议签署 + 冷静期提示</td><td>认购模块</td><td class="col-dev"><span class="dev dev-mob">📱phone</span></td><td class="col-pri"><span class="pri pri-p0">P0</span></td></tr><tr><td class="col-id">B-1</td><td class="col-name">持仓列表 + 赎回入口</td><td>持仓 / 赎回模块</td><td class="col-dev"><span class="dev dev-mob">📱phone</span></td><td class="col-pri"><span class="pri pri-p0">P0</span></td></tr><tr><td class="col-id">B-2</td><td class="col-name">赎回下单（含大额顺延提示）</td><td>持仓 / 赎回模块</td><td class="col-dev"><span class="dev dev-mob">📱phone</span></td><td class="col-pri"><span class="pri pri-p0">P0</span></td></tr></tbody></table></section><section class="sec"><h2>View 2 · Web 运营后台</h2><p><strong>统计</strong>：共 1 个场景 · P0 × 1</p><p><strong>总计</strong>：5 个场景 · P0 × 5</p><p><strong>涉及端</strong>：H5（投资人端）+ Web（运营后台）</p><p><strong>跨场景主链路</strong>：A-1 → A-2（下单后签约）→ B-1（持仓查看）→ B-2（赎回）→ C-1（运营审核）</p><table class="tbl tbl-compact"><thead><tr><th>编号</th><th>场景</th><th>模块</th><th>设备</th><th>P</th></tr></thead><tbody><tr><td class="col-id">C-1</td><td class="col-name">订单审核队列（认购 + 赎回）</td><td>订单中心</td><td class="col-dev"><span class="dev dev-web">🖥web</span></td><td class="col-pri"><span class="pri pri-p0">P0</span></td></tr></tbody></table></section>
+  <footer>
+    source: <code>examples/private-fund-demo/scene-list.md</code> · 修改请改 md 后重生
+  </footer>
+</div>
+</body>
+</html>
