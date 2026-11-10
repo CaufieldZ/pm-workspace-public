@@ -189,11 +189,11 @@ bash hub/_vet_local.sh hub/<包> && bash hub/_repack.sh <包> && bash hub/_verif
 
 | 文件 | 何时读 |
 |------|--------|
-| [hub/README.md](../../../hub/README.md) | 维护者手册（三层文件分类 / 脱敏规则 / sync.sh / 验证 / SKILL-TO-AGENT 入口） |
-| [hub/AUTHORING-RULES.md](../../../hub/AUTHORING-RULES.md) | 上架总准则（frontmatter 合规 / 红旗行为 / 用例 / 密钥误报规避） |
-| [hub/SKILL-TO-AGENT.md](../../../hub/SKILL-TO-AGENT.md) | skill → OWUI Agent 剥耦合（Valves / daemon vs 内联两范式） |
-| [hub/INDEX.md](../../../hub/INDEX.md) | 22 包当前态清单（自动生成，看包分类与一句话） |
-| [.claude/runbooks/ai-platform-specs.md](../../runbooks/ai-platform-specs.md) | 公司中台规范入口路由（L1，产物→必读规范映射） |
+| `hub/README.md` | 维护者手册（三层文件分类 / 脱敏规则 / sync.sh / 验证 / SKILL-TO-AGENT 入口） |
+| `hub/AUTHORING-RULES.md` | 上架总准则（frontmatter 合规 / 红旗行为 / 用例 / 密钥误报规避） |
+| `hub/SKILL-TO-AGENT.md` | skill → OWUI Agent 剥耦合（Valves / daemon vs 内联两范式） |
+| `hub/INDEX.md` | 包当前态清单（自动生成，看包分类与一句话） |
+| `.claude/runbooks/ai-platform-specs.md` | 公司中台规范入口路由（L1，产物→必读规范映射） |
 | [scripts/check_hub_fresh.py](../../../scripts/check_hub_fresh.py) | 发布物新鲜度校验（zip 过期 / 部署态漂移） |
 
 ## 失败恢复

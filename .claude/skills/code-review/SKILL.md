@@ -64,7 +64,7 @@ python3 .claude/skills/code-review/scripts/scan_changes.py --range HEAD~1   # �
 
 **R4 · 机械 gate 已出结论的维度只汇总不重述。** ruff F / `bash -n` / shellcheck / audit 19 / pytest 的结果进第 2 块一行一条，不在 findings 表里重讲一遍。
 
-**R5 · 只审 diff 命中的文件。** 不顺手审没改的老代码、不提「顺便重构一下」。对应 CLAUDE.md「只动该动的」与 `pm-methodology.md §五`「先确认现有基建已覆盖什么再报盲区，别把已有 gate 当缺口」。
+**R5 · 只审 diff 命中的文件。** 不顺手审没改的老代码、不提「顺便重构一下」。对应 CLAUDE.md「只动该动的」与 `defensive-patterns.md §三`「先确认现有基建已覆盖什么再报盲区，别把已有 gate 当缺口」。
 
 **R6 · 🔴 级 finding 上报前必须实跑证实。** 「会崩 / 静默错数据」结论禁止单凭读代码推断——用最小输入跑一次复现（只读调用，或 `tempfile` 造一次性 fixture 用后即删；系统临时目录里的 fixture 不属于 R1 禁的被审 / 工区文件）。复现不了 → 降 🟡 并在问题栏标「未复现」+ 写明推断依据。锚点：`SCRIPTS_WRITING.md §四`「凭内联测试 / 表象反推 bug」。
 

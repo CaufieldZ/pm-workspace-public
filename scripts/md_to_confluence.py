@@ -20,20 +20,21 @@ Examples:
 退出码：1 = md 不存在 / 参数互斥 / 同名冲突等（消息见 stderr）。
 
 PRD md 路径自动适配：
-    1. 检测 split 模式（{stem}-scenes/ 子目录存在）→ 调 prd_compose.py 拼接成完整 md 再推
-    2. 扫 md 里 `![alt](./assets/...)` 本地图片 → 上传为 Confluence attachment
-    3. 图片在 storage 里渲染为 <ac:image><ri:attachment ri:filename="X"/></ac:image> 真原生引用
+    1. 扫 md 里 `![alt](./assets/...)` 本地图片 → 上传为 Confluence attachment
+    2. 图片在 storage 里渲染为 <ac:image><ri:attachment ri:filename="X"/></ac:image> 真原生引用
        （Confluence markdown 宏内嵌 `![](filename)` 不会自动找 attachment，会图片裂）
-
-split-children-by-chapter 模式：
-    - 新建：--parent-id PARENT_SPACE_ID（在某 space 下新建父页 + N 子页）
-    - 更新：--update-id PARENT_PAGE_ID（已存在的父页，自动取 children 按章节标题匹配 update）
 
 首推前查同名（LEARNED 2026-05-12）：
     --parent-id 模式首推时，Confluence create 同名冲突会返回 HTTP 400。
     PM 先用 `--title` 显式改名或先用 search_pages 查空间下同名页（lib.confluence_rest.search_pages）.
 
-推送前 md 内容自检（渲染会炸的）：
+推送前 md 内容自检：
+
+- 字段块软换行：promo / launch 产物里 ≥2 行连续的「标签：值」且中间无空行 → 阻断
+  （CommonMark 会把它们并成一段，wiki 上只剩空格）。修法：补空行或改成列表项；
+  确认要这样推加 `--allow-soft-breaks`。侦测器：`check_soft_line_breaks`。
+
+以下渲染会炸的：
     - 嵌套任务列表：Confluence ac:task-body 不允许嵌 ul，改「标签 → 子项」平铺 checkbox；
       推前 grep 野生 `</content>` / `</ac:` 标签残留，可跑 render_md_full 校验 task-body 开合平衡。
     - HTML table 的 th 含 `&` 必须写 `&amp;`，否则渲染后 Confluence XHTML 解析 400
@@ -52,20 +53,10 @@ _r and (_s.path.insert(0, str(_r / "scripts")), __import__("lib.route_log", from
 import argparse
 import mimetypes
 import re
-import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
 
-from lib.confluence_rest import (
-    add_label,
-    base_url,
-    create_page,
-    list_child_pages,
-    search_pages,
-    set_content_property,
-    update_page,
-)
 from lib.confluence_md import (
     _is_sep_line,
     _is_table_row,
@@ -74,6 +65,14 @@ from lib.confluence_md import (
     extract_title,
     render_md_full,
     render_raw_html,
+)
+from lib.confluence_rest import (
+    add_label,
+    base_url,
+    create_page,
+    search_pages,
+    set_content_property,
+    update_page,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -232,7 +231,86 @@ def warn_broken_tables(md: str, md_path: Path) -> None:
     print("    建议删掉表格内的空行后重推；坚持推送的话，这几处请推完肉眼验收。\n", file=sys.stderr)
 
 
-# ── PRD md 自适配：split 模式 compose + 本地图片提取 ─────────────────────
+# ── 软换行陷阱：连续行在 Markdown 里会并成一段 ────────────────────
+# CommonMark 把「中间没有空行的连续行」当同一段的软换行，推上去只剩一个空格。
+# 骨架里的「主标题：/副标题：」这类逐行字段最常踩：本地看着一行一条，wiki 上并成一句。
+# 判据：整段每行都短（<46 字符）且段内含至少一条「标签：」行 → 字段块，阻断；
+#       其余短行段只提示，正文硬折行（长行）不提示。
+_OL_RE = re.compile(r"^\s*\d+[.)]\s")
+_FIELD_RE = re.compile(r"^\s*[^：:|]{1,12}[：:]")
+_STRUCT_PREFIX = ("-", "*", "|", "#", ">", "`", "+", "<", "!", "{", "[", "(", '"', "'")
+
+
+def soft_break_runs(md: str):
+    """返回 [(起始行号, [行...]), ...]：会被并成一段的短行块。"""
+    lines = md.split("\n")
+    runs, cur = [], []
+    fence = front = False
+
+    def flush():
+        if len(cur) >= 2:
+            runs.append((start, list(cur)))
+
+    start = 1
+    for i, line in enumerate(lines, 1):
+        st = line.strip()
+        if st.startswith("```"):
+            fence = not fence
+            flush(); cur = []
+            continue
+        if fence:
+            continue
+        if i == 1 and st == "---":
+            front = True
+            continue
+        if front:
+            if st == "---":
+                front = False
+            continue
+        is_prose = bool(st) and not st.startswith(_STRUCT_PREFIX) \
+            and not st.startswith("---") and not _OL_RE.match(st)
+        if is_prose and len(st) < 46:
+            if not cur:
+                start = i
+            cur.append(st)
+        else:
+            flush(); cur = []
+    flush()
+    return runs
+
+
+def check_soft_line_breaks(md: str, md_path: Path, allow: bool = False) -> int:
+    """推前扫软换行陷阱。返回阻断数（字段块数）；allow=True 时只提示。"""
+    runs = soft_break_runs(md)
+    # 只有 promo-kit 产物（launch-* / promo-*）才按字段块阻断：那套骨架要求逐行写字段。
+    # 其余文档里的「标签：」行多为提纲或语料，阻断会误伤正常推送。
+    is_promo = bool(re.match(r"(launch|promo)-.*\.md$", md_path.name))
+    field_runs = [(ln, lines) for ln, lines in runs
+                  if is_promo and any(_FIELD_RE.match(x) for x in lines)]
+    if not runs:
+        return 0
+    # 2 行短段多半是正常的两行句，只对 ≥3 行提示，避免正文折行刷屏
+    runs = [r for r in runs if len(r[1]) >= 3]
+    if field_runs:
+        print(f"\n🚫 {md_path.name} 检出 {len(field_runs)} 处字段块会被并成一段：",
+              file=sys.stderr)
+        for ln, lines in field_runs[:6]:
+            print(f"      L{ln}-{ln + len(lines) - 1}  {lines[0][:28]}", file=sys.stderr)
+        if len(field_runs) > 6:
+            print(f"      …另 {len(field_runs) - 6} 处", file=sys.stderr)
+        print("    Markdown 连续行之间没有空行会并成同一段，wiki 上只剩空格。", file=sys.stderr)
+        print("    修法：字段之间补空行，或改成列表项（每行前加「- 」）。", file=sys.stderr)
+        if not allow:
+            print("    确认要这样推：加 --allow-soft-breaks\n", file=sys.stderr)
+            return len(field_runs)
+        print("    （--allow-soft-breaks 已指定，继续推送）\n", file=sys.stderr)
+    else:
+        print(f"\n⚠️  {md_path.name} 有 {len(runs)} 处连续短行可能并成一段，"
+              f"请推完肉眼验收。\n", file=sys.stderr)
+    return 0
+
+
+# ── PRD md 本地图片提取 ─────────────────────
 
 # 相对路径图：可选 ./ 或 ../ 前缀 + 非 / 开头（排除绝对路径）。
 # confluence.py get --mode pandoc 回流吐裸 assets/x.png（无 ./），生成器吐 ./assets/x.png，两者都收；
@@ -240,30 +318,6 @@ def warn_broken_tables(md: str, md_path: Path) -> None:
 _IMG_RE = re.compile(r"!\[([^\]]*)\]\(((?:\.{1,2}/)?[^)/][^)]*)\)")
 # HTML <img src="...">（生成器吐 HTML table 左列图 + fetch 回流的裸相对路径）
 _HTML_IMG_RE = re.compile(r'(<img\s+[^>]*?src=")((?:\.{1,2}/)?[^"/][^"]*)(")')
-
-
-def maybe_compose_split(md_path: Path) -> tuple[str, Path]:
-    """如果同级有 {stem}-scenes/ 目录则调 prd_compose 拼接，否则原文返回。
-
-    返回 (md_text, base_dir) —— base_dir 是图片相对路径的解析根。
-    """
-    scenes_dir = md_path.parent / f"{md_path.stem}-scenes"
-    if not scenes_dir.is_dir():
-        return md_path.read_text(encoding="utf-8"), md_path.parent
-
-    # 找 prd_compose.py
-    compose_py = (
-        Path(__file__).resolve().parent.parent
-        / ".claude/skills/prd/scripts/prd_compose.py"
-    )
-    if not compose_py.exists():
-        sys.exit(f"split 模式但找不到 prd_compose.py：{compose_py}")
-    print(f"  → split 模式，拼接 {scenes_dir.name}/ ...", file=sys.stderr)
-    out = subprocess.run(
-        ["python3", str(compose_py), str(md_path)],
-        capture_output=True, text=True, check=True,
-    )
-    return out.stdout, md_path.parent
 
 
 def extract_local_images(md: str, base_dir: Path) -> list[tuple[str, Path]]:
@@ -396,94 +450,6 @@ def _post_push(page_ids: list[str], labels: list[str], md_path: Path) -> None:
         print(f"  → 标签：{', '.join(labels)}", file=sys.stderr)
 
 
-# ── 父页 + N 章节子页推送（split-children-by-chapter）─────────────────────
-
-_PARENT_CHAPTER_HEAD_RE = re.compile(r"^#\s+\*{0,2}([4-7])\.\s+(.+?)\*{0,2}\s*$")
-_PARENT_SCENE_LINK_RE = re.compile(r"^- \[([^\]]+)\]\(([^)]+\.md)\)\s*$")
-
-
-def parse_chapter_blocks_for_split(md: str) -> list[dict]:
-    """解析主 md 的 §4-7 章节。每章返回：
-    chapter / title (heading 白话部分) / heading_idx /
-    scene_links: [(anchor_text, link_path), ...]
-    """
-    lines = md.splitlines()
-    chapters: list[dict] = []
-    current: dict | None = None
-    for i, line in enumerate(lines):
-        m_ch = _PARENT_CHAPTER_HEAD_RE.match(line)
-        if m_ch:
-            if current is not None:
-                chapters.append(current)
-            current = {
-                "chapter": int(m_ch.group(1)),
-                "title": m_ch.group(2).strip(),
-                "heading_idx": i,
-                "scene_links": [],
-            }
-            continue
-        # 下一个 # heading（非 §4-7）关闭当前章
-        if line.startswith("# ") and current is not None and not m_ch:
-            chapters.append(current)
-            current = None
-            continue
-        if current is not None:
-            m_link = _PARENT_SCENE_LINK_RE.match(line)
-            if m_link:
-                current["scene_links"].append(
-                    (m_link.group(1).strip(), m_link.group(2).strip())
-                )
-    if current is not None:
-        chapters.append(current)
-    return [c for c in chapters if c["scene_links"]]
-
-
-def gen_child_md(chapter: dict, scenes_dir: Path) -> str:
-    """生成子页 md：# 章节标题 + 章节简介（来自主 md 已剥）+ 场景文件内容串接。
-
-    简介由调用方传入（这里只串接 scene 文件）；child_md 起头是 chapter title。
-    """
-    parts = [f"# {chapter['title']}\n"]
-    for _, link_path in chapter["scene_links"]:
-        # link_path 是相对主 md 的路径，如 'prd-xxx-scenes/audience-A-1-...md'
-        # scenes_dir 已是 scenes/ 目录绝对路径，取 basename
-        scene_file = scenes_dir / Path(link_path).name
-        if not scene_file.exists():
-            print(f"  ⚠ 场景文件不存在：{scene_file}", file=sys.stderr)
-            continue
-        parts.append(scene_file.read_text(encoding="utf-8").rstrip() + "\n")
-    return "\n".join(parts)
-
-
-def rewrite_scene_links_to_confluence(
-    md: str, chapter_to_pageid: dict[int, str]
-) -> str:
-    """主 md §4-7 章下的 - [N.x · 名](xxx.md) 引用 link 改写为对应章节子页 URL。"""
-    lines = md.splitlines()
-    out: list[str] = []
-    current_chapter = 0
-    for line in lines:
-        m_ch = _PARENT_CHAPTER_HEAD_RE.match(line)
-        if m_ch:
-            current_chapter = int(m_ch.group(1))
-            out.append(line)
-            continue
-        if line.startswith("# ") and not m_ch:
-            current_chapter = 0
-            out.append(line)
-            continue
-        if current_chapter in chapter_to_pageid:
-            m_link = _PARENT_SCENE_LINK_RE.match(line)
-            if m_link:
-                anchor = m_link.group(1).strip()
-                page_id = chapter_to_pageid[current_chapter]
-                url = f"{base_url()}/pages/viewpage.action?pageId={page_id}"
-                out.append(f"- [{anchor}]({url})")
-                continue
-        out.append(line)
-    return "\n".join(out) + "\n"
-
-
 def _precheck_duplicate_title(space: str, title: str) -> None:
     """首推前查 space 下是否已有同 title 页；有则 friendly exit 提示 PM 三选一。
 
@@ -516,142 +482,6 @@ def _precheck_duplicate_title(space: str, title: str) -> None:
         lines.append(f"    [{pid}] {rtitle}")
         lines.append(f"      {base}/pages/viewpage.action?pageId={pid}")
     sys.exit("\n".join(lines))
-
-
-def _get_chapter_children(parent_id: str, chapters: list[dict]) -> dict[int, str]:
-    """从已存在的父页拿 children，按 child.title == chapter.title 匹配。
-
-    返回 {chapter_num: child_page_id}。匹配不到的 chapter 报错。
-    """
-    children = list_child_pages(parent_id)
-    title_to_id = {c["title"]: c["id"] for c in children}
-    chapter_to_pageid: dict[int, str] = {}
-    missing: list[str] = []
-    for ch in chapters:
-        page_id = title_to_id.get(ch["title"])
-        if page_id is None:
-            missing.append(f"§{ch['chapter']} {ch['title']}")
-            continue
-        chapter_to_pageid[ch["chapter"]] = page_id
-    if missing:
-        sys.exit(
-            f"父页 {parent_id} 下找不到匹配 children：\n  " + "\n  ".join(missing)
-            + f"\n  现有 children: {list(title_to_id.keys())}"
-        )
-    return chapter_to_pageid
-
-
-def push_split_children_by_chapter(
-    md_path: Path,
-    parent_id: str | None,
-    update_id: str | None,
-    space: str,
-    title_override: str | None,
-    exclude_sections: list[str] | None = None,
-    strip_preamble: bool = True,
-    minor_edit: bool = False,
-) -> list[str]:
-    """父页 + 各章节子页推送。
-
-    新建模式：传 parent_id（在 space 下新建父页 + N 子页）
-    更新模式：传 update_id（已存在父页，按 children title 匹配章节 update）
-    """
-    scenes_dir = md_path.parent / f"{md_path.stem}-scenes"
-    if not scenes_dir.is_dir():
-        sys.exit(
-            f"--split-children-by-chapter 需要 split 后的 PRD（{scenes_dir} 不存在）；"
-            f"先跑 split_prd.py"
-        )
-
-    main_md = md_path.read_text(encoding="utf-8")
-    main_md = strip_for_confluence(main_md, exclude_sections or [], strip_preamble)
-    warn_broken_tables(main_md, md_path)
-    chapters = parse_chapter_blocks_for_split(main_md)
-    if not chapters:
-        sys.exit("未在主 md 找到 §4-7 章节及其场景引用列表")
-    print(
-        f"  → 发现 {len(chapters)} 章可拆为子页：{[c['chapter'] for c in chapters]}",
-        file=sys.stderr,
-    )
-
-    # 子页正文由 gen_child_md 从 -scenes/*.md 串接，主 md 扫不到那些表格 → 逐文件再扫
-    for ch in chapters:
-        for _, link_path in ch["scene_links"]:
-            scene_file = scenes_dir / Path(link_path).name
-            if scene_file.exists():
-                warn_broken_tables(scene_file.read_text(encoding="utf-8"), scene_file)
-
-    parent_title = title_override or extract_title(main_md)
-    is_update = update_id is not None
-
-    # 1. 父页：新建走 create + 后续 update / 更新模式直接拿现有 page id
-    if is_update:
-        parent_page_id = update_id
-        chapter_to_pageid = _get_chapter_children(parent_page_id, chapters)
-        print(f"  → 更新模式：父页 {parent_page_id}，子页映射：", file=sys.stderr)
-        for ch in chapters:
-            print(
-                f"    §{ch['chapter']} → {chapter_to_pageid[ch['chapter']]}",
-                file=sys.stderr,
-            )
-    else:
-        _precheck_duplicate_title(space, parent_title)
-        parent_page = create_page(
-            space, parent_title, render_md_full(main_md), parent_id
-        )
-        parent_page_id = parent_page["id"]
-        print(f"  ↑ 父页（新建）：{parent_title} → pageId={parent_page_id}", file=sys.stderr)
-        chapter_to_pageid = {}
-
-    # 2. 子页：按章节
-    for ch in chapters:
-        child_title = ch["title"]
-        child_md = gen_child_md(ch, scenes_dir)
-        child_imgs = extract_local_images(child_md, scenes_dir)
-
-        if is_update:
-            child_page_id = chapter_to_pageid[ch["chapter"]]
-        else:
-            child_page = create_page(
-                space, child_title, render_md_full(child_md), parent_page_id
-            )
-            child_page_id = child_page["id"]
-            chapter_to_pageid[ch["chapter"]] = child_page_id
-
-        # 上传图片，得到 attachment names → 走 render_md_full 终轮渲染
-        mapping = upload_local_images(child_page_id, child_imgs, minor_edit=minor_edit) if child_imgs else {}
-        attachment_names = set(mapping.values())
-        if attachment_names:
-            child_md_final = rewrite_image_paths(child_md, mapping)
-            body = render_md_full(child_md_final, attachment_names)
-        else:
-            body = render_md_full(child_md)
-
-        update_page(child_page_id, child_title, body)
-        action = "↻ 更新" if is_update else "↑ 新建"
-        print(
-            f"  {action} 子页 §{ch['chapter']}：{child_title} → pageId={child_page_id} "
-            f"({len(ch['scene_links'])} 场景 / {len(attachment_names)} 图)",
-            file=sys.stderr,
-        )
-
-    # 3. 父页 update：图片 + 场景 link 改写为子页 URL
-    parent_imgs = extract_local_images(main_md, md_path.parent)
-    parent_mapping = upload_local_images(parent_page_id, parent_imgs, minor_edit=minor_edit) if parent_imgs else {}
-    parent_attachment_names = set(parent_mapping.values())
-
-    rewritten = main_md
-    if parent_mapping:
-        rewritten = rewrite_image_paths(rewritten, parent_mapping)
-    rewritten = rewrite_scene_links_to_confluence(rewritten, chapter_to_pageid)
-
-    body = render_md_full(rewritten, parent_attachment_names)
-    update_page(parent_page_id, parent_title, body)
-    print("  → 父页 update 完成（场景 link 改写为子页 URL）", file=sys.stderr)
-
-    print(f"\n✓ 推送完成：1 父页 + {len(chapters)} 子页（{'update' if is_update else '新建'} 模式）")
-    print(f"  父页：{base_url()}/pages/viewpage.action?pageId={parent_page_id}")
-    return [parent_page_id] + list(chapter_to_pageid.values())
 
 
 # ── 埋点表 rowspan 合并（--merge-tracking）────────────────────────────────
@@ -731,21 +561,6 @@ def main():
     p.add_argument("--space", default="DEMO_SPACE_KEY", help="space key（默认 DEMO_SPACE_KEY）")
     p.add_argument("--title", help="覆盖页面标题（默认取 md 首个 H1）")
     p.add_argument(
-        "--split-children-by-chapter",
-        action="store_true",
-        help=(
-            "分章节推为父页 + N 子页（按 §4-7 各章拆）。需要先跑 split_prd.py。"
-            "父页含 §1-3 + §8-12 全文 + §4-7 章节链接到子页；子页含该章全部场景内容"
-        ),
-    )
-    p.add_argument(
-        "--no-split",
-        action="store_true",
-        help=(
-            "强制单页推送（即便检测到 -scenes/ split 目录）。用于场景少 / 不想拆子页 / 历史页面已经是单页结构"
-        ),
-    )
-    p.add_argument(
         "--raw-html",
         action="store_true",
         help=(
@@ -787,6 +602,11 @@ def main():
         metavar="标签名",
         help="推送后打标签（可多次；CQL label=\"...\" 可检索）。缺省从路径自动推断 pm-{产品线}",
     )
+    p.add_argument(
+        "--allow-soft-breaks",
+        action="store_true",
+        help="跳过字段块软换行阻断（连续行会被 wiki 并成一段）",
+    )
     args = p.parse_args()
 
     md_path = Path(args.md_path)
@@ -796,37 +616,11 @@ def main():
     exclude_sections = DEFAULT_EXCLUDE_SECTIONS + (args.exclude_section or [])
     strip_preamble = not args.keep_preamble
 
-    # 父页 + N 子页模式（split-children-by-chapter）
-    if args.split_children_by_chapter:
-        if not (args.parent_id or args.update_id):
-            sys.exit("--split-children-by-chapter 需要 --parent-id（新建）或 --update-id（更新）")
-        if args.parent_id and args.update_id:
-            sys.exit("--parent-id（新建）与 --update-id（更新）互斥，只能传一个")
-        page_ids = push_split_children_by_chapter(
-            md_path, args.parent_id, args.update_id, args.space, args.title,
-            exclude_sections, strip_preamble, minor_edit=args.minor,
-        )
-        _post_push(page_ids, _infer_labels(md_path, args.label), md_path)
-        return
-
-    # split 检测门：scenes/ 存在但既没选 split-children 也没选 no-split → 强制 PM 选
-    scenes_dir = md_path.parent / f"{md_path.stem}-scenes"
-    if scenes_dir.is_dir() and not args.no_split:
-        sys.exit(
-            f"\n⚠️  检测到 split 目录：{scenes_dir.name}/\n"
-            f"必须显式选择推送方式（防止误把子页结构推成单页）：\n"
-            f"  方式 A：1 父页 + N 子页（推荐，按章节拆）\n"
-            f"    python3 scripts/md_to_confluence.py {md_path} \\\n"
-            f"      --split-children-by-chapter --update-id <PARENT_PAGE_ID>\n"
-            f"  方式 B：单页（compose 全 md 推一页）\n"
-            f"    python3 scripts/md_to_confluence.py {md_path} \\\n"
-            f"      --no-split --update-id <PAGE_ID>\n"
-        )
-
-    # 单页模式（含 split 自动 compose）
-    md, base_dir = maybe_compose_split(md_path)
+    md, base_dir = md_path.read_text(encoding="utf-8"), md_path.parent
     md = strip_for_confluence(md, exclude_sections, strip_preamble)
     warn_broken_tables(md, md_path)
+    if check_soft_line_breaks(md, md_path, allow=args.allow_soft_breaks):
+        sys.exit(1)
     title = args.title or extract_title(md)
 
     # merge-tracking：10 列埋点表 → rowspan HTML（rowspan 不能进 markdown 宏，仅在实际

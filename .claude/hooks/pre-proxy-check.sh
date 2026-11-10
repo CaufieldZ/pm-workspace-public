@@ -29,7 +29,7 @@ source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/strip.sh"
 HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$HOOK_DIR/../.." && pwd)"
 
-INPUT=$(cat)
+hook_read_input
 hook_parse_bash_input
 require_bash
 
@@ -141,7 +141,7 @@ case "$GATE_MODE" in
     echo "🚫 [proxy-check] 外网下载命令未设代理" >&2
     echo "   ${CMD:0:120}" >&2
     echo "" >&2
-    echo "   → 修法 1: 跑 eval \"\$(python3 scripts/lib/proxy.py --export)\" 后重发本条命令" >&2
+    echo "   → 修法 1: 跑 eval \"\$(.venv/bin/python scripts/lib/proxy.py --export)\" 后重发本条命令" >&2
     echo "   → 修法 2: 确认本条不需代理（国内源 / 已自有代理）→ SKIP_PROXY_CHECK_GATE=1" >&2
     echo "" >&2
     log_event gate proxy-check block "${CMD:0:120}"

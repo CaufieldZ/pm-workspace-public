@@ -119,7 +119,7 @@ def delta_is_live(delta_text: str) -> bool:
     return "已上线" in m.group(1)
 
 
-# delta 头部「内部项目系统」字段（工作项链接，产研效能上线日期/状态唯一权威源）
+# delta 头部「内部项目系统」字段（工作项链接，旁证源——上线状态以 PM 宣告为准）
 _HX_FIELD = re.compile(r"^[\s\-*]*\**\s*内部项目系统\s*\**\s*[:：]\s*(.+?)\s*$", re.MULTILINE)
 
 
@@ -316,7 +316,7 @@ def check(project: str, repo_root: Path, stale_days: int) -> int:
     for dp in delta_files:
         text = dp.read_text(encoding="utf-8")
         if delta_in_flight(dp, changelog, archive_dir) and delta_hx_link_missing(text):
-            hx_missing.append(f"  · {dp.name} 头部无「内部项目系统」字段或为占位符——跑 sync_hx_status.py 前先补内部项目系统工作项链接")
+            hx_missing.append(f"  · {dp.name} 头部无「内部项目系统」字段或为占位符——不卡上线宣告（状态以 PM 宣告为准）；补链接后可跑 sync_hx_status.py 对账")
         if not delta_is_live(text):
             continue
         status = changelog.get(dp.name)
@@ -387,7 +387,7 @@ def check(project: str, repo_root: Path, stale_days: int) -> int:
         print("🟢 第二层 · 内容新鲜度：所有模块章核对日期在期内")
 
     if hx_missing:
-        print(f"\n🟡 第四层 · 内部项目系统链接缺失（{len(hx_missing)}，提醒不卡）——内部项目系统是上线日期/状态唯一权威源：")
+        print(f"\n🟡 第四层 · 内部项目系统链接缺失（{len(hx_missing)}，提醒不卡）——上线状态以 PM 宣告为准，内部项目系统为旁证（补链接可对账）：")
         for s in hx_missing:
             print(s)
     else:

@@ -68,9 +68,10 @@ curl -sS https://api.anthropic.com/v1/models \
 git clone https://github.com/CaufieldZ/pm-workspace.git
 cd pm-workspace
 
-# Python deps（playwright 装完还要再装 chromium）
-python3 -m pip install -r requirements.txt
-python3 -m playwright install chromium
+# Python deps（装进 .venv；playwright 装完还要再装 chromium）
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m playwright install chromium
 
 # Git hooks（pre-commit 跑防腐化审计）
 git config core.hooksPath .githooks
@@ -105,8 +106,8 @@ node --version                                            # → v18+
 git config core.hooksPath                                 # → .githooks
 test -f .mcp.json && echo "MCP config OK"                 # → MCP config OK
 test -f CLAUDE.md && echo "CLAUDE.md OK"                  # → CLAUDE.md OK
-ls .claude/runbooks/*.md | wc -l                          # → 13
-ls -d .claude/skills/*/ | grep -v _shared | wc -l         # → 12
+ls .claude/hooks/*.sh | grep -v '/lib/' | wc -l           # → 16
+ls -d .claude/skills/*/ | grep -v _shared | wc -l         # → 16
 ```
 
 ### 0.7 把控制权交回真人
@@ -245,8 +246,11 @@ export SLACK_BOT_TOKEN="xoxb-..."   # 示例：竞品采集推 Slack 通知用�
 ### 2.7 安装 Python 依赖
 
 ```bash
-pip install -r requirements.txt
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
 ```
+
+装进项目 `.venv`，不要 `pip install` 到系统 python：Homebrew / 多数发行版的 `python3` 带 PEP 668 `EXTERNALLY-MANAGED` 标记会直接拒绝安装，`--break-system-packages` 则把依赖混进系统 site-packages。且 hook 由 Claude Code / git 启动、不继承 shell 的 venv 激活，`.claude/hooks/lib/pyenv.sh` 会自动前置 `.venv/bin`，交互 shell / IDE / CI 走同一解释器。缺依赖不是「跳过」而是门静默失效。
 
 12 个包，按用途分组：
 
@@ -301,11 +305,11 @@ git config core.hooksPath    # 应输出 .githooks
 # 4. MCP 配置文件存在
 test -f .mcp.json && echo "MCP config OK" || echo "MISSING: 手动新建 .mcp.json"
 
-# 5. CLAUDE.md / runbooks 完整
-test -f CLAUDE.md && ls .claude/runbooks/*.md | wc -l    # 应输出 13
+# 5. CLAUDE.md / hook 完整
+test -f CLAUDE.md && ls .claude/hooks/*.sh | grep -v '/lib/' | wc -l    # 应输出 16
 
 # 6. Skill 完整
-ls -d .claude/skills/*/ | grep -v _shared | wc -l    # 应输出 12
+ls -d .claude/skills/*/ | grep -v _shared | wc -l    # 应输出 16
 ```
 
 全绿就开干。
@@ -373,9 +377,14 @@ touch projects/your-line/your-project/context.md
 | 目录 / 文件 | 为什么不含 | 怎么补 |
 |-----------|-----------|--------|
 | `projects/` | 业务隐私 | 按第四节自建 |
+| `.claude/runbooks/` | 方法论手册含内部业务与系统引用 | 按需自写；`CLAUDE.md` 的 runbook 触发表是私有工区的规则，本拷贝忽略其文件指向 |
+| `.claude/decisions/` | 治理决策含内部系统与项目名 | 自建（约定见 `CLAUDE.md`「决策记录」段） |
+| `hub/` | 公司 AI 中台规范与内部工具链 | 与本拷贝无关，忽略 |
+| `_demos/` `references/` `deliverables/` | 内部演示材料 / 竞品素材 / 历史交付 | 自建 |
 | `LEARNED.md` | 个人沉淀 | 自建（按需）|
 | `.mcp.json` | API 密钥 | 按 2.5 节配，从空开始填 |
 | `.claude/skills/competitor-analysis/assets/auth/` | 登录态凭证 | 按 competitor-analysis SKILL.md「采集模式」自己抓 |
+| `.claude/skills/{data-report,内部项目系统}/` | 绑定内部数据平台 / 内部项目管理系统 | 按同接口模式自建 |
 | `inputs/competitors/` 历史素材 | 体积大 + 版权 | 用竞品采集 Skill 现抓 |
 
 ---
@@ -392,21 +401,8 @@ pm-workspace/
 ├── .mcp.json                         ← MCP 服务配置（默认空，按需开）
 ├── .githooks/                        ← pre-commit + post-commit
 ├── .claude/
-│   ├── runbooks/                     ← 13 份按需手册
-│   │   ├── pm-methodology.md             ← PM 方法论（链路 / 决策段 / 逻辑拼图）
-│   │   ├── artifact-conventions.md       ← 产物编号 + 静态章规范
-│   │   ├── cli-cheatsheet.md             ← CLI 速查
-│   │   ├── decision-framework.md         ← 方案选型 + 竞品对照
-│   │   ├── git-and-hooks.md              ← commit / 推 wiki / 新写 hook
-│   │   ├── html-build-split.md           ← HTML > 1500 行拆分规则
-│   │   ├── human-voice-rules.md          ← 人话规则（PRD §4.x「理由」边界）
-│   │   ├── mcp-config.md                 ← MCP 配置策略
-│   │   ├── project-mgmt.md               ← 项目落点 / 命名 / 迁移
-│   │   ├── proxy-fallback.md             ← pip / npm 网络回退
-│   │   ├── skill-conventions.md          ← Skill 命名 / frontmatter / 产物前缀
-│   │   ├── tech-debt-backlog.md          ← 技术债待办
-│   │   └── version-bump.md               ← 升版 / 改场景 / 改术语
-│   ├── skills/                       ← 12 个 Skill 定义（+ _shared 公共）
+│   ├── runbooks/                     ← 本拷贝不含（见第六节）
+│   ├── skills/                       ← 16 个 Skill 定义（+ _shared 公共）
 │   │   ├── scene-list/                   ← 场景清单
 │   │   ├── interaction-map/              ← 交互大图（IMAP）
 │   │   ├── prototype/                    ← 可交互原型
@@ -414,25 +410,28 @@ pm-workspace/
 │   │   ├── architecture-diagrams/        ← 架构图
 │   │   ├── flowchart/                    ← 流程 / 泳道 / 状态机
 │   │   ├── ppt/                          ← 多 Tab 信息文档
+│   │   ├── trtc-docs/                    ← 音视频能力事实查询
 │   │   ├── competitor-analysis/          ← 竞品分析 + 情报采集
-│   │   ├── data-report/                  ← 数据报告
+│   │   ├── promo-kit/                    ← 对外宣发内容
+│   │   ├── aihub-package/                ← 出包流水线（自建 Skill 范例）
 │   │   ├── mrd-review/                   ← MRD 评审
+│   │   ├── user-manual/                  ← 操作手册 / 帮助中心
 │   │   ├── cross-check/                  ← 产出物一致性校验
 │   │   ├── workspace-audit/              ← 全局诊断
+│   │   ├── code-review/                  ← 增量代码 review
 │   │   └── _shared/                      ← 跨 skill 共享规则 / fixtures
-│   ├── chat-templates/               ← context.md / IMAP / 原型 / PPT 模板
-│   ├── output-styles/                ← 沟通风格
+│   ├── chat-templates/               ← 沟通模板（IMAP / 原型 / PPT 等）
 │   ├── commands/                     ← 慢命令
 │   ├── workspace-dashboard.md        ← 项目看板（Stop hook 6h 刷新）
 │   ├── session-state.md              ← 高风险操作 checkpoint
 │   └── settings.json                 ← 项目级权限
-├── scripts/                          ← 通用工具脚本（25 个，详见第八节）
+├── scripts/                          ← 通用工具脚本（详见第八节）
 └── projects/                         ← 你的项目（自建，两层产品线 / 项目）
     └── {产品线}/{项目}/
-        ├── context.md                ← 项目唯一真相源
+        ├── prd-{产品线/活动}-baseline.md  ← 当前态真相源（living，无版本号）
         ├── scene-list.md             ← 场景清单（编号锁）
         ├── inputs/                   ← meetings / docs / figma / raw / competitors
-        ├── deliverables/             ← 产物（prd- / imap- / proto- / arch- 前缀）
+        ├── deliverables/             ← 本轮迭代 delta（{季度}/{版本}/）
         │   ├── assets/               ← 产物图片
         │   └── archive/              ← 旧版归档
         └── scripts/                  ← 项目级生成脚本（按需）
@@ -444,7 +443,7 @@ pm-workspace/
 
 ## 八、脚本速查
 
-`scripts/` 下共 **25 个脚本**，按用途分组。**Claude Code 大部分场景会自动调用**，下表给人和模型一份参考。
+`scripts/` 下的脚本按用途分组，下表给人和模型一份参考（常用项，非全量）。**Claude Code 大部分场景会自动调用**。
 
 外部数据源相关脚本是**示例集成**——内置实现绑定了特定厂商（会议纪要工具 / Confluence / 行为分析平台 / BI 平台 / Slack），但接口都是 REST，自己换 wiki / 数据平台 / 通知工具时改对应脚本里的 base_url + auth 头就行。
 

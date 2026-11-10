@@ -13,7 +13,7 @@ PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 LEARNED_FILE="${LEARNED_FILE:-$PROJECT_DIR/LEARNED.md}"
 
 # 读取 stdin 获取 transcript_path + stop_hook_active（走 lib 单字段函数）
-INPUT=$(cat)
+hook_read_input
 TRANSCRIPT_PATH=$(hook_transcript_path)
 
 if [ -z "$TRANSCRIPT_PATH" ] || [ ! -f "$TRANSCRIPT_PATH" ]; then

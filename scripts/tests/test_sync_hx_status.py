@@ -1,7 +1,7 @@
-"""sync_hx_status 纯函数回归：内部项目系统字段解析 / 状态映射 / PRD TAG 日期 / 两条管线回写。
+"""sync_hx_status 纯函数回归：内部项目系统字段解析 / 状态映射 / PRD TAG 日期 / 两条管线对账回填。
 
 只测纯函数（吃字符串 → 返回结构），不触网络——内部项目系统 调用在 sync_one 的 I/O 层，
-纯函数与网络解耦，这里锁定「内部项目系统状态 → 本地缓存投影」的映射与回写契约。
+纯函数与网络解耦，这里锁定「PM 宣告为准，内部项目系统只前进回填、冲突报 diff」的对账契约。
 """
 import sync_hx_status as s
 
@@ -69,23 +69,32 @@ def test_earliest_prd_date_normalizes():
 
 def test_rewrite_header_status_changes():
     text = "- **状态**：开发中\n正文"
-    new, ch = s.rewrite_header_status(text, "已上线")
+    new, ch, note = s.rewrite_header_status(text, "已上线")
     assert "**状态**：已上线" in new
     assert ch and "开发中 → 已上线" in ch
+    assert note is None
 
 
 def test_rewrite_header_status_merged_not_overwritten():
-    # 本地「已合并」是本地动作，内部项目系统无此态，不被覆盖
+    # 本地「已合并」是本地动作，内部项目系统无此态，不被覆盖、报 diff
     text = "- **状态**：已合并\n正文"
-    new, ch = s.rewrite_header_status(text, "已上线")
+    new, ch, note = s.rewrite_header_status(text, "已上线")
     assert new == text
-    assert ch is None
+    assert ch is None and note and "diff" in note
+
+
+def test_rewrite_header_status_live_not_regressed():
+    # PM 宣告「已上线」，内部项目系统侧流程落后（如仍「测试中」→开发中）不得打回
+    text = "- **状态**：已上线\n正文"
+    new, ch, note = s.rewrite_header_status(text, "开发中")
+    assert new == text
+    assert ch is None and note and "PM 宣告为准" in note
 
 
 def test_rewrite_header_status_noop_when_same():
     text = "- **状态**：已上线"
-    new, ch = s.rewrite_header_status(text, "已上线")
-    assert new == text and ch is None
+    new, ch, note = s.rewrite_header_status(text, "已上线")
+    assert new == text and ch is None and note is None
 
 
 # ── 协作表头部形态（骨架 v5 起头部是表格，不再是 bullet）───────────────────
@@ -121,14 +130,14 @@ def test_current_local_status_from_table_cell():
 
 
 def test_rewrite_header_status_table_cell():
-    new, ch = s.rewrite_header_status(_TABLE_HEAD, "已上线")
+    new, ch, _ = s.rewrite_header_status(_TABLE_HEAD, "已上线")
     assert "| 状态 | 已上线 |" in new
     assert ch and "开发中 → 已上线" in ch
 
 
 def test_rewrite_header_status_table_does_not_touch_schedule():
     # §排期表有「状态」列头，回写只能落头部块，不许改到排期行
-    new, _ = s.rewrite_header_status(_TABLE_HEAD, "已上线")
+    new, _, _ = s.rewrite_header_status(_TABLE_HEAD, "已上线")
     assert "| 上线 | 2026-08-01 | — | 待启 | 推流失败率 |" in new
     assert new.count("已上线") == 1
 
@@ -147,7 +156,7 @@ _SCHEDULE_4COL = """# 8. 排期 / 上线节奏
 
 
 def test_rewrite_schedule_hits_rollout_row():
-    new, changes = s.rewrite_schedule(_SCHEDULE_4COL, "2026-07-15")
+    new, changes, _ = s.rewrite_schedule(_SCHEDULE_4COL, "2026-07-15")
     # 「联调 / 灰度 / 全量」行命中（含灰度/全量关键词）
     assert "2026-07-15" in new
     assert any("2026-07-15" in c for c in changes)
@@ -156,9 +165,26 @@ def test_rewrite_schedule_hits_rollout_row():
     assert "| 前端 web + h5 | 待定 | 待启" in new
 
 
+def test_rewrite_schedule_preserves_handfilled():
+    # PM 手填的日期 / 状态不覆盖，冲突只报 diff
+    hand = """# 8. 排期 / 上线节奏
+
+| 阶段 | 起止 | 进度 | 状态 | 影响指标 |
+| :--- | :--- | :--- | :--- | :--- |
+| 上线 | 2026-09-20 | — | 已上线 | 响应率 |
+
+# 9. 反向合并
+"""
+    new, changes, notes = s.rewrite_schedule(hand, "2026-09-18")
+    assert "| 上线 | 2026-09-20 | — | 已上线 | 响应率 |" in new
+    assert "2026-09-18" not in new
+    assert any("保留「2026-09-20」" in x for x in notes)
+    assert any("保留「已上线」" in x for x in notes)
+
+
 def test_rewrite_schedule_no_table():
     text = "# 1. 背景\n没有排期表"
-    new, changes = s.rewrite_schedule(text, "2026-07-15")
+    new, changes, _ = s.rewrite_schedule(text, "2026-07-15")
     assert new == text
     assert any("未找到" in c for c in changes)
 
@@ -172,7 +198,7 @@ def test_rewrite_schedule_5col_variant():
 
 # 6. 下一章
 """
-    new, changes = s.rewrite_schedule(five, "2026-07-20")
+    new, changes, _ = s.rewrite_schedule(five, "2026-07-20")
     assert "2026-07-20" in new
     assert "已完成" in new
     # 进度列不被误改

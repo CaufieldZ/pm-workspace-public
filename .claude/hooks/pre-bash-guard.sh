@@ -4,7 +4,6 @@
 # 本文件内联规则：
 #   A：外网下载的代理判定与注入 → 已迁至 pre-proxy-check.sh（本文件只留文末指针，不重复判）
 #   B：git push/remote 用 HTTPS → 阻断（CLAUDE.md「push 用 SSH」）
-#   C：gen_prd_skeleton --force 但目标 scenes 目录有旧文件 → 阻断（LEARNED 2026-05-12 L8）
 #
 # lib/bash-guards.sh 子函数（原独立 hook 合并，gate 名不变）：
 #   risky-op / git-safety / prototype-paradigm-gate
@@ -25,7 +24,7 @@ source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/notes.sh"
 # 只在退出码为 0 时发射 —— exit 2（阻断）那条路上 stderr 本就可达模型，不重复注入。
 trap 'rc=$?; [ "$rc" = "0" ] && note_emit "PreToolUse"' EXIT
 
-INPUT=$(cat)
+hook_read_input
 hook_parse_all
 require_bash
 
@@ -64,57 +63,6 @@ case "$CMD" in
       done <<EOF
 $(split_command_segments "$CMD")
 EOF
-    fi
-    ;;
-esac
-
-# === 规则 C：gen_prd_skeleton --force 前置检查 ===
-# case 粗筛：不含 gen_prd_skeleton 的命令直接跳过。
-case "$CMD_STRIPPED" in
-  *gen_prd_skeleton*)
-    if [ "${SKIP_SKELETON_FORCE_GATE:-0}" != "1" ] && [[ "$CMD" != *SKIP_SKELETON_FORCE_GATE=1* ]]; then
-      if echo "$CMD_STRIPPED" | grep -qE 'gen_prd_skeleton\.py[[:space:]].*--force'; then
-        # 抽 -p / --project 后的项目名，找目标 scenes 目录（先去引号：-p "community" 否则带引号 find 不到 = 门禁失效）
-        TARGET=$(strip_quote_chars "$CMD" | grep -oE '(-p|--project)[[:space:]]+[^[:space:]]+' | head -1 | awk '{print $2}')
-        if [ -n "$TARGET" ]; then
-          SCENES_DIRS=$(find "${CLAUDE_PROJECT_DIR:-$(pwd)}/projects" -type d -name "prd-${TARGET}*-scenes" 2>/dev/null | head -3)
-          if [ -n "$SCENES_DIRS" ]; then
-            echo "" >&2
-            echo "🚫 [skeleton-force-gate] gen_prd_skeleton --force 不清 stale" >&2
-            echo "   目标 scenes 目录已存在：" >&2
-            echo "$SCENES_DIRS" | sed 's/^/     /' >&2
-            echo "   先 rm -rf 旧 scenes 目录 + 主 md，再 --force（LEARNED 2026-05-12）" >&2
-            echo "   显式跳过: SKIP_SKELETON_FORCE_GATE=1 $CMD" >&2
-            log_event gate skeleton-force-gate block "${CMD:0:120}"
-            exit 2
-          fi
-        fi
-      fi
-    fi
-    ;;
-esac
-
-# === 规则 D：delta PRD 推 Confluence 前未见冷读产物 ===
-# case 粗筛：不含 md_to_confluence 的命令直接跳过。
-case "$CMD_STRIPPED" in
-  *md_to_confluence*)
-    if [ "${SKIP_COLD_READ_GATE:-0}" != "1" ] && [[ "$CMD" != *SKIP_COLD_READ_GATE=1* ]]; then
-      # 抽 delta PRD md 路径：deliverables/{季}Q{N}/{版}/prd-*.md（季度段避开 baseline / 普通 PRD）
-      # 用去引号版而非 CMD_STRIPPED：引号包住的路径会被 strip_command_literals 抹成 ""，门禁 fail-open
-      DELTA_MD=$(strip_quote_chars "$CMD" | grep -oE '[^[:space:]]*deliverables/[0-9]{4}Q[1-4]/[^[:space:]/]+/prd-[^[:space:]]+\.md' | head -1)
-      if [ -n "$DELTA_MD" ]; then
-        MD_DIR=$(dirname "$DELTA_MD")
-        if ! ls "$MD_DIR"/cold-read-*.md >/dev/null 2>&1; then
-          echo "" >&2
-          echo "🚫 [cold-read-gate] delta PRD 推 Confluence 前未见冷读产物" >&2
-          echo "   $DELTA_MD" >&2
-          echo "   交付前冷读是推 wiki 前必跑工序（抓机械自检漏掉的语义盲点）：" >&2
-          echo "   python3 .claude/skills/prd/scripts/cold_read.py --prepare $DELTA_MD → 派干净子代理逐 target 跑 → 盲点 triage" >&2
-          echo "   已跑过冷读 / 本次确无需要 → 显式跳过：SKIP_COLD_READ_GATE=1 $CMD" >&2
-          log_event gate cold-read-gate block "${CMD:0:120}"
-          exit 2
-        fi
-      fi
     fi
     ;;
 esac

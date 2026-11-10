@@ -205,7 +205,7 @@ EOF
   if [ "$has_paradigm" -eq 0 ]; then
     printf '═══ pre-prototype-paradigm-gate fail ═══\n\n' >&2
     printf '❌ 检测到 build_proto_skeleton / build_proto_v* 调用，但项目 [%s] 未跑 Step 0 范式门\n\n' "$project" >&2
-    printf '→ 先跑：python3 .claude/skills/prototype/scripts/check_paradigm.py %s\n' "$project" >&2
+    printf '→ 先跑：.venv/bin/python .claude/skills/prototype/scripts/check_paradigm.py %s\n' "$project" >&2
     printf '→ 推断结果记到 projects/%s/inputs/scene-anchors.md（含「范式: xxx」一行）\n' "$project" >&2
     printf '→ 或更新 .claude/session-state.md 含「范式: xxx」\n' >&2
     printf '→ 用户口头确认范式后才允许跑 build_proto_skeleton\n' >&2

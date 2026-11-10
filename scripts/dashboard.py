@@ -33,6 +33,10 @@ HUB_DIR = ROOT / "hub"
 GHOST_GATES = {
     "version-sync-gate",   # 已退役的骨架版本号同步 gate，留 68 条历史事件
     "dedup-format-test",   # 2026-08-01 log 去重机制的测试残留（/tmp/pmws_dedup_test_key）
+    "pm-visual-gate",      # 已退役：PRD 视觉越界检测，随 PRD 正向写作规范删除
+    "cold-read-gate",      # 已退役：推送前冷读强制门，冷读改为可选工序
+    "skeleton-force-gate", # 已退役：随 PRD split 模式删除
+    "audit-fast-lite",     # 已退役：-scenes/ 子文件的轻量审计分支，随 split 删除
 }
 HUB_SKIP = {"zips", "references", "AI中台-规范及帮助文档"}
 

@@ -41,6 +41,7 @@
 |----|-----|
 | `echo "$x" \| grep -q 'FIXED'` | `[[ "$x" == *FIXED* ]]` |
 | `echo "$x" \| grep -qE 'a\|b\|c'` | `case "$x" in *a*\|*b*\|*c*) ;; esac` |
+| `echo "$x" \| grep -qE '<复杂 ERE>'` | `[[ "$x" =~ <ERE> ]]`（`\b` 非 POSIX → 写成 `(^\|[^A-Za-z0-9_])…([^A-Za-z0-9_]\|$)`；ERE 含 `(` 时放变量再 `=~ $var`，否则 shellcheck 报 SC1073 假错；多行输入把 `\n` 折成 `;` 再匹配） |
 | `sed -nE` 抽段 | bash 参数展开 `${t%%/*}` |
 | 同一 JSON 多次 `jq` | 一次 `hook_parse_all` 出全 |
 | 跑 python3 前不粗筛 | 先 `case` 粗筛（超集，宁 over 勿 under） |

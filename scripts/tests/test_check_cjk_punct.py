@@ -239,3 +239,19 @@ def test_fix_file_image_line_untouched(tmp_path):
     c.fix_file(f)
     out = f.read_text(encoding="utf-8")
     assert out.count("live-trends-0821.png") == 1
+
+
+# ── 周报标红语法 !!x!!：定界符不判半角、--fix 不改坏 ──────────────
+def test_red_marker_after_cjk_not_flagged():
+    assert "strict" not in _levels("- 单主播日均开播 !!1.1 场!!，上周 1.3 场\n")
+    assert "strict" not in _levels("- 相比 Q3 !!-27%!!\n")
+
+
+def test_red_marker_does_not_shield_real_bang():
+    assert "strict" in _levels("- 场次下降了!\n")
+
+
+def test_fix_line_keeps_red_marker():
+    line = "- 单主播日均开播 !!1.1 场!!，上周 1.3 场"
+    assert c.fix_line(line) == line
+    assert c.fix_line(c.fix_line(line)) == line

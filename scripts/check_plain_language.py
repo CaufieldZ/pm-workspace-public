@@ -93,20 +93,16 @@ SCENE_ANCHOR_EXEMPT_GLOBS = ["scene-list-*.html", "scene-list-*.md", "imap-*.htm
 # ── 数据报告专属违禁（仅 deliverables/reports/weekly-* 路径生效）────────────
 # 数据报告 AI 八股拦截：
 #   1) 段尾"下周/建议/持续观察"等行动项模板（领导版全删，规则已禁但产出失守）
-#   2) 段标题"X，但 Y"对仗（AI 句式套路）
-#   3) 段标题拟人化（"人/用户/主播"作主语）
-#   4) 段标题名词性单维度 + AI 词（XX 信号 / XX 典型模式 / XX 疲软）
-# 规则源：.claude/skills/data-report/references/insight-writing-guide.md「禁用句式」段
+#   2) 段标题拟人化（"人/用户/主播"作主语）
+#   3) 段标题名词性单维度 + AI 词（XX 信号 / XX 典型模式 / XX 疲软）
+# 段标题「X，但 Y」是领导改稿的常用判断句式，不拦。
+# 规则源：.claude/skills/data-report/references/insight-writing-guide.md「禁用词」「产品动作和软话」节
 
 ACTION_TAIL_RE = re.compile(
     r"(下周(?:建议|关注|观察|跟进|继续|补|看)|"
     r"建议(?:拆解|跟进|补|关注|追踪)|"
     r"(?:需|待)(?:关注|补充|追踪|观察)|"
     r"持续(?:观察|跟进|追踪))"
-)
-
-TITLE_DUEI_RE = re.compile(
-    r"^#{2,4}\s+\d+\.\s+[^，#]+，但[^#]+$"
 )
 
 TITLE_PERSONIFY_RE = re.compile(
@@ -120,7 +116,6 @@ TITLE_AI_NOUN_RE = re.compile(
 
 WEEKLY_PATTERNS = [
     (ACTION_TAIL_RE, "数据报告禁段尾下周/建议"),
-    (TITLE_DUEI_RE, "段标题对仗式「X，但 Y」"),
     (TITLE_PERSONIFY_RE, "段标题拟人化"),
     (TITLE_AI_NOUN_RE, "段标题名词性 AI 词"),
 ]
@@ -436,6 +431,7 @@ def main():
     collected = []
     for f in files:
         if not f.exists():
+            print(f"⚠️  文件不存在，未检查: {f}", file=sys.stderr)
             continue
         strict_hits, warn_hits = check_file(f, added_only=added_only)
         file_hits.append((str(f), strict_hits, warn_hits))

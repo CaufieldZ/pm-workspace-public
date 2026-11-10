@@ -17,6 +17,11 @@ package-lock.json
 .mcp-disabled.json
 .claude/settings.local.json
 
+# Codex 本地镜像（CLAUDE.md / .claude/ 的机器级副本，真相源在 .claude/，不跟踪）
+.codex/
+.agents/
+/AGENTS.md
+
 # Session 进度快照（由 Claude 维护，PreCompact hook 读取注入，不跟踪）
 .claude/session-state.md
 
@@ -79,6 +84,12 @@ projects/**/inputs/archive/
 
 # inputs/raw/ 临时素材（消化即删，整目录不进）
 projects/**/inputs/raw/
+
+# im 中台的 Wiki 拉取素材（本地保留，可重拉，整目录不进）
+projects/im/inputs/
+
+# 翻译工作台的 Wiki 拉取素材与原型包（公司内部文档，本地保留，可重拉，不进 git）
+projects/translation-workbench/inputs/
 
 # inputs/figma/ Figma 拉取产物（可重拉）
 projects/**/inputs/figma/
@@ -170,17 +181,14 @@ hub/AI中台-规范及帮助文档/
 # Hook 自动刷新的衍生状态（dashboard.py 随时可重建）
 .claude/workspace-dashboard.md
 
-# Stop hook 每次 session 追加（同 session-state.md 性质）
-LEARNED.md
-
 # 顶层 Python 字节码（__pycache__/ 已覆盖目录级）
 *.pyc
 
 # pytest-cov 产物（测试覆盖率残留，随时可重跑）
 .coverage
 
-# sync_public 生成目录
-.public/
+# .public/overrides/ 是手维护的脱敏覆盖源（sync_public 消费它，不是它的产物），
+# 必须入库——别加 ignore 规则：gitignore 只对新文件生效，漏掉的 override 会静默无备份。
 
 # 内部项目系统 二进制（27MB，外部 zip 分发；本地重装可恢复，不入库不进公开镜像）
 .claude/skills/内部项目系统/内部项目系统-macos

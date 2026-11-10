@@ -16,6 +16,12 @@
 # - check_skip_env 命中 skip 则 _log_skip_gate + exit 0；不命中返回，调用方继续
 set +e
 
+# log.sh 未 source 时（单测只 source 本文件）_log_skip_gate 未定义，
+# skip 路径会打印 "command not found" —— 事件照记不成本可接受，但 stderr 噪音会污染测试输出
+if ! command -v _log_skip_gate >/dev/null 2>&1; then
+  _log_skip_gate() { :; }
+fi
+
 require_bash() {
   [ "${HOOK_TOOL_NAME:-}" = "Bash" ] || exit 0
 }
@@ -113,7 +119,9 @@ check_skip_env() {
     [ "$mode" = "--exit" ] && exit 0
     return 0
   fi
-  if [ -n "${HOOK_COMMAND:-}" ] && echo "$HOOK_COMMAND" | grep -qE "\b${var}=1\b"; then
+  # 内建 =~ 替 `echo | grep`（每次 check_skip_env 省一条管道 ≈15ms）；
+  # `\b` 非 POSIX ERE → 展开成 (^|[^A-Za-z0-9_])…([^A-Za-z0-9_]|$)
+  if [ -n "${HOOK_COMMAND:-}" ] && [[ "$HOOK_COMMAND" =~ (^|[^a-zA-Z0-9_])${var}=1([^a-zA-Z0-9_]|$) ]]; then
     _log_skip_gate "$gate" "inline  ${HOOK_COMMAND:0:120}"
     [ "$mode" = "--exit" ] && exit 0
     return 0

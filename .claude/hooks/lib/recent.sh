@@ -8,7 +8,7 @@
 #   source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/recent.sh"
 #
 #   # 60s 内 prd-*.md，排除 scenes/
-#   RECENT=$(find_recent_deliverables 60 "prd-*.md" --not-path '*-scenes/*')
+#   RECENT=$(find_recent_deliverables 60 "prd-*.md" --not-path '*/archive/*')
 #
 #   # 30s 内 *.html / *.md / *.drawio
 #   RECENT=$(find_recent_deliverables 30 "*.html" "*.md" "*.drawio")

@@ -71,7 +71,7 @@ def stamp_skel_version(md: str) -> str:
 
     无 skel_version（workspace.json 未配）→ 原样返回，向后兼容。
     载体用 HTML 注释非 YAML frontmatter：避开 md_to_confluence 推送吞 frontmatter。
-    被 MdWriter.render 与 split_prd 落盘点共用，保证所有 PRD md 产物带戳。
+    被 MdWriter.render 调用，保证所有 PRD md 产物带戳。
     """
     ver = _workspace_skel_version()
     if not ver:
@@ -294,19 +294,16 @@ def scene_5section_card(
     exceptions: Sequence[Sequence[str]] = (),  # [[触发, 响应, 用户感知], ...]
     copy_list: Sequence[str] = (),
     page_structure: Sequence[Sequence[str]] = (),  # [[模块, 层次, 数据来源], ...]
-    heading_level: int = 3,  # 默认 h3（主骨架 single 模式）；split 模式子文件用 h2
+    heading_level: int = 3,  # 默认 h3（### 5.1 A-1 · 发帖）
 ) -> None:
     """[DEPRECATED 2026-05] 旧 8 段式卡片。新项目用 `scene_block_card`。
 
     研发反馈 8 段式信息过散（同区块信息散在 4 段），改用区块表聚合。
-    详见 `references/prd-scene-templates.md` §四「子场景模板」。
 
     场景编号出现在 heading 里（锚点合规），正文禁编号由上游 humanize 把关。
     参数全部可选 —— 缺哪段就跳过哪段（允许不完整，骨架阶段正常）。
 
-    heading_level:
-        3 = single 模式主 md 里（### 5.1 A-1 · 发帖）
-        2 = split 模式子文件里（## 5.1 A-1 · 发帖，子文件自己做一级标题）
+    heading_level: 标题层级，默认 3（### 5.1 A-1 · 发帖）
     """
     heading = f"{scene_id} · {scene_name}"
     if heading_level == 2:
@@ -451,78 +448,44 @@ def _leftright_html_table(
     )
 
 
-# 规格 / 验收 列的 bullet 项：str（单层）或 (父, [子...])（两层，子项禁再嵌）
-SpecItem = "str | tuple[str, Sequence[str]]"
-
-
-def _render_spec_items(items: Sequence, base_indent: int) -> str:
-    """规格 / 验收 cell 的 bullet 列表 → 原生 <ul><li>（支持一层嵌套）。
-
-    每项 str → 单层 <li>；(父, [子...]) → <li>父<ul><li>子</li>...</ul></li>。
-    子项只允许一层（研发规格不需要更深；更深说明该拆场景）。
-    """
-    pad = " " * base_indent
-    inner = " " * (base_indent + 2)
-    lis: list[str] = []
-    for item in items:
-        if isinstance(item, (tuple, list)):
-            parent, children = item[0], item[1]
-            sub = "\n".join(
-                f"{inner}  <li>{_xml_escape(c)}</li>" for c in children
-            )
-            lis.append(
-                f"{pad}<li>{_xml_escape(parent)}\n"
-                f"{inner}<ul>\n{sub}\n{inner}</ul>\n"
-                f"{pad}</li>"
-            )
-        else:
-            lis.append(f"{pad}<li>{_xml_escape(item)}</li>")
-    return f'{" " * (base_indent - 2)}<ul>\n' + "\n".join(lis) + f'\n{" " * (base_indent - 2)}</ul>'
-
-
-def _spec_3col_html_table(
-    scene_name: str,
-    rows: Sequence[tuple[Sequence[tuple[str, str]], Sequence, Sequence]],
+def image_spec_table(
+    images: Sequence[tuple[str, str]],
+    groups: Sequence[tuple[str, Sequence[str]]],
 ) -> str:
-    """三列规格表 → 原生 HTML <table>：示意图 / 规格（页面元素 + 字段·状态）/ 验收。
+    """图 + 规格两列 → 原生 HTML <table>（左图右文，Confluence 原样渲染）。
 
-    每行 = (images, spec_items, accept_items)：
-    - images: [(path, caption), ...] 该屏截图
-    - spec_items / accept_items: _render_spec_items 的项（str 或 (父,[子])）
-    研发看规格列 build，QA 看验收列测，行对齐——同一屏的规格与验收横向并排。
+    images: [(path, alt), ...]；groups: [(区块名, [规格条目...]), ...]，
+    区块名为空串时该组不出小标题。
     """
-    body_rows: list[str] = []
-    for images, spec_items, accept_items in rows:
-        img_html = "\n".join(
-            f'        <img src="{_xml_attr_escape(p)}" alt="{_xml_attr_escape(c or scene_name)}" />'
-            for p, c in images
-        )
-        spec_html = _render_spec_items(spec_items, 10) if spec_items else ""
-        accept_html = _render_spec_items(accept_items, 10) if accept_items else ""
-        body_rows.append(
-            "    <tr>\n"
-            f"      <td>\n{img_html}\n      </td>\n"
-            f"      <td>\n{spec_html}\n      </td>\n"
-            f"      <td>\n{accept_html}\n      </td>\n"
-            "    </tr>"
-        )
+    left = "\n".join(
+        f'        <img src="{_xml_attr_escape(p)}" alt="{_xml_attr_escape(a)}" />'
+        for p, a in images
+    )
+    right_parts: list[str] = []
+    for name, items in groups:
+        if name:
+            right_parts.append(f"        <strong>{_xml_escape(name)}</strong>")
+        lis = "\n".join(f"          <li>{_xml_escape(it)}</li>" for it in items)
+        right_parts.append(f"        <ul>\n{lis}\n        </ul>")
+    right = "\n".join(right_parts)
     return (
         "<table>\n"
         "  <colgroup>\n"
-        '    <col style="width: 22.0%;" />\n'
-        '    <col style="width: 50.0%;" />\n'
-        '    <col style="width: 28.0%;" />\n'
+        '    <col style="width: 30.0%;" />\n'
+        '    <col style="width: 70.0%;" />\n'
         "  </colgroup>\n"
         "  <thead>\n"
         "    <tr>\n"
         "      <th>示意图</th>\n"
-        "      <th>规格（页面元素 + 字段 / 状态）</th>\n"
-        "      <th>验收</th>\n"
+        "      <th>规格</th>\n"
         "    </tr>\n"
         "  </thead>\n"
         "  <tbody>\n"
-        + "\n".join(body_rows)
-        + "\n  </tbody>\n"
+        "    <tr>\n"
+        f"      <td>\n{left}\n      </td>\n"
+        f"      <td>\n{right}\n      </td>\n"
+        "    </tr>\n"
+        "  </tbody>\n"
         "</table>"
     )
 
@@ -536,10 +499,6 @@ def scene_block_card(
     images: Sequence[tuple[str, str]] = (),  # [(path, caption), ...]
     leftright_modules: Sequence[tuple[str, str, Sequence[str], Sequence[str]]] = (),
     # 新默认模板（2026-05 起）：[(模块名, 显示逻辑, [显示要素...], [交互...]), ...]
-    spec_rows: Sequence[tuple[Sequence[tuple[str, str]], Sequence, Sequence]] = (),
-    # 三列规格表：[(images, spec_items, accept_items), ...]；每屏一行，规格与验收行对齐。
-    # spec_items / accept_items 项 = str（单层）或 (父, [子...])（两层）。用此模式时
-    # 验收内联在表内、acceptance_criteria 只放跨行 / 反向态断言。
     blocks: Sequence[Sequence[str]] = (),
     # 【兼容】老 4 列区块表模板：[[区块, 元素+规则, 文案, 数据来源], ...]
     cross_cutting_sections: Sequence[tuple[str, Sequence[str]]] = (),
@@ -568,7 +527,7 @@ def scene_block_card(
     - 异常场景 表（3 列：触发条件 / 系统响应 / 用户感知）
     - 验收标准 checkbox（baseline 与 delta 场景小节共用字段集，反向合并粘贴不缺段）
 
-    参考：`references/prd-scene-templates.md` §四「子场景模板」。
+    旧 12 章 PRD 与 baseline 模块章用；delta 走 image_spec_table。
     """
     heading = f"{scene_id} · {scene_name}"
     if heading_level == 2:
@@ -582,24 +541,6 @@ def scene_block_card(
 
     if story:
         w.chapter_story(story)
-
-    # 三列规格表（图 / 规格 / 验收）：每屏一行，规格与验收横向对齐，同一事实只出现一次。
-    # 优先级最高——显式传 spec_rows 即走此模板。规格 / 显性验收内联表内；
-    # data_impact 归「跨模块 / 全局」（表画不出的跨模块联动 / 迁移 / 全局规则），
-    # acceptance_criteria 归「整体验收」（跨行 / 反向态断言，塞不进单屏）。
-    if spec_rows:
-        w.raw(_spec_3col_html_table(scene_name, spec_rows))
-        if data_impact:
-            w.paragraph(bold("跨模块 / 全局"))
-            w.bullet_list(list(data_impact))
-        if exceptions:
-            w.paragraph(bold("异常场景"))
-            w.table(headers=["触发条件", "系统响应", "用户感知"], rows=list(exceptions))
-        if acceptance_criteria:
-            w.paragraph(bold("整体验收（跨行 / 反向态）"))
-            for c in acceptance_criteria:
-                w.raw(f"- [ ] {c}")
-        return
 
     # 左图右文三段式模板：有图 → 带表头的原生 HTML <table>（wiki 可视化编辑 +
     # 往返可回流）；无图（baseline living 文档）→ 纯编号三段式

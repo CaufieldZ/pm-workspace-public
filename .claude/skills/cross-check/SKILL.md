@@ -87,11 +87,11 @@ bash .claude/skills/cross-check/scripts/cross-check-auto.sh <产品线/项目>
 
 跑 prd skill 的 **「交付前冷读」Step**（`.claude/skills/prd/SKILL.md`）：
 ```bash
-python3 .claude/skills/prd/scripts/cold_read.py --prepare <prd.md> [--targets 3.1,4.1,5.1]
+python3 .claude/skills/prd/scripts/cold_read.py --prepare <prd.md>
 ```
-脚本打包 context 文件 + 7 类盲区探针 prompt + `cold-read-{date}.md` 盲点清单模板 → 派**干净上下文子代理**（Agent 工具，硬约束：同 session 会脑补）逐 target 跑 → 回填盲点清单 → 逐条 triage。7 类盲区权威定义见 `../prd/references/prd-scene-templates.md` §4.6。
+脚本打包 context 文件（PRD 全文 + scene-list + baseline）+ 开发者视角探针 prompt + `cold-read-{date}.md` 清单模板 → 派**干净上下文子代理**（Agent 工具，硬约束：同 session 会脑补）跑 → 回填清单 → 逐条处理。
 
-**产出**：盲点清单（`cold-read-{date}.md`）作为本工序产物；cross-check 报告末尾附一句汇总——「冷读已发现 N / 已补 M / 留版本 K」。
+**产出**：冷读清单（`cold-read-{date}.md`）作为本工序产物；cross-check 报告末尾附一句汇总——「冷读发现 N / 已补 M / 误报 K」。
 
 ## 自检清单
 

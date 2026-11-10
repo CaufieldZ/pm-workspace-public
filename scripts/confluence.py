@@ -10,7 +10,7 @@
     python3 scripts/confluence.py search "<内容词>" [--space <KEY>] [--limit N]
     # 看父页下的子页树
     python3 scripts/confluence.py tree <parentId> [--recursive] [--max-depth N] [--show-url]
-    # 拉单页（auto 嗅探 4 种形态：split-restore / md-macro / pandoc / simple）
+    # 拉单页（auto 嗅探形态：md-macro / pandoc；simple 为旧转换）
     python3 scripts/confluence.py get <url> [--out-dir DIR | -p <项目>] [--mode ...] [--no-images]
     # 考古：一组历史迭代文档聚成时间线语料
     python3 scripts/confluence.py dig "<关键词>" [--space <KEY>] [--title] [--limit N] [-p <项目>]
@@ -136,7 +136,7 @@ def html_to_markdown(html_str, img_mapping=None, img_rel_dir=None):
     return text.strip()
 
 
-# ── 形态嗅探 + md-macro / pandoc / split-restore 模式 ──────
+# ── 形态嗅探 + md-macro / pandoc 模式 ──────
 
 _MD_MACRO_RE = re.compile(
     r'<ac:structured-macro[^>]*ac:name="markdown"[^>]*>'
@@ -145,26 +145,14 @@ _MD_MACRO_RE = re.compile(
     re.DOTALL,
 )
 
-# 子页内场景 heading：## 5.1 A-1 · 直播间完整全貌（split_prd 拆时降 ### → ##）
-# re.M：heading 在 CDATA 提取出的 md 文本中不在串首（调用方先剥 macro 再匹配）
-_CHILD_SCENE_HEAD_RE = re.compile(
-    r"^##\s+\*{0,2}(\d+\.\d+)\s+(?:Scene\s+)?([A-Z][-\w]*)\s*·\s*(.+?)\*{0,2}\s*$",
-    re.MULTILINE,
-)
-# 父页 §4-7 章 heading：# 4. 开播链路
-_PARENT_CHAPTER_HEAD_RE = re.compile(r"^#\s+\*{0,2}([4-7])\.\s+(.+?)\*{0,2}\s*$")
-# 父页 scene link 行（push 时被 rewrite_scene_links_to_confluence 改写为 Confluence URL）
-_PARENT_SCENE_LINK_RE = re.compile(
-    r"^- \[(\d+\.\d+)\s+([A-Z][-\w]*)\s*·\s*([^\]]+?)\]\(([^)]+)\)\s*$"
-)
-# 场景名清理：剥末尾追溯标记（同 split_prd._PHASE_TAG_RE）
+# 文件名清理：剥末尾追溯标记
 _PHASE_TAG_RE = re.compile(
     r"\s*\*{0,2}[（(](?:Phase\s*\d+|变更|新增|后续迭代)[^）)]*[）)]\*{0,2}\s*$"
 )
 
 
 def _safe_filename(name):
-    """场景白话名 → 文件名 safe 部分（复制自 split_prd._safe_filename，避免跨目录依赖）。"""
+    """标题 / 关键词 → 文件名 safe 部分。"""
     name = _PHASE_TAG_RE.sub("", name)
     name = re.sub(r"\s*[（(][^）)]*[）)]\s*", "", name)
     name = re.sub(r"[\s/\\:*?<>|+]", "-", name)
@@ -172,19 +160,15 @@ def _safe_filename(name):
     return name.strip("-")
 
 
-def detect_mode(body_html, has_split_children=False):
-    """按 storage 指纹返回 'split-restore' / 'md-macro' / 'pandoc'。
+def detect_mode(body_html):
+    """按 storage 指纹返回 'md-macro' / 'pandoc'。
 
-    - 父+子页 + 父页有 markdown 宏 + 子页含 ## N.x SID 场景 heading → split-restore
-    - 单页 + markdown 宏占比 ≥ 50% → md-macro
+    - markdown 宏占比 ≥ 50% → md-macro
     - 其他 → pandoc
 
     阈值 50% 是安全裕度（实测 PM push 的 PRD markdown 宏占比 ≥ 95%；人编辑文档为 0%）。
     """
-    has_md_macro = "<ac:structured-macro" in body_html
-    if has_md_macro and has_split_children:
-        return "split-restore"
-    if not has_md_macro:
+    if "<ac:structured-macro" not in body_html:
         return "pandoc"
     md_macro_chars = sum(len(m) for m in re.findall(
         r'<ac:structured-macro[^>]*ac:name="markdown".*?</ac:structured-macro>',
@@ -193,113 +177,6 @@ def detect_mode(body_html, has_split_children=False):
     if md_macro_chars / max(len(body_html), 1) > 0.5:
         return "md-macro"
     return "pandoc"
-
-
-def parse_view_map(spec):
-    """'4:broadcaster-h5,5:audience,6:broadcaster-web,7:cms'
-       → {4: 'broadcaster-h5', 5: 'audience', 6: 'broadcaster-web', 7: 'cms'}
-    """
-    out = {}
-    for kv in spec.split(","):
-        kv = kv.strip()
-        if not kv:
-            continue
-        k, _, v = kv.partition(":")
-        if not k.strip().isdigit() or not v.strip():
-            sys.exit(f"--view-map 格式错: {kv!r}（应为 'N:prefix' 逗号分隔）")
-        out[int(k.strip())] = v.strip()
-    if not out:
-        sys.exit("--view-map 为空")
-    return out
-
-
-def split_child_into_scenes(child_md, view):
-    """子页 md 按 `## N.x ID · 名` 切场景块。返回 [{fname, sid, content}, ...]。
-
-    fname = '{view}-{sid}-{safe_name}.md'，跟 split_prd 推上去时的文件名一致。
-    """
-    lines = child_md.splitlines()
-    scenes = []
-    current = None
-    for line in lines:
-        m = _CHILD_SCENE_HEAD_RE.match(line)
-        if m:
-            if current is not None:
-                scenes.append(current)
-            sid = m.group(2)
-            name = m.group(3).strip()
-            current = {
-                "fname": f"{view}-{sid}-{_safe_filename(name)}.md",
-                "sid": sid,
-                "lines": [line],
-            }
-            continue
-        if current is not None:
-            current["lines"].append(line)
-    if current is not None:
-        scenes.append(current)
-    for s in scenes:
-        s["content"] = "\n".join(s["lines"]).rstrip() + "\n"
-        del s["lines"]
-    return scenes
-
-
-def infer_chapter_from_child(child_md):
-    """扫子页第一个 `## N.x ID · ...` 推断章节号。"""
-    for line in child_md.splitlines():
-        m = _CHILD_SCENE_HEAD_RE.match(line)
-        if m:
-            return int(m.group(1).split(".")[0])
-    return None
-
-
-def rewrite_parent_links_to_local(parent_md, chapters_in_scope, scenes_dir_name, sid_to_fname):
-    """父页 §4-7 章下的 `- [N.x ID · 名](Confluence URL)` 反向改写为本地相对路径。
-
-    返回 (新 md, 改写行数, 未匹配 sid 列表)。
-    """
-    lines = parent_md.splitlines()
-    out = []
-    current_chapter = 0
-    rewritten = 0
-    unresolved = []
-    for line in lines:
-        m_ch = _PARENT_CHAPTER_HEAD_RE.match(line)
-        if m_ch:
-            current_chapter = int(m_ch.group(1))
-            out.append(line)
-            continue
-        if line.startswith("# ") and not m_ch:
-            current_chapter = 0
-            out.append(line)
-            continue
-        if current_chapter in chapters_in_scope:
-            m = _PARENT_SCENE_LINK_RE.match(line)
-            if m:
-                num, sid, name, _url = m.groups()
-                fname = sid_to_fname.get(sid)
-                if fname:
-                    anchor = f"{num} {sid} · {name.strip()}"
-                    out.append(f"- [{anchor}]({scenes_dir_name}/{fname})")
-                    rewritten += 1
-                    continue
-                else:
-                    unresolved.append(sid)
-        out.append(line)
-    tail = "\n" if not parent_md.endswith("\n") else ""
-    return "\n".join(out) + tail, rewritten, unresolved
-
-
-def ensure_h1(md, title):
-    """主 md 首个非空行若不是 `# `，补一行 `# {title}`。"""
-    for line in md.splitlines():
-        s = line.strip()
-        if not s:
-            continue
-        if s.startswith("# "):
-            return md
-        break
-    return f"# {title}\n\n{md.lstrip()}"
 
 
 def extract_md_macro(storage_html, img_mapping=None, img_rel_dir=None):
@@ -746,12 +623,10 @@ def cmd_get(args) -> None:
         sys.exit("错误：--with-children 仅支持 markdown 输出，不能配合 --html / --raw")
     if args.with_children and args.images and not (args.project or args.out_dir):
         sys.exit("错误：--with-children --images 需要 -p 或 --out-dir")
-    if args.mode in ("md-macro", "pandoc", "split-restore") and (args.html or args.raw):
-        sys.exit("错误：--mode md-macro/pandoc/split-restore 不能与 --html / --raw 组合")
-    if args.with_children and args.mode in ("md-macro", "pandoc", "split-restore"):
-        sys.exit("错误：--with-children 与 --mode md-macro/pandoc/split-restore 互斥（split-restore 自己拉子页）")
-    if args.view_map and args.mode not in ("auto", "split-restore"):
-        sys.exit("错误：--view-map 仅 --mode split-restore 使用")
+    if args.mode in ("md-macro", "pandoc") and (args.html or args.raw):
+        sys.exit("错误：--mode md-macro/pandoc 不能与 --html / --raw 组合")
+    if args.with_children and args.mode in ("md-macro", "pandoc"):
+        sys.exit("错误：--with-children 与 --mode md-macro/pandoc 互斥")
 
     load_creds()  # 凭证缺失即早退（base_url() 从同一发现链取）
 
@@ -824,119 +699,10 @@ def cmd_get(args) -> None:
             print(content)
         return
 
-    # ── 模式决议（auto 时先探子页判断 split 形态）──
     effective_mode = args.mode
-    children_cache = None  # 复用避免重复 API 调用
     if effective_mode == "auto":
-        children_cache = fetch_children(page_id)
-        # 子页 split 形态判定：至少 1 个子页 body 含场景 heading
-        split_children_detected = False
-        for ch in children_cache:
-            ch_body = ch.get("body", {}).get("storage", {}).get("value", "")
-            # md-macro 子页：storage 是 <ac:structured-macro markdown><CDATA[md]>，先剥出 md 再匹配
-            # raw-html 子页：storage 直接是 <h2>5.1 A-1 · …</h2>，按 storage 形态匹配
-            md_segs = _MD_MACRO_RE.findall(ch_body)
-            if any(_CHILD_SCENE_HEAD_RE.search(seg) for seg in md_segs) or re.search(
-                r"<h2[^>]*>\s*\d+\.\d+\s+[A-Z][-\w]*\s*·", ch_body
-            ):
-                split_children_detected = True
-                break
-        effective_mode = detect_mode(body_html, has_split_children=split_children_detected)
+        effective_mode = detect_mode(body_html)
         print(f"  → auto 嗅探 → mode={effective_mode}", file=sys.stderr)
-
-    # ── split-restore: 父+子页还原本地 split 目录结构 ──
-    if effective_mode == "split-restore":
-        if children_cache is None:
-            children_cache = fetch_children(page_id)
-        children = children_cache
-        if not children:
-            sys.exit("错误：split-restore 模式需要父+子页结构，当前页无子页")
-
-        view_map = parse_view_map(args.view_map) if args.view_map else {5: "front", 6: "back", 7: "cross"}
-        if not args.view_map:
-            print(
-                "  ⚠ --view-map 未传，使用默认 {5:front,6:back,7:cross}；"
-                "看子页标题对应不上时显式传 --view-map 精确还原",
-                file=sys.stderr,
-            )
-
-        # 输出路径
-        if args.out_dir:
-            out_root = Path(args.out_dir).resolve()
-        elif args.project:
-            project_dir = ROOT / "projects" / args.project
-            if not project_dir.is_dir():
-                sys.exit(f"错误：项目目录不存在 {project_dir}")
-            out_root = project_dir / "inputs" / "docs"
-        else:
-            sys.exit("错误：split-restore 模式需要 -p 或 --out-dir 指定输出位置")
-        out_root.mkdir(parents=True, exist_ok=True)
-
-        stem = args.stem or _safe_filename(title)
-        main_md_path = out_root / f"{stem}.md"
-        scenes_dir_name = f"{stem}-scenes"
-        scenes_dir = out_root / scenes_dir_name
-        assets_dir = out_root / "assets"
-        scenes_dir.mkdir(parents=True, exist_ok=True)
-
-        # 拉父页 attachments（仅 storage 引用的图）
-        parent_refs = extract_referenced_images(body_html)
-        if parent_refs and not args.no_images:
-            parent_atts = fetch_attachments(page_id, download=True, filter_names=parent_refs)
-            parent_img_map = save_images_to_dir(parent_atts, assets_dir)
-        else:
-            parent_img_map = {}
-        parent_md = extract_md_macro(body_html, parent_img_map, "./assets")
-        parent_md = ensure_h1(parent_md, title)
-
-        # 处理子页：拉 storage + attachments + 切场景
-        chapters_in_scope = set()
-        sid_to_fname = {}
-        total_scenes = 0
-        total_imgs = len(parent_img_map)
-
-        for child in children:
-            child_id = child["id"]
-            child_title = child["title"]
-            child_body_html = child["body"]["storage"]["value"]
-            child_refs = extract_referenced_images(child_body_html)
-            if child_refs and not args.no_images:
-                child_atts = fetch_attachments(child_id, download=True, filter_names=child_refs)
-                child_img_map = save_images_to_dir(child_atts, assets_dir)
-                total_imgs += len(child_img_map)
-            else:
-                child_img_map = {}
-            child_md = extract_md_macro(child_body_html, child_img_map, "../assets")
-            chapter = infer_chapter_from_child(child_md)
-            if chapter is None:
-                print(f"  ⚠ 子页 pageId={child_id}「{child_title}」无场景 heading，跳过", file=sys.stderr)
-                continue
-            view = view_map.get(chapter)
-            if not view:
-                print(f"  ⚠ §{chapter}「{child_title}」未在 --view-map 中声明，跳过", file=sys.stderr)
-                continue
-            chapters_in_scope.add(chapter)
-            scenes = split_child_into_scenes(child_md, view)
-            for s in scenes:
-                (scenes_dir / s["fname"]).write_text(s["content"], encoding="utf-8")
-                sid_to_fname[s["sid"]] = s["fname"]
-            total_scenes += len(scenes)
-            print(f"  → §{chapter}「{child_title}」→ view={view}, {len(scenes)} 场景", file=sys.stderr)
-
-        # 主 md scene link 反向改写
-        main_md_final, n_rewritten, unresolved = rewrite_parent_links_to_local(
-            parent_md, chapters_in_scope, scenes_dir_name, sid_to_fname
-        )
-        main_md_path.write_text(main_md_final, encoding="utf-8")
-
-        print("\n✓ split-restore 完成", file=sys.stderr)
-        print(f"  主 md: {main_md_path}", file=sys.stderr)
-        print(f"  场景目录: {scenes_dir} ({total_scenes} 文件)", file=sys.stderr)
-        print(f"  图片目录: {assets_dir} ({total_imgs} 张)", file=sys.stderr)
-        print(f"  scene link 改写: {n_rewritten} 条", file=sys.stderr)
-        if unresolved:
-            print(f"  ⚠ 未匹配 sid: {sorted(set(unresolved))}", file=sys.stderr)
-        return
 
     # pandoc/md-macro 模式：默认只下载 storage 实际引用的图（不下页 attachment 全集）
     if effective_mode in ("pandoc", "md-macro"):
@@ -1184,23 +950,15 @@ def main() -> int:
     gp.add_argument("--raw", action="store_true", help="输出原始 Confluence 存储 HTML")
     gp.add_argument(
         "--mode",
-        choices=["auto", "simple", "md-macro", "pandoc", "split-restore"],
+        choices=["auto", "simple", "md-macro", "pandoc"],
         default="auto",
         help=(
-            "auto（默认）按 storage 嗅探：父+子页+md宏 -> split-restore，单页+md宏 -> md-macro，其余 -> pandoc；"
-            "simple = 旧 html_to_markdown（向后兼容）；"
-            "md-macro = 剥 markdown 宏 CDATA 直出（PM push 的单页 PRD）；"
-            "pandoc = HTML -> GFM，保留 HTML 复杂表 + 全图本地预览（人编辑文档）；"
-            "split-restore = 还原本地 split 目录结构（主 md + scenes/{view}-{id}-{name}.md），父+子页 PRD 专用"
+            "auto（默认）按 storage 嗅探：md 宏为主 -> md-macro，其余 -> pandoc；"
+            "simple = 旧 html_to_markdown；"
+            "md-macro = 剥 markdown 宏 CDATA 直出（PM push 的 PRD）；"
+            "pandoc = HTML -> GFM，保留 HTML 复杂表 + 全图本地预览（人编辑文档）。"
+            "父页 + 子页结构的旧 PRD 用 --with-children 合并成一份 md"
         ),
-    )
-    gp.add_argument(
-        "--view-map",
-        help='split-restore 模式必填：章节号 -> view 前缀，逗号分隔。例: "4:broadcaster-h5,5:audience,6:broadcaster-web,7:cms"',
-    )
-    gp.add_argument(
-        "--stem",
-        help="split-restore 模式：主 md 文件名 stem（默认从父页标题派生）。最终产物 = {stem}.md + {stem}-scenes/",
     )
     gp.add_argument(
         "--with-children",

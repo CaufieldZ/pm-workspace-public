@@ -4,6 +4,9 @@
 
 cd "$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 
+# 项目解释器解析（.venv 优先）—— 与 hook 链同一 SSOT，别在此另写一份。
+source "${BASH_SOURCE[0]%/*}/../.claude/hooks/lib/pyenv.sh"
+
 # ── 规则源改动提醒 bump skel_version（只提醒不阻断）──
 # 本次 commit 改了规则源（骨架生成器 / check / 词表）但没改 workspace.json → 提醒 bump。
 # 规则源清单 = check_rule_version_drift.py --rule-sources（单一真相源）。

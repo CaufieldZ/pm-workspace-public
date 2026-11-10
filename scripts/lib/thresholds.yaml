@@ -101,15 +101,9 @@ read_discipline:
 # ═══════════════════════════════════════════════════════════════
 
 prd_checks:
-  # 长句 run-on 判定字数（WARN）。
-  # 消费者：.claude/skills/prd/scripts/humanize/patterns.py LONG_SENTENCE_THRESHOLD
-  long_sentence_chars: 100
   # 场景级业务故事字数上限（超限 raise）。
   # 消费者：.claude/skills/prd/scripts/core/md_renderer.py STORY_MAX_CHARS
   story_chars: 30
-  # 场景数模式判定阈值（≥ 此值走 split 分文件）。
-  # 消费者：.claude/skills/prd/scripts/gen_prd_skeleton.py _SCENE_COUNT_THRESHOLD
-  scene_split_count: 10
 
 baseline:
   # 模块章内容新鲜度过期天数（提醒不卡）。

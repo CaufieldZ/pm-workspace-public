@@ -11,7 +11,7 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-1f54d6?style=flat-square)](LICENSE)
 [![Skills](https://img.shields.io/badge/skills-16-D97757?style=flat-square)](.claude/skills)
 [![Hooks](https://img.shields.io/badge/hooks-16-000?style=flat-square)](.claude/hooks)
-[![Audit](https://img.shields.io/badge/audit-18_categories-000?style=flat-square)](.claude/skills/workspace-audit)
+[![Audit](https://img.shields.io/badge/audit-21_categories-000?style=flat-square)](.claude/skills/workspace-audit)
 [![Python](https://img.shields.io/badge/python-3.10+-000?style=flat-square)]()
 [![Node](https://img.shields.io/badge/node-18+-000?style=flat-square)]()
 [![Claude Code](https://img.shields.io/badge/claude_code-native-000?style=flat-square)](https://docs.anthropic.com/en/docs/claude-code)
@@ -27,7 +27,7 @@
 | 输入 | 会议纪要 / MRD / 竞品截图 / 口头需求 | 同左 |
 | 过程 | PM 手动画原型、写 PRD、反复对齐 | AI 按 Skill 自动产出，PM 审核微调 |
 | 耗时 | 3-5 天 | 10 分钟 − 2 小时 |
-| 一致性 | 每次结果不同，术语混乱 | 编号锁定 + 术语全局一致 + 18 类 audit 拉通 |
+| 一致性 | 每次结果不同，术语混乱 | 编号锁定 + 术语全局一致 + 21 类 audit 拉通 |
 | 下游 | PRD 扔给研发自己理解 | PRD md 作为唯一可信源 — 业务对象 / 状态机 / 5 段式 / 文案矩阵都在一份文档，研发 / 设计 / QA AI 各取所需 |
 | 方法论沉淀 | 散落在个人习惯和文档里 | 战略层 + 工作流层 + 项目层三层落盘，可跨 session / 跨模型复用 |
 
@@ -67,8 +67,11 @@ git clone git@github.com:CaufieldZ/pm-workspace.git
 cd pm-workspace
 
 # 2. 装依赖（macOS / Linux / WSL / Git Bash）
-python3 -m pip install -r requirements.txt
-python3 -m playwright install chromium
+#    装进项目 .venv：系统 python3 带 PEP 668 标记会拒绝 pip install；
+#    hook 由 Claude Code / git 启动、不继承 shell 的 venv 激活，工区工具链优先 .venv/bin
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m playwright install chromium
 node --version   # Node 18+；根目录无 npm 依赖，不需要 npm install
 
 # Windows PowerShell：把 python3 换成 py -3 或 python
@@ -110,7 +113,7 @@ git config core.hooksPath .githooks
 | 文件 | 加载方式 | 管什么 |
 |:--|:--|:--|
 | `CLAUDE.md` | 每 session 注入 | 工具操作 · 快捷路由 · 收到需求 PM-GATE 4 风险扫描 · 三条链路映射 · runbook 触发条件 |
-| `.claude/runbooks/*.md` | 触发条件命中按需 Read | 18 个 runbook（方法论 / 产物规范 / 决策框架 / LNO / 项目管理 / 版本同步 / 讲人话铁律含对话风格 / HTML pipeline / Confluence 考古等） |
+| `.claude/runbooks/*.md` | 触发条件命中按需 Read | 方法论 / 产物规范 / 决策框架 / LNO / 项目管理 / 版本同步 等操作手册（**本拷贝不含**，见 [SETUP.md §六](SETUP.md)） |
 | `LEARNED.md` | 每 session 注入（可选） | 个人沟通偏好 + 纠错沉淀（根目录，存在即读，gitignored） |
 
 ### Layer 3 · 项目层
@@ -138,7 +141,7 @@ git config core.hooksPath .githooks
 
 ## Skill 流程
 
-6 个 Pipeline 位 Skill 按依赖顺序执行（含收尾拉通的 cross-check），6 个独立 Skill + 1 个工具 Skill 随时调用，另有 3 个场景定制扩展示范「自建 Skill 怎么落地」。共 16 个。
+6 个 Pipeline 位 Skill 按依赖顺序执行（含收尾拉通的 cross-check），6 个独立 Skill + 2 个工具 Skill 随时调用，另有 2 个场景定制扩展示范「自建 Skill 怎么落地」。共 16 个。
 
 ```
 1 scene-list ─→ 2.5 arch-diagrams* ─→ 3 interaction-map
@@ -168,25 +171,25 @@ git config core.hooksPath .githooks
 | Skill | 说明 |
 |:-|:-|
 | competitor-analysis | 竞品调研：情报采集（APP 截图 / Web 截图 / 公告抓取）+ 三角对比 + 可借鉴点提取 |
-| data-report | 周报 / 月报 / 季报，行为分析平台 + 有数自动化 |
 | flowchart | 流程图 / 泳道图 / 审批流，独立产出可嵌入其他文档 |
 | mrd-review | MRD 评审：投票表 + 价值判断 + 市场窗口验证 |
 | ppt | 方案 / SOP → HTML 多 Tab 文档 + 口播稿 |
+| trtc-docs | 音视频能力事实查询（计费 / 配额 / 错误码 / API 用法），走知识库检索不靠训练记忆 |
 | user-manual | 操作手册 / 帮助中心文章 / 营销宣发稿，面向用户的上线交付物 |
 
-### 扩展（3 个 · 自建范例）
+### 扩展（2 个 · 自建范例）
 
 | Skill | 说明 |
 |:-|:-|
 | promo-kit | 功能 / 活动写成对外宣发内容（视频分镜 / 图文 4 宫格 / 短文案三选一或组合） |
 | aihub-package | 企业 AI 平台出包流水线（脱敏 checklist → 预检 → 打包 → 验证），跨部门分发 Skill 的范例 |
-| 内部项目系统 | 内部项目管理 CLI 桥接（任务 / 需求 / 进度查询），「工具型 Skill 怎么包内部系统」的范例 |
 
-### Tool（1 个）
+### Tool（2 个）
 
 | Skill | 说明 |
 |:-|:-|
-| workspace-audit | 全局诊断（Phase 1 脚本 18 类 + Phase 2 模型推理 4 类），含 Hooks 健康度与规范承诺一致性 |
+| workspace-audit | 全局诊断（Phase 1 脚本 21 类 + Phase 2 模型推理 4 类），含 Hooks 健康度与规范承诺一致性 |
+| code-review | 按 git diff 审增量代码（Phase 1 脚本聚合机械层 + 消费者反查，Phase 2 模型语义 review），review-only 不落盘 |
 
 ---
 
@@ -220,10 +223,10 @@ PRD md ──┼─→ 5/6/7.x 子场景区块表 + 截图 ───────
 
 | 机制 | 说明 |
 |:-|:-|
-| 防腐化 hook | `.githooks/pre-commit` 每次 commit 跑 secret scan + staged 大文件/本地原料拦截；Skill / 规则 / `.claude/hooks/` 变更时加跑 `audit.sh 1,2,3,4,7,12,13,14,15,16,17,19,20,21`（14 类硬检查） |
+| 防腐化 hook | `.githooks/pre-commit` 每次 commit 跑 secret scan + staged 大文件/本地原料拦截；Skill / 规则 / `.claude/hooks/` 变更时加跑 `audit.sh 1,2,3,4,7,12,13,14,15,16,17,19,20,21,23,25`（16 类硬检查） |
 | 16 个 runtime hook | 16 个 hook 文件按事件分发出 28 条自动兜底：CJK 标点 / 讲人话 / 翻译腔检测 / 版本同步 / wiki push / 脚本优先 / 原型范式 / 风险操作兜底 / 脚本语法 + 引用自检（.py/.sh/.js/.json/.yaml）/ Learn-Rule 纠错捕获 / Session 保活等闸门。stderr warning 看到立改，阻断级的直接拒写 |
-| 18 类 workspace-audit | Phase 1 脚本硬检查 18 类（文件 / 数值 / 依赖 / 规则 / Token / 产出物 / SKILL_TABLE / scripts / imports / 三件套纯洁性 / Hooks 健康度 / 规范承诺一致性 / SKILL 结构 / 内链断链 / 场景悬空 / 跨平台 / 计数对账等）+ Phase 2 模型推理 4 类（规则矛盾 / 安全 / 工程健壮性 / 瘦身） |
-| 回归测试 | `scripts/tests/` 429 个 pytest 用例（dashboard 渲染 / CJK 标点 / 编号契约 / 门禁语义等）+ `test-hooks.sh` 134 条 gate 双探针（该 block 的必拦、无害近似必放行），改 hook / 渲染函数即跑 |
+| 21 类 workspace-audit | Phase 1 脚本硬检查 21 类（文件 / 数值 / 依赖 / 规则 / Token / 产出物 / SKILL_TABLE / scripts / imports / 三件套纯洁性 / Hooks 健康度 / 规范承诺一致性 / SKILL 结构 / 内链断链 / 场景悬空 / 跨平台 / 计数对账 / hub 健康 / 脚本健康 / 阈值分布 / 原型可复现 / gate 健康等）+ Phase 2 模型推理 4 类（规则矛盾 / 安全 / 工程健壮性 / 瘦身） |
+| 回归测试 | `scripts/tests/` 的 pytest 回归（dashboard 渲染 / CJK 标点 / 编号契约 / 门禁语义等）+ `test-hooks.sh` 的 gate 双探针（该 block 的必拦、无害近似必放行），改 hook / 渲染函数即跑 |
 | HTML 铁律 | > 200 行必须脚本生成（Step A 骨架 → B fill → C 自检），禁止 Write 直写 |
 | 自检反压 | 每个 Skill 自带 checklist，不通过最多自动修复 2 次，仍失败停下报告，禁止静默跳过 |
 | pre-deliverable-source-gate | 有 gen 脚本的 HTML 即只读，改动只进源文件 |
@@ -300,7 +303,7 @@ pm-workspace/
 │   │   ├── pre-version-sync-gate.sh
 │   │   ├── stop-learn-capture.sh         # 从 transcript 提取 [LEARN] 追加 LEARNED.md
 │   │   └── ...                  #   等共 16 个 hook（7 pre 含 pre-compact + 3 post + 3 stop + 1 session + 2 user-prompt）
-│   ├── runbooks/               # 18 个按需方法论 / 操作规范（CLAUDE.md 触发条件命中时 Read，含对话风格 human-voice-rules.md §⓪ + AI 中台规范入口 ai-platform-specs.md）
+│   ├── runbooks/               # 本拷贝不含（方法论 / 操作规范手册，见 SETUP.md §六）
 │   ├── _meta/                  # 元数据（half-life.md 规则半衰期索引）
 │   ├── skills/                  # 16 个 Skill（三件套：SKILL.md + scripts/ + references/ + assets/）
 │   │   ├── {skill}/scripts/     #   可执行代码（Claude 调用执行，不读源码）
@@ -336,7 +339,7 @@ pm-workspace/
     │   └── {项目}/
     │       ├── prd-{name}-baseline.md  #   唯一可信源（living；产品线 baseline 落产品线根一层）
     │       ├── scene-list.md    #   锁定的场景编号
-    │       ├── inputs/          #   输入素材（落点判定见 .claude/runbooks/project-mgmt.md）
+    │       ├── inputs/          #   输入素材（落点判定见项目管理的落点查找表）
     │       │   ├── meetings/    #     会议纪要（pull_meeting_notes 默认落点）
     │       │   ├── docs/        #     永久参考（技术方案 / 接口 spec / Confluence 拉取 confluence-{页面}.md + -images/）
     │       │   ├── raw/         #     原始 pdf / docx / 未分类截图（临时素材）
@@ -378,7 +381,7 @@ Chat 模式适合临时应急 / 不想折腾环境。长期使用建议切 Claud
 
 ## 自建 Skill
 
-在 `.claude/skills/{name}/` 下手写 `SKILL.md` + `scripts/` + `references/` + `assets/` 三件套。约定 / 命名前缀 / frontmatter 规范见 [`.claude/runbooks/skill-conventions.md`](.claude/runbooks/skill-conventions.md)，`workspace-audit` Phase 1 自动校验。
+在 `.claude/skills/{name}/` 下手写 `SKILL.md` + `scripts/` + `references/` + `assets/` 三件套。frontmatter 规范见任一现成 `SKILL.md`（`name` / `description` / `type` / `scripts` 四段），`workspace-audit` Phase 1 自动校验。
 
 ---
 

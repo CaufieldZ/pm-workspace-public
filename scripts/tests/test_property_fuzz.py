@@ -60,25 +60,24 @@ def test_scene_list_sep_row_never_crashes(line):
 
 # ═══════════ 2. md_scan（PRD 扫描器）═══════════
 
-# 两个扫描函数的返回键全集（check_prd_md.sh fail_keys 依赖，缺键即静默漏检）。
-# 清单唯一真源 = humanize/patterns.py——这里取四种开关全开 / 全关的并集，不再手抄副本。
+# 扫描函数的返回键全集（check_prd_md.sh fail_keys 依赖，缺键即静默漏检）。
+# 清单唯一真源 = humanize/patterns.py——这里取开关全开 / 全关的并集，不再手抄副本。
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / ".claude/skills/prd/scripts"))
 from humanize.patterns import prd_fail_keys, prd_warn_keys  # noqa: E402
 
-_ALL_FAIL = prd_fail_keys(
-    split=True, skeleton=False, profile="delta", scene_prose=True
-) + prd_fail_keys(split=False, skeleton=True, profile="baseline", scene_prose=False)
+_ALL_FAIL = prd_fail_keys(skeleton=False, profile="delta") + prd_fail_keys(
+    skeleton=True, profile="baseline"
+)
 _PRD_KEYS = sorted({k for k, _ in _ALL_FAIL} | {k for k, _ in prd_warn_keys(skeleton=True)})
 
 
 @given(st.text(max_size=6000))
 def test_md_scan_never_crashes_and_exposes_all_keys(text):
-    """任意 md → 两个扫描函数不崩溃，且 fail / warn 清单引用的键都真的存在。
+    """任意 md → 扫描函数不崩溃，且 fail / warn 清单引用的键都真的存在。
 
-    check_prd_md.sh 消费的是两者合并后的 dict，所以按合并结果断言；
     缺键会让该维度静默漏检（拿不到 key → hits 恒空 → 永远绿）。
     """
-    out = {**md_scan.scan_human_voice_md(text), **md_scan.scan_prd_structural_md(text)}
+    out = md_scan.scan_prd_structural_md(text)
     for key in _PRD_KEYS:
         assert key in out, f"md_scan 缺键 {key}"
         assert isinstance(out[key], list)

@@ -2,13 +2,18 @@
 # 防腐化 hook：Skill/规则文件变更时自动跑轻量审计 + secret scan
 # 激活方式：git config core.hooksPath .githooks
 
-if command -v python3 >/dev/null 2>&1; then
-  PYTHON_BIN=${PYTHON_BIN:-python3}
-elif command -v python >/dev/null 2>&1; then
-  PYTHON_BIN=${PYTHON_BIN:-python}
-else
-  echo "❌ 未找到 Python，请安装 Python 3 后再提交"
-  exit 1
+# 项目解释器解析（.venv 优先）走 .claude/hooks/lib/pyenv.sh —— 与 hook 链同一 SSOT，不在此另写一份。
+# 按自身位置取路径（不依赖 cwd）；PATH 前置连带让下面调起的 audit.sh 也用同一解释器。
+source "${BASH_SOURCE[0]%/*}/../.claude/hooks/lib/pyenv.sh"
+if [ -z "${PYTHON_BIN:-}" ]; then
+  if command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN=python3
+  elif command -v python >/dev/null 2>&1; then
+    PYTHON_BIN=python
+  else
+    echo "❌ 未找到 Python，请安装 Python 3 后再提交"
+    exit 1
+  fi
 fi
 
 # -------- Secret scan（所有 commit 都跑）--------

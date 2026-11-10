@@ -4,8 +4,12 @@
 不硬编码 /tmp —— Windows 原生 Python 不映射 /tmp，Path("/tmp/x") 落到 C:\tmp 失败。
 """
 
+import inspect
+import json
+import subprocess
 import sys
 import tempfile
+from datetime import date, timedelta
 from pathlib import Path
 
 import pytest
@@ -15,6 +19,7 @@ _SKILL_SCRIPTS = Path(__file__).resolve().parents[2] / ".claude" / "skills" / "d
 sys.path.insert(0, str(_SKILL_SCRIPTS))
 
 import confluence_sync  # noqa: E402
+import fetch_weekly_youshu  # noqa: E402
 import gen_weekly_all  # noqa: E402
 import gen_weekly_md  # noqa: E402
 import gen_weekly_metrics  # noqa: E402
@@ -336,23 +341,269 @@ def test_confluence_merges_rate_into_uv_cell(tmp_path, monkeypatch):
     assert "点击率" not in [r[1] for r in rows["community"]]
 
 
-def test_confluence_fills_caliber_notes(tmp_path, monkeypatch):
-    """说明列填口径注,不是环比复读（旧实现填的是「40.1 vs 45.1（-11.1%）」）。"""
+def test_confluence_table_has_no_note_column(tmp_path, monkeypatch):
+    """Confluence 表 9 列，不带说明列。"""
     rows = confluence_sync.extract_rows(_report_dir(tmp_path, monkeypatch))
-    notes = {r[1]: r[9] for r in rows["community"] + rows["live"]}
-    assert notes["人均停留时长(秒)"] == "口径 05.22 起改主页 Feed 单页"
-    assert "不可相除" in notes["上麦人次"]          # 举手人数 ÷ 上麦人次是跨口径
-    for note in notes.values():
-        assert " vs " not in note, f"说明列在复读环比: {note}"
+    assert all(len(r) == 9 for r in rows["community"] + rows["live"])
+    html = confluence_sync._build_table(rows["community"], ["a", "b", "c", "d"])
+    assert "<th>说明</th>" not in html
+    assert html.count("</th>") == 9
 
 
-def test_caliber_notes_keys_all_hit_specs():
-    """CALIBER_NOTES 的键必须都能命中 spec 指标名——拼错会静默留空,没人发现。"""
-    spec_names = {
-        confluence_sync._normalize_name(item[1])
-        for item in confluence_sync.COMMUNITY_ROWS_SPEC + confluence_sync.LIVE_ROWS_SPEC
+# ── 推前门槛：默认不写 wiki，须显式 --push ────────────────────────────────────
+# 门槛的意义全在「默认值」上——这组测试钉死默认，谁把默认改回「推」立即红。
+# 决策见 .claude/decisions/implemented/2026-09-28-weekly-push-human-review-gate.md
+
+_SCRIPT = _SKILL_SCRIPTS / "confluence_sync.py"
+
+
+@pytest.mark.parametrize(
+    "dry_run,push,pending,expect",
+    [
+        (True, False, [], "dry-run"),
+        (True, True, [], "dry-run"),          # dry-run 优先级最高，演练语义不被 --push 抢走
+        (False, False, [], "gated"),          # 默认路径
+        (False, False, ["a.md"], "gated"),    # 没带 --push 时 pending 不改变结论
+        (False, True, ["a.md"], "blocked"),
+        (False, True, [], "push"),
+    ],
+)
+def test_push_decision_matrix(dry_run, push, pending, expect):
+    assert gen_weekly_all._push_decision(dry_run, push, pending) == expect
+
+
+def test_sync_full_signature_frozen():
+    """sync_full 不加 push 参数——授权是会话层的事，塞进函数体会让程序化调用方静默变 no-op。"""
+    params = inspect.signature(confluence_sync.sync_full).parameters
+    assert list(params) == ["report_dir", "history_path", "dry_run", "week_end"]
+    assert params["dry_run"].default is False
+
+
+def _run(*argv):
+    return subprocess.run(
+        [sys.executable, str(argv[0]), *argv[1:]], capture_output=True, text=True
+    )
+
+
+def test_confluence_cli_exposes_push_flag():
+    assert "--push" in _run(_SCRIPT, "--help").stdout
+
+
+def test_sync_full_without_push_writes_nothing(tmp_path):
+    """默认路径：打 [push-gate]、不碰网络（空目录也能跑通）、明说 wiki 未改动。"""
+    r = _run(_SCRIPT, "--sync-full", str(tmp_path))
+    assert r.returncode == 0
+    assert "push-gate" in r.stderr
+    assert "未写 Confluence" in r.stderr
+
+
+def test_sync_full_push_blocked_on_insight_stub(tmp_path):
+    """洞察还是 [待补充] 桩时 --push 也不许推——堵住主推路径绕开 gen_weekly_all 检查的口子。"""
+    (tmp_path / "community-weekly-0925.md").write_text(
+        "## 洞察\n\n[待补充 · 洞察写法]\n\n## 数据明细\n\n", encoding="utf-8"
+    )
+    r = _run(_SCRIPT, "--sync-full", str(tmp_path), "--push")
+    assert r.returncode == 0
+    assert "阻断" in r.stderr
+    assert "community-weekly-0925.md" in r.stderr
+
+
+def test_confluence_pending_stub_detector(tmp_path):
+    (tmp_path / "live-weekly-0925.md").write_text("## 洞察\n[待补充\n", encoding="utf-8")
+    (tmp_path / "community-weekly-0925.md").write_text("## 洞察\n### 1. 判断句\n", encoding="utf-8")
+    assert confluence_sync._pending_insight_stubs(tmp_path) == ["live-weekly-0925.md"]
+
+
+@pytest.mark.parametrize(
+    "argv,expect_pushed",
+    [([], False), (["--skip-push"], False), (["--dry-run"], True), (["--push"], True)],
+)
+def test_kefu_default_does_not_push(tmp_path, monkeypatch, argv, expect_pushed):
+    """客服通道默认不推（与主链路对称）；--dry-run 仍保留「演练 h3 断言不写回」语义。"""
+    import gen_kefu_weekly as gk
+
+    monkeypatch.setattr(gk, "REPORTS_DIR", tmp_path)
+    monkeypatch.setattr(gk, "pull_bi", lambda *a, **k: ({}, {}))
+    monkeypatch.setattr(gk, "pull_homepage_uv", lambda *a, **k: 0)
+    monkeypatch.setattr(gk, "compute_week", lambda *a, **k: {})
+    monkeypatch.setattr(gk, "gen_kefu_md", lambda *a, **k: "md")
+    monkeypatch.setattr(gk, "merge_history", lambda *a, **k: None)
+    monkeypatch.setattr(gk, "_read_history", lambda: {})
+    pushed = []
+    monkeypatch.setattr(gk, "push", lambda *a, **k: pushed.append(a))
+
+    monkeypatch.setattr(sys, "argv", ["gen_kefu_weekly.py", "--week-end", "2026-09-04", *argv])
+    gk.main()
+    assert bool(pushed) is expect_pushed
+
+
+# ── 4.1 客服：开场分析 + 表行截断 ────────────────────────────────────────────
+
+@pytest.mark.parametrize("raw,expect", [
+    (232535, "23.25万"),
+    (140000, "14万"),
+    (10000, "1万"),
+])
+def test_wan_format(raw, expect):
+    assert confluence_sync._wan(raw) == expect
+
+
+@pytest.mark.parametrize("cur,prev,expect", [
+    (110, 100, "，较上周增加10.0%"),
+    (90, 100, "，较上周减少10.0%"),
+    (100, 100, "，与上周持平"),
+    (100, None, ""),        # 无上周可比 → 不出环比从句
+    (None, 100, ""),
+])
+def test_mom_txt(cur, prev, expect):
+    assert confluence_sync._mom_txt(cur, prev) == expect
+
+
+@pytest.mark.parametrize("cur,prev,expect", [
+    ({"center_pv": 110, "app_dau": 101}, {"center_pv": 100, "app_dau": 100},
+     "客服访问回升幅度高于App周活跃增幅"),
+    ({"center_pv": 101, "app_dau": 110}, {"center_pv": 100, "app_dau": 100},
+     "客服访问回升幅度低于App周活跃增幅"),
+    ({"center_pv": 98, "app_dau": 99}, {"center_pv": 100, "app_dau": 100},
+     "客服访问回落幅度大于App周活跃降幅"),
+    ({"center_pv": 100, "app_dau": 100}, {"center_pv": 100, "app_dau": 100},
+     "客服访问与App周活跃同步变化"),
+    ({"center_pv": 100}, {"center_pv": 100}, ""),   # 缺 app_dau → 不做比较
+])
+def test_kefu_access_vs_dau(cur, prev, expect):
+    assert confluence_sync._kefu_access_vs_dau(cur, prev) == expect
+
+
+def _kefu_rows(n_weeks: int, end: date = date(2026, 10, 16)) -> list[dict]:
+    rows = [{"label": "Q1周均", "app_dau": 400000}]
+    for i in range(n_weeks, 0, -1):
+        d = end - timedelta(days=7 * (i - 1))
+        rows.append({
+            "label": f"{(d - timedelta(days=7)).strftime('%m%d')}-{(d - timedelta(days=1)).strftime('%m%d')}",
+            "app_dau": 200000 + i * 100,
+            "center_pv": 14000 + i * 10,
+            "human_pv": 4000 + i,
+            "intercept_rate": 49.0 + i / 100,
+        })
+    return rows
+
+
+def test_kefu_lead_uses_target_week():
+    lead = confluence_sync._kefu_lead(_kefu_rows(3), date(2026, 10, 16))
+    assert lead.startswith("<p>本周App周活跃为")
+    assert "进线拦截率" in lead
+
+
+def test_kefu_lead_refuses_stale_week():
+    """当期 kefu 没落盘时，「本周」会指向上一周 —— 必须报错而不是静默推错数。"""
+    with pytest.raises(RuntimeError, match="不是目标周"):
+        confluence_sync._kefu_lead(_kefu_rows(3), date(2026, 10, 23))
+
+
+def test_kefu_lead_needs_two_weeks():
+    assert confluence_sync._kefu_lead(_kefu_rows(1), date(2026, 10, 16)) == ""
+
+
+def test_kefu_rows_keep_all_baselines_and_three_weeks(tmp_path):
+    hist = {
+        "kefu_baseline": {
+            "_note": "元数据行不进表",
+            "q1": {"app_dau": 1}, "q2": {"app_dau": 2}, "q3": {"app_dau": 3},
+        },
+        "weekly": {
+            (date(2026, 1, 2) + timedelta(days=7 * i)).isoformat():
+                {"kefu": {"app_dau": 100 + i}}
+            for i in range(5)
+        },
     }
-    orphans = set(confluence_sync.CALIBER_NOTES) - spec_names
-    assert not orphans, f"CALIBER_NOTES 有键对不上任何表行: {sorted(orphans)}"
-    for table, table_notes in confluence_sync.CALIBER_NOTES_BY_TABLE.items():
-        assert not set(table_notes) - spec_names, f"{table} 按表覆盖有孤儿键"
+    p = tmp_path / "history.json"
+    p.write_text(json.dumps(hist), encoding="utf-8")
+    labels = [r["label"] for r in confluence_sync._kefu_rows_from_history(p)]
+    assert labels == ["Q1周均", "Q2周均", "Q3周均", "0109-0115", "0116-0122", "0123-0129"]
+
+
+# ── 取数守卫：缺天 / 回流 / 未计入口径 ──────────────────────────────────────
+
+def _live_rows(days: int, per_day: int = 2, offline: int = 0) -> list[list]:
+    """造有数「直播逐场」形态的 rows（header + 明细）。"""
+    rows = [["预计开播时间", "直播id", "直播状态", "主播uid", "观看人数", "平均观看分钟"]]
+    for i in range(days):
+        day = f"2026-10-{17 + i:02d}"
+        for j in range(per_day):
+            rows.append([f"{day} 10:00:00", f"L{i}-{j}", "直播结束", f"U{j}", "100", "10"])
+        for k in range(offline):
+            rows.append([f"{day} 12:00:00", f"O{i}-{k}", "下线", f"V{k}", "100", "10"])
+    return rows
+
+
+def test_parse_live_daily_average_uses_days_with_data():
+    """只有 5 天有数据时，日均按 5 天折算——固定除以 7 会把日均压低三成。"""
+    weekly, _ = fetch_weekly_youshu.parse_live(
+        _live_rows(5), date(2026, 10, 17), date(2026, 10, 23)
+    )
+    assert weekly["days_with_data"] == 5
+    assert weekly["sessions"] == 2.0      # 2 场/天 × 5 天 ÷ 5
+    assert weekly["viewers"] == 200.0     # 200 人/天 × 5 天 ÷ 5
+
+
+def test_parse_live_reports_offline_sessions_separately():
+    """「下线」场次不进指标（口径未变），但数量和观看人数要带回供披露。"""
+    weekly, _ = fetch_weekly_youshu.parse_live(
+        _live_rows(7, per_day=2, offline=1), date(2026, 10, 17), date(2026, 10, 23)
+    )
+    assert weekly["sessions"] == 2.0
+    assert weekly["viewers"] == 200.0
+    assert weekly["offline_sessions"] == 7
+    assert weekly["offline_viewers"] == 700
+
+
+def test_sanity_flags_three_day_zero():
+    sensors = {
+        "summary": {"community": {"feed_dau": 100, "penetration": 5.0}, "live": {}},
+        "daily": {"feed_dau": [100, 0, 0, 0, 100, 100, 100],
+                  "exposure_count": [1] * 7},
+    }
+    fails = gen_weekly_metrics.step8_sanity(sensors, {})
+    assert any("连续 3 天为 0" in f for f in fails)
+
+
+def test_sanity_flags_wow_over_200():
+    sensors = {
+        "summary": {"community": {"feed_dau": 400, "penetration": 5.0}, "live": {"viewers": 100}},
+        "daily": {"feed_dau": [400] * 7, "exposure_count": [1] * 7},
+    }
+    history = [{"community": {"feed_dau": 100}, "live": {"viewers": 100}}]
+    fails = gen_weekly_metrics.step8_sanity(sensors, {"live": {"viewers": 100}}, history)
+    assert any("> 200%" in f for f in fails)
+
+
+def test_sanity_skips_wow_without_history():
+    sensors = {
+        "summary": {"community": {"feed_dau": 400, "penetration": 5.0}, "live": {"viewers": 100}},
+        "daily": {"feed_dau": [400] * 7, "exposure_count": [1] * 7},
+    }
+    assert gen_weekly_metrics.step8_sanity(sensors, {"live": {"viewers": 100}}) == []
+
+
+def test_live_md_discloses_offline_and_pull_time(monkeypatch):
+    monkeypatch.setattr(gen_weekly_md, "_gen_insight_stubs", lambda *a, **k: "[stub]")
+    m = _metrics()
+    m["live_data_quality"] = {
+        "days_with_data": 7, "days_in_period": 7, "latest_date": "2026-06-19",
+        "offline_sessions": 47, "offline_viewers": 1904,
+    }
+    m["data_pulled_at"] = "2026-06-21 10:30"
+    md = gen_weekly_all.gen_live_md("0619", m, [])
+    assert "47 场状态为「下线」的直播" in md
+    assert "取数时点" in md
+    assert "只覆盖 6 天" not in md
+
+
+def test_readback_problems_flags_missing_title_and_chart(tmp_path):
+    (tmp_path / "live-weekly-1106.md").write_text(
+        "## 洞察\n\n### 1. 观众跟着主播走，==场次少了==观众没少\n\n- x\n\n## 数据明细\n", encoding="utf-8")
+    (tmp_path / "live-trends-1106.png").write_bytes(b"")
+    ok_text = "1. 观众跟着主播走，场次少了观众没少\n[图] live-trends-1106.png"
+    assert confluence_sync._readback_problems(tmp_path, ok_text) == []
+    bad = confluence_sync._readback_problems(tmp_path, "[待补充 x")
+    assert len(bad) == 3

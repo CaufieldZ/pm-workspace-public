@@ -150,7 +150,7 @@ python3 projects/{产品线}/{项目}/scripts/gen_flow_v{N}.py
 }
 ```
 
-字段：`id` 禁空格 / 特殊字符；`kind` ∈ {active / terminal / rejected}；`[*]` 表起点 / 终点。
+字段：`id` 禁空格 / 特殊字符；`kind` ∈ {active / terminal / rejected}；`[*]` 表起点 / 终点；可选 `direction` ∈ {LR / TB}，默认 LR，状态多且近似单链时用 TB 防止图过宽。
 
 ## 执行步骤
 

@@ -13,7 +13,7 @@ source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/log.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/input.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/guards.sh"
 
-INPUT=$(cat)
+hook_read_input
 hook_parse_task
 
 case "$HOOK_TOOL_NAME" in

@@ -75,6 +75,7 @@ type: reference
 - **液态玻璃先看背后有没有真画面**：近黑 / 纯色底上 `backdrop-filter` 等于没写，配底比调参数重要。
 - 玻璃只给常驻控件（输入栏 / 按钮）。逐条增删的弹幕、列表项不上玻璃 —— 掉帧且字发飘。
 - `mask-image` 的祖先会切断后代的 `backdrop-filter` 取样源。
+- **键盘弹起才出现的浮层**：基础态必须 `display:none`，只在状态类下 `display:flex`；只改 `transform` / `opacity` 会让基础态漏出组件。
 - **手机壳半屏浮层的截图**：浮层内容常高过 464px 可视区，下半区要在 `extra_shots` 的 `setup` 里设 `scrollTop` 单独截一张——偏移量预留分区标题高度，否则截到的是标题不是内容。
 
 ## 七、弹窗与滚动

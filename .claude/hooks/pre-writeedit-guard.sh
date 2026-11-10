@@ -13,7 +13,7 @@ source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/guards.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/pre-writeedit-guards.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/notes.sh"
 
-INPUT=$(cat)
+hook_read_input
 hook_parse_all
 require_write_or_edit
 

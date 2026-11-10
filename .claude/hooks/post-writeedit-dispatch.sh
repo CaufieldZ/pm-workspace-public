@@ -18,7 +18,7 @@ source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/notes.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/pybatch.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/post-checks.sh"
 
-INPUT=$(cat)
+hook_read_input
 hook_parse_all
 require_write_or_edit
 
@@ -56,7 +56,6 @@ _pcr_prd_content
 _dedup_if_fresh context-static-lint 60 "$HOOK_FILE_PATH" || pc_static_chapter
 pc_scene_list
 pc_audit_fast
-pc_pm_visual
 pc_prototype_audit
 pc_prototype_source
 pc_prototype_split

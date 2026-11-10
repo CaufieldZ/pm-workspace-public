@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 共享：跑外部 checker + 自动 tempfile + 失败时 stderr 输出
 #
-# 用途：post-audit-fast / post-prototype-audit / post-pm-visual-overreach 等都做
+# 用途：post-audit-fast / post-prototype-audit 等都做
 #       「跑 checker → mktemp 收集输出 → 失败时 cat/head/tail 到 stderr → cleanup」
 #       原本 5 处 tempfile 风格不一（/tmp 固定名 / $$ PID / mktemp），统一成 lib
 #

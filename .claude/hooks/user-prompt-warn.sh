@@ -64,11 +64,12 @@ source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/log.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/input.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/dedup.sh"
 
-INPUT=$(cat)
+hook_read_input
 hook_parse_all
 
 # ── 检查项 3：模糊需求（只需要 prompt，放在 transcript 门之前）──────────
-PROMPT=$(printf '%s' "$INPUT" | jq -r '.prompt // ""' 2>/dev/null)
+# 复用 hook_parse_all 已解析的 JSON，不再单开一次 jq（每次 prompt 省 ~14ms）
+PROMPT="$HOOK_PROMPT"
 PM_HIT=0
 PM_MSG=""
 

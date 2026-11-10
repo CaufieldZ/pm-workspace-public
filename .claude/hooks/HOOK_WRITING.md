@@ -29,7 +29,7 @@ source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/guards.sh"
 # 命令字符串里有用户输入 / heredoc / 字符串字面量需要剥 → 加：
 # source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/strip.sh"
 
-INPUT=$(cat)
+hook_read_input
 hook_parse_all
 require_bash
 
@@ -75,7 +75,7 @@ source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/input.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/guards.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/runner.sh"
 
-INPUT=$(cat)
+hook_read_input
 hook_parse_all
 require_write_or_edit
 
@@ -116,7 +116,7 @@ source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/input.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/guards.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/recent.sh"
 
-INPUT=$(cat)
+hook_read_input
 hook_parse_all
 require_bash
 
@@ -125,7 +125,7 @@ echo "$CMD" | grep -qE '<触发 pattern>' || exit 0
 check_skip_env "<gate-name>" "SKIP_<GATE>_GATE" "$CMD"
 
 # 60 秒内动过的 *.md / *.html，排除 scenes/
-RECENT=$(find_recent_deliverables 60 --not-path '*-scenes/*' "*.md" "*.html")
+RECENT=$(find_recent_deliverables 60 --not-path '*/archive/*' "*.md" "*.html")
 [ -z "$RECENT" ] && exit 0
 
 # 逐个跑 checker（业务逻辑省略）
@@ -149,7 +149,7 @@ set +e
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/log.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/input.sh"
 
-INPUT=$(cat)
+hook_read_input
 hook_parse_all
 
 [ -f "$HOOK_TRANSCRIPT" ] || exit 0
@@ -234,7 +234,7 @@ Claude 看完 3 秒决定动作，不需要 Read runbook。
 
 - 一旦某 gate 名进了 `usage.jsonl`（哪怕 1 次），后续 hook 改名 / 合并必须**保留同样的字符串** emit
 - gate-name 用 kebab-case，与 SKIP 环境变量同源（`prd-check-gate` ↔ `SKIP_PRD_CHECK_GATE`）
-- 一个 hook 文件可以 emit 多个 gate 名（如 `pre-bash-guard.sh` emit `git-https-gate` + `skeleton-force-gate` + `cold-read-gate`）
+- 一个 hook 文件可以 emit 多个 gate 名（如 `pre-bash-guard.sh` emit `git-https-gate` + `git-safety`）
 - 不要为了"清理"改 gate 名 — dashboard 会出现 ghost 行
 - **`lib/log.sh` 的 `log_event` 在非 hook 脚本里 source 用时**，需先 `export CLAUDE_PROJECT_DIR`，否则它按 `BASH_SOURCE` 推断 root 会走偏到 `/Users`。
 
@@ -279,7 +279,8 @@ Claude Code 只读 stderr 作为 hook 输出注入到 tool result。`2>/dev/null
 
 每个 hook 手写 `python3 -c "import sys,json; ..."` 会让单次 Write/Edit 触发十几个 python3 进程。
 
-- 必须 `INPUT=$(cat); hook_parse_all` 一次性出 `$HOOK_TOOL_NAME` / `$HOOK_FILE_PATH` / `$HOOK_COMMAND` / `$HOOK_TRANSCRIPT`
+- 必须 `hook_read_input; hook_parse_all` 一次性出 `$HOOK_TOOL_NAME` / `$HOOK_FILE_PATH` / `$HOOK_COMMAND` / `$HOOK_TRANSCRIPT`
+- 读 stdin 用 `hook_read_input`（bash 内建 `read`），别写 `INPUT=$(cat)`——后者每条 hook 白付一次进程 spawn
 - 单字段函数 `hook_tool_name` / `hook_file_path` / `hook_command` 仅在不需要其他字段时用（省一个 python3 进程）
 - Read 路径专用 `hook_parse_read` 一次出 `$HOOK_FILE_PATH` + `$HOOK_HAS_PAGING`（offset/limit 标志），别 `hook_parse_all` 后再 `jq` 取 paging
 - 需要的字段现有 `hook_parse_*` 没覆盖 → 扩函数多输出一个变量（仍单次 jq），不要再 fork 第二次 jq（见 §三 K）
@@ -523,7 +524,7 @@ heredoc 特例：bash 3.2 + UTF-8 locale 下，heredoc 里变量紧邻全角字�
 ## 七、自检清单（写完新 hook 前过一遍）
 
 - [ ] source 了 `lib/log.sh` + `lib/input.sh`（至少）
-- [ ] `INPUT=$(cat); hook_parse_all` 而不是手写 python3
+- [ ] `hook_read_input; hook_parse_all` 而不是手写 python3
 - [ ] 早退用 `require_bash` / `require_write_or_edit` 而不是 case
 - [ ] 路径过滤用 `is_deliverable_path` / `is_excluded_path` 而不是 verbatim glob
 - [ ] SKIP 用 `check_skip_env` 而不是手写 if-grep

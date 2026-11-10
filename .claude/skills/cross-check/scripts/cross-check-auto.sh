@@ -72,9 +72,9 @@ PROTO_HTML=$(ls "$PROJ_DIR/deliverables"/proto-*.html 2>/dev/null | sort -V | ta
 _pick_prd() {  # $1=mindepth $2=maxdepth
   local picks
   picks=$(find "$PROJ_DIR/deliverables" -mindepth "$1" -maxdepth "$2" -type f -name 'prd-*.md' \
-    -not -path '*/archive/*' -not -path '*-scenes/*' 2>/dev/null | awk -F/ 'split($NF,a,"-")==3' | sort -V)
+    -not -path '*/archive/*' 2>/dev/null | awk -F/ 'split($NF,a,"-")==3' | sort -V)
   [ -z "$picks" ] && picks=$(find "$PROJ_DIR/deliverables" -mindepth "$1" -maxdepth "$2" -type f -name 'prd-*.md' \
-    -not -path '*/archive/*' -not -path '*-scenes/*' 2>/dev/null | sort -V)
+    -not -path '*/archive/*' 2>/dev/null | sort -V)
   echo "$picks" | tail -1
 }
 PRD_DOC=$(_pick_prd 3 3)

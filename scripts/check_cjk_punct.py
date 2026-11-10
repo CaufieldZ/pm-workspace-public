@@ -247,6 +247,9 @@ def _protected_spans(line: str) -> list[tuple[int, int]]:
         spans.append(m.span())
     for m in re.finditer(r'[NnMm]:\d+', line):
         spans.append(m.span())
+    # 周报标红语法 !!x!!（confluence_sync 渲染成红字）：只护两端定界符，标记内文字照常检查
+    for m in re.finditer(r'!!(?=[^!\s])[^!\n]*?(?<=[^!\s])!!', line):
+        spans.extend([(m.start(), m.start() + 2), (m.end() - 2, m.end())])
     # 选项标记 A) B) C) — 行首或 | 后
     for m in re.finditer(r'(?:^|(?<=[\s|]))([A-Z]\))', line):
         spans.append((m.start(1), m.end(1)))
@@ -603,6 +606,9 @@ def main():
     do_strict_fix_spaces = "--strict-then-fix-spaces" in args
     dry_run = "--dry-run" in args
     files = [Path(a) for a in args if not a.startswith("-")]
+    for fp in files:
+        if not fp.exists():
+            print(f"⚠️  文件不存在，未检查: {fp}", file=sys.stderr)
 
     if do_strict_fix_spaces:
         # 热路径合并档：同一进程内先按 strict 判定，干净才补空格——等价于连跑

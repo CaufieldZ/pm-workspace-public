@@ -13,8 +13,10 @@
      → 碎句（一顿一顿的短句堆成段），连成完整的话或改列表。
 换标点绕检测（分号改逗号 / 顿号焊多件独立事）检测器数不到逗号、误伤高，靠 SKILL 行为规则兜。
 
-跳过：> 引用 / | 表格 / # 标题 / ``` 代码块 / ::: 容器 / frontmatter / 空行 / 纯图片。
-  表格行豁免关键——cell 内 ; 是 md_to_confluence 切 <li> 的约定分隔符。
+跳过：> 引用 / | 表格 / # 标题 / ``` 代码块 / <!-- HTML 注释 --> / ::: 容器 / frontmatter /
+  空行 / 纯图片。
+  表格行豁免关键——cell 内 ; 是 md_to_confluence 切 <li> 的约定分隔符。注释豁免关键——
+  生成器把归因锚块 / 口径骨架写在注释里，不渲染给读者；与 md_scan 的剥注释口径一致。
 章节豁免只给「长句」这一维：决策 / 变更 / 埋点章的论证叙事（`方案。理由。阻塞。`）一句
   本就长，硬砍割裂推理。句号 / 分号 / 碎句不给整章开口子——3 句焊一行、碎成一顿一顿，
   哪章都该拆，拆成「标签：」+ 子 bullet 反而更好读。
@@ -105,6 +107,7 @@ def check_text(text: str, only_line_texts: set[str] | None = None
     hits: list[tuple[int, str, int, str]] = []
     in_code = False     # ``` 代码块
     in_frontmatter = False
+    in_html_comment = False  # <!-- ... -->（跨行 / 行内一行闭合都跳过）
     h1 = h2 = ""        # 当前一级 / 二级标题（只给长句维用）
 
     for i, raw in enumerate(lines, start=1):
@@ -124,6 +127,17 @@ def check_text(text: str, only_line_texts: set[str] | None = None
             in_code = not in_code
             continue
         if in_code:
+            continue
+
+        # HTML 注释状态机：注释不渲染给读者，不按正文查挤话（与 md_scan 同口径）
+        if not in_html_comment and "<!--" in line and "-->" not in line:
+            in_html_comment = True
+            continue
+        if in_html_comment:
+            if "-->" in line:
+                in_html_comment = False
+            continue
+        if "<!--" in line and "-->" in line:
             continue
 
         # 标题状态机（长句豁免按 H1 / H2 判）

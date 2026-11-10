@@ -22,6 +22,10 @@ workspace-audit Phase 1 全局审计：脚本硬检查（零推理纯 bash），
 EOF
 }
 
+# 项目解释器解析（.venv 优先）—— 与 hook 链同一 SSOT。本脚本的 ruff / mypy / bs4 系检查
+# 全靠它：系统解释器缺 ruff 时 §19 会静默空跑。按自身位置取路径，不依赖 cwd。
+source "${BASH_SOURCE[0]%/*}/../../../../.claude/hooks/lib/pyenv.sh"
+
 case "${1:-}" in
   -h|--help) usage; exit 0 ;;
 esac
@@ -1249,7 +1253,7 @@ for c in sorted(ext_cmds):
     done
     # 豁免：① 旧前缀别名（hook 同时认新旧做向后兼容，如 architecture-*.html 别名 arch-*.html）
     #       ② 非产出物前缀（audit- = workspace-audit 产出但 SKILL.md output_prefix 为 none；fix-plan- = 修复方案豁免类；
-    #          cold-read- = cold_read.py 产出的冷读盲点清单，cold-read-gate hook 只 glob 查存在，非 hook 自身产出）
+    #          cold-read- = cold_read.py 产出的冷读清单）
     EXEMPT_STEMS="architecture interaction prototype audit fix-plan cold-read"
     # 抽 hook 里产出物 glob 前缀（形如 xxx-*.md / xxx-*.html），跳过注释行
     HOOK_GLOB_STEMS=$(grep -hE "^[^#]*[a-z][a-z0-9-]+-\*+[a-z0-9-]*\.(md|html)" "$HOOK_DIR"/*.sh 2>/dev/null \
@@ -1332,8 +1336,8 @@ BAD_CHARS = set('{}*$<>')  # 占位 / glob / 变量拼接形不作数
 EXEMPT_LIB = {'modname'}  # git-and-hooks.md「from .modname import」行文占位符，无实现属有意
 EXEMPT_PATH_STEM = set()  # 暂空；出现真占位（如 xxx/bin/yyy）时按 stem 加并注出处
 
-# SKIP / lib 消费方搜索面：hooks + skill scripts + 根 scripts（含 .sh/.py；SKIP_SCENE_PROSE_GATE
-# 消费方在 check_prd_md.sh 不在 hooks——只扫 hooks 必误报）
+# SKIP / lib 消费方搜索面：hooks + skill scripts + 根 scripts（含 .sh/.py；部分 SKIP_* 消费方
+# 在 skill 脚本不在 hooks——只扫 hooks 必误报）
 chunks = []
 for root in ('.claude/hooks', '.claude/skills', 'scripts'):
     for dirpath, dirnames, filenames in os.walk(root):
@@ -1732,10 +1736,12 @@ if run_cat 20; then
     done < <(grep -nE "$re" "$file" 2>/dev/null)
   }
 
-  # skill 计数
+  # skill 计数（同一事实的每种写法各登记一条：漏一种写法 = 该处漂移无人知）
   check_count "README.md"           '[0-9]+ 个 Skill'          "$REAL_SKILLS" "skill 数"
   check_count "README.md"           'skills/                  # [0-9]+ 个 Skill' "$REAL_SKILLS" "skill 数(目录树)"
   check_count "README.md"           'badge/skills-[0-9]+'      "$REAL_SKILLS" "skill badge"
+  check_count "README.md"           '> [0-9]+ 个? Skill'       "$REAL_SKILLS" "skill 数(hero 引文)"
+  check_count "README.md"           '共 [0-9]+ 个。'            "$REAL_SKILLS" "skill 总数(流程节)"
   check_count "README-EN.md"        '[0-9]+ Skills'            "$REAL_SKILLS" "skill 数"
   check_count "README-EN.md"        'badge/skills-[0-9]+'      "$REAL_SKILLS" "skill badge"
   check_count "workspace-context.md" '[0-9]+ 个标准化 Skill'   "$REAL_SKILLS" "skill 数"
@@ -1753,7 +1759,11 @@ if run_cat 20; then
 
   # audit 类别数
   check_count "README.md"           'badge/audit-[0-9]+'       "$REAL_CATS" "audit 类别 badge"
+  check_count "README.md"           '[0-9]+ 类 (audit|workspace-audit)' "$REAL_CATS" "audit 类别数"
   check_count "README-EN.md"        'badge/audit-[0-9]+'       "$REAL_CATS" "audit 类别 badge"
+  check_count "README-EN.md"        '[0-9]+-category audit'    "$REAL_CATS" "audit 类别数"
+  check_count "README-EN.md"        '[0-9]+ workspace-audit categories' "$REAL_CATS" "audit 类别数(表)"
+  check_count "README-EN.md"        'script-based [0-9]+'       "$REAL_CATS" "audit 类别数(skill 表)"
 
   [ "$COUNT_FAIL" -eq 0 ] && echo "  ✅ 门面文档计数与文件系统一致"
   echo ""
@@ -1846,9 +1856,12 @@ if run_cat 22; then
       PY_FAIL=1; GLOBAL_FAIL=1
     fi
   else
-    echo "  ⚠ 未装 ruff，跳过（brew install ruff）"
+    echo "  ⚠ 未装 ruff —— E9/F821 未检查，不等于通过（装：python3 -m pip install -r requirements.txt）"
+    PY_FAIL_SKIP=1
   fi
-  [ "$PY_FAIL" -eq 0 ] && echo "  ✅ ${PY_N} 个 py 无语法错 / 未定义名"
+  if [ "$PY_FAIL" -eq 0 ] && [ -z "${PY_FAIL_SKIP:-}" ]; then
+    echo "  ✅ ${PY_N} 个 py 无语法错 / 未定义名"
+  fi
 
   # 22.2 Shell：bash -n 双版本（PATH bash 5.x + /bin/bash 3.2 兼容）
   echo "--- Shell 双版本语法 ---"
@@ -1872,9 +1885,12 @@ if run_cat 22; then
       SC_FAIL=1; GLOBAL_FAIL=1
     fi
   else
-    echo "  ⚠ 未装 shellcheck，跳过（brew install shellcheck）"
+    echo "  ⚠ 未装 shellcheck —— error 级未检查，不等于通过（brew install shellcheck）"
+    SC_FAIL_SKIP=1
   fi
-  [ "$SC_FAIL" -eq 0 ] && echo "  ✅ shellcheck error 级零命中"
+  if [ "$SC_FAIL" -eq 0 ] && [ -z "${SC_FAIL_SKIP:-}" ]; then
+    echo "  ✅ shellcheck error 级零命中"
+  fi
   echo ""
   rm -f "$PY_LIST" "$SH_LIST"
 fi

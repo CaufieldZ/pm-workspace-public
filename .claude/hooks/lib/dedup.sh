@@ -40,7 +40,9 @@ _dedup_if_fresh() {
   if [ -f "$cache" ]; then
     local mtime now age
     mtime=$(file_mtime "$cache")
-    now=$(date +%s)
+    # now 按进程缓存：一个 dispatcher 会连调 5 次 dedup，秒级粒度下同进程取一次即可
+    [ -n "$_DEDUP_NOW" ] || _DEDUP_NOW=$(date +%s)
+    now="$_DEDUP_NOW"
     if [ -n "$mtime" ]; then
       age=$((now - mtime))
       if [ "$age" -lt "$ttl" ]; then

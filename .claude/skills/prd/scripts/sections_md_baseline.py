@@ -1,21 +1,20 @@
 """baseline / delta profile 骨架生成（迭代文档集模型）。
 
 从 sections_md 拆出：baseline = 线上当前态全量真相源（模块树 + changelog），
-delta = 单轮迭代（本轮 N 需求 + WHY，引 baseline）。被 gen_prd_skeleton.py 调用。
+delta = 单轮迭代（本轮改动按模块 / 页面组织，引 baseline）。被 gen_prd_skeleton.py 调用。
 """
 from __future__ import annotations
 
 from datetime import date
 
-from core.md_renderer import MdWriter, bold, scene_block_card
+from core.md_renderer import MdWriter, bold, image_spec_table, scene_block_card
 from sections_md import PL, SceneInfo, _parse_scenes, build_chapter_4
 
 # ── baseline / delta profile（迭代文档集模型） ──────────────────────────────
 #
 # baseline = 线上当前态全量真相源（living，按模块树组织，含 changelog 索引章）
-# delta    = 单轮迭代（本轮 N 需求 + WHY，术语 / 模块树不重复，引 baseline）
-# 两者 5/6/7 场景小节走同一个 scene_block_card 原语（字段集含 acceptance），
-# 保证反向合并「粘贴 + 改非重写」不缺段。
+# delta    = 单轮迭代（本轮改动按模块 / 页面组织，术语 / 模块树不重复，引 baseline）
+# delta §3/§4/§5 与 baseline 对应章同构，反向合并直接搬章。
 
 
 def _group_by_module(scenes: list[SceneInfo]) -> "list[tuple[str, list[SceneInfo]]]":
@@ -150,37 +149,29 @@ def _build_module_chapter(
         )
 
 
-def _delta_patch_heavy_template() -> str:
-    """补丁包（patch）重项 H3 需求块模板（HTML 注释形态，供复制）。
+def _delta_module_block(w: MdWriter, num: str) -> None:
+    """§2 一个模块 / 页面需求块的空模板：图 + 规格两列表、变体差异表、验收。
 
-    patch 档默认全部需求只落 §2.0 表（轻项读完表即止），命中升块判据的重项才
-    从本模板复制出一个 H3。模板摆注释里而非活槽 = 默认产出最轻形态，升块是
-    加法而非删减——规则见 references/prd-chapter-rules.md §2 第 3 条。
-    patch 需求块是散功能点（无图），标题用需求序号 + 需求名，不套 scene-list
-    场景号，也不套 §4.0 三列规格表（无截图）。术语与三列模板对齐。
+    一块对应一个模块或页面（几个场景是同一组件的变体时合成一块），
+    骨架只吐一块示范，PM 按本轮实际模块数复制——块数跟着需求走，不跟 scene-list 走。
     """
-    return (
-        "<!-- 重项模板（命中升块判据才复制一份出来，编号沿用 §2.0 表的 2.N）：\n"
-        "\n"
-        "### 2.N 需求名\n"
-        "\n"
-        "- **现状**：一行前置态锚点（具体场景号 / 字段 / 旧行为），不复述 §1 痛点\n"
-        "- **修改点**：做 X（原 Y 问题）\n"
-        "- **跨模块 / 全局**：做到哪为止的护栏（『仅校验 X 三类字段，其余不变』），"
-        "不写『属前端修复』这类归类元评论\n"
-        "- **数据影响**：数据变化，业务语言；无数据变化删本行\n"
-        "\n"
-        "**验收标准**\n"
-        "\n"
-        "- [ ] 可验证的验收点\n"
-        "-->"
+    w.h2(f"{num} " + PL("模块或页面名（覆盖的场景编号写括号里）"))
+    w.raw(image_spec_table(
+        [("./assets/" + PL("截图文件名") + ".png", PL("截图说明"))],
+        [(PL("区块名，只有一块时删掉"), [PL("一条一件事：条件 → 结果，或 对象：取值")])],
+    ))
+    w.paragraph(bold("差异") + "（同一模块有几种情况时用，每种情况一列，线上已有的那种也算；只有一种就删掉）")
+    w.table(
+        headers=["", PL("情况 A"), PL("情况 B")],
+        rows=[[PL("不同的那一项"), PL("A 的取值"), PL("B 的取值")]],
     )
+    w.paragraph(bold("验收"))
+    w.bullet_list([PL("最容易做错的判定点：临界值 / 情况之间的差别 / 反向情况")])
 
 
 def build_delta_skeleton(info: dict) -> str:
-    """delta profile：单轮迭代。只写本轮 N 需求 + WHY，引 baseline，不重复术语 / 模块树。"""
+    """delta profile：单轮迭代。只写本轮改动，每个事实只落一处，线上现状引 baseline。"""
     w = MdWriter()
-    scenes = _parse_scenes(info.get("scenes"))
     project = info.get("project_name", PL("产品线名"))
     version = info.get("version", "1")
     tier = info.get("tier", "feature")
@@ -190,10 +181,8 @@ def build_delta_skeleton(info: dict) -> str:
     # 协作头（对齐公司 PRD 模板的 PRD信息 / 团队信息 / 资源对接三张表，压成一张）。
     # 用表格而非 bullet 是承重设计：md_to_confluence 的 _preamble_all_meta 只把
     # `- ` / `> ` / `---` / 空行判为「内部元信息」整块剥离，表格行（`|` 开头）→ 保留上 wiki。
-    # 即：表 = 对外协作信息，bullet = 内部机制。文档机制说明（baseline 指针等）一律
-    # 不进头部，落 §9（推送时整章剥离）。
     # 「状态」「内部项目系统」两格由 sync_hx_status.py 按内部项目系统回写，故固定摆第 3 列 key / 第 4 列 value
-    # （值落行尾单元格，回写正则好锚），勿调列位。
+    # （值落行尾单元格，回写正则好锚），勿调列位。日期只在 §8 排期表（推送时整章剥离）。
     w.table(
         headers=["项", "内容", "项", "内容"],
         rows=[
@@ -204,7 +193,7 @@ def build_delta_skeleton(info: dict) -> str:
             ["重要性 / 紧迫性", PL("高 / 中 / 低"),
              "迭代档位", tier_label],
             ["端侧范围", PL("App / H5 / Web 工作台 / CMS"),
-             "提测 / 走查 / 上线", "见排期章"],
+             "提测 / 走查 / 上线", "待定"],
             ["产品 / 交互", PL("姓名"),
              "设计 / 设计稿", PL("姓名 / 设计稿链接")],
             ["前端 / 后端", PL("姓名 / 姓名"),
@@ -212,145 +201,81 @@ def build_delta_skeleton(info: dict) -> str:
         ],
     )
 
-    # 1. 背景与价值
-    w.h1("1. 背景与价值")
-    w.field_bullet("痛点", PL("解决谁的什么具体痛点（引 baseline 现状章说明从什么变到什么）"))
-    w.field_bullet("价值", PL("业务价值 + 核心指标 + 具体数字"))
-    w.field_bullet("不在本期范围", PL("本期明确不做的相邻能力（划边界防范围争议）；确无则删本行"))
+    # 1. 概述：问题 / 方案 / 成功标准 + 范围表，全文唯一讲「为什么做、做多大」的地方
+    w.h1("1. 概述")
+    w.field_bullet("要解决的问题", PL("谁在什么场景遇到什么问题，一两句"))
+    w.field_bullet("本轮做什么", PL("一两句说清方案"))
+    w.field_bullet("成功标准", PL("指标 + 目标值；有回滚条件也写这里"))
+    w.paragraph(bold("范围"))
+    w.table(
+        headers=["模块 / 页面", "本轮改动", "实施方"],
+        rows=[[PL("模块名"), PL("一句话"), PL("哪个团队 / 端")]],
+    )
+    w.field_bullet("不做", PL("相邻但本轮不做的事，一行；没有就删"))
+    w.paragraph(bold("待确认"))
+    w.bullet_list([PL("输入里没给、要 PM 或相关方拍板的点；没有就删本段")])
 
-    # 2. 本轮需求（仅本轮变更，走 scene_block_card，与 baseline 同字段集）
+    # 2. 本轮需求：按模块 / 页面组织。patch 只出索引表；feature 出一块示范；bundle 两者都出
     w.h1("2. 本轮需求")
-    # 散需求档（补丁包 / 集合体）：先给读者地图（§2.0 索引），再按单轴分组散开；
-    # 「反向合并目标」列与 §9 表呼应。内聚特性档（feature）无索引，平铺按用户旅程叙事。
     if tier == "patch":
-        # 补丁包：默认全部需求只落索引表（轻项读完表即止），命中升块判据的重项才起 H3。
-        # 「默认最轻、升块是加法」是承重设计——反过来（预生成带槽 H3 靠删）必然被填满。
-        # 列取「端 / 模块」而非「反向合并目标」：后者与 §9 表重复（同一字段只写一次），
-        # 且 §9 推 wiki 时整章剥离、该列却留在 wiki 上给研发看内部维护机制。
-        w.h2("2.0 本轮需求索引")
-        w.paragraph(PL(
-            "分组轴（跟版边界 / 改动所在端 等，只许一条）：一句话说明即可，不强行拆 H2 组。"
-            "四条升块判据任一命中 → 另起 ### 2.N 需求块（模板见下方注释）："
-            "新增 / 变更业务对象 · 涉状态流转 · 跨端行为不一致 · 有取舍要在决策记录章交代；"
-            "都不命中 = 轻项，读完本表即止"
-        ))
-        if scenes:
-            # 编号列用需求序号 2.{i}；重项另起的 H3 沿用同一编号空间（读者在表或块里都找得到）。
-            # scene-list 场景号（A-1）不进 patch 需求块——散点需求未必对应单一场景。
-            index_rows = [
-                [f"2.{i}", s.name, PL("H5 / Web / 通用"),
-                 PL("做 X（原 Y 问题）"), PL("判定点；判定点"), PL("P0/P1")]
-                for i, s in enumerate(scenes, start=1)
-            ]
-        else:
-            index_rows = [[PL("编号"), PL("需求名"), PL("端 / 模块"),
-                           PL("做 X（原 Y 问题）"), PL("判定点；判定点"), PL("P0/P1")]]
         w.table(
-            headers=["编号", "需求", "端 / 模块", "修改点", "验收", "优先级"],
-            rows=index_rows,
+            headers=["编号", "需求", "端 / 模块", "改动", "验收", "优先级"],
+            rows=[["2.1", PL("需求名"), PL("H5 / Web / 通用"),
+                   PL("做 X（原 Y 问题）"), PL("判定点"), PL("P0/P1")]],
         )
-        w.raw(_delta_patch_heavy_template())
-    elif tier == "bundle":
-        w.h2("2.0 本轮需求索引")
-        w.paragraph(PL(
-            "分组只许沿一条轴（模块 / 主题 等，选读者跨引最少的一条）："
-            "把下列需求拆成 N 个 ## 组 X · 组名 H2，每组归拢相关需求"
-        ))
-        if scenes:
-            index_rows = [
-                [f"2.{i}", s.name, PL("组名"), PL("baseline 哪个模块章"), PL("P0/P1")]
-                for i, s in enumerate(scenes, start=1)
-            ]
-        else:
-            index_rows = [[PL("编号"), PL("需求名"), PL("组名"), PL("baseline 模块章"), PL("P0/P1")]]
-        w.table(headers=["编号", "需求", "分组", "反向合并目标", "优先级"], rows=index_rows)
-    # patch 档已在 §2.0 表收口（重项由上方注释模板按需复制），不预生成需求块。
-    if tier != "patch":
-        if scenes:
-            for i, scene in enumerate(scenes, start=1):
-                scene_block_card(
-                    w,
-                    f"2.{i} {scene.id}",
-                    scene.name,
-                    story=PL("谁/做什么/为什么"),
-                    spec_rows=[
-                        (
-                            [(f"./assets/scene-{scene.id}.png", f"{scene.name}低保真")],
-                            [
-                                (PL("父规格，如「表单内二选一」"), [PL("子项 A"), PL("子项 B")]),
-                                PL("字段 / 状态：创建时落定 → 此后只读"),
-                            ],
-                            [PL("这一屏 QA 能勾的判定点")],
-                        ),
-                    ],
-                    data_impact=[PL("跨模块联动 / 全局规则 / 迁移（表画不出的）")],
-                    exceptions=[[PL("触发条件"), PL("系统响应"), PL("用户感知")]],
-                    acceptance_criteria=[PL("跨行 / 反向态验收（塞不进单屏的）")],
-                    heading_level=3,
-                )
-        else:
-            w.paragraph(PL("本轮需求场景（scene-list 为空时手填）"))
+    else:
+        if tier == "bundle":
+            w.table(
+                headers=["编号", "需求", "分组", "优先级"],
+                rows=[["2.1", PL("需求名"), PL("组名"), PL("P0/P1")]],
+            )
+        _delta_module_block(w, "2.1")
 
-    # 3. 业务对象增量（可删 · 与 baseline §3.2 同构，反向合并直接搬章 → §9 表）
+    # 3–5 四支柱增量：与 baseline 对应章同构，反向合并直接搬章；本轮没有就整章删
     w.h1("3. 业务对象增量")
-    w.paragraph(PL("本轮无新增 / 变更业务对象则整章删除（§3/§4/§5 同）。"))
-    w.h2("3.1 新增 / 变更业务对象")
-    w.paragraph(bold(PL("对象名，如「交易卡片」")))
+    w.h2("3.1 " + PL("对象名"))
     w.table(
-        headers=["属性", "类型范畴", "数据来源", "说明"],
-        rows=[
-            [PL("属性名"), PL("ID / 字符串 / 枚举 / 金额 等"), PL("用户输入 / 系统生成 / 接口"), PL("业务含义")],
-        ],
+        headers=["属性", "类型", "来源", "说明"],
+        rows=[[PL("属性中文名"), PL("ID / 文本 / 枚举 / 金额 等"), PL("用户输入 / 系统生成 / 接口"), PL("业务含义")]],
     )
-    w.paragraph(bold("生命周期") + "：" + PL("草稿 → 待审核 → 已发布 → 已删除 等"))
-    w.paragraph(bold("关系") + "：" + PL("和其他业务对象的关联，如 1 个帖子附 1 张交易卡片"))
 
-    # 4. 状态机增量（可删 · 与 baseline §3.3 同构，反向合并直接搬章 → §9 表）
     w.h1("4. 状态机增量")
-    w.h2("4.1 新增 / 变更状态机")
-    w.paragraph(bold(PL("对象名")) + " 状态迁移表：")
+    w.h2("4.1 " + PL("对象名") + "状态")
     w.table(
-        headers=["起始状态", "触发事件", "终止状态", "谁触发"],
+        headers=["起始状态", "触发", "终止状态", "谁触发"],
         rows=[
-            [PL("起始态"), PL("触发事件"), PL("终止态"), PL("用户 / 系统")],
+            ["不存在", PL("创建动作"), PL("初始状态"), PL("用户 / 系统")],
+            [PL("起始状态"), PL("触发"), PL("终止状态"), PL("用户 / 系统")],
         ],
     )
 
-    # 5. 全局规则增量（可删 · 与 baseline §4 同构，反向合并直接搬章 → §9 表）
     w.h1("5. 全局规则增量")
-    w.h2("5.1 新增跨场景规则")
-    w.paragraph(bold(PL("规则名")) + "：" + PL("规则描述 + 违反时的处理 + 适用场景"))
-    w.h2("5.2 归因规则增量（可选）")
+    w.bullet_list([bold(PL("规则名")) + "：" + PL("两个以上模块共用的规则写这里，模块里只写规则名")])
+
+    # 6. 决策：推送时整章剥离，只给 PM 和后来的维护者看。只收输入里给过理由的取舍，
+    # 不设「否掉的方案」列——空列会诱导模型编理由。
+    w.h1("6. 决策记录")
+    w.paragraph("只记输入材料里给过理由的取舍，理由照输入写。输入没给理由的决策不记；整章没有就删。")
     w.table(
-        headers=["漏斗", "定义", "归因窗口"],
-        rows=[
-            ["L1", PL("曝光口径"), "—"],
-            ["L2", PL("点击口径"), PL("实时 / Nh")],
-        ],
+        headers=["决策", "理由（来自输入）"],
+        rows=[[PL("定了什么，一句"), PL("输入里给的理由；选 A 不选 B 时写上 B")]],
     )
 
-    # 6. 决策记录（WHY）
-    w.h1("6. 决策记录（WHY）")
-    w.paragraph(PL("为什么这么定 / 否决了什么方案 / 取舍依据（delta 专属，不进 baseline）"))
-
-    # 7. 埋点（本轮新增事件）+ 看板口径（连回 §1 本轮核心指标，闭环「定了指标→看板能看」）
     w.h1("7. 埋点与看板")
     w.h2("7.1 本轮新增事件")
-    w.paragraph("事件名与属性名为本轮拟名，待行为分析平台注册后回填真名。多属性事件每属性一行，事件名 / 触发机制列重复，数据团队按事件英文名 group。")
+    w.paragraph("事件名与属性名为本轮拟名，待行为分析平台注册后回填真名。多属性事件每属性一行。")
     w.table(
         headers=["所属页面", "事件中文名", "事件英文名", "属性中文名", "属性英文名", "数据类型", "是否必填", "数据值示例", "应埋点平台", "触发机制"],
-        rows=[[PL("页面 / 模块"), PL("操作中文名"), PL("snake_case 拟名"), PL("属性中文名"), PL("snake_case 拟名"), PL("NUMBER / STRING / BOOL"), PL("是 / 否"), PL("枚举值或 —"), PL("APP / Web / H5 / 服务端"), PL("用户做了什么 / 系统触发时机")]],
+        rows=[[PL("页面 / 模块"), PL("操作中文名"), PL("snake_case 拟名"), PL("属性中文名"), PL("snake_case 拟名"), PL("NUMBER / STRING / BOOL"), PL("是 / 否"), PL("枚举值或 —"), PL("APP / Web"), PL("客户端可观测的触发点，如「提交成功响应后」")]],
     )
     w.h2("7.2 看板口径")
     w.table(
-        headers=["指标", "计算口径", "支撑 §1 哪个核心指标"],
-        rows=[[PL("指标名"), PL("分子 / 分母"), PL("对应本轮核心指标")]],
+        headers=["指标", "计算口径"],
+        rows=[[PL("指标名（与概述的成功标准同名）"), PL("分子 / 分母")]],
     )
 
-    # 8. 排期 / 上线节奏（5 列表，与产品线真相源同构，供周报扫业务节奏分桶）
+    # 8. 排期（5 列表，与产品线真相源同构，供周报扫业务节奏分桶；推送时整章剥离）
     w.h1("8. 排期 / 上线节奏")
-    w.h2("8.1 排期")
-    # 一张表兼顾两个视角：研发 / 测试看提测~走查的交付节奏，PM 看上线影响哪些指标。
     w.table(
         headers=["阶段", "起止", "进度", "状态", "影响指标"],
         rows=[
@@ -362,20 +287,12 @@ def build_delta_skeleton(info: dict) -> str:
             ["上线", PL("YYYY-MM-DD（app 跟版）"), "—", PL("待启 / 灰度中 / 已完成"), PL("影响哪些指标")],
         ],
     )
-    w.h2("8.2 上线后验证 & 回滚")
-    w.table(
-        headers=["验证项", "判定指标 / 阈值", "回滚触发条件"],
-        rows=[[PL("核心功能可用"), PL("成功率 / 指标达标线"), PL("低于阈值 / 报错率超标")]],
-    )
 
-    # 9. 反向合并指引（上线后执行）
-    # 本章推 Confluence 时整章剥离（DEFAULT_EXCLUDE_SECTIONS），是内部机制的唯一落点。
-    # baseline 路径不写进正文——工具按约定推导（scripts/lib/truth_source.resolve），
-    # 写死路径既是 plumbing 又会被 plain-language-gate 判为内部文件名。
+    # 9. 反向合并指引：推送时整章剥离，是内部机制的唯一落点。
+    # baseline 路径不写进正文——工具按约定推导（scripts/lib/truth_source.resolve）。
     w.h1("9. 反向合并指引（上线后执行）")
     w.paragraph(
-        "本 delta 只写本轮需求 + WHY，术语 / 模块树 / 未变规则引产品线基线不重复。"
-        "上线后按承重不变量执行：先写基线变更记录行（状态=已登记）→ 反向合并 → 状态推进「已合并」。"
+        "上线后按顺序执行：先写基线变更记录行（状态=已登记）→ 反向合并 → 状态推进「已合并」。"
     )
     w.table(
         headers=["baseline 目标章", "合并方式", "合并动作"],

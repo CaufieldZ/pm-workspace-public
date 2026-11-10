@@ -3,10 +3,10 @@
 #
 # 用法（推荐一次性解析）：
 #   source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/input.sh"
-#   INPUT=$(cat); hook_parse_all
-#   # 之后用 $HOOK_TOOL_NAME / $HOOK_FILE_PATH / $HOOK_COMMAND / $HOOK_TRANSCRIPT
+#   hook_read_input; hook_parse_all
+#   # 之后用 $HOOK_TOOL_NAME / $HOOK_FILE_PATH / $HOOK_COMMAND / $HOOK_TRANSCRIPT / $HOOK_PROMPT
 #
-# 单字段解析（调用方已 INPUT=$(cat)）：
+# 单字段解析（调用方已 hook_read_input）：
 #   TOOL_NAME=$(hook_tool_name)
 #   FILE_PATH=$(hook_file_path)
 #   CMD=$(hook_command)
@@ -22,8 +22,17 @@
 # - 用 jq 解析（启动 ~1ms，远低于 python3 冷启动 ~30ms；settings.json 已 allow jq）
 # - 解析失败返回空串（不阻塞 hook，调用方按空判断）
 # - hook_parse_all 用 jq @sh（single-quote escape）防 JSON 内容里的 ' " ` $() 注入 eval
-# - 所有函数都假定 $INPUT 已设置（调用方 cat 一次）
+# - 所有函数都假定 $INPUT 已设置（调用方 hook_read_input 一次）
 set +e
+
+# 读 stdin 到 $INPUT。用 read 内建替 $(cat)：后者每条 hook 白付一次 cat 进程 spawn
+# （≈14ms × 每条 hook）。-d '' 读到 EOF（比 $(cat) 多留末尾换行，对 JSON 解析无影响）。
+# stdin 为空时 INPUT 保持空串（read 返回非 0，set +e 下不中断）。
+hook_read_input() {
+  INPUT=""
+  IFS= read -r -d '' INPUT
+  return 0
+}
 
 hook_tool_name() {
   printf '%s' "$INPUT" | jq -r '.tool_name // ""' 2>/dev/null
@@ -45,17 +54,19 @@ hook_stop_active() {
   printf '%s' "$INPUT" | jq -r 'if .stop_hook_active then "true" else "false" end' 2>/dev/null
 }
 
-# 一次性解析：把 4 个字段 eval 进当前 shell（HOOK_TOOL_NAME / HOOK_FILE_PATH / HOOK_COMMAND / HOOK_TRANSCRIPT）
+# 一次性解析：把 5 个字段 eval 进当前 shell（HOOK_TOOL_NAME / HOOK_FILE_PATH / HOOK_COMMAND / HOOK_TRANSCRIPT / HOOK_PROMPT）
 # jq @sh 输出 bash-safe 的 single-quote-escaped 赋值语句，避免 JSON 内容里的 ' " ` $ 等被 shell 解释。
-# 解析失败（jq 吞错 → eval 空串）时，4 个变量保持下方预置的空值，与原 python except 分支一致。
+# 解析失败（jq 吞错 → eval 空串）时，变量保持下方预置的空值，与原 python except 分支一致。
+# HOOK_PROMPT 供 UserPromptSubmit 用；其余事件该字段为空串，带上是为省掉第二条 jq。
 hook_parse_all() {
-  HOOK_TOOL_NAME=""; HOOK_FILE_PATH=""; HOOK_COMMAND=""; HOOK_TRANSCRIPT=""
+  HOOK_TOOL_NAME=""; HOOK_FILE_PATH=""; HOOK_COMMAND=""; HOOK_TRANSCRIPT=""; HOOK_PROMPT=""
   if command -v jq >/dev/null 2>&1; then
     eval "$(printf '%s' "$INPUT" | jq -r '
       "HOOK_TOOL_NAME=" + (.tool_name // "" | @sh),
       "HOOK_FILE_PATH=" + (.tool_input.file_path // "" | @sh),
       "HOOK_COMMAND=" + (.tool_input.command // "" | @sh),
-      "HOOK_TRANSCRIPT=" + (.transcript_path // "" | @sh)' 2>/dev/null)"
+      "HOOK_TRANSCRIPT=" + (.transcript_path // "" | @sh),
+      "HOOK_PROMPT=" + (.prompt // "" | @sh)' 2>/dev/null)"
   else
     # jq 缺失兜底：不 fallback 会让 $HOOK_COMMAND 恒空 → 所有 PreToolUse 安全门（force-push /
     # reset --hard 等）静默 fail-open。用 python3（本仓强依赖）+ shlex.quote 输出 shell-safe 赋值。
@@ -74,6 +85,7 @@ for var, val in (
     ("HOOK_FILE_PATH", ti.get("file_path")),
     ("HOOK_COMMAND", ti.get("command")),
     ("HOOK_TRANSCRIPT", d.get("transcript_path")),
+    ("HOOK_PROMPT", d.get("prompt")),
 ):
     print(f"{var}={shlex.quote(str(val) if val is not None else '')}")
 PY

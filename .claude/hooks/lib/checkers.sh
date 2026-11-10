@@ -13,7 +13,7 @@
 # 各 gate 行为差异：
 #   - script-rebuild-cjk：发射方是 cjk 检查器（half-life 真相源见 .claude/_meta/half-life.md）
 #   - plain-language-gate：唯一含根 deliverables/ 的检查器（--include-root-deliverables）
-#   - prd-check-gate：排除 *-scenes/* + 支持 --skeleton flag（split PRD 父 PRD 兼容）
+#   - prd-check-gate：支持 --skeleton flag
 set +e
 _check_block() {
   local gate="$1"
@@ -34,7 +34,10 @@ _check_clean() {
 
 check_cjk_for_bash_recent() {
   local cmd="$1"
-  echo "$cmd" | grep -qE '\b(gen|fill|patch|update|render)_[a-zA-Z0-9_-]+\.(py|js)\b' || return 0
+  # 触发判断走 bash 内建 =~（零 fork）：本 fn 在每次 Bash 调用后被调度，
+  # 原 `echo | grep -qE` 一条管道 ≈ 15ms，8 个 sub-checker 合计 ~130ms/次。
+  # `\b` 是 GNU 扩展、POSIX ERE 无 → 展开成 (^|[^a-zA-Z0-9_])…([^a-zA-Z0-9_]|$)。
+  [[ "$cmd" =~ (^|[^a-zA-Z0-9_])(gen|fill|patch|update|render)_[a-zA-Z0-9_-]+\.(py|js)([^a-zA-Z0-9_]|$) ]] || return 0
 
   if [ "${SKIP_SCRIPT_REBUILD_CJK_GATE:-0}" = "1" ]; then
     _log_skip_gate script-rebuild-cjk "env  ${cmd:0:120}"
@@ -70,7 +73,7 @@ check_cjk_for_bash_recent() {
     head -30 "$tmpout" >&2
     echo "" >&2
     echo "   → 修法 1: 改源脚本里的字符串字面量（把半角标点改全角），重跑 gen/fill/patch 脚本重生" >&2
-    echo "   → 修法 2: 只想快速修产物 → python3 scripts/check_cjk_punct.py --fix \"$first\"（--dry-run 先预览；注意下次重跑脚本会覆盖，最终仍要改源）" >&2
+    echo "   → 修法 2: 只想快速修产物 → .venv/bin/python scripts/check_cjk_punct.py --fix \"$first\"（--dry-run 先预览；注意下次重跑脚本会覆盖，最终仍要改源）" >&2
     echo "   → 真不适用 → SKIP_SCRIPT_REBUILD_CJK_GATE=1（仅 false positive，如外部引入非自产产物）" >&2
     echo "" >&2
     rm -f "$tmpout"
@@ -100,7 +103,7 @@ check_cjk_for_bash_recent() {
 
 check_plain_language_for_bash_recent() {
   local cmd="$1"
-  echo "$cmd" | grep -qE '\b(gen|fill)_[a-zA-Z0-9_-]+\.(py|sh)\b' || return 0
+  [[ "$cmd" =~ (^|[^a-zA-Z0-9_])(gen|fill)_[a-zA-Z0-9_-]+\.(py|sh)([^a-zA-Z0-9_]|$) ]] || return 0
 
   local proj="${CLAUDE_PROJECT_DIR:-$(pwd)}"
   local checker="$proj/scripts/check_plain_language.py"
@@ -142,7 +145,7 @@ $(cat "$tmpout")
     echo "" >&2
     echo "   → 修法 1: 按上方行号定位，把内部锚点（文件名 / 决策 N / 第 N 章 / PART / 占位符）改成业务白话（例：A-1 → 「下注弹层」，决策 7 → 删引用）" >&2
     echo "   → 修法 2: 改的是源脚本里的字符串字面量，改完重跑 gen/fill 脚本重生（别直接改产物，下次重生会覆盖）" >&2
-    echo "   → 真不适用 → SKIP_PLAIN_LANGUAGE_GATE=1 python3 ...（仅内部审计 / fix-plan 文档，对外产物禁用）" >&2
+    echo "   → 真不适用 → SKIP_PLAIN_LANGUAGE_GATE=1 .venv/bin/python ...（仅内部审计 / fix-plan 文档，对外产物禁用）" >&2
     echo "" >&2
     _check_block plain-language-gate "${cmd:0:80}"
     return 0
@@ -151,11 +154,11 @@ $(cat "$tmpout")
   _check_clean plain-language-gate "${cmd:0:80}"
 }
 
-# ── Sub-checker 3: PRD 自检（gen|update|patch_prd*.py 后扫近 60s，排除 *-scenes/*）─
+# ── Sub-checker 3: PRD 自检（gen|update|patch_prd*.py 后扫近 60s）─
 
 check_prd_for_bash_recent() {
   local cmd="$1"
-  echo "$cmd" | grep -qE '\b(gen|update|patch)_prd[a-zA-Z0-9_-]*\.py\b' || return 0
+  [[ "$cmd" =~ (^|[^a-zA-Z0-9_])(gen|update|patch)_prd[a-zA-Z0-9_-]*\.py([^a-zA-Z0-9_]|$) ]] || return 0
 
   check_skip_env prd-check-gate SKIP_PRD_CHECK_GATE "$cmd" && return 0
 
@@ -167,7 +170,7 @@ check_prd_for_bash_recent() {
   [ ! -f "$checker" ] && return 0
 
   local recent
-  recent=$(find_recent_deliverables 60 --not-path '*-scenes/*' "prd-*.md")
+  recent=$(find_recent_deliverables 60 "prd-*.md")
   [ -z "$recent" ] && return 0
 
   local fail=0
@@ -220,7 +223,7 @@ $(cat "$tmpout")
 
 check_ui_annotation_for_bash_recent() {
   local cmd="$1"
-  echo "$cmd" | grep -qE '\bbuild_(proto|imap)_[a-zA-Z0-9_-]*\.py\b' || return 0
+  [[ "$cmd" =~ (^|[^a-zA-Z0-9_])build_(proto|imap)_[a-zA-Z0-9_-]*\.py([^a-zA-Z0-9_]|$) ]] || return 0
 
   local proj="${CLAUDE_PROJECT_DIR:-$(pwd)}"
   local checker="$proj/scripts/check_ui_annotation.py"
@@ -257,7 +260,7 @@ $(cat "$tmpout")
     echo "   → 原型：删掉注解，屏内只放真实文案" >&2
     echo "   → IMAP：注解移到 mockup 外的 ann-card / flow-note，手机/Web 屏内只放真实文案" >&2
     echo "   → 改源 scene_fns / page_fns 后重 build" >&2
-    echo "   → 真不适用（极少数 false positive）：SKIP_UI_ANNOTATION_GATE=1 python3 ..." >&2
+    echo "   → 真不适用（极少数 false positive）：SKIP_UI_ANNOTATION_GATE=1 .venv/bin/python ..." >&2
     _check_block ui-annotation-gate "${cmd:0:80}"
     return 0
   fi
@@ -271,7 +274,7 @@ $(cat "$tmpout")
 # —— 正常产出流只经 Bash build，故本条才是实际触发路径。
 check_proto_audit_for_bash() {
   local cmd="$1"
-  echo "$cmd" | grep -qE '\bbuild_proto_[a-zA-Z0-9_-]*\.py\b' || return 0
+  [[ "$cmd" =~ (^|[^a-zA-Z0-9_])build_proto_[a-zA-Z0-9_-]*\.py([^a-zA-Z0-9_]|$) ]] || return 0
 
   local proj="${CLAUDE_PROJECT_DIR:-$(pwd)}"
   local checker="$proj/.claude/skills/prototype/scripts/audit_against_baseline.py"
@@ -308,7 +311,7 @@ $(cat "$tmpout")
     echo "   → 改 src/scenes/*.py 或 page_fns 重 build，不直接改 HTML" >&2
     echo "   → E 组（交互机制 / Fill 视觉铁律）见 references/prototype-components.md § E" >&2
     echo "   → V 组（数字排版 / 素材 / 悬浮 / 交互态）见 references/visual-rework-atlas.md，多数可直接换用 crypto-dark.css 的 cx- 组件" >&2
-    echo "   → 真不适用 → SKIP_PROTOTYPE_AUDIT=1 python3 ..." >&2
+    echo "   → 真不适用 → SKIP_PROTOTYPE_AUDIT=1 .venv/bin/python ..." >&2
     _check_block prototype-audit "${cmd:0:80}"
     return 0
   fi
@@ -322,7 +325,7 @@ $(cat "$tmpout")
 # —— 正常产出流只经 Bash build，故本条才是实际触发路径。
 check_prototype_split_for_bash() {
   local cmd="$1"
-  echo "$cmd" | grep -qE '\bbuild_proto_[a-zA-Z0-9_-]*\.py\b' || return 0
+  [[ "$cmd" =~ (^|[^a-zA-Z0-9_])build_proto_[a-zA-Z0-9_-]*\.py([^a-zA-Z0-9_]|$) ]] || return 0
 
   local proj="${CLAUDE_PROJECT_DIR:-$(pwd)}"
   local checker="$proj/.claude/skills/prototype/scripts/check_proto_split.py"
@@ -358,7 +361,7 @@ $(cat "$tmpout")
     echo "" >&2
     echo "   → 修法: 拆 projects/{项目}/scripts/src/scenes/{view_id}_{page_id}.py 一文件一页面，build_proto_v{N}.py import 收口后重 build" >&2
     echo "   → 规则源: .claude/skills/prototype/SKILL.md §硬规则 11（src/scenes 分场景拆分）+ .claude/runbooks/html-build-split.md §二" >&2
-    echo "   → 真不适用 → SKIP_PROTOTYPE_SPLIT_GATE=1 python3 ..." >&2
+    echo "   → 真不适用 → SKIP_PROTOTYPE_SPLIT_GATE=1 .venv/bin/python ..." >&2
     _check_block prototype-split-gate "${cmd:0:80}"
     return 0
   fi
@@ -370,7 +373,7 @@ $(cat "$tmpout")
 # 同 6 号：pc_imap_split 挂 Write|Edit 物理不可达，正常产出流只经 Bash build。
 check_imap_split_for_bash() {
   local cmd="$1"
-  echo "$cmd" | grep -qE '\bbuild_imap_[a-zA-Z0-9_-]*\.py\b' || return 0
+  [[ "$cmd" =~ (^|[^a-zA-Z0-9_])build_imap_[a-zA-Z0-9_-]*\.py([^a-zA-Z0-9_]|$) ]] || return 0
 
   local proj="${CLAUDE_PROJECT_DIR:-$(pwd)}"
   local checker="$proj/.claude/skills/interaction-map/scripts/check_imap_split.py"
@@ -406,7 +409,7 @@ $(cat "$tmpout")
     echo "" >&2
     echo "   → 修法: 拆 projects/{项目}/scripts/src/scenes/{scene_id}.py 一文件一主场景，build_imap_v{N}.py import 收口后重 build" >&2
     echo "   → 规则源: .claude/skills/interaction-map/SKILL.md §硬规则 11（src/scenes 分场景拆分）+ .claude/runbooks/html-build-split.md §二" >&2
-    echo "   → 真不适用 → SKIP_IMAP_SPLIT_GATE=1 python3 ..." >&2
+    echo "   → 真不适用 → SKIP_IMAP_SPLIT_GATE=1 .venv/bin/python ..." >&2
     _check_block imap-split-gate "${cmd:0:80}"
     return 0
   fi
@@ -428,12 +431,17 @@ $(cat "$tmpout")
 # 条件内直呼不匹配——漏的代价只是延后一条非阻断 warn（SKIP env 仍在），
 # 误放面远小于原先的误触面（gate 验意图不验表面，2026-09-07-gate-intent-over-surface）。
 _proto_cmd_runs_generator() {
-  local cmd="$1"
+  # grep 逐行匹配（^ 命中每行行首），bash =~ 的 ^ 只认整串行首 → 先把换行折成分号。
+  # 命令位语义不变（换行与 ; 同为命令分隔符），零 fork。
+  local cmd="${1//$'\n'/;}"
   # 形态 A：命令位（行首 / ; & | ( 之后）→ 可选 sudo/nohup/env · env 赋值前缀
   #        → python3(.x)? → 可选解释器 flag → [路径/]build_proto_v*.py
-  echo "$cmd" | grep -qE '(^|[;&|(])[[:space:]]*((sudo|nohup|env)[[:space:]]+)*([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*python3?(\.[0-9]+)?[[:space:]]+(-[A-Za-z][^[:space:]]*[[:space:]]+)*([^[:space:]]*/)?build_proto_v[A-Za-z0-9_-]*\.py([^0-9A-Za-z_-]|$)' && return 0
+  # 正则放变量：shellcheck 的解析器遇到 [[ =~ ]] 字面量里的 `(` 会报 SC1073 假错
+  local _RE_A='(^|[;&|(])[[:space:]]*((sudo|nohup|env)[[:space:]]+)*([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*python3?(\.[0-9]+)?[[:space:]]+(-[A-Za-z][^[:space:]]*[[:space:]]+)*([^[:space:]]*/)?build_proto_v[A-Za-z0-9_-]*\.py([^0-9A-Za-z_-]|$)'
+  [[ "$cmd" =~ $_RE_A ]] && return 0
   # 形态 B：脚本即命令首词（./build_proto_v1.py / 相对·绝对路径直执行）
-  echo "$cmd" | grep -qE '(^|[;&|(])[[:space:]]*([^[:space:]]*/)?build_proto_v[A-Za-z0-9_-]*\.py([[:space:]]|$)'
+  local _RE_B='(^|[;&|(])[[:space:]]*([^[:space:]]*/)?build_proto_v[A-Za-z0-9_-]*\.py([[:space:]]|$)'
+  [[ "$cmd" =~ $_RE_B ]]
 }
 
 check_proto_drift_for_bash() {
@@ -492,11 +500,11 @@ PY
       echo "   ${ver}：用到的 ${files} 已变，但该版产物是旧的"
     done
     echo ""
-    echo "   → 确认是否真漂移: python3 .claude/skills/prototype/scripts/check_proto_repro.py"
+    echo "   → 确认是否真漂移: .venv/bin/python .claude/skills/prototype/scripts/check_proto_repro.py"
     echo "   → 漂移是有意的 → 重建那些版本；无意的 → 按 prototype SKILL §硬规则 14 收窄装配范围"
     echo "   → 真不适用 → SKIP_PROTO_DRIFT_WARN=1"
   } >&2
-  note_add "工区 proto-drift-warn 检查：$(echo "$out" | wc -l | tr -d ' ') 个版本的产物可能已不可原样重建（不阻断）。$(echo "$out" | head -3 | tr '\n' ' ' | tr -s ' ')。确认是否真漂移：python3 .claude/skills/prototype/scripts/check_proto_repro.py。"
+  note_add "工区 proto-drift-warn 检查：$(echo "$out" | wc -l | tr -d ' ') 个版本的产物可能已不可原样重建（不阻断）。$(echo "$out" | head -3 | tr '\n' ' ' | tr -s ' ')。确认是否真漂移：.venv/bin/python .claude/skills/prototype/scripts/check_proto_repro.py。"
   command -v log_event >/dev/null && log_event hook proto-drift-warn warn "${cmd:0:80}"
   return 0
 }

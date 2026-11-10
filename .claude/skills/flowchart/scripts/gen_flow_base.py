@@ -236,7 +236,7 @@ def _swimlane_to_mermaid(chart) -> str:
 
 def _state_to_mermaid(chart) -> str:
     """状态机 / 生命周期 → stateDiagram-v2。回路 / 多源汇聚 / 扇出无需手工布局。"""
-    lines = ["stateDiagram-v2", "    direction LR"]
+    lines = ["stateDiagram-v2", f"    direction {chart.get('direction', 'LR')}"]
     ids_by_kind = defaultdict(list)
     for s in chart.get("states", []):
         lines.append(f"    state {_q(s['label'])} as {s['id']}")

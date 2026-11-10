@@ -22,6 +22,7 @@
 set +e
 
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/log.sh"
+source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/input.sh"
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 STATE="$PROJECT_DIR/.claude/session-state.md"
@@ -29,7 +30,7 @@ DASHBOARD="$PROJECT_DIR/.claude/workspace-dashboard.md"
 
 # stdin：SessionStart 事件 JSON（source=startup|resume|compact|clear|fork）。
 # tty 守卫：手工裸跑（无管道输入）不卡死，INPUT 留空即全跳过
-if [ ! -t 0 ]; then INPUT=$(cat); else INPUT=""; fi
+if [ ! -t 0 ]; then hook_read_input; else INPUT=""; fi
 
 OUT=$(mktemp)
 trap "rm -f $OUT" EXIT

@@ -14,13 +14,11 @@ info 的最小字段：
             {"id": "A-1", "name": "发帖", "view": "前台", "priority": "P0", "note": "..."},
             ...
         ],
-        "mode": "single" | "split",      # 默认 single
     }
 
 输出规则：
 - 没传的字段用占位符 `{{ 待填：... }}` 提示 PM
 - 传了 scenes 时自动填第 2.1 表 + 第 5/6/7 章子场景骨架
-- mode=split 时第 5/6/7 章只列场景引用链接，子场景骨架由 gen_prd_skeleton 写到独立文件
 
 设计原则：
 1. 本模块**只生成骨架**，不做任何内容判断 / 智能填充 —— PM + AI 填内容
@@ -86,24 +84,13 @@ class SceneInfo:
 
     @property
     def view_prefix(self) -> str:
-        """split 模式子文件名前缀：front / back / cross"""
+        """按 view 分 5/6/7 章：front / back / cross"""
         if self.view in ("前台", "App", "用户端"):
             return "front"
         if self.view in ("后台", "CMS", "管理端"):
             return "back"
         return "cross"
 
-    def scene_filename(self) -> str:
-        """split 模式下的子文件名：front-A-1-发帖.md
-
-        只取主名（— : · + ( （ & 等分隔符前），完整白话名仍保留在 h2 标题。
-        避免长描述拼出 front-B-2-专题胶囊筛选-+-统一-Grid.md 这种丑陋形态。
-        """
-        main = re.split(r"[—–:：·+(（&]", self.name, maxsplit=1)[0].strip()
-        if not main:  # 名字以分隔符开头（如「（既有）发帖」）→ 回退整名，避免空段 front-A-1-.md 撞名
-            main = re.sub(r"[—–:：·+(（&]", " ", self.name).strip()
-        safe_name = main.replace(" ", "-").replace("/", "-")
-        return f"{self.view_prefix}-{self.id}-{safe_name}.md"
 
 
 def _parse_scenes(scenes_raw: Optional[list]) -> list[SceneInfo]:
@@ -303,8 +290,6 @@ def _build_scene_section_chapter(
     chapter_num: int,
     chapter_title: str,
     scenes: list[SceneInfo],
-    mode: str,
-    scenes_dir_name: str = "",
 ) -> None:
     """5/6/7 章公共逻辑：按 view 类型生成扁平子场景。"""
     w.h1(f"{chapter_num}. {chapter_title}")
@@ -313,16 +298,7 @@ def _build_scene_section_chapter(
         w.paragraph(PL(f"本章无 {chapter_title} 场景（如有按扁平列表追加 {chapter_num}.1 / {chapter_num}.2 / ...）"))
         return
 
-    if mode == "split":
-        # 主骨架只放引用链接，子场景写在独立文件
-        links = [
-            f"[{chapter_num}.{i + 1} {s.id} · {s.name}]({scenes_dir_name}/{s.scene_filename()})"
-            for i, s in enumerate(scenes)
-        ]
-        w.bullet_list(links)
-        return
-
-    # single 模式：每个场景骨架直接铺在这里（左图右文三段式模板，详见 §四）
+    # 每个场景骨架直接铺在这里（左图右文三段式模板）
     for i, scene in enumerate(scenes):
         scene_id_label = f"{chapter_num}.{i + 1} {scene.id}"
         scene_block_card(
@@ -354,7 +330,7 @@ def _build_scene_section_chapter(
         )
 
 
-def build_chapter_5(w: MdWriter, info: dict, scenes_dir_name: str = "") -> None:
+def build_chapter_5(w: MdWriter, info: dict) -> None:
     """5. 前台功能需求"""
     scenes = _parse_scenes(info.get("scenes"))
     groups = _group_by_view(scenes)
@@ -363,12 +339,10 @@ def build_chapter_5(w: MdWriter, info: dict, scenes_dir_name: str = "") -> None:
         chapter_num=5,
         chapter_title="前台功能需求",
         scenes=groups["前台"],
-        mode=info.get("mode", "single"),
-        scenes_dir_name=scenes_dir_name,
     )
 
 
-def build_chapter_6(w: MdWriter, info: dict, scenes_dir_name: str = "") -> None:
+def build_chapter_6(w: MdWriter, info: dict) -> None:
     """6. 后台功能需求"""
     scenes = _parse_scenes(info.get("scenes"))
     groups = _group_by_view(scenes)
@@ -377,12 +351,10 @@ def build_chapter_6(w: MdWriter, info: dict, scenes_dir_name: str = "") -> None:
         chapter_num=6,
         chapter_title="后台功能需求",
         scenes=groups["后台"],
-        mode=info.get("mode", "single"),
-        scenes_dir_name=scenes_dir_name,
     )
 
 
-def build_chapter_7(w: MdWriter, info: dict, scenes_dir_name: str = "") -> None:
+def build_chapter_7(w: MdWriter, info: dict) -> None:
     """7. 跨端 / 后端需求"""
     scenes = _parse_scenes(info.get("scenes"))
     groups = _group_by_view(scenes)
@@ -391,8 +363,6 @@ def build_chapter_7(w: MdWriter, info: dict, scenes_dir_name: str = "") -> None:
         chapter_num=7,
         chapter_title="跨端 / 后端需求",
         scenes=groups["跨端"],
-        mode=info.get("mode", "single"),
-        scenes_dir_name=scenes_dir_name,
     )
 
 
@@ -522,60 +492,20 @@ def build_chapter_12(w: MdWriter, info: dict) -> None:
 
 # ── 主组装入口 ────────────────────────────────────────────────────────────
 
-def build_full_skeleton(info: dict, scenes_dir_name: str = "") -> str:
-    """single 模式：12 章全部生成到一个 md 字符串。"""
+def build_full_skeleton(info: dict) -> str:
+    """12 章全部生成到一个 md 字符串。"""
     w = MdWriter()
     build_cover(w, info)
     build_chapter_1(w, info)
     build_chapter_2(w, info)
     build_chapter_3(w, info)
     build_chapter_4(w, info)
-    build_chapter_5(w, info, scenes_dir_name)
-    build_chapter_6(w, info, scenes_dir_name)
-    build_chapter_7(w, info, scenes_dir_name)
+    build_chapter_5(w, info)
+    build_chapter_6(w, info)
+    build_chapter_7(w, info)
     build_chapter_8(w, info)
     build_chapter_9(w, info)
     build_chapter_10(w, info)
     build_chapter_11(w, info)
     build_chapter_12(w, info)
     return w.render()
-
-
-def build_scene_file(scene: SceneInfo, chapter_label: str = "") -> str:
-    """split 模式下的单个子场景独立 md 文件内容（h2 层级）。
-
-    chapter_label: 如 "5.1"，子文件标题会是 `## 5.1 A-1 · 发帖`；
-    缺省则只有 `## A-1 · 发帖`（用于预览，不进主 md）。
-
-    模板：左图右文三段式（2026-05 起规范），详见 references/prd-chapter-rules.md §4.1。
-    """
-    w = MdWriter()
-    scene_id = f"{chapter_label} {scene.id}" if chapter_label else scene.id
-    scene_block_card(
-        w,
-        scene_id,
-        scene.name,
-        story=PL("谁/做什么/为什么"),
-        images=[(f"../assets/scene-{scene.id}.png", f"{scene.name}低保真")],
-        leftright_modules=[
-            (
-                PL("模块名"),
-                PL("何时显示/不显示"),
-                [PL("字段/控件/文案"), PL("再一条")],
-                [PL("点 X → 跳 Y")],
-            ),
-            (
-                PL("模块名"),
-                PL("何时显示/不显示"),
-                [PL("字段/控件/文案"), PL("再一条")],
-                [PL("点 X → 跳 Y")],
-            ),
-        ],
-        data_impact=[PL("数据变化，业务语言"), PL("再一条")],
-        exceptions=[[PL("触发条件"), PL("系统响应"), PL("用户感知")]],
-        acceptance_criteria=[PL("可验证的验收点"), PL("再一条")],
-        heading_level=2,
-    )
-    return w.render()
-
-

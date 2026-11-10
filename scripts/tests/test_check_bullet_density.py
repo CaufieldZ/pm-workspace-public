@@ -3,7 +3,7 @@
 锁住四条挤话判据 + 误报边界：
   命中  — bullet 单行 ≥3 句号 / 单行 ≥2 分号 / 单句 ≥100 字 / 段落碎句（≥3 句且句长中位 <9）
   干净  — ≤2 句号 / 分号串子项 / 单句 bullet / 三句完整短句 / 引号内的长文案
-  跳过  — >/表格/代码块/:::/frontmatter/空行/纯图片
+  跳过  — >/表格/代码块/<!-- 注释 -->/:::/frontmatter/空行/纯图片
   章节豁免 — 只给「长句」这一维：决策 / 变更 / 埋点章的论证句可以长；
             句号 / 分号 / 碎句一视同仁（哪章都该拆）
   逃生口 — <!-- lint-skip:density --> 行级跳过
@@ -103,6 +103,17 @@ def test_frontmatter_skipped():
 def test_image_only_line_skipped():
     """纯图片行不报。"""
     assert _lines("![一。二。三。](a.png)") == []
+
+
+def test_html_comment_block_skipped():
+    """跨行 HTML 注释块内的脚手架不报——注释不渲染给读者（与 md_scan 同口径）。"""
+    text = "<!-- 归因锚块：\n- 一。二。三。\n- 甲。乙。丙。\n-->\n正文。"
+    assert _lines(text) == []
+
+
+def test_html_comment_inline_skipped():
+    """行内一行闭合的注释行不报。"""
+    assert _lines("<!-- 一。二。三。 -->") == []
 
 
 # ── 无章节豁免：决策 / 埋点 / 变更章句号串、分号串照样 block ──────────

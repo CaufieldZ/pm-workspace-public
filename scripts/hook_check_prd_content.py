@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-"""prd-content-gate 检查体：PRD 写入时新增行的讲人话 / 结构硬错检测。
+"""prd-content-gate 检查体：PRD 写入时新增行的硬错检测。
 
-PRD 用 Write / Edit 写入时过去不跑 check_prd_md.sh（完整跑要几百毫秒，超热路径预算），
-plain-language 与 md-blockquote 两道门又都以「PRD 走 check_prd_md」为由跳过 PRD——
-结果 PRD 写入长期只在交付时查一次。本检查体补「写入时」这一段：跑 md_scan 里跨维
-可复用的内容硬错，且只报本次新增行，存量不卡。
+完整的 check_prd_md.sh 只在交付时跑；本检查体补「写入时」这一段：跑 md_scan 的硬错维度
+（Confluence 渲染不了的写法 / 埋点表），只报本次新增行，存量不卡。
 
 用法：
     python3 scripts/hook_check_prd_content.py <file> --added-file <added-lines.txt>
@@ -19,19 +17,17 @@ plain-language 与 md-blockquote 两道门又都以「PRD 走 check_prd_md」为
        异常时 traceback 进 stdout，由调用方按输出判定）
 
 维度取 humanize/patterns.py 的 prd_fail_keys(skeleton=True)——骨架阶段的占位符降 WARN，
-写入时不拦。去掉别的门已经管的：圈数字 / 水平线归 cjk-punct，视觉越界归 pm-visual-gate。
-场景正文串句维度仍受 SKIP_SCENE_PROSE_GATE 逃生阀控制（沿用 check_prd_md 的同一口径）。
+写入时不拦。水平线归 cjk-punct 管，这里不重复报。
 
 进合批：top-level 不读 argv / 不 print / 不 exit，判定全在 main()（见 lib/pybatch.sh 不变量）。
 """
-import os
 import re
 import subprocess
 import sys
 from pathlib import Path
 
 # 别的门已经管的维度，本检查体不重复报（避免一处违规两份措辞不同的拦截）
-OTHER_GATE_KEYS = frozenset({"circle_nums", "horizontal_rule_hits", "visual_overreach_hits"})
+OTHER_GATE_KEYS = frozenset({"horizontal_rule_hits"})
 
 _HIT_LINENO_RE = re.compile(r"^L(\d+)\b")
 
@@ -44,19 +40,16 @@ def _humanize_path() -> Path:
 def key_list(file_path: str, project_dir: str = "") -> list[tuple[str, str]]:
     """取本次要查的 (维度键, 标签) 清单。
 
-    profile 按文件名判（prd-*-baseline.md = baseline），split 按是否在 -scenes/ 下判。
+    profile 按文件名判（prd-*-baseline.md = baseline）。
     """
     sys.path.insert(0, str(_humanize_path()))
     from humanize.patterns import prd_fail_keys  # noqa: E402
 
     name = Path(file_path).name
     is_baseline = name.startswith("prd-") and name.endswith("-baseline.md")
-    is_split = Path(file_path).parent.name.endswith("-scenes")
     keys = prd_fail_keys(
-        split=is_split,
         skeleton=True,
         profile="baseline" if is_baseline else "delta",
-        scene_prose=os.environ.get("SKIP_SCENE_PROSE_GATE") != "1",
     )
     return [(k, label) for k, label in keys if k not in OTHER_GATE_KEYS]
 
@@ -80,10 +73,10 @@ def added_lines_from_git(file_path: str, project_dir: str) -> list[str]:
 def scan_added_hits(file_path: str, added: list[str], keys: list[tuple[str, str]]) -> dict[str, list[str]]:
     """跑 md_scan，只留行号落在本次新增行里的命中。"""
     sys.path.insert(0, str(_humanize_path()))
-    from humanize.md_scan import scan_human_voice_md, scan_prd_structural_md  # noqa: E402
+    from humanize.md_scan import scan_prd_structural_md  # noqa: E402
 
     text = Path(file_path).read_text(encoding="utf-8")
-    merged = {**scan_human_voice_md(text), **scan_prd_structural_md(text)}
+    merged = scan_prd_structural_md(text)
 
     added_set = set(added)
     text_lines = text.splitlines()

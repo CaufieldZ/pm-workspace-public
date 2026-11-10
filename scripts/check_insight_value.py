@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
-"""周报洞察内容门：抓「把明细表翻译成中文句子」的复读和跨口径相除。
+"""周报洞察内容门：抓四类问题——没有判断的表格复读、分析腔、营销腔、跨口径相除。
 
-周报的其他门（check_plain_language / check_bullet_density）全是负向的——只管
-「不许说什么」。唯一两条内容规则（每句都是表外增量 / 跨期对比给了）写在
-insight-writing-guide.md 的必检清单里靠人肉自查，于是新指标进表那周的洞察
-常写成「上麦 14 人次、8 个场次、人均在麦 42 分钟」这种三个数全在表里的复读。
+洞察的写法是「判断 → 证据 → 说明」（insight-writing-guide.md）：标题是业务判断，
+bullet 用表里的数 + 环比 / Q 对比做证据。所以表内数出现在判断标题下面是正常的
+证据，不算复读；只有标题本身在罗列表里的数、或 bullet 不挂在任何判断标题下时，
+才按「表格复读」报。
+
+「分析腔」抓领导改稿里反复删掉的自造说法（摊薄 / 浏览盘 / 基线 / 小盘 / 进表 /
+「降幅是 X 的 N 倍」），换成业务说法见 guide 的人话替换表。
+
+「营销腔」抓她只删不加的那类词（极其 / 惊人 / 剪刀差 / 破局 / 触底反弹 …）——
+形容词本身不违禁，违禁的是把业务变化写成宣发稿。
 
 本脚本只认同时含「## 洞察」和「## 数据明细」两节的文件（即周报 md），
 其余文件直接返回 0，不必挑路径。
@@ -62,6 +68,25 @@ FORBIDDEN_PAIRS: list[tuple[tuple[str, ...], tuple[str, ...], str]] = [
 # 相除 / 取比的表述
 RATIO_RE = re.compile(r"倍|占|转化率|覆盖率|渗透到|除以|／|/|%的")
 
+# 分析腔：领导改稿里删掉的自造说法。「档位」「留存盘」「翻倍」她自己保留，不在此列。
+ANALYST_RE = re.compile(
+    r"摊薄|浏览盘|边缘流量|小盘|进表|基线|形态|表态|"
+    r"(?:降|增|涨|跌)幅是.{0,16}?倍|"
+    r"的近?\s*\d+(?:\.\d+)?\s*倍|差\s*\d+(?:\.\d+)?\s*倍"
+)
+
+# 营销腔：领导改稿里只删不加的一类词。用她 Q2~Q4 的 78 个编辑版本校准过——
+# 新增句 520 条命中 0、删除句 585 条命中 15。「归因」「洞察」故意不收：
+# 那是我方正常业务词，收进来会误杀自己的分析句。
+MARKETING_RE = re.compile(
+    r"极其|惊人|漂亮|彻底|质变|剪刀差|破局|诊断报告|信号|爆发|飙升|焦虑|闭环|拐点|"
+    r"去肥增瘦|触底反弹|报复性"
+)
+
+# 编号小标题：`### 1. 判断句`
+HEADING_RE = re.compile(r"^#{2,4}\s*\d+\.\s*")
+CJK_RE = re.compile(r"[一-鿿]")
+
 
 def _norm_nums(text: str) -> set[str]:
     return {m.group(0).replace(",", "") for m in NUM_RE.finditer(text)}
@@ -100,6 +125,21 @@ def insight_lines(text: str) -> list[tuple[int, str]]:
     return out
 
 
+def _heading_has_judgment(body: str, tbl: set[str]) -> bool:
+    """标题带判断才能装数（领导要「标题能装下的数就装进去」）。
+
+    判断 = 有一个不含数字的分句（「是在播主播开得少了」）、跨周形态 / 推导词
+    （「4 周最低」，DERIVE_RE），或表里查不到的推导数（「相比 Q3 提升 57%」）。
+    三样都没有 = 在罗列表里的数。
+    """
+    if DERIVE_RE.search(body):
+        return True
+    clauses = re.split(r"[，,；;、：:]", body)
+    if any(len(CJK_RE.findall(c)) >= 4 and not NUM_RE.search(c) for c in clauses):
+        return True
+    return bool({n for n in _norm_nums(body) if len(n) > 1} - tbl)
+
+
 def check_text(text: str) -> list[tuple[int, str, str, str]]:
     """返回 [(行号, 类别, 说明, 原文), ...]。非周报 md（缺任一节）返回空。"""
     if "## 洞察" not in text or "## 数据明细" not in text:
@@ -107,8 +147,10 @@ def check_text(text: str) -> list[tuple[int, str, str, str]]:
 
     tbl = table_numbers(text)
     hits: list[tuple[int, str, str, str]] = []
+    under_judgment = False  # 当前行是否挂在一个判断标题下
 
     for lineno, line in insight_lines(text):
+        is_heading = bool(HEADING_RE.match(line))
         body = re.sub(r"^#{1,6}\s*\d*\.?\s*|^[-*]\s+", "", line)
 
         for a_terms, b_terms, why in FORBIDDEN_PAIRS:
@@ -117,15 +159,23 @@ def check_text(text: str) -> list[tuple[int, str, str, str]]:
                 hits.append((lineno, "跨口径相除", why, line))
                 break
 
-        nums = _norm_nums(body)
-        if not nums or DERIVE_RE.search(body):
-            continue
-        verbatim = nums & tbl
-        if len(verbatim) >= VERBATIM_LIMIT:
+        m = ANALYST_RE.search(body)
+        if m:
+            hits.append((lineno, "分析腔", f"「{m.group(0)}」是自造的分析说法，换成业务说法", line))
+
+        m = MARKETING_RE.search(body)
+        if m:
+            hits.append((lineno, "营销腔", f"「{m.group(0)}」是营销稿用词，换成业务陈述", line))
+
+        verbatim = _norm_nums(body) & tbl
+        restates = len(verbatim) >= VERBATIM_LIMIT and not DERIVE_RE.search(body)
+        if is_heading:
+            under_judgment = _heading_has_judgment(body, tbl)
+        if restates and not under_judgment:
             hits.append((
                 lineno, "表格复读",
                 f"{len(verbatim)} 个数在明细表里原样可查（{'、'.join(sorted(verbatim))}），"
-                "整句没有跨期 / 跨行推导",
+                + ("标题在罗列数字，没有业务判断" if is_heading else "没有挂在判断标题下"),
                 line,
             ))
     return hits
@@ -142,8 +192,9 @@ def report(hits: list[tuple[int, str, str, str]], label: str) -> None:
         print(f"   L{lineno} [{kind}] {snippet}", file=sys.stderr)
         print(f"        → {why}", file=sys.stderr)
     print(
-        "   → 修法：把表里的原值换成跨行 / 跨期推导（比值、差值、占比、N 周形态），"
-        "或补一个横向参照；跨口径的比值算不出来就写进「数据能力缺口」",
+        "   → 修法：标题写成业务判断（用户 / 主播 / 内容在发生什么），bullet 用表里的数"
+        " + 环比或 Q 对比做证据；分析腔换成业务说法（guide「人话替换表」）；"
+        "营销腔换成业务陈述；跨口径的比值算不出来就写进「数据能力缺口」",
         file=sys.stderr,
     )
 
@@ -155,8 +206,10 @@ def main() -> int:
         return 0
     strict = "--strict" in args
     total: list[tuple[int, str, str, str]] = []
+    checked = 0
 
     if "--stdin" in args:
+        checked = 1
         hits = check_text(sys.stdin.read())
         if hits:
             report(hits, "<stdin>")
@@ -167,13 +220,17 @@ def main() -> int:
                 continue
             p = Path(a)
             if not p.is_file():
+                print(f"⚠️  文件不存在，未检查: {p}", file=sys.stderr)
                 continue
+            checked += 1
             hits = check_file(p)
             if hits:
                 report(hits, str(p))
                 total += hits
 
-    if not total:
+    if not checked:
+        print("⚠️  [insight-value] 没有检查任何文件", file=sys.stderr)
+    elif not total:
         print("✅ [insight-value] 洞察无表格复读 / 跨口径相除", file=sys.stderr)
     return 2 if (strict and total) else 0
 

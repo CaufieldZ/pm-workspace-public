@@ -61,6 +61,7 @@
 | 下载 Figma 图片/批量素材 | `fetch_figma.py` → cheatsheet |
 | 生图/改图（配图 · 封面 · 宣发图） | `image_gen.py "提示词"`（改图 `--edit <图>`；`-p {项目}` 落项目）|
 | 出视频（文生 / 图生 / 参考生） | `video_gen.py "提示词"`（图生 `--first-frame`；`-p {项目}` 落项目）|
+| 翻译 / 出外文版 / 多语种（15 平台语种） | Read `hub/translate-agent/system-prompt.md` 照规则翻；术语 · 黑话 · 区域语体按目标语种 grep `hub/translate-agent/knowledge/`，以知识库为准不凭记忆译 |
 | pdf/docx/pptx/xlsx → md | `doc_to_md.py <file> [--batch]` |
 | 打包工作区 | `pack_for_opus.py` → cheatsheet |
 | Slack 消息 | `slack.py` → cheatsheet（send/read/search/thread/draft/schedule）|
@@ -71,7 +72,7 @@
 | 导出埋点 xlsx / 埋点表格 | `.claude/skills/prd/scripts/export_tracking_xlsx.py <prd.md>`（事件级列合并单元格）|
 | 场景清单视觉版 | `.claude/skills/scene-list/scripts/render_scene_list.py {项目}` |
 | **🔥 内部项目系统**（先 `source .env`） | |
-| 内部项目系统 delta 状态/上线日期同步（内部项目系统为权威源） | `sync_hx_status.py <delta.md>`（默认 dry-run，`--apply` 落盘；`-p {产品线}` 扫当季）|
+| 内部项目系统 delta 状态/上线日期对账（PM 宣告为准；只前进回填，不覆盖手填，冲突报 diff） | `sync_hx_status.py <delta.md>`（默认 dry-run，`--apply` 落盘；`-p {产品线}` 扫当季）|
 | 内部项目系统任务进展（分支/H 号做到哪一步） | `.claude/skills/内部项目系统/scripts/hx_task_progress.py [H号]` |
 | 内部项目系统个人面板（我手头/逾期的任务） | `.claude/skills/内部项目系统/scripts/hx_panel.py [--filter overdue\|current]` |
 | **✅ 校验 / 自检** | |

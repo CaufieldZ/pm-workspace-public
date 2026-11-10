@@ -2,7 +2,7 @@
 # 共享：PreToolUse Write|Edit 4 个 guard 子函数（原 4 个独立 pre-*.sh 合并）
 #
 # 被 pre-writeedit-guard.sh source；前提：已 source log.sh + input.sh + guards.sh
-#                                        且已 INPUT=$(cat); hook_parse_all
+#                                        且已 hook_read_input; hook_parse_all
 #
 # 约定（Pre 侧 = 硬 block，拦住就停）：
 # - 每个 pg_* 子函数：路径 / 工具不匹配 → return 0（放行，继续下一 guard）
@@ -23,8 +23,9 @@ pg_scripts_first() {
   [ "$HOOK_TOOL_NAME" != "Write" ] && return 0
   local FILE_PATH="$HOOK_FILE_PATH"
   if check_skip_env "scripts-first" "SKIP_SCRIPTS_FIRST_GATE" "$FILE_PATH"; then return 0; fi
-  echo "$FILE_PATH" | grep -qE 'projects/[^/]+/.*\.html$' || return 0
-  echo "$FILE_PATH" | grep -qE '/(archive|inputs|screenshots|scripts|sop-src)/' && return 0
+  # 触发判断走 bash 内建（本 fn 在每次 Write 都被调度，原两条 `echo | grep` 白付 ~30ms）
+  [[ "$FILE_PATH" =~ projects/[^/]+/.*\.html$ ]] || return 0
+  [[ "$FILE_PATH" =~ /(archive|inputs|screenshots|scripts|sop-src)/ ]] && return 0
 
   local CONTENT LINE_COUNT
   CONTENT=$(_pg_content)
@@ -51,7 +52,7 @@ pg_scripts_first() {
   echo "   文件: ${FILE_PATH}（拟写 ${LINE_COUNT} 行）" >&2
   echo "" >&2
   echo "   → 修法 1: 在 ${PROJECT_DIR_X}/scripts/ 创建 gen_*.py（可参考 .claude/skills/prd/scripts/gen_prd_skeleton.py 模板）" >&2
-  echo "   → 修法 2: 用 python3 ${PROJECT_DIR_X}/scripts/gen_*.py 生成 HTML（产物文件不再手 Write）" >&2
+  echo "   → 修法 2: 用 .venv/bin/python ${PROJECT_DIR_X}/scripts/gen_*.py 生成 HTML（产物文件不再手 Write）" >&2
   echo "   → 阈值依据: scripts/lib/thresholds.yaml write_tool.html_max_lines（200 行）" >&2
   echo "   → 真不适用 → 检查文件名是否应改后缀避免误判（hook 仅对 *.html 触发）；或 export SKIP_SCRIPTS_FIRST_GATE=1（仅一次性静态 HTML、确无脚本生成价值时）" >&2
   echo "" >&2
@@ -241,11 +242,6 @@ pg_skill_load() {
     arch-*.html|architecture-*.html)             SKILL=architecture-diagrams ;;
     ppt-*.html)                                  SKILL=ppt ;;
   esac
-  if [ -z "$SKILL" ]; then
-    case "$FILE_PATH" in
-      */prd-*-scenes/*.md) SKILL=prd ;;
-    esac
-  fi
   if [ -n "$SKILL" ]; then
     GUIDE=".claude/skills/$SKILL/SKILL.md"
     GATE="skill-load-gate"
@@ -253,10 +249,9 @@ pg_skill_load() {
       scene-list|interaction-map|prototype|prd)
         GUIDE2=".claude/runbooks/info-ownership.md" ;;
     esac
-    # prd 追加：章节规则速查（写 PRD 前必读，chapter-rules 561 行精华 ~100 行，全量按需）+ 场景模板速查
+    # prd 追加：写作指南（各章写法 + 示例）
     if [ "$SKILL" = "prd" ]; then
-      GUIDE3=".claude/skills/prd/references/prd-chapter-rules-quickref.md"
-      GUIDE4=".claude/skills/prd/references/prd-scene-template-quickref.md"
+      GUIDE3=".claude/skills/prd/references/prd-writing-guide.md"
     fi
   fi
 
@@ -392,7 +387,7 @@ PY
       if [[ "$GUIDE" == *SKILL.md ]] && [ -z "$GUIDE2" ]; then
         HINT_LIGHT="   → 修法（轻量·改 scripts/*）: Read $GUIDE limit=80（§1 触发与定位 + §2 改脚本前 30 秒 即够·见 skill-conventions.md）"
       fi ;;
-    */projects/*/prd-*.md|*/projects/*/*/prd-*.md|*/projects/*/prd-*-baseline.md|*/projects/*/prd-*-scenes/*.md)
+    */projects/*/prd-*.md|*/projects/*/*/prd-*.md|*/projects/*/prd-*-baseline.md)
       # 只在「缺的就是 GUIDE 本身」时给轻量提示；还缺别的文件就落到下面的显式清单分支。
       # 否则提示只教读 GUIDE、判定却要求读全部缺失项，照提示做仍被拦 → 反复撞墙。
       if [ "${#MISSING[@]}" -eq 1 ] && [ "${MISSING[0]}" = "$GUIDE" ]; then

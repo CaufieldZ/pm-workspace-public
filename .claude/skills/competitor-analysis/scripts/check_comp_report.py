@@ -8,8 +8,9 @@
 参数：<report.md> = 竞品分析报告 md 路径（comp-*.md）。
 
 检查项：
-    FAIL（阻断）：--- 分隔线 / 打分矩阵疑似硬编（全数字无 — 且规模大）/ 缺打分矩阵。
-    WARN（提示）：打分表无 👍 / 无「需验证」标注 / 无翻车风险列 / 无我方进度图例。
+    FAIL（阻断）：--- 分隔线 / 第一个 ## 章节不是结论（CRBE 深度版除外）。
+    WARN（提示）：决策型缺差异分析表或落地清单 / 有打分矩阵时：疑似硬编、无 👍 /
+                  正文出现「模式命名」/ 无「需验证 / 未公开」标注。
 
 前置：无（纯文本扫描，--help 亦不需要）。
 退出码：0 = 全过或仅 WARN；1 = 有 FAIL；2 = 用法错 / 读不到文件。
@@ -66,10 +67,24 @@ def main():
         if re.match(r"^\s*-{3,}\s*$", ln):
             fails.append(f"L{i} 用了 --- 水平分隔线（Confluence 渲染崩），改用 ## 标题或空行")
 
-    # FAIL 2: 缺打分矩阵
+    # FAIL 2: 第一个 ## 章节不是结论（CRBE 深度版按立项调研结构，不卡）
+    h2 = [ln for ln in lines if ln.startswith("## ")]
+    is_crbe = "CRBE" in text or "Capability" in text
+    if h2 and not is_crbe and "结论" not in h2[0]:
+        fails.append(f"第一个 ## 章节是「{h2[0][3:].strip()}」，决策型报告第一章应是结论（问题表 + 我方截图 + 建议速览）")
+
+    # WARN: 决策型缺差异分析表 / 落地清单
+    if not is_crbe:
+        if not any("对我方的判断" in ln or "对 Platform C 的判断" in ln for ln in lines):
+            warns.append("没找到差异分析表（列：维度 | 差异点 | 原因分析 | 对我方的判断）")
+        if not any(ln.startswith("|") and "优先级" in ln and "配合方" in ln for ln in lines):
+            warns.append("没找到落地清单（列含 优先级 / 需配合方）")
+
+    # WARN: 给竞品打法起名字
+    if "模式命名" in text:
+        warns.append("正文出现「模式命名」：给打法起名字读起来像口号，直接写差异和判断")
+
     score_tables = find_score_tables(lines)
-    if not score_tables:
-        fails.append("没找到打分矩阵（功能维度 × 平台的 1-9 分表），深度版必须有")
 
     # WARN: 打分矩阵疑似硬编（规模够大却一个 — 都没有，可能存在拍脑袋填分）
     for t in score_tables:
@@ -90,14 +105,6 @@ def main():
     # WARN: 无「需验证」标注（多为二手数据却全无来源审慎标注）
     if "需验证" not in text and "未公开" not in text:
         warns.append("全文无「需验证 / 未公开」标注：竞品数据多为二手，无来源的数字应标注")
-
-    # WARN: 无我方进度图例
-    if not re.search(r"[🟢🟡🔵🔴⚫]", text):
-        warns.append("无我方进度图例（🟢🟡🔵🔴⚫）：每条可借鉴点应标我方进度")
-
-    # WARN: 无翻车风险
-    if "翻车" not in text and "风险" not in text:
-        warns.append("全文无「翻车 / 风险」：每条可借鉴点应附直接抄的翻车风险")
 
     for m in fails:
         print(f"❌ FAIL: {m}")

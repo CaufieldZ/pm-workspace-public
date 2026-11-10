@@ -336,7 +336,7 @@ sed -n '{起始},{结束}p' .claude/skills/prototype/references/prototype-compon
 
 并行在途时：
 
-- 动 `src/` 前先跑 `python3 .claude/skills/prototype/scripts/check_proto_repro.py {产线}` 拿到基线，改完再跑一次看多出哪些漂移
+- 动 `src/` 前先跑 `python3 .claude/skills/prototype/scripts/check_proto_repro.py {产线}` 拿到基线，改完再跑一次看多出哪些漂移（当前只有 2.5 留有 build 脚本，2.4 无法重建；SVG 用自增 id，同一进程调两次必然比出差异，比对要在两个独立进程里做）
 - 漂移是有意的（该版本也要这个改动）→ 重建那些版本并说明；无意的 → 说明共享面划错了，按 §硬规则 14 收窄装配范围
 - `proto-drift-warn` hook 在 build 后按 src 指纹秒级提示，精确结论以 `check_proto_repro.py` 为准
 

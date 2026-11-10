@@ -2,22 +2,11 @@
 """PRD md 骨架生成器（scaffold）。
 
 读 scene-list 生成 PRD 空骨架（普通 12 章 / baseline / delta 三种 profile），
-自动填第 2.1 场景编号表 + 5/6/7 章场景文件，其余章节留 {{ 待填 }} 占位符。
+自动填第 2.1 场景编号表 + 5/6/7 章场景骨架，其余章节留 {{ 待填 }} 占位符。
 
 行为：
 1. 读 projects/{产品线}/{项目}/scene-list.md 解析场景清单
-2. 按 --mode 生成：
-   single（默认，场景 ≤ 10）：
-     projects/xxx/deliverables/
-       ├── prd-{简称}-v{N}.md       # 12 章全在一个文件
-       └── assets/                  # 空文件夹
-   split（场景 > 10 或显式指定）：
-     projects/xxx/deliverables/
-       ├── prd-{简称}-v{N}.md              # 主骨架
-       ├── prd-{简称}-v{N}-scenes/
-       │   ├── front-A-1-xxx.md
-       │   └── ...
-       └── assets/
+2. 生成单个 md 文件（普通 12 章 → deliverables/prd-{简称}-v{N}.md）+ assets/
 3. 自动填第 2.1 场景编号表 + 第 5/6/7 章（按 view 分桶）
 4. 其他章节填 {{ 待填：... }} 占位符
 
@@ -33,8 +22,7 @@
 - --help 本身无前置
 
 退出码 / 产物：
-- 0 — 生成完成。产物落点：普通 / split → deliverables/ 下主 md（split 另加
-  {主md名}-scenes/ 子文件 + assets/）；baseline → 产品线根 prd-{产品线}-baseline.md
+- 0 — 生成完成。产物落点：普通 → deliverables/prd-{简称}-v{N}.md + assets/；baseline → 产品线根 prd-{产品线}-baseline.md
   （无版本号）；delta → deliverables/{季度}/{版本}/prd-{简称}-v{N}.md
 - 2 — scene-list 预检未通过（SKIP_SCENE_LIST_PRECHECK=1 可绕过，不推荐）
 
@@ -51,7 +39,6 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
 
 # 让本模块既能在 scripts/ 目录下跑，也能被 import
 _SCRIPT_DIR = Path(__file__).resolve().parent
@@ -60,11 +47,7 @@ if str(_SCRIPT_DIR) not in sys.path:
 sys.path.insert(0, str(_SCRIPT_DIR.parents[3] / "scripts"))  # 接根 scripts/lib
 
 from lib.repo import find_root  # noqa: E402
-from sections_md import (
-    SceneInfo,
-    build_full_skeleton,
-    build_scene_file,
-)
+from sections_md import build_full_skeleton
 from sections_md_baseline import (
     build_baseline_skeleton,
     build_delta_skeleton,
@@ -246,20 +229,14 @@ def parse_scene_list(scene_list_path: Path) -> list[dict]:
 
 
 # ── scene-list 合规预检（scaffold 前拦截） ──────────────────────────────
-# 骨架脚本会把场景名扩散到 N 个子场景文件 + 2.1 表 + image alt，
-# 源头不清洁就生成会导致污染扩散，PM 要逐文件返工。
-# 拦截两类硬错：
-#   1. 场景名含半角括号包 CJK（check_cjk_punct.py --strict 会报错）
-#   2. 场景名裸引用其他场景编号（如「与 C-3 同款」/「同 B-2」），check_prd_md.sh
-#      的 bare_scene_codes checker 会报 FAIL
+# 骨架脚本会把场景名扩散到 2.1 表、场景标题和 image alt，源头不清洁就生成会到处返工。
+# 拦截：场景名含半角括号包 CJK（check_cjk_punct.py --strict 会报错）
 
 _HALF_PAREN_CJK_RE = re.compile(r"[一-鿿][(][^)]*[)]|[(][^()]*[一-鿿][^()]*[)]")
-# 裸引用：场景名里出现「X-N」但不是场景自身的编号（自身在单独的 id 列，不会出现在 name 里）
-_OTHER_SCENE_REF_RE = re.compile(r"(?:与|同|见|如|类似|参考|对标|同款)\s*[A-Z]+-\w+")
 
 
 def precheck_scene_list(scenes_raw: list[dict]) -> list[str]:
-    """扫场景名三类硬错，返回问题描述列表（空 = 通过）。"""
+    """扫场景名硬错，返回问题描述列表（空 = 通过）。"""
     issues: list[str] = []
     for s in scenes_raw:
         name = s.get("name", "")
@@ -267,29 +244,9 @@ def precheck_scene_list(scenes_raw: list[dict]) -> list[str]:
         if _HALF_PAREN_CJK_RE.search(name):
             issues.append(
                 f"  ❌ 场景 {sid} 名含半角括号包 CJK：{name!r}\n"
-                f"     → 改全角括号 `（）`（check_cjk_punct.py strict 会报错 + 会扩散到所有子场景文件）"
-            )
-        m = _OTHER_SCENE_REF_RE.search(name)
-        if m:
-            issues.append(
-                f"  ❌ 场景 {sid} 名含裸场景引用：{name!r}\n"
-                f"     → 改白话描述（check_prd_md.sh 的 bare_scene_codes 会报 FAIL）"
+                f"     → 改全角括号 `（）`（check_cjk_punct.py strict 会报错）"
             )
     return issues
-
-
-# ── 模式判定 ─────────────────────────────────────────────────────────────
-
-_SCENE_COUNT_THRESHOLD = 10  # 阈值登记: thresholds.yaml §E prd_checks.scene_split_count
-
-
-def _decide_mode(scenes: list[dict], user_mode: Optional[str]) -> str:
-    if user_mode in ("single", "split"):
-        return user_mode
-    if user_mode is not None:
-        raise SystemExit(f"--mode 只接受 single / split，传入：{user_mode}")
-    # 自动：场景数 > 10 → split
-    return "split" if len(scenes) > _SCENE_COUNT_THRESHOLD else "single"
 
 
 # ── 文件写入 ─────────────────────────────────────────────────────────────
@@ -357,102 +314,12 @@ def _write_delta(
     return prd_path
 
 
-def _scan_stale_scene_files(
-    scenes_dir: Path, expected_filenames: set[str]
-) -> tuple[list[Path], list[Path]]:
-    """扫 scenes_dir 下当前存在的 .md 文件 + 嵌套子目录，返回 (stale_md, stale_subdirs)。
-
-    stale_md = scenes_dir/*.md 里不在 expected_filenames 集合的
-    stale_subdirs = scenes_dir 下不应存在的任何子目录（骨架不生成嵌套）
-    """
-    if not scenes_dir.is_dir():
-        return [], []
-    stale_md: list[Path] = []
-    stale_subdirs: list[Path] = []
-    for p in sorted(scenes_dir.iterdir()):
-        if p.is_file() and p.suffix == ".md":
-            if p.name not in expected_filenames:
-                stale_md.append(p)
-        elif p.is_dir():
-            # 骨架目录下不该出现子目录（如误 mv 嵌套的 prd-base-v4-scenes/）
-            stale_subdirs.append(p)
-    return stale_md, stale_subdirs
-
-
-def _write_split(
-    deliverables: Path,
-    short_name: str,
-    version: str,
-    info: dict,
-    scenes: list[SceneInfo],
-    force: bool,
-    clean_stale: bool = False,
-) -> Path:
-    prd_path = deliverables / f"prd-{short_name}-v{version}.md"
-    scenes_dir = deliverables / f"prd-{short_name}-v{version}-scenes"
-    scenes_dir_name = scenes_dir.name
-
-    # 按 view 分桶分配章节编号（5.x / 6.x / 7.x）
-    chapter_map = {"前台": 5, "后台": 6, "跨端": 7}
-    view_counters = {5: 0, 6: 0, 7: 0}
-    expected_filenames: set[str] = set()
-    scene_labels: list[tuple[SceneInfo, str]] = []
-    for scene in scenes:
-        view_key = "前台" if scene.view_prefix == "front" else (
-            "后台" if scene.view_prefix == "back" else "跨端"
-        )
-        chapter = chapter_map[view_key]
-        view_counters[chapter] += 1
-        label = f"{chapter}.{view_counters[chapter]}"
-        expected_filenames.add(scene.scene_filename())
-        scene_labels.append((scene, label))
-
-    # Stale 扫描（scene-list 删场景 / 改 view 前缀 / 误嵌套会留 stale，不清掉 check_prd_md 会抓）
-    stale_md, stale_subdirs = _scan_stale_scene_files(scenes_dir, expected_filenames)
-    if stale_md or stale_subdirs:
-        print(f"\n⚠ 检测到 {len(stale_md)} 个过时场景文件 + {len(stale_subdirs)} 个误嵌套目录（不在本次生成清单里）：")
-        for p in stale_md:
-            rel = p.relative_to(Path.cwd()) if p.is_relative_to(Path.cwd()) else p
-            print(f"  - {rel}")
-        for p in stale_subdirs:
-            rel = p.relative_to(Path.cwd()) if p.is_relative_to(Path.cwd()) else p
-            print(f"  - {rel}/ （嵌套子目录，骨架不应有）")
-        if clean_stale:
-            print("\n→ --clean-stale 已指定，删除 stale：")
-            for p in stale_md:
-                p.unlink()
-                print(f"  ✗ 删除 {p.name}")
-            for p in stale_subdirs:
-                import shutil
-                shutil.rmtree(p)
-                print(f"  ✗ 删除目录 {p.name}/")
-        else:
-            print("\n  加 --clean-stale 可自动删除；或手动 rm 后重跑")
-            print("  （不删会导致 check_prd_md.sh 抓到消失场景的裸引用 / 编号不一致）\n")
-
-    # 主骨架
-    main_content = build_full_skeleton(info, scenes_dir_name=scenes_dir_name)
-    _safe_write(prd_path, main_content, force)
-
-    # 子场景文件
-    scenes_dir.mkdir(parents=True, exist_ok=True)
-    for scene, label in scene_labels:
-        scene_file = scenes_dir / scene.scene_filename()
-        scene_content = build_scene_file(scene, chapter_label=label)
-        _safe_write(scene_file, scene_content, force)
-
-    (deliverables / "assets").mkdir(parents=True, exist_ok=True)
-    print("  ✓ 创建 assets/ 空目录")
-    return prd_path
-
-
 # ── CLI ──────────────────────────────────────────────────────────────────
 
 _EPILOG = """\
 示例：
     python3 .claude/skills/prd/scripts/gen_prd_skeleton.py -p <活动线>/<活动> -v <版本>
     python3 .claude/skills/prd/scripts/gen_prd_skeleton.py -p <产品线> -v <版本> --profile delta --tier patch
-    python3 .claude/skills/prd/scripts/gen_prd_skeleton.py -p <产品线>/base -v <版本> --mode split --clean-stale
     python3 .claude/skills/prd/scripts/gen_prd_skeleton.py -p xxx -v 1 --force       # 覆盖已存在文件
 """
 
@@ -471,10 +338,6 @@ def main() -> int:
         help="版本号，如 1 / 1.0 / 5.3",
     )
     ap.add_argument(
-        "--mode", choices=["single", "split"], default=None,
-        help="骨架模式：single（单 md）/ split（主 + scenes/）。缺省按场景数自动判断",
-    )
-    ap.add_argument(
         "--profile", choices=["baseline", "delta"], default=None,
         help="文档集模型：baseline（产品线根 living 真相源，按模块树）/ delta（deliverables 单轮迭代，档位见 --tier）。"
              "缺省 = 普通 12 章 PRD。baseline 时 -p 接产品线（如 livestream）",
@@ -487,7 +350,7 @@ def main() -> int:
         "--tier", choices=["patch", "feature", "bundle"], default="feature",
         help="delta 迭代档位（仅 --profile delta 生效）：patch（补丁包，散修复+小调，无新对象/状态机，版本号三段）"
              " / feature（内聚特性，单一能力有新对象/状态机，默认）/ bundle（集合体，N 个松耦合需求跨模块/团队）。"
-             "patch / bundle 自动出 §2.0 本轮需求索引表 + 按单轴分组",
+             "patch 只出需求索引表；feature 出一个模块需求块示范；bundle 两者都出",
     )
     ap.add_argument(
         "--author", default=None,
@@ -505,10 +368,6 @@ def main() -> int:
         "--force", action="store_true",
         help="覆盖已存在文件（慎用，建议先归档）",
     )
-    ap.add_argument(
-        "--clean-stale", action="store_true",
-        help="split 模式下自动删除 scenes 目录里不再期望的 stale 场景 md + 误嵌套子目录（scene-list 删场景 / 改 view 前缀后用）",
-    )
     args = ap.parse_args()
 
     repo_root = find_root()
@@ -522,7 +381,7 @@ def main() -> int:
             f"  将生成纯占位符骨架，第 2.1 表需要 PM 手填"
         )
 
-    # scene-list 合规预检 —— 源头不清洁就生成会污染 N 个子场景文件
+    # scene-list 合规预检 —— 源头不清洁就生成会污染场景骨架
     precheck_issues = precheck_scene_list(scenes_raw)
     if precheck_issues:
         print(f"\n🚫 scene-list.md 预检未通过（{len(precheck_issues)} 处问题）：\n")
@@ -538,8 +397,6 @@ def main() -> int:
         import os as _os
         if not _os.environ.get("SKIP_SCENE_LIST_PRECHECK"):
             return 2
-
-    mode = _decide_mode(scenes_raw, args.mode)
 
     # 作者
     author = args.author
@@ -561,7 +418,6 @@ def main() -> int:
         "author": author,
         "baseline": args.baseline,
         "scenes": scenes_raw,
-        "mode": mode,
         "tier": args.tier,
     }
 
@@ -595,37 +451,24 @@ def main() -> int:
         print(f"  ✓ 写入 {prd_path.relative_to(repo_root)}")
         print()
         print("下一步：")
-        print("  1. 填本轮 N 需求 + WHY，术语 / 模块树引 baseline 不重复")
-        if args.tier in ("patch", "bundle"):
-            print("  2. 先填 §2.0 本轮需求索引：定一条分组轴 → 把需求拆成 ## 组 X · 组名")
-            print("  3. 上线后按承重不变量：先写 baseline changelog 行（已登记）→ 反向合并 → 状态推进「已合并」")
-        else:
-            print("  2. 上线后按承重不变量：先写 baseline changelog 行（已登记）→ 反向合并 → 状态推进「已合并」")
+        print("  1. 先填 §1 概述（问题 / 方案 / 成功标准 + 范围表），定下本轮有几个模块")
+        print("  2. §2 按模块 / 页面写，示范块复制到实际模块数；§3–§5 本轮没有就整章删")
+        print("  3. 上线后按承重不变量：先写 baseline changelog 行（已登记）→ 反向合并 → 状态推进「已合并」")
         return 0
 
-    print(f"→ 模式：{mode}{' （场景超阈值自动拆分）' if mode == 'split' and args.mode is None else ''}")
     print(f"→ 输出目录：{paths['deliverables'].relative_to(repo_root)}")
     print()
 
-    if mode == "single":
-        prd_path = _write_single(
-            paths["deliverables"], short_name, args.version, info, args.force
-        )
-    else:
-        scene_infos = [SceneInfo.from_dict(s) for s in scenes_raw]
-        prd_path = _write_split(
-            paths["deliverables"], short_name, args.version, info, scene_infos,
-            args.force, clean_stale=args.clean_stale,
-        )
+    prd_path = _write_single(
+        paths["deliverables"], short_name, args.version, info, args.force
+    )
 
     print()
     print("下一步：")
     print(f"  1. VS Code 打开 {prd_path.relative_to(repo_root)}")
-    print("  2. 搜 `{{ 待填` 定位所有占位符，按 references/prd-chapter-rules.md 填充")
-    if mode == "split":
-        print(f"  3. 场景细节写在 {prd_path.stem}-scenes/ 各子文件里")
-    print(f"  4. 截图放 {paths['assets'].relative_to(repo_root)}/，md 用相对路径 `./assets/xxx.png`")
-    print(f"  5. 完成后跑 check_prd_md.sh {prd_path.relative_to(repo_root)}")
+    print("  2. 搜 `{{ 待填` 定位所有占位符，按 references/prd-writing-guide.md 填充")
+    print(f"  3. 截图放 {paths['assets'].relative_to(repo_root)}/，md 用相对路径 `./assets/xxx.png`")
+    print(f"  4. 完成后跑 check_prd_md.sh {prd_path.relative_to(repo_root)}")
     return 0
 
 

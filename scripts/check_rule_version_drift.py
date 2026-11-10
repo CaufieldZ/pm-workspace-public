@@ -52,7 +52,6 @@ RULE_SOURCE_PATHS = [
     "scripts/lib/html_builder.py",
     ".claude/skills/prd/scripts/core/md_renderer.py",
     ".claude/skills/prd/scripts/sections_md.py",
-    ".claude/skills/prd/scripts/split_prd.py",
     ".claude/skills/interaction-map/scripts/build_imap_skeleton.py",
     ".claude/skills/prototype/scripts/build_proto_skeleton.py",
     ".claude/skills/architecture-diagrams/scripts/build_arch_skeleton.py",

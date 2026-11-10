@@ -17,7 +17,7 @@ source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/log.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/input.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/guards.sh"
 
-INPUT=$(cat)
+hook_read_input
 hook_parse_read
 
 [ "$HOOK_TOOL_NAME" = "Read" ] || exit 0
@@ -83,9 +83,9 @@ cat >&2 <<EOF
    文件: ${REL_PATH}（${DIM_MSG}）
    原因: 当前网关为内部 Bedrock 网关，超限图直接 Read 会报错
 
-   → 修法 1: python3 scripts/compress_image.py "${REL_PATH}"
+   → 修法 1: .venv/bin/python scripts/compress_image.py "${REL_PATH}"
        压缩后输出同目录 {文件名}-compressed.{后缀}，Read 压缩版
-   → 修法 2: 多张批量: python3 scripts/compress_image.py a.png b.png c.png
+   → 修法 2: 多张批量: .venv/bin/python scripts/compress_image.py a.png b.png c.png
    → 真不适用 → SKIP_READ_IMAGE_CHECK_GATE=1（仅确知网关接受大图时）
 EOF
 log_event gate read-image-check block "${REL_PATH} (${DIM_MSG})"

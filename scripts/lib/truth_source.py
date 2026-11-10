@@ -8,10 +8,10 @@
   - baseline：产品线根 `projects/{line}/prd-{line}-baseline.md`（living 全量真相）
 
 用法：
-    from lib.truth_source import resolve, involved_ends, schedule_rows
+    from lib.truth_source import resolve, involved_ends, current_deltas
     ts = resolve("livestream", projects_dir)  # → TruthSource(kind="baseline", ...)
     ends = involved_ends(ts)          # → {"app", "web-frontend", "web-backend"}
-    rows = schedule_rows(ts)          # → [{"stage","range","progress","status","impact"}, ...]
+    deltas = current_deltas(ts)       # → [{"version","source","status","rows","phase"}, ...]
 """
 from __future__ import annotations
 
@@ -76,35 +76,45 @@ def involved_ends(ts: TruthSource) -> set:
     return _ends_from_keywords(text)
 
 
-# ── 排期解析（gen_weekly_all 用） ────────────────────────
+# ── 排期解析（data-report 周报业务上下文用） ─────────────
 # 统一 5 列表：阶段 | 起止 | 进度 | 状态 | 影响指标。
-# 容忍 H1/H2 + 可选数字前缀：delta `# 5. 排期 / 上线节奏`。
+# 容忍 H1/H2 + 可选数字前缀：delta `# 8. 排期 / 上线节奏`，其下可有 `## 8.1` 子节。
 _SCHEDULE_HEADER_RE = re.compile(
-    r"^#{1,2}\s+(?:\d+\.\s*)?排期\s*/\s*上线节奏\s*$", re.MULTILINE
+    r"^(#{1,2})\s+(?:\d+\.\s*)?排期\s*/\s*上线节奏\s*$", re.MULTILINE
 )
-_NEXT_HEADING_RE = re.compile(r"^#{1,2}\s+", re.MULTILINE)
 _PHASE_NOTE_RE = re.compile(r"^>\s*当前\s*Phase[:：]\s*(.+?)$", re.MULTILINE)
+# delta 头部元信息表：| PRD 版本 | 2.4 | 状态 | 待评审 |
+_HEADER_STATUS_RE = re.compile(
+    r"^\|\s*PRD 版本\s*\|[^|]*\|\s*状态\s*\|\s*([^|]+?)\s*\|", re.MULTILINE
+)
+_QUARTER_DIR_RE = re.compile(r"^\d{4}Q[1-4]$")
 
 
 def _extract_schedule_section(text: str) -> str | None:
+    """取排期章正文，截到下一个同级或更高级标题（子节 `## 8.1` 归入本章）。"""
     m = _SCHEDULE_HEADER_RE.search(text)
     if not m:
         return None
-    start = m.end()
-    nxt = _NEXT_HEADING_RE.search(text, start)
-    return text[start:(nxt.start() if nxt else len(text))]
+    level = len(m.group(1))
+    nxt = re.compile(rf"^#{{1,{level}}}\s+", re.MULTILINE).search(text, m.end())
+    return text[m.end():(nxt.start() if nxt else len(text))]
 
 
 def _parse_schedule_rows(section: str) -> list[dict]:
-    rows = []
+    """解析表头首列为「阶段」的那张 5 列排期表；同章其他表（需求清单 / 验收表）不收。"""
+    rows: list[dict] = []
+    in_table = False
     for line in section.splitlines():
         line = line.strip()
         if not line.startswith("|"):
+            if in_table:
+                break
             continue
         cells = [c.strip() for c in line.split("|")[1:-1]]
-        if len(cells) < 5:
+        if not in_table:
+            in_table = len(cells) >= 5 and cells[0] == "阶段"
             continue
-        if cells[0].startswith("---") or cells[0] in ("阶段",):
+        if cells[0].startswith((":--", "---")):
             continue
         rows.append({
             "stage": cells[0], "range": cells[1], "progress": cells[2],
@@ -113,34 +123,42 @@ def _parse_schedule_rows(section: str) -> list[dict]:
     return rows
 
 
-def _current_quarter_deltas(line_root: Path) -> list[Path]:
-    """产品线 deliverables 下所有 delta（季度/版本两层），按路径倒序（新季度优先）。"""
-    deliv = line_root / "deliverables"
+def _version_key(version: str) -> tuple:
+    """版本号按数值排序：2.10 排在 2.9 之后。"""
+    return tuple(int(x) if x.isdigit() else -1 for x in re.split(r"[.\-]", version))
+
+
+def current_deltas(ts: TruthSource) -> list[dict]:
+    """最新季度目录下每个版本 delta 的排期信息，按版本号升序。
+
+    只认主 delta（`{季度}/{版本}/prd-{line}-{版本}.md`），附属文件（如 lexicon-seed）不算。
+    返回 [{"version", "source", "status"（PRD 头部状态，占位符视为空）, "rows", "phase"}]。
+    """
+    if ts.line_root is None:
+        return []
+    deliv = ts.line_root / "deliverables"
     if not deliv.exists():
         return []
-    return sorted(deliv.glob("*/*/prd-*.md"), reverse=True)
-
-
-def schedule_section(ts: TruthSource) -> tuple[str | None, str]:
-    """返回 (排期段文本, 来源文件名)。baseline 找当季 delta §排期。"""
-    if ts.path is None or ts.line_root is None:
-        return None, ""
-    # baseline：业务节奏在当季 delta
-    for delta in _current_quarter_deltas(ts.line_root):
-        sec = _extract_schedule_section(delta.read_text(encoding="utf-8"))
-        if sec and _parse_schedule_rows(sec):
-            return sec, delta.name
-    return None, ""
-
-
-def schedule_rows(ts: TruthSource) -> list[dict]:
-    sec, _ = schedule_section(ts)
-    return _parse_schedule_rows(sec) if sec else []
-
-
-def phase_note(ts: TruthSource) -> str:
-    sec, _ = schedule_section(ts)
-    if not sec:
-        return ""
-    m = _PHASE_NOTE_RE.search(sec)
-    return m.group(1).strip() if m else ""
+    quarters = sorted(d for d in deliv.iterdir() if d.is_dir() and _QUARTER_DIR_RE.match(d.name))
+    if not quarters:
+        return []
+    out = []
+    for vdir in quarters[-1].iterdir():
+        delta = vdir / f"prd-{ts.line}-{vdir.name}.md"
+        if not delta.is_file():
+            continue
+        text = delta.read_text(encoding="utf-8")
+        sec = _extract_schedule_section(text) or ""
+        st = _HEADER_STATUS_RE.search(text)
+        status = st.group(1).strip() if st else ""
+        if status.startswith("{{"):
+            status = ""
+        ph = _PHASE_NOTE_RE.search(sec)
+        out.append({
+            "version": vdir.name,
+            "source": delta.name,
+            "status": status,
+            "rows": _parse_schedule_rows(sec),
+            "phase": ph.group(1).strip() if ph else "",
+        })
+    return sorted(out, key=lambda e: _version_key(e["version"]))

@@ -13,7 +13,7 @@ source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/log.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/input.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/guards.sh"
 
-INPUT=$(cat)
+hook_read_input
 hook_parse_read
 
 [ "$HOOK_TOOL_NAME" = "Read" ] || exit 0
@@ -57,7 +57,7 @@ if [ "$LINE_COUNT" -gt "$THRESHOLD" ]; then
    → 修法(任一):
      1. Grep -n '关键词' 此文件     # 先定位行号
      2. Read 加 offset=N limit=M    # 按行号范围分页
-     3. baseline / PRD md → python3 .claude/skills/prd/scripts/read_prd_section.py --toc / -s
+     3. baseline / PRD md → .venv/bin/python .claude/skills/prd/scripts/read_prd_section.py --toc / -s
    理由:全量 Read 大文件吃 token 预算 / 触发 compact 丢状态
    Escape: SKIP_READ_BIGFILE_GATE=1(env 设置后重试)
 EOF

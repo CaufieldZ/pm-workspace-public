@@ -1,12 +1,11 @@
-"""PRD 讲人话扫描两件套。
+"""PRD 自检扫描。
 
-- md_scan: scan_human_voice_md / scan_prd_structural_md（md 文本输入，AST 行扫）
-- patterns: 共享正则 / 替换规则 / 词集
+- md_scan: scan_prd_structural_md（md 文本输入，只查会把文档弄坏的硬错）
+- patterns: 维度清单 prd_fail_keys / 共享正则 / 词集
 
-讲人话共性铁律见 .claude/runbooks/human-voice-rules.md，PRD 形态规则见
-references/prd-chapter-rules.md §三 / §三点八。check_prd_md.sh 直接调用 md_scan。
+check_prd_md.sh 与 scripts/hook_check_prd_content.py 直接调用 md_scan。
 """
-from .md_scan import scan_human_voice_md, scan_prd_structural_md
+from .md_scan import scan_prd_structural_md
 from .patterns import (
     PRD_CHANGELOG_BODY_HISTORY,
     PRD_CHANGELOG_ITERATION_WORDS,
@@ -19,7 +18,6 @@ from .patterns import (
 )
 
 __all__ = [
-    'scan_human_voice_md',
     'scan_prd_structural_md',
     'PRD_CHANGELOG_PATTERNS',
     'PRD_CHANGELOG_BODY_HISTORY',

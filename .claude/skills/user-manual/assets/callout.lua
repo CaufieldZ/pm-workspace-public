@@ -4,7 +4,7 @@
 -- 不匹配标记的普通 blockquote 不动，保持 pandoc 默认 Quote 渲染。
 -- help-center md 不经此 filter，callout 仍是标准 blockquote。
 
-local MARKERS = { "【", "⚠️", "⚠" }
+local MARKERS = { "【", "⚠️", "⚠", "Note", "Tip", "Important", "Risk", "Примечание", "Совет", "Важно", "Риск" }
 
 -- 取 blockquote 第一段的纯文本前缀，判断是否 callout
 local function leading_text(blocks)

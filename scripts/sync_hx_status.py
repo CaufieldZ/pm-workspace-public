@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""内部项目系统 → 本地 delta 状态/上线日期同步（内部项目系统是唯一权威源，本地是缓存投影）。
+"""内部项目系统 → 本地 delta 状态/上线日期对账回填（PM 宣告为准，内部项目系统为旁证）。
 
 从 delta 头部「内部项目系统」字段解析 H 号 → 读内部项目系统真实流程状态 + PRD TAG 上线日期
-→ 回写本地两条管线：
-  管线 1（反向合并门）：delta 头部「状态」字段
-  管线 2（周报上线归因）：delta §排期 / 上线节奏表 含「上线/灰度/全量」行的 起止 + 状态
+→ 只回填本地空缺，不推翻 PM 已宣告的值：
+  管线 1（反向合并门）：delta 头部「状态」字段——只沿生命周期前进（待排期 → 开发中 → 已上线）；
+    「已上线 / 已合并」是 PM 宣告 / 本地动作，内部项目系统数据不覆盖，冲突只报 diff
+  管线 2（周报上线归因）：delta §排期 / 上线节奏表 含「上线/灰度/全量」行的 起止 + 状态——
+    仅填占位格（待定 / — / 待启），已有值冲突只报 diff
 
-默认 dry-run（print diff）；--apply 才落盘。本地「已合并」是本地动作（内部项目系统无此态），不被覆盖。
+默认 dry-run（print diff）；--apply 才落盘。
 
 用法：
     python3 scripts/sync_hx_status.py <delta.md>            # dry-run 单个
@@ -44,6 +46,11 @@ sys.path.insert(0, str(_SKILL_SCRIPTS))
 import hx_client as hx  # noqa: E402
 
 CONTROLLED = ("待排期", "开发中", "已上线", "已合并")
+
+# 生命周期序：回填只许前进（rank 大者胜），PM 宣告的「已上线」/ 本地「已合并」不可被内部项目系统数据回退
+_RANK = {"待排期": 0, "开发中": 1, "已上线": 2, "已合并": 3}
+# §排期表里的占位值：仅这些格子允许内部项目系统回填，其余视为 PM 手填、冲突只报 diff
+_PLACEHOLDER = ("", "待定", "—", "-", "待启")
 
 # 内部项目系统 current_process → 本地受控词。已合并是本地动作，内部项目系统无此态，此表不产出「已合并」。
 _LIVE_PROCESSES = {"已完成", "已上线", "已发布"}  # 配合 PRD TAG 判「已上线」
@@ -141,13 +148,19 @@ def earliest_prd_date(tag_rows: list[dict]) -> str | None:
 
 # ── 纯函数：头部状态回写（管线 1）─────────────────────────────────────────
 
-def rewrite_header_status(delta_text: str, new_status: str) -> tuple[str, str | None]:
-    """回写头部「状态」字段。本地「已合并」不被覆盖。返回 (新文本, 改动说明 or None)。"""
+def rewrite_header_status(delta_text: str, new_status: str) -> tuple[str, str | None, str | None]:
+    """对账回写头部「状态」字段：只沿生命周期前进。返回 (新文本, 改动说明, diff 提醒)。
+
+    PM 宣告的「已上线」与本地「已合并」不被内部项目系统数据回退；内部项目系统侧靠后或同级 → 只报 diff 不写。
+    """
     old = current_local_status(delta_text)
-    if old == "已合并":
-        return delta_text, None
     if not new_status or old == new_status:
-        return delta_text, None
+        return delta_text, None, None
+    old_r, new_r = _RANK.get(old), _RANK.get(new_status)
+    if old_r is None:
+        return delta_text, None, f"头部状态「{old}」不在受控词表，保留未改（人工确认）"
+    if new_r <= old_r:
+        return delta_text, None, f"头部状态保留「{old}」（PM 宣告为准）；内部项目系统侧「{new_status}」不回退，仅报 diff"
     # 两种形态都只在头部块内替，切片改完再拼回
     # （bullet 全文替会撞正文里的「状态：」字样，表格全文替会撞 §排期表的「状态」列头）
     hs, he = header_span(delta_text)
@@ -159,9 +172,9 @@ def rewrite_header_status(delta_text: str, new_status: str) -> tuple[str, str | 
             lambda m: f"{m.group(1)}{new_status}{m.group(3)}", delta_text[hs:he], count=1
         )
     if not changed:
-        return delta_text, None
+        return delta_text, None, None
     new_text = delta_text[:hs] + head + delta_text[he:]
-    return new_text, f"头部状态：{old} → {new_status}"
+    return new_text, f"头部状态：{old} → {new_status}", None
 
 
 # ── 纯函数：§排期表回写（管线 2，按列名定位，容忍 4/5 列变体）─────────────
@@ -173,15 +186,17 @@ def _find_col(header_cells: list[str], name: str) -> int | None:
     return None
 
 
-def rewrite_schedule(delta_text: str, launch_date: str) -> tuple[str, list[str]]:
+def rewrite_schedule(delta_text: str, launch_date: str) -> tuple[str, list[str], list[str]]:
     """§排期表里含 上线/灰度/全量 的行：起止列填 launch_date、状态列填「已完成」。
 
-    按表头列名定位「起止」「状态」列（容忍 4 列变体）。返回 (新文本, 改动说明列表)。
+    仅填占位格（待定 / — / 待启 / 空）；PM 手填的日期与状态不覆盖，冲突只报 diff。
+    按表头列名定位「起止」「状态」列（容忍 4 列变体）。返回 (新文本, 改动说明列表, diff 提醒列表)。
     """
     changes: list[str] = []
+    notes: list[str] = []
     m = _SCHEDULE_HEADER.search(delta_text)
     if not m:
-        return delta_text, ["§排期表未找到，跳过管线 2"]
+        return delta_text, ["§排期表未找到，跳过管线 2"], []
     start = m.end()
     nxt = _NEXT_HEADING.search(delta_text, start)
     end = nxt.start() if nxt else len(delta_text)
@@ -209,23 +224,31 @@ def rewrite_schedule(delta_text: str, launch_date: str) -> tuple[str, list[str]]
         changed = False
         if col_range is not None and col_range < len(raw_cells):
             old = raw_cells[col_range].strip()
-            if old != launch_date:
+            if old == launch_date:
+                pass
+            elif old in _PLACEHOLDER:
                 raw_cells[col_range] = f" {launch_date} "
-                changes.append(f"§排期「{cells[0][:20]}」起止：{old} → {launch_date}")
+                changes.append(f"§排期「{cells[0][:20]}」起止：{old or '空'} → {launch_date}")
                 changed = True
+            else:
+                notes.append(f"§排期「{cells[0][:20]}」起止保留「{old}」（PM 手填为准）；内部项目系统 TAG {launch_date} 仅报 diff")
         if col_status is not None and col_status < len(raw_cells):
             olds = raw_cells[col_status].strip()
-            if olds != "已完成":
+            if olds == "已完成":
+                pass
+            elif olds in _PLACEHOLDER:
                 raw_cells[col_status] = " 已完成 "
-                changes.append(f"§排期「{cells[0][:20]}」状态：{olds} → 已完成")
+                changes.append(f"§排期「{cells[0][:20]}」状态：{olds or '空'} → 已完成")
                 changed = True
+            else:
+                notes.append(f"§排期「{cells[0][:20]}」状态保留「{olds}」（PM 手填为准）；内部项目系统侧「已完成」仅报 diff")
         if changed:
             indent = line[:len(line) - len(line.lstrip())]
             trail = "\n" if line.endswith("\n") else ""
             lines[i] = f"{indent}|{'|'.join(raw_cells)}|{trail}"
-    if not changes:
+    if not changes and not notes:
         changes.append("§排期表无 上线/灰度/全量 行命中，管线 2 未改")
-    return delta_text[:start] + "".join(lines) + delta_text[end:], changes
+    return delta_text[:start] + "".join(lines) + delta_text[end:], changes, notes
 
 
 # ── I/O 层：单个 delta 同步（调网络）──────────────────────────────────────
@@ -286,13 +309,16 @@ def sync_one(path: Path, token: str | None, apply: bool) -> dict:
     if not new_status:
         rec["notes"].append(f"内部项目系统流程「{proc}」未在映射表内 → 保留本地状态，未改（请人工确认映射）")
     else:
-        text, ch = rewrite_header_status(text, new_status)
+        text, ch, note = rewrite_header_status(text, new_status)
         if ch:
             rec["changes"].append(ch)
+        if note:
+            rec["notes"].append(note)
 
     if launch_date:
-        text, sched_changes = rewrite_schedule(text, launch_date)
+        text, sched_changes, sched_notes = rewrite_schedule(text, launch_date)
         rec["changes"].extend(sched_changes)
+        rec["notes"].extend(sched_notes)
         rec["launch_date"] = launch_date
     else:
         rec["notes"].append("无 PRD TAG 上线日期 → 管线 2（§排期）未改")

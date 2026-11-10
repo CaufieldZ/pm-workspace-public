@@ -54,7 +54,6 @@ RULE_PATTERNS = [
 HOOK_CN_ALIASES = {
     "cjk-punct": ["中文标点", "全角", "CJK", "标点"],
     "plain-language-gate": ["白话", "AI slop", "禁词", "锚点", "讲人话"],
-    "pm-visual-gate": ["UI 视觉", "视觉超界", "px ", "hex", "PM 走查", "样式"],
     "deliverable-source-gate": ["只改源", "改源不改产物", "脚本生成", "产出物只改源"],
     "context-static-lint": ["静态章", "四不", "四禁"],
     "risky-op": ["高风险", "Playwright", "render 大文件"],

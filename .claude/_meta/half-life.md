@@ -121,7 +121,7 @@
 
 ### D6 · 三闸口质量（PRD 讲人话 / 业务白话 / 字体三件套）
 
-**位置**：`.claude/skills/prd/SKILL.md` §核心规则 · `.claude/skills/prd/references/prd-chapter-rules.md §三` · `.claude/runbooks/human-voice-rules.md`
+**位置**：`.claude/skills/prd/SKILL.md` §硬规则 · `.claude/skills/prd/references/prd-writing-guide.md` · `.claude/runbooks/human-voice-rules.md`
 
 **为什么 durable**：产出物讲人话是 PM 职业的核心素养，不是模型能力问题。
 

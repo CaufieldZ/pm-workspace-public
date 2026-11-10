@@ -73,7 +73,7 @@ PRD_CONTENT = str(REPO / "scripts" / "hook_check_prd_content.py")
 PRD_AB_CASES = [
     # (slot, md 内容, 新增行清单)——干净 / 触发判定路径各一
     ("prd_clean", "# 1. 背景\n\n- 用户点分享出面板\n", "- 用户点分享出面板\n"),
-    ("prd_hit", "# 1. 背景\n\n- 鼠标 hover 时展示浮层\n", "- 鼠标 hover 时展示浮层\n"),
+    ("prd_hit", "# 1. 背景\n\n> 导读一句\n", "> 导读一句\n"),
 ]
 
 

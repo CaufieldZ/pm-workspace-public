@@ -35,6 +35,10 @@
 # 时间戳按秒复用不影响 analytics 粒度，故缓存 —— 每次只剩 jq 一个 fork 干真活。
 set +e
 
+# 项目解释器解析：本文件被所有 hook source，在此挂一次即覆盖全 hook 链（含 lib/ 与子进程）。
+# 参数展开取自身目录，零 fork；resolve 在 CLAUDE_PROJECT_DIR 已设时也不 fork。
+source "${BASH_SOURCE[0]%/*}/pyenv.sh"
+
 _LOG_DIR_CACHE=""
 _LOG_TS=""
 _LOG_TS_SEC=""

@@ -12,7 +12,7 @@ set +e
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/log.sh"
 source "${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/hooks/lib/input.sh"
 
-INPUT=$(cat)
+hook_read_input
 
 # 绝大多数 Read 不是 guide 文件：raw input 不含任一字样 → case 早退（零 fork），
 # 省掉 hook_parse_all 的 jq + 下方 sed。含字样的才走精确解析。

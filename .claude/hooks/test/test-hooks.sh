@@ -11,6 +11,10 @@ set +e
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 cd "$ROOT" || exit 1
 
+# 项目解释器解析（.venv 优先）—— 与本仓 hook 链同一 SSOT。本套件调真 checker，
+# 缺 bs4 / pytest 的解释器会让 ui-annotation 等断言假红（实际是解释器选错）。
+source "${BASH_SOURCE[0]%/*}/../lib/pyenv.sh"
+
 # 回归跑触发的是真 hook，log_event 会写进真 usage.jsonl 污染 dashboard 健康统计
 # （fixtures bad.py / prd-foo / prd-ll-baseline 被当真实流量）→ 子进程继承此标志后短路埋点
 export CLAUDE_HOOK_TEST=1
@@ -90,8 +94,8 @@ T_HIT_PRD="$D/t_prd.jsonl"
 T_HIT_SL="$D/t_sl.jsonl"
 T_HIT_HOOK="$D/t_hook.jsonl"
 T_MISS="$D/t_miss.jsonl"
-# prd / scene-list 产出物需读 SKILL.md + info-ownership.md（GUIDE2）；prd 另需章节规则速查（GUIDE3）+ 场景模板速查（GUIDE4）
-make_hit "$T_HIT_PRD" "/p/.claude/skills/prd/SKILL.md" "/p/.claude/runbooks/info-ownership.md" "/p/.claude/skills/prd/references/prd-chapter-rules-quickref.md" "/p/.claude/skills/prd/references/prd-scene-template-quickref.md"
+# prd / scene-list 产出物需读 SKILL.md + info-ownership.md（GUIDE2）；prd 另需写作指南（GUIDE3）
+make_hit "$T_HIT_PRD" "/p/.claude/skills/prd/SKILL.md" "/p/.claude/runbooks/info-ownership.md" "/p/.claude/skills/prd/references/prd-writing-guide.md"
 make_hit "$T_HIT_SL"  "/p/.claude/skills/scene-list/SKILL.md" "/p/.claude/runbooks/info-ownership.md"
 make_hit "$T_HIT_HOOK" "/p/.claude/hooks/HOOK_WRITING-quickref.md"
 echo '{}' > "$T_MISS"
@@ -105,8 +109,6 @@ run_pre_gate "/p/projects/x/scene-list.md"           "$T_HIT_SL"  >/dev/null
 assert_exit "old · scene-list.md     HIT " 0 $?
 run_pre_gate "/p/projects/x/scene-list.md"           "$T_MISS"    >/dev/null
 assert_exit "old · scene-list.md     MISS" 2 $?
-run_pre_gate "/p/projects/x/deliverables/prd-foo-scenes/back-G-1-x.md" "$T_HIT_PRD" >/dev/null
-assert_exit "old · prd-*-scenes/.md  HIT " 0 $?
 
 # 新 required-read-gate 规则
 run_pre_gate "/p/.claude/skills/prd/scripts/foo.py" "$T_HIT_PRD" >/dev/null
@@ -453,34 +455,20 @@ assert_exit "img · SKIP_READ_IMAGE_CHECK → bypass" 0 $?
 
 # ═══════════════════════════════════════════════════════════════
 echo ""
-echo "═══ pc_pm_visual（PRD 视觉越界 · 覆盖 S1 argv 改造 + L14 clean 路径）═══"
-
-mkdir -p "$D/pvproj/deliverables"
-# 视觉越界：颜色 + UI 元素（红色描边）→ pm-visual-gate block
-printf '# t\n\n按钮用红色描边。\n' > "$D/pvproj/deliverables/prd-pvtest.md"
-PV_OUT=$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/pvproj/deliverables/prd-pvtest.md"}}' "$D" | CLAUDE_HOOK_TEST=1 CLAUDE_PROJECT_DIR="$ROOT" bash .claude/hooks/post-writeedit-dispatch.sh 2>&1)
-assert_grep "pm-visual · 颜色+UI 越界 → block" "pm-visual-gate" "$PV_OUT"
-# clean：无视觉越界 → 不触发 pm-visual-gate
-printf '# t\n\n用户完成签到后获得奖励。\n' > "$D/pvproj/deliverables/prd-pvclean.md"
-PVC_OUT=$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/pvproj/deliverables/prd-pvclean.md"}}' "$D" | CLAUDE_HOOK_TEST=1 CLAUDE_PROJECT_DIR="$ROOT" bash .claude/hooks/post-writeedit-dispatch.sh 2>&1)
-assert_no_grep "pm-visual · clean 不误报" "pm-visual-gate" "$PVC_OUT"
-
-# ═══════════════════════════════════════════════════════════════
-echo ""
 echo "═══ S2.6 · bullet-density-gate（md 产物单行挤话 block）═══"
 
 mkdir -p "$D/projects/bdproj/deliverables" "$D/deliverables/reports/weekly-0624"
-# 挤话：正文段落 4 句 → block（projects 内 PRD 路径）
-printf '# t\n\n补丁包。表单缺校验。推流加白锁死。假重开。两处 bug。\n' > "$D/projects/bdproj/deliverables/prd-bdtest.md"
-BD_OUT=$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/projects/bdproj/deliverables/prd-bdtest.md"}}' "$D" | CLAUDE_HOOK_TEST=1 CLAUDE_PROJECT_DIR="$ROOT" bash .claude/hooks/post-writeedit-dispatch.sh 2>&1)
+# 挤话：正文段落 4 句 → block（projects 内非 PRD md）
+printf '# t\n\n补丁包。表单缺校验。推流加白锁死。假重开。两处 bug。\n' > "$D/projects/bdproj/deliverables/report-bdtest.md"
+BD_OUT=$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/projects/bdproj/deliverables/report-bdtest.md"}}' "$D" | CLAUDE_HOOK_TEST=1 CLAUDE_PROJECT_DIR="$ROOT" bash .claude/hooks/post-writeedit-dispatch.sh 2>&1)
 assert_grep "bullet-density · 段落 4 句 → block" "bullet-density-gate" "$BD_OUT"
 # 决策章无豁免：3 句焊一行照样 block（决策流水也配写好看，拆标签 bullet 更清晰）
-printf '# t\n\n# 6. 决策记录（WHY）\n取舍：选 A。因为 X。所以 Y。\n' > "$D/projects/bdproj/deliverables/prd-bddec.md"
-BDD_OUT=$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/projects/bdproj/deliverables/prd-bddec.md"}}' "$D" | CLAUDE_HOOK_TEST=1 CLAUDE_PROJECT_DIR="$ROOT" bash .claude/hooks/post-writeedit-dispatch.sh 2>&1)
+printf '# t\n\n# 6. 决策记录（WHY）\n取舍：选 A。因为 X。所以 Y。\n' > "$D/projects/bdproj/deliverables/report-bddec.md"
+BDD_OUT=$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/projects/bdproj/deliverables/report-bddec.md"}}' "$D" | CLAUDE_HOOK_TEST=1 CLAUDE_PROJECT_DIR="$ROOT" bash .claude/hooks/post-writeedit-dispatch.sh 2>&1)
 assert_grep "bullet-density · 决策章 3 句照样 block（无章节豁免）" "bullet-density-gate" "$BDD_OUT"
 # 决策章 2 句（论点。论据。）不到阈值 → 干净：证明拦的是句数不是章
-printf '# t\n\n# 6. 决策记录（WHY）\n取舍：选 A。因为成本更低。\n' > "$D/projects/bdproj/deliverables/prd-bdclean.md"
-BDC_OUT=$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/projects/bdproj/deliverables/prd-bdclean.md"}}' "$D" | CLAUDE_HOOK_TEST=1 CLAUDE_PROJECT_DIR="$ROOT" bash .claude/hooks/post-writeedit-dispatch.sh 2>&1)
+printf '# t\n\n# 6. 决策记录（WHY）\n取舍：选 A。因为成本更低。\n' > "$D/projects/bdproj/deliverables/report-bdclean.md"
+BDC_OUT=$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/projects/bdproj/deliverables/report-bdclean.md"}}' "$D" | CLAUDE_HOOK_TEST=1 CLAUDE_PROJECT_DIR="$ROOT" bash .claude/hooks/post-writeedit-dispatch.sh 2>&1)
 assert_no_grep "bullet-density · 决策章 2 句不误报（≤2 句号天然过）" "bullet-density-gate" "$BDC_OUT"
 # datareport 根 deliverables/reports/ 路径也覆盖 → block
 printf '# 周报\n\n归因落环境。共现率假象。真实转化低。\n' > "$D/deliverables/reports/weekly-0624/report.md"
@@ -491,21 +479,26 @@ printf '# t\n\n审计 A。审计 B。审计 C。\n' > "$D/deliverables/audit-fak
 BDA_OUT=$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/deliverables/audit-fake.md"}}' "$D" | CLAUDE_HOOK_TEST=1 CLAUDE_PROJECT_DIR="$ROOT" bash .claude/hooks/post-writeedit-dispatch.sh 2>&1)
 assert_no_grep "bullet-density · 根 deliverables/audit 内部文档不触发" "bullet-density-gate" "$BDA_OUT"
 # 分号 ≥2 → block（分号串该拆嵌套 bullet；句号不足 3 也拦）
-printf '# t\n\n- 显示逻辑：默认自动通过；运营可驳回；通过前校验冲突\n' > "$D/projects/bdproj/deliverables/prd-bdsemi.md"
-BDS_OUT=$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/projects/bdproj/deliverables/prd-bdsemi.md"}}' "$D" | CLAUDE_HOOK_TEST=1 CLAUDE_PROJECT_DIR="$ROOT" bash .claude/hooks/post-writeedit-dispatch.sh 2>&1)
+printf '# t\n\n- 显示逻辑：默认自动通过；运营可驳回；通过前校验冲突\n' > "$D/projects/bdproj/deliverables/report-bdsemi.md"
+BDS_OUT=$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/projects/bdproj/deliverables/report-bdsemi.md"}}' "$D" | CLAUDE_HOOK_TEST=1 CLAUDE_PROJECT_DIR="$ROOT" bash .claude/hooks/post-writeedit-dispatch.sh 2>&1)
 assert_grep "bullet-density · 分号 ≥2 → block" "bullet-density-gate" "$BDS_OUT"
 # 表格行内分号（md_to_confluence 切 bullet 约定分隔符）→ 豁免不触发
-printf '# t\n\n| 规则 | A；B；C；D |\n' > "$D/projects/bdproj/deliverables/prd-bdtable.md"
-BDT_OUT=$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/projects/bdproj/deliverables/prd-bdtable.md"}}' "$D" | CLAUDE_HOOK_TEST=1 CLAUDE_PROJECT_DIR="$ROOT" bash .claude/hooks/post-writeedit-dispatch.sh 2>&1)
+printf '# t\n\n| 规则 | A；B；C；D |\n' > "$D/projects/bdproj/deliverables/report-bdtable.md"
+BDT_OUT=$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/projects/bdproj/deliverables/report-bdtable.md"}}' "$D" | CLAUDE_HOOK_TEST=1 CLAUDE_PROJECT_DIR="$ROOT" bash .claude/hooks/post-writeedit-dispatch.sh 2>&1)
 assert_no_grep "bullet-density · 表格行分号豁免" "bullet-density-gate" "$BDT_OUT"
 # 三句完整的短句（句长够）→ 放行：段落不再数句号，罚的是碎句与长句
-printf '# t\n\n目前这条漏斗没有看板。运营每天只能手工拉数。我们想做一张看板。\n' > "$D/projects/bdproj/deliverables/prd-bdshort.md"
-BDSH_OUT=$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/projects/bdproj/deliverables/prd-bdshort.md"}}' "$D" | CLAUDE_HOOK_TEST=1 CLAUDE_PROJECT_DIR="$ROOT" bash .claude/hooks/post-writeedit-dispatch.sh 2>&1)
+printf '# t\n\n目前这条漏斗没有看板。运营每天只能手工拉数。我们想做一张看板。\n' > "$D/projects/bdproj/deliverables/report-bdshort.md"
+BDSH_OUT=$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/projects/bdproj/deliverables/report-bdshort.md"}}' "$D" | CLAUDE_HOOK_TEST=1 CLAUDE_PROJECT_DIR="$ROOT" bash .claude/hooks/post-writeedit-dispatch.sh 2>&1)
 assert_no_grep "bullet-density · 三句完整短句放行" "bullet-density-gate" "$BDSH_OUT"
 # 单句 ≥100 字（逗号焊成的长枚举）→ block
-printf '# t\n\n平仓盈利顶飘的触发要覆盖主动平仓、止盈止损触发、部分平仓三种情况，并且每一笔都要显示本次已实现盈亏与收益率两个数字，以及对应的晒单入口按钮位置说明，和不再显示的勾选逻辑说明，还要区分合约与现货两条链路\n' > "$D/projects/bdproj/deliverables/prd-bdlong.md"
-BDL_OUT=$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/projects/bdproj/deliverables/prd-bdlong.md"}}' "$D" | CLAUDE_HOOK_TEST=1 CLAUDE_PROJECT_DIR="$ROOT" bash .claude/hooks/post-writeedit-dispatch.sh 2>&1)
+printf '# t\n\n平仓盈利顶飘的触发要覆盖主动平仓、止盈止损触发、部分平仓三种情况，并且每一笔都要显示本次已实现盈亏与收益率两个数字，以及对应的晒单入口按钮位置说明，和不再显示的勾选逻辑说明，还要区分合约与现货两条链路\n' > "$D/projects/bdproj/deliverables/report-bdlong.md"
+BDL_OUT=$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/projects/bdproj/deliverables/report-bdlong.md"}}' "$D" | CLAUDE_HOOK_TEST=1 CLAUDE_PROJECT_DIR="$ROOT" bash .claude/hooks/post-writeedit-dispatch.sh 2>&1)
 assert_grep "bullet-density · 单句 ≥100 字 → block" "bullet-density-gate" "$BDL_OUT"
+
+# PRD 不走挤话门（写法交给作者，PRD 只查硬错）→ 同样的碎句不触发
+printf '# t\n\n补丁包。表单缺校验。推流加白锁死。假重开。两处 bug。\n' > "$D/projects/bdproj/deliverables/prd-bdskip.md"
+BDP_OUT=$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/projects/bdproj/deliverables/prd-bdskip.md"}}' "$D" | CLAUDE_HOOK_TEST=1 CLAUDE_PROJECT_DIR="$ROOT" bash .claude/hooks/post-writeedit-dispatch.sh 2>&1)
+assert_no_grep "bullet-density · PRD 路径不触发" "bullet-density-gate" "$BDP_OUT"
 
 echo ""
 echo "═══ S2.6b · md-blockquote-gate（项目 md 新增引用墙 block，合批路径）═══"
@@ -534,8 +527,8 @@ _pc_run() {  # $1 = 沙箱内 PRD 相对路径
     | TMPDIR="$(mktemp -d)" CLAUDE_HOOK_TEST=1 CLAUDE_PROJECT_DIR="$PC_SB" \
       bash "$ROOT/.claude/hooks/post-writeedit-dispatch.sh" 2>&1)
 }
-# 新增行含行内版本标签 → block
-printf '# t\n\n- 打赏入口（v2.1 新增）\n' > "$PC_SB/projects/pcproj/deliverables/prd-pchit.md"
+# 新增行含引用块 → block
+printf '# t\n\n> 打赏入口导读\n' > "$PC_SB/projects/pcproj/deliverables/prd-pchit.md"
 PCH_OUT=$(_pc_run projects/pcproj/deliverables/prd-pchit.md)
 assert_grep "prd-content · 新增违规行 → block" "prd-content-gate" "$PCH_OUT"
 # 干净的新 PRD → 不误报
@@ -543,14 +536,14 @@ printf '# t\n\n- 打赏入口\n- 用户完成签到后获得奖励\n' > "$PC_SB/
 PCC_OUT=$(_pc_run projects/pcproj/deliverables/prd-pcclean.md)
 assert_no_grep "prd-content · 干净新 PRD 不误报" "prd-content-gate" "$PCC_OUT"
 # 已提交的旧账 + 一行干净新增 → 只报新增行，旧账不卡
-printf '# t\n\n- 打赏入口（v2.1 新增）\n' > "$PC_SB/projects/pcproj/deliverables/prd-pcold.md"
+printf '# t\n\n> 打赏入口导读\n' > "$PC_SB/projects/pcproj/deliverables/prd-pcold.md"
 git -C "$PC_SB" add -A >/dev/null 2>&1
 git -C "$PC_SB" -c user.email=t@t -c user.name=t commit -q -m init >/dev/null 2>&1
-printf '# t\n\n- 打赏入口（v2.1 新增）\n- 用户完成签到后获得奖励\n' > "$PC_SB/projects/pcproj/deliverables/prd-pcold.md"
+printf '# t\n\n> 打赏入口导读\n- 用户完成签到后获得奖励\n' > "$PC_SB/projects/pcproj/deliverables/prd-pcold.md"
 PCO_OUT=$(_pc_run projects/pcproj/deliverables/prd-pcold.md)
 assert_no_grep "prd-content · 旧账加干净新增行不拦" "prd-content-gate" "$PCO_OUT"
 # 同一沙箱里再加一行违规 → 照拦（证明门在该仓真跑，上一条不是被 skip 掉的假绿）
-printf '# t\n\n- 打赏入口（v2.1 新增）\n- 用户完成签到后获得奖励\n- 展示 hover 提示\n' > "$PC_SB/projects/pcproj/deliverables/prd-pcold.md"
+printf '# t\n\n> 打赏入口导读\n- 用户完成签到后获得奖励\n> 再加一段导读\n' > "$PC_SB/projects/pcproj/deliverables/prd-pcold.md"
 PCO2_OUT=$(_pc_run projects/pcproj/deliverables/prd-pcold.md)
 assert_grep "prd-content · 旧账仓内新增违规行照拦" "prd-content-gate" "$PCO2_OUT"
 

@@ -2,7 +2,7 @@
 # 共享：PostToolUse Write|Edit 全部 checker 子函数（pc_*，调用序列见 post-writeedit-dispatch.sh）
 #
 # 被 post-writeedit-dispatch.sh source；前提：已 source log.sh + input.sh + guards.sh + runner.sh + dedup.sh
-#                                          且已 INPUT=$(cat); hook_parse_all; require_write_or_edit
+#                                          且已 hook_read_input; hook_parse_all; require_write_or_edit
 #
 # 约定：
 # - 每个 pc_* 子函数无参数，读全局 $HOOK_FILE_PATH / $INPUT / $PROJECT_DIR
@@ -76,7 +76,7 @@ pc_cjk_punct() {
     RC=$?
     if [ "$RC" -ne 0 ]; then
       head -20 "$TMPOUT" >&2
-      echo "💡 自动修复：python3 scripts/check_cjk_punct.py --fix \"$FILE_PATH\"（--dry-run 预览不写盘）" >&2
+      echo "💡 自动修复：.venv/bin/python scripts/check_cjk_punct.py --fix \"$FILE_PATH\"（--dry-run 预览不写盘）" >&2
       log_event hook cjk-punct block "$FILE_PATH"
       rm -f "$TMPOUT"
       _PC_BLOCKED=1
@@ -90,7 +90,7 @@ pc_cjk_punct() {
     RC=$?
     [ -n "$STDERR" ] && echo "$STDERR" >&2
     if [ "$RC" -ne 0 ]; then
-      echo "💡 自动修复：python3 scripts/check_cjk_punct.py --fix \"$FILE_PATH\"（--dry-run 预览不写盘）" >&2
+      echo "💡 自动修复：.venv/bin/python scripts/check_cjk_punct.py --fix \"$FILE_PATH\"（--dry-run 预览不写盘）" >&2
       note_add "工区 cjk-punct 检查：${FILE_PATH#$PROJECT_DIR/} 含 CJK 旁半角标点。该文件不在产物树内故只提示不阻断；修：python3 scripts/check_cjk_punct.py --fix \"$FILE_PATH\"。"
       log_event hook cjk-punct warn "$FILE_PATH"
     else
@@ -130,13 +130,12 @@ pc_plain_language() {
     _PC_PL_LEARNED_QUEUED=1
   fi
 
-  echo "$FILE_PATH" | grep -qE '/deliverables/' || return 0
+  case "$FILE_PATH" in */deliverables/*) ;; *) return 0 ;; esac
 
   is_plain_language_exempt "$FILE_PATH" && return 0
   # PRD 由 prd-content-gate 按 PRD 自己的 profile 判（含量 / 锚点口径与本文档不同）
   case "$FILE_PATH" in
-    */deliverables/prd-*.md|*/deliverables/prd-*-scenes/*.md) return 0 ;;
-    */deliverables/*/prd-*.md|*/deliverables/*/prd-*-scenes/*.md) return 0 ;;
+    */deliverables/prd-*.md|*/deliverables/*/prd-*.md) return 0 ;;
   esac
 
   check_skip_env "plain-language-gate" "SKIP_PLAIN_LANGUAGE_GATE" "${FILE_PATH:0:120}" && return 0
@@ -281,36 +280,13 @@ pc_scene_list() {
   return 0
 }
 
-# ── 4. audit-fast（含 scenes/ lite 分支）────────────────────────────
+# ── 4. audit-fast ────────────────────────────
 pc_audit_fast() {
   local FILE_PATH="$HOOK_FILE_PATH"
   [ -z "$FILE_PATH" ] && return 0
   is_deliverable_path "$FILE_PATH" || return 0
   is_excluded_path "$FILE_PATH" && return 0
   check_skip_env "audit-fast" "SKIP_AUDIT_FAST" "${FILE_PATH##*/}" && return 0
-
-  case "$FILE_PATH" in
-    *-scenes/*)
-      # CJK 标点已由 pc_cjk_punct（dispatcher 内先跑、strict block）统一负责，此处只查占位符
-      local LITE_FAIL=""
-      if grep -qE 'TODO|FIXME|\[待补充\]|\[补充\]|XXX' "$FILE_PATH" 2>/dev/null; then
-        LITE_FAIL="${LITE_FAIL}占位符（TODO / FIXME / [待补充] / [补充] / XXX）"$'\n'
-      fi
-      if [ -n "$LITE_FAIL" ]; then
-        echo "" >&2
-        echo "🚫 [audit-fast-lite] split scenes/ 子文件轻量自检未通过" >&2
-        echo "   文件: $FILE_PATH" >&2
-        printf '%s' "$LITE_FAIL" >&2
-        echo "   → 修后重试；编号闭环 / 命名前缀闭环仍由主 prd- 文件统一负责" >&2
-        echo "   → escape: export SKIP_AUDIT_FAST=1（不推荐）" >&2
-        log_event hook audit-fast-lite block "$FILE_PATH"
-        _PC_BLOCKED=1
-        return 0
-      fi
-      log_event hook audit-fast-lite clean "$FILE_PATH"
-      return 0
-      ;;
-  esac
 
   local SCRIPT="$PROJECT_DIR/scripts/audit-fast.sh"
   [ ! -f "$SCRIPT" ] && return 0
@@ -335,69 +311,6 @@ pc_audit_fast() {
   fi
   rm -f "$TMPOUT"
   log_event hook audit-fast clean "$FILE_PATH"
-  return 0
-}
-
-# ── 5. pm-visual-overreach（PRD md 视觉越界）─────────
-pc_pm_visual() {
-  local FILE_PATH="$HOOK_FILE_PATH"
-  [ -z "$FILE_PATH" ] || [ ! -f "$FILE_PATH" ] && return 0
-  case "$FILE_PATH" in
-    */deliverables/prd-*.md|*/deliverables/prd-*-scenes/*.md) ;;
-    */deliverables/*/prd-*.md|*/deliverables/*/prd-*-scenes/*.md) ;;
-    *) return 0 ;;
-  esac
-  check_skip_env "pm-visual-gate" "SKIP_PM_VISUAL_GATE" "${FILE_PATH##*/}" && return 0
-
-  local PATTERNS_DIR="$PROJECT_DIR/.claude/skills/prd/scripts/humanize"
-  local HITS
-  HITS=$(python3 -c "
-import sys
-file_path, patterns_dir = sys.argv[1], sys.argv[2]
-sys.path.insert(0, patterns_dir)
-from patterns import PM_EMOJI_RE, PM_VISUAL_OVERREACH_RE
-
-visual = []
-with open(file_path, encoding='utf-8') as f:
-    for i, line in enumerate(f, start=1):
-        for m in PM_VISUAL_OVERREACH_RE.finditer(line):
-            visual.append(f'L{i}: {m.group()}  ← {line.strip()[:80]}')
-        for m in PM_EMOJI_RE.finditer(line):
-            visual.append(f'L{i}: 图标 emoji「{m.group()}」（写功能名即可，图标由设计定）  ← {line.strip()[:80]}')
-
-if visual:
-    print('VISUAL')
-    for h in visual: print(h)
-" "$FILE_PATH" "$PATTERNS_DIR" 2>&1)
-
-  local VISUAL_BLOCK FAIL=0
-  VISUAL_BLOCK=$(echo "$HITS" | awk '/^VISUAL$/{flag=1; next} flag')
-
-  if [ -n "$VISUAL_BLOCK" ]; then
-    FAIL=1
-    echo "🚫 [pm-visual-gate] PRD 视觉细节越界（PM 写承载形态 + 业务规则，不定颜色 / 尺寸 / 描边 / 圆角 / ✕ / 图标 emoji 等视觉规格）：" >&2
-    echo "   文件: ${FILE_PATH#$PROJECT_DIR/}" >&2
-    echo "$VISUAL_BLOCK" | head -10 | sed 's/^/   /' >&2
-    echo "   修法：写「按视觉规范」「视觉规范由设计定」「按金融语义色规范（涨绿跌红）」等业务语义" >&2
-    echo "" >&2
-  fi
-
-  # checker 异常（HITS 含 traceback → awk 不匹配 VISUAL → 原逻辑 FAIL=0 静默放行）不放过
-  if [ "$FAIL" -eq 0 ] && echo "$HITS" | grep -qE 'Traceback|Error|Exception|ImportError'; then
-    FAIL=1
-    echo "🚫 [pm-visual-gate] checker 异常（patterns 加载失败），无法判定视觉越界：" >&2
-    echo "$HITS" | head -10 | sed 's/^/   /' >&2
-    echo "   修法：检查 .claude/skills/prd/scripts/humanize/patterns.py 是否可 import" >&2
-    echo "" >&2
-  fi
-
-  if [ "$FAIL" -eq 1 ]; then
-    echo "   临时绕过：SKIP_PM_VISUAL_GATE=1 ..." >&2
-    log_event hook pm-visual-gate block "${FILE_PATH##*/}"
-    _PC_BLOCKED=1
-    return 0
-  fi
-  log_event hook pm-visual-gate clean "${FILE_PATH##*/}"
   return 0
 }
 
@@ -434,7 +347,7 @@ pc_md_blockquote_wall() {
   esac
   is_excluded_path "$FILE_PATH" && return 0
   case "$FILE_PATH" in
-    */prd-*.md|*/prd-*-scenes/*.md) return 0 ;;
+    */prd-*.md) return 0 ;;
     */inputs/*) return 0 ;;
   esac
   check_skip_env "md-blockquote-gate" "SKIP_MD_BLOCKQUOTE_GATE" "${FILE_PATH##*/}" && return 0
@@ -480,7 +393,7 @@ _pcr_md_blockquote_wall() {
   return 0
 }
 
-# ── 5.5 bullet-density（PRD 单行挤话：句号 ≥3 或 分号 ≥2）─────────
+# ── 5.5 bullet-density（非 PRD md 产物单行挤话：句号 ≥3 或 分号 ≥2）─────────
 # diff-based：只拦本次新增/修改行（新增行清单与 blockquote 共享 _pc_git_added_lines）。
 # 存量 living 文档不卡（分号串渐进消化），章节 / 表格豁免靠 checker 全文状态机。
 pc_bullet_density() {
@@ -498,6 +411,10 @@ pc_bullet_density() {
     */inputs/*|*/audits/*) return 0 ;;
   esac
   is_plain_language_exempt "$FILE_PATH" && return 0
+  # PRD 不走挤话门：写法交给作者，PRD 只由 prd-content-gate 查硬错
+  case "${FILE_PATH##*/}" in
+    prd-*.md) return 0 ;;
+  esac
   check_skip_env "bullet-density-gate" "SKIP_BULLET_DENSITY_GATE" "${FILE_PATH##*/}" && return 0
 
   local CHECKER="$PROJECT_DIR/scripts/check_bullet_density.py"
@@ -515,7 +432,7 @@ _pcr_bullet_density() {
   local RC="${_PC_RC_bullet:-1}" TMPOUT="$_PC_ALL_bullet"
   if [ "$RC" -ne 0 ]; then
     echo "" >&2
-    echo "🚫 [bullet-density-gate] PRD 本次改动挤话（bullet 句号 ≥3 / 分号 ≥2 / 单句 ≥100 字 / 段落碎句）" >&2
+    echo "🚫 [bullet-density-gate] 本次改动挤话（bullet 句号 ≥3 / 分号 ≥2 / 单句 ≥100 字 / 段落碎句）" >&2
     echo "   文件: ${FILE_PATH#$PROJECT_DIR/}" >&2
     cat "$TMPOUT" >&2
     echo "" >&2
@@ -537,17 +454,14 @@ _pcr_bullet_density() {
   return 0
 }
 
-# ── 5.6 prd-content（PRD 写入时新增行的讲人话 / 结构硬错）─────────
-# diff-based：只拦本次新增行。PRD 不在 check_prd_md 的写入路径上，plain-language 与
-# md-blockquote 又都以「PRD 走 check_prd_md」为由跳过 PRD —— 写入路径此前整个没门。
-# 维度清单与 check_prd_md 同源（humanize/patterns.py prd_fail_keys），去掉别的门已管的
-# 圈数字 / 水平线（cjk-punct）与视觉越界（pm-visual-gate）。
+# ── 5.6 prd-content（PRD 写入时新增行的硬错）─────────
+# diff-based：只拦本次新增行。维度清单与 check_prd_md 同源（humanize/patterns.py
+# prd_fail_keys）：Confluence 渲染不了的写法 / 埋点表；水平线归 cjk-punct。
 pc_prd_content() {
   local FILE_PATH="$HOOK_FILE_PATH"
   [ -z "$FILE_PATH" ] || [ ! -f "$FILE_PATH" ] && return 0
   case "$FILE_PATH" in
-    */deliverables/prd-*.md|*/deliverables/prd-*-scenes/*.md) ;;
-    */deliverables/*/prd-*.md|*/deliverables/*/prd-*-scenes/*.md) ;;
+    */deliverables/prd-*.md|*/deliverables/*/prd-*.md) ;;
     *) return 0 ;;
   esac
   is_excluded_path "$FILE_PATH" && return 0
@@ -573,15 +487,12 @@ _pcr_prd_content() {
   if echo "$HITS" | grep -q '^HITS$'; then
     FAIL=1
     echo "" >&2
-    echo "🚫 [prd-content-gate] PRD 本次改动有讲人话 / 结构硬错（流水账 / 技术字段 / 越界禁词 / 场景正文串句等）：" >&2
+    echo "🚫 [prd-content-gate] PRD 本次改动有硬错（Confluence 渲染不了 / 埋点表）：" >&2
     echo "   文件: ${FILE_PATH#$PROJECT_DIR/}" >&2
     echo "$HITS" | grep -v '^HITS$' | sed 's/^/   /' >&2
     echo "" >&2
-    echo "   → 修法：按方括号里的维度名逐条改，示例：" >&2
-    echo "     改前: 打赏入口（v2.1 新增）  →  改后: 打赏入口（版本变更集中写 §2 本轮需求）" >&2
-    echo "     改前: hover 时显示           →  改后: 悬停时显示" >&2
-    echo "     改前: - **现状**：A。B。C。   →  改后: 一 bullet 一原子事实，多阶段用 → 串成一行" >&2
-    echo "   → 真不适用 → SKIP_PRD_CONTENT_GATE=1（仅 false positive；场景正文叙事确需保留时先用 SKIP_SCENE_PROSE_GATE=1）" >&2
+    echo "   → 修法：按方括号里的维度名改（引用块改普通段落 / mermaid 改表格或出图 / 埋点平台只填 APP、Web）" >&2
+    echo "   → 真不适用 → SKIP_PRD_CONTENT_GATE=1（仅 false positive）" >&2
     echo "" >&2
   elif echo "$HITS" | grep -qE 'Traceback|Error|Exception'; then
     FAIL=1
@@ -822,17 +733,17 @@ pc_script_syntax() {
       if python3 -m ruff --version >/dev/null 2>&1; then
         run_checker_capture python3 -m ruff check --select F --ignore F401 --no-cache "$FILE_PATH"
         CHECKER="ruff(F 除 F401)"
-        SELFCHECK="python3 -m ruff check --select F $REL"
+        SELFCHECK=".venv/bin/python -m ruff check --select F $REL"
         EXTRA_HINT="   → F401（import 未使用）本闸不拦（两步 Edit 中间态会假阳）；改完跑上面自检收尾"
       elif python3 -c "import pyflakes" 2>/dev/null; then
         run_checker_capture python3 -m pyflakes "$FILE_PATH"
         CHECKER="pyflakes"
-        SELFCHECK="python3 -m pyflakes $REL"
+        SELFCHECK=".venv/bin/python -m pyflakes $REL"
       else
         run_checker_capture python3 -m py_compile "$FILE_PATH"
         CHECKER="py_compile"
-        EXTRA_HINT="   → 升级: \`python3 -m pip install ruff\` 装上能多抓「漏 import / 未定义名」"
-        SELFCHECK="python3 -m py_compile $REL"
+        EXTRA_HINT="   → 升级: \`.venv/bin/python -m pip install ruff\` 装上能多抓「漏 import / 未定义名」"
+        SELFCHECK=".venv/bin/python -m py_compile $REL"
       fi
       MSG="Python 脚本语法/引用错误（改完没自检会让下游 import 直接挂）"
       FIX="按上面行号定位，修语法 / 补 import / 改错变量名"
@@ -867,7 +778,7 @@ pc_script_syntax() {
       run_checker_capture python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1]))" "$FILE_PATH"
       CHECKER="python3 yaml.safe_load"; MSG="YAML 解析失败"
       FIX="按报错位置修，常见: 缩进不一致 / 冒号后缺空格 / tab 混 space"
-      SELFCHECK="python3 -c \"import yaml; yaml.safe_load(open('$REL'))\""
+      SELFCHECK=".venv/bin/python -c \"import yaml; yaml.safe_load(open('$REL'))\""
       ;;
   esac
 
@@ -1080,7 +991,7 @@ pc_test_reminder() {
   echo "   文件: ${REL}（${KIND}）" >&2
   echo "   未跑就推 / 切 session，hook 链 / 脚本回归风险会漏到线上" >&2
   echo "" >&2
-  echo "   → 单元测试: python3 -m pytest scripts/tests/ -q" >&2
+  echo "   → 单元测试: .venv/bin/python -m pytest scripts/tests/ -q" >&2
   echo "   → 回归测试: bash .claude/hooks/test/test-hooks.sh" >&2
   echo "   → 真不适用（纯文档 / 注释微调）→ SKIP_TEST_REMINDER_GATE=1" >&2
   note_add "本轮改动落在工区的${KIND}资产（${REL}）。按工区约定，这三类改动收尾前要跑 python3 -m pytest scripts/tests/ -q 与 bash .claude/hooks/test/test-hooks.sh。（本条来自工区 test-reminder-gate 检查）"

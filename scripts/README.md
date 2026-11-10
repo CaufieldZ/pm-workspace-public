@@ -34,7 +34,7 @@
 | `pack_for_opus.py` | 打包工作区 | 把工作区按 scope 任意范围打包成单文件 markdown（外部 review / 离线分享 / 备份），包装 repomix CLI。 |
 | `pull_meeting_notes.py` | 会议纪要/拉纪要 | 从会议纪要工具拉取会议纪要到项目 inputs/ 目录。 |
 | `slack.py` | Slack 消息 | Slack CLI —— 调用 Slack MCP，不加载 MCP server 到 Claude Code。 |
-| `sync_hx_status.py` | 内部项目系统 delta 状态/上线日期同步（内部项目系统为权威源） | 内部项目系统 → 本地 delta 状态/上线日期同步（内部项目系统是唯一权威源，本地是缓存投影）。 |
+| `sync_hx_status.py` | 内部项目系统 delta 状态/上线日期对账（PM 宣告为准；只前进回填，不覆盖手填，冲突报 diff） | 内部项目系统 → 本地 delta 状态/上线日期对账回填（PM 宣告为准，内部项目系统为旁证）。 |
 | `sync_pools.sh` | 需求池 | 一键刷新两个需求池 md（增长 + 体验专项） |
 | `video_gen.py` | 出视频（文生 / 图生 / 参考生） | video_gen.py — MiniMax H3 出视频：文生 / 图生（首尾帧）/ 参考生成，建任务轮询下载。 |
 | `youshu_cli.py` | BI 报告/BI 链接 | BI 平台（BI 平台）报告下载 CLI |
@@ -45,7 +45,7 @@
 |------|---------|------|
 | `check_bullet_density.py` | — | bullet / 段落挤话检测（AI 味「挤话一团」维度）。 |
 | `check_hub_fresh.py` | — | hub 分发物新鲜度校验（改完源码忘重打 zip / 忘重贴 OWUI 的机械检出）。 |
-| `check_insight_value.py` | — | 周报洞察内容门：抓「把明细表翻译成中文句子」的复读和跨口径相除。 |
+| `check_insight_value.py` | — | 周报洞察内容门：抓四类问题——没有判断的表格复读、分析腔、营销腔、跨口径相除。 |
 | `check_plain_language.py` | — | 产出物「讲人话」自检 — 全 PM-WORKSPACE 唯一规则源（新）。 |
 | `check_static_chapter.py` | — | 真相源静态章写作纪律 lint（baseline 模块章 / 现状章 / scene-list）。 |
 
@@ -66,7 +66,7 @@
 | `gen_hooks_readme.py` | — | 生成 .claude/hooks/README.md —— 当前 hook 清单（零腐化，自动从 settings + 文件提取）。 |
 | `gen_scripts_readme.py` | — | 生成 scripts/README.md —— 当前 scripts 清单（零腐化，自动从文件 + CLAUDE.md 提取）。 |
 | `hook_check_md_blockquote.py` | — | md-blockquote-gate 检查体：项目 md 新增行的引用墙检测（连排 ≥2 行 / 单行 >120 字）。 |
-| `hook_check_prd_content.py` | — | prd-content-gate 检查体：PRD 写入时新增行的讲人话 / 结构硬错检测。 |
+| `hook_check_prd_content.py` | — | prd-content-gate 检查体：PRD 写入时新增行的硬错检测。 |
 | `hook_py_batch.py` | — | hook 批量检查器运行器：单 python3 进程按原 argv 依次跑多个 checker 的 main()。 |
 | `reconcile_peak.py` | — | 用站点自己的账单核对峰谷判定 —— 指定日期的实际成交价 vs「交易所日历」规则。 |
 | `relay_balance.py` | — | 查中转站账户余额 —— user-prompt-warn.sh 报金额时附一行「余额 ¥X」；也可手动跑。 |

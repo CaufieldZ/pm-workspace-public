@@ -1,7 +1,7 @@
 """hook_check_prd_content（PRD 写入时内容门）单元测试。
 
-锁四件事：只报本次新增行（存量旧账不卡）；骨架占位符不拦；别的门已管的维度不重复报；
-split / baseline 专属维度只在对应形态下报。
+锁四件事：只报本次新增行（存量旧账不卡）；骨架占位符不拦；别的门已管的维度（水平线）
+不重复报；baseline 豁免的维度只在 delta 下报。
 """
 
 import sys
@@ -31,17 +31,16 @@ def _md(tmp_path: Path, text: str, name: str = "prd-demo-v1.md", sub: str = "") 
 # ── 1. 只报新增行 ──────────────────────────────────────────────────────────
 
 def test_only_added_lines_are_reported(tmp_path):
-    text = "# 1. 背景\n\n- 旧账：鼠标 hover 时展示浮层\n- 新增：点按钮弹 modal\n"
+    text = "# 1. 背景\n\n> 旧账导读\n\n> 新增导读\n"
     f = _md(tmp_path, text)
-    # 只把第二行当作本次新增
-    hits = _run(f, ["- 新增：点按钮弹 modal"])
+    # 只把第二段当作本次新增
+    hits = _run(f, ["> 新增导读"])
     assert len(hits) == 1, hits
-    assert "modal" in hits[0]
-    assert "hover" not in hits[0]
+    assert "新增导读" in hits[0]
 
 
 def test_whole_file_added_reports_everything(tmp_path):
-    text = "# 1. 背景\n\n- 鼠标 hover 时展示浮层\n- 点按钮弹 modal\n"
+    text = "# 1. 背景\n\n> 导读一\n\n```mermaid\ngraph TD\n```\n"
     f = _md(tmp_path, text)
     assert len(_run(f, text.splitlines())) == 2
 
@@ -57,31 +56,19 @@ def test_draft_placeholders_not_blocked(tmp_path):
 # ── 3. 别的门已管的维度不重复报 ────────────────────────────────────────────
 
 def test_other_gate_keys_not_reported(tmp_path):
-    text = (
-        "# 1. 背景\n\n"
-        "- 支持 ① 现货 ② 合约\n"
-        "- 上一段\n\n---\n\n- 下一段\n"
-        "- 按钮用蓝色按钮\n"
-        "- 图标 🪙 打赏入口\n"
-    )
+    text = "# 1. 背景\n\n- 上一段\n\n---\n\n- 下一段\n"
     f = _md(tmp_path, text)
     assert _run(f, text.splitlines()) == []
 
 
-# ── 4. split / baseline 专属维度 ───────────────────────────────────────────
-
-def test_split_only_keys_fire_only_under_scenes_dir(tmp_path):
-    text = "# 1. 背景\n\n- 展示口径见 §3.1\n- A-1 走海报\n"
-    single = _md(tmp_path, text, name="prd-demo-v1.md")
-    assert _run(single, text.splitlines()) == []
-
-    split = _md(tmp_path, text, name="x.md", sub="prd-demo-v1-scenes")
-    hits = _run(split, text.splitlines())
-    assert len(hits) == 2, hits
-
+# ── 4. baseline 豁免维度 ───────────────────────────────────────────
 
 def test_baseline_profile_skips_delta_only_keys(tmp_path):
-    text = "# 1. 背景\n\n> 导读墙\n\n| 事件英文名 | 应埋点平台 |\n| :--- | :--- |\n| `a` | 服务端 |\n"
+    text = (
+        "# 1. 背景\n\n> 导读墙\n\n"
+        "| 所属页面 | 事件中文名 | 事件英文名 | 属性中文名 | 属性英文名 | 数据类型 | 是否必填 | 数据值示例 | 应埋点平台 | 触发机制 |\n| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n"
+        "| 页 | 事件 | `a` | 属性 | p | STRING | 是 | x | 服务端 | 点击后 |\n"
+    )
     delta = _md(tmp_path, text, name="prd-demo-v1.md")
     assert len(_run(delta, text.splitlines())) == 2, _run(delta, text.splitlines())
 

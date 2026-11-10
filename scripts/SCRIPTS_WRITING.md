@@ -222,7 +222,7 @@ CLI 缺失走 `command -v x >/dev/null 2>&1` 守卫静默降级（如 macOS 专�
 
 ### L. > 300 行必读 references 必须配 ≤ 100 行 quickref（省 token）
 
-SKILL.md References「必读」清单里的 md 文件 > 300 行时，必须同目录配 `<原名>-quickref.md`（≤ 100 行，只留必守硬规则 + 全量指针）。References 必读指向 quickref、全量降为按需读；skill-load-gate 的 GUIDE 清单同步指向 quickref。先例：prd-scene-templates 300 行 → quickref 67 行；prd-chapter-rules 561 行 → quickref ~100 行（每 PRD session 省 ~15K token）。
+SKILL.md References「必读」清单里的 md 文件 > 300 行时，必须同目录配 `<原名>-quickref.md`（≤ 100 行，只留必守硬规则 + 全量指针）。References 必读指向 quickref、全量降为按需读；skill-load-gate 的 GUIDE 清单同步指向 quickref。先例：HOOK_WRITING.md → HOOK_WRITING-quickref.md。
 
 ### M. 被 source 的脚本不用 `$#` / `$1` 判自身参数
 
